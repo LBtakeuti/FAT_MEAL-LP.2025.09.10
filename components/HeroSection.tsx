@@ -12,7 +12,7 @@ const HeroSection: React.FC = () => {
           src="/bento_1.jpeg"
           alt="お弁当"
           fill
-          className="object-cover shadow-2xl"
+          className="object-cover"
           priority
         />
       </div>
@@ -27,9 +27,9 @@ const HeroSection: React.FC = () => {
       
       <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto text-center animate-fadeIn relative z-10">
         <div className="mb-8">
-          <h2 className="text-5xl md:text-6xl font-bold text-black mb-4">
-            <span className="inline-block">もっと<span className="text-black">カロリー</span>を、</span>
-            <span className="inline-block">もっと<span className="text-black">栄養</span>を。</span>
+          <h2 className="text-5xl md:text-6xl font-bold text-white mb-4">
+            <span className="inline-block">もっと<span className="text-white">カロリー</span>を、</span>
+            <span className="inline-block">もっと<span className="text-white">栄養</span>を。</span>
           </h2>
         </div>
       </div>

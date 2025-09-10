@@ -115,10 +115,10 @@ const MobileHeader: React.FC = () => {
               </button>
               
               <button
-                onClick={() => handleNavClick('#why')}
+                onClick={() => handleNavClick('#target-users')}
                 className="block w-full text-left text-2xl font-medium text-orange-600 hover:bg-orange-50 transition-all py-6 px-8"
               >
-                なぜふとるめしなのか
+                どんな人に必要？
               </button>
               
               <button

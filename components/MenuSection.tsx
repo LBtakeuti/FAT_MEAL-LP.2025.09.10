@@ -9,11 +9,11 @@ const MenuSection: React.FC = () => {
   // All 5 cards on one page
   const allItems = menuItems;
 
-  const MenuCard = ({ item }: { item: typeof menuItems[0] }) => (
+  const MenuCard = ({ item, compact = false }: { item: typeof menuItems[0], compact?: boolean }) => (
     <Link href={`/menu/${item.id}`} className="block">
       <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer">
         <div className="flex flex-col">
-          <div className="relative h-[100px]">
+          <div className={`relative ${compact ? 'h-[80px]' : 'h-[90px]'}`}>
             <Image
               src={item.image}
               alt={item.name}
@@ -22,35 +22,35 @@ const MenuSection: React.FC = () => {
               sizes="50vw"
             />
           </div>
-          <div className="p-3 flex flex-col">
-            <h3 className="text-xs font-bold text-gray-900 mb-1">
+          <div className={`${compact ? 'p-2' : 'p-2.5'} flex flex-col`}>
+            <h3 className="text-[11px] font-bold text-gray-900 mb-0.5">
               {item.name}
             </h3>
-            <div className="mb-1">
-              <span className="text-lg font-bold text-orange-600">
+            <div className="mb-0.5">
+              <span className="text-base font-bold text-orange-600">
                 {item.calories}
               </span>
-              <span className="text-xs text-gray-600">kcal</span>
+              <span className="text-[10px] text-gray-600">kcal</span>
             </div>
-            <div className="space-y-0.5 text-xs">
+            <div className="space-y-0 text-[9px]">
               <div className="flex justify-between">
-                <span className="text-gray-500 text-[10px]">タンパク質</span>
-                <span className="font-semibold text-gray-900 text-[10px]">{item.protein}g</span>
+                <span className="text-gray-500">タンパク質</span>
+                <span className="font-semibold text-gray-900">{item.protein}g</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500 text-[10px]">脂質</span>
-                <span className="font-semibold text-gray-900 text-[10px]">{item.fat}g</span>
+                <span className="text-gray-500">脂質</span>
+                <span className="font-semibold text-gray-900">{item.fat}g</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500 text-[10px]">炭水化物</span>
-                <span className="font-semibold text-gray-900 text-[10px]">{item.carbs}g</span>
+                <span className="text-gray-500">炭水化物</span>
+                <span className="font-semibold text-gray-900">{item.carbs}g</span>
               </div>
             </div>
-            <div className="flex items-center justify-between mt-2">
-              <span className="text-sm font-bold text-gray-900">
+            <div className="flex items-center justify-between mt-1">
+              <span className="text-xs font-bold text-gray-900">
                 ¥{item.price}
               </span>
-              <span className="bg-orange-600 text-white px-2 py-0.5 rounded text-[10px] hover:bg-orange-700 transition-colors">
+              <span className="bg-orange-600 text-white px-1.5 py-0.5 rounded text-[9px] hover:bg-orange-700 transition-colors">
                 詳細
               </span>
             </div>
@@ -61,24 +61,24 @@ const MenuSection: React.FC = () => {
   );
 
   return (
-    <section id="menu" className="min-h-screen bg-white py-20">
+    <section id="menu" className="min-h-screen bg-white py-12 sm:py-20">
       <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900">
+        <div className="text-center mb-6 sm:mb-12">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900">
             弁当<span className="text-orange-600">メニュー</span>一覧
           </h2>
         </div>
 
         {/* Mobile: All 5 cards in one view */}
         <div className="sm:hidden">
-          <div className="px-4">
-            {/* 5th card at the top */}
-            <div className="mb-4">
-              <MenuCard item={allItems[4]} />
+          <div className="px-2">
+            {/* 5th card at the top - more compact */}
+            <div className="mb-3 max-w-[200px] mx-auto">
+              <MenuCard item={allItems[4]} compact={true} />
             </div>
             
             {/* First 4 cards in 2x2 grid */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               {allItems.slice(0, 4).map((item, index) => (
                 <MenuCard key={index} item={item} />
               ))}
@@ -140,12 +140,6 @@ const MenuSection: React.FC = () => {
               </div>
             </Link>
           ))}
-        </div>
-
-        <div className="text-center mt-12">
-          <button className="bg-orange-600 text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-orange-700 transition-colors">
-            全メニューを見る
-          </button>
         </div>
       </div>
     </section>

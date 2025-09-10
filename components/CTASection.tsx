@@ -70,24 +70,6 @@ const CTASection: React.FC = () => {
           </button>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6 text-center">
-          <div>
-            <div className="text-4xl mb-2">🚚</div>
-            <h4 className="font-semibold text-gray-900">全国配送</h4>
-            <p className="text-sm text-gray-600">冷凍便でお届け</p>
-          </div>
-          <div>
-            <div className="text-4xl mb-2">💳</div>
-            <h4 className="font-semibold text-gray-900">安心決済</h4>
-            <p className="text-sm text-gray-600">各種クレジット対応</p>
-          </div>
-          <div>
-            <div className="text-4xl mb-2">📞</div>
-            <h4 className="font-semibold text-gray-900">サポート充実</h4>
-            <p className="text-sm text-gray-600">栄養相談も承ります</p>
-          </div>
-        </div>
-
         <div id="contact" className="mt-12 p-6 bg-gray-50 rounded-xl">
           <p className="text-gray-700 font-semibold mb-2">お問い合わせ</p>
           <p className="text-2xl font-bold text-orange-600">0120-XXX-XXX</p>

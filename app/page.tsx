@@ -10,6 +10,8 @@ import MobileHeader from '@/components/MobileHeader';
 import HeroSection from '@/components/HeroSection';
 import FeaturesSection from '@/components/FeaturesSection';
 import { FeatureSlide1, FeatureSlide2, FeatureSlide3 } from '@/components/FeatureSlides';
+import TargetUserSection from '@/components/TargetUserSection';
+import { TargetUserSlide1, TargetUserSlide2 } from '@/components/TargetUserSlides';
 import MenuSection from '@/components/MenuSection';
 import CTASection from '@/components/CTASection';
 import Footer from '@/components/Footer';
@@ -54,6 +56,12 @@ export default function Home() {
             <FeatureSlide3 />
           </SwiperSlide>
           <SwiperSlide>
+            <TargetUserSlide1 />
+          </SwiperSlide>
+          <SwiperSlide>
+            <TargetUserSlide2 />
+          </SwiperSlide>
+          <SwiperSlide>
             <MenuSection />
           </SwiperSlide>
           <SwiperSlide>
@@ -70,6 +78,7 @@ export default function Home() {
         <main className="normal-scroll">
         <HeroSection />
         <FeaturesSection />
+        <TargetUserSection />
         <MenuSection />
         <CTASection />
           <Footer />
