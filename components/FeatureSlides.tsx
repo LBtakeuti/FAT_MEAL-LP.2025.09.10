@@ -21,9 +21,10 @@ export const FeatureSlide1: React.FC = () => {
         </div>
         
         {/* Feature Content */}
-        <div className="text-center">
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">
+        <div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-4 inline-block relative">
             良質なタンパク質
+            <span className="absolute bottom-0 left-0 w-full h-1 bg-orange-600"></span>
           </h3>
           <p className="text-base text-gray-700 leading-relaxed whitespace-pre-line">
             {`プロテインが苦手、お腹を下してしまう。
@@ -49,8 +50,8 @@ export const FeatureSlide2: React.FC = () => {
         </div>
         
         {/* Feature Content */}
-        <div className="text-center">
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">
+        <div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-4 inline-block border-b-4 border-orange-600 pb-1">
             確かな味
           </h3>
           <p className="text-base text-gray-700 leading-relaxed whitespace-pre-line">
@@ -75,8 +76,8 @@ export const FeatureSlide3: React.FC = () => {
         </div>
         
         {/* Feature Content */}
-        <div className="text-center">
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">
+        <div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-4 inline-block border-b-4 border-orange-600 pb-1">
             レンジでチンだけ！
           </h3>
           <p className="text-base text-gray-700 leading-relaxed whitespace-pre-line">

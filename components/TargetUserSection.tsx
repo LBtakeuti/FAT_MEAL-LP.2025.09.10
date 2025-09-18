@@ -9,8 +9,8 @@ const TargetUserSection: React.FC = () => {
       <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight">
-            <span className="block">どんな人に「<span className="text-orange-600">ふとるめし</span>」が</span>
-            <span className="block">必要なのか？</span>
+            <span className="block sm:inline">どんな人に「<span className="text-orange-600">ふとるめし</span>」が</span>
+            <span className="block sm:inline">必要なのか？</span>
           </h1>
         </div>
 
