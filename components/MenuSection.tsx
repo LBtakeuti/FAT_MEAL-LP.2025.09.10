@@ -87,54 +87,52 @@ const MenuSection: React.FC = () => {
   const currentItem = menuItems[currentIndex];
 
   const MenuCard = ({ item, compact = false }: { item: typeof menuItems[0], compact?: boolean }) => (
-    <Link href={`/menu/${item.id}`} className="block">
-      <div className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer">
-        <div className="flex flex-col">
-          <div className="relative h-[70px]">
-            <Image
-              src={item.image}
-              alt={item.name}
-              fill
-              className="object-cover"
-              sizes="50vw"
-            />
+    <div 
+      onClick={() => router.push(`/menu/${item.id}`)}
+      className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+    >
+      <div className="flex flex-col">
+        <div className="relative h-[70px]">
+          <Image
+            src={item.image}
+            alt={item.name}
+            fill
+            className="object-cover"
+            sizes="50vw"
+          />
+        </div>
+        <div className="p-1.5 flex flex-col">
+          <h3 className="text-[10px] font-bold text-gray-900 mb-0.5 truncate">
+            {item.name}
+          </h3>
+          <div className="mb-0.5">
+            <span className="text-sm font-bold text-orange-600">
+              {item.calories}
+            </span>
+            <span className="text-[9px] text-gray-600">kcal</span>
           </div>
-          <div className="p-1.5 flex flex-col">
-            <h3 className="text-[10px] font-bold text-gray-900 mb-0.5 truncate">
-              {item.name}
-            </h3>
-            <div className="mb-0.5">
-              <span className="text-sm font-bold text-orange-600">
-                {item.calories}
-              </span>
-              <span className="text-[9px] text-gray-600">kcal</span>
+          <div className="space-y-0 text-[8px]">
+            <div className="flex justify-between">
+              <span className="text-gray-500">タンパク質</span>
+              <span className="font-semibold text-gray-900">{item.protein}g</span>
             </div>
-            <div className="space-y-0 text-[8px]">
-              <div className="flex justify-between">
-                <span className="text-gray-500">タンパク質</span>
-                <span className="font-semibold text-gray-900">{item.protein}g</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">脂質</span>
-                <span className="font-semibold text-gray-900">{item.fat}g</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">炭水化物</span>
-                <span className="font-semibold text-gray-900">{item.carbs}g</span>
-              </div>
+            <div className="flex justify-between">
+              <span className="text-gray-500">脂質</span>
+              <span className="font-semibold text-gray-900">{item.fat}g</span>
             </div>
-            <div className="flex items-center justify-between mt-0.5">
-              <span className="text-[10px] font-bold text-gray-900">
-                ¥{item.price}
-              </span>
-              <span className="bg-orange-600 text-white px-1 py-0.5 rounded text-[8px] hover:bg-orange-700 transition-colors">
-                詳細
-              </span>
+            <div className="flex justify-between">
+              <span className="text-gray-500">炭水化物</span>
+              <span className="font-semibold text-gray-900">{item.carbs}g</span>
             </div>
+          </div>
+          <div className="flex items-center justify-end mt-0.5">
+            <span className="bg-orange-600 text-white px-1 py-0.5 rounded text-[8px] hover:bg-orange-700 transition-colors">
+              詳細
+            </span>
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 
   return (
@@ -155,45 +153,46 @@ const MenuSection: React.FC = () => {
             onTouchEnd={onTouchEnd}
           >
             <div className="w-full max-w-[340px]">
-              <Link href={`/menu/${currentItem.id}`} className="block">
-                <div className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300 h-[380px] flex flex-col overflow-hidden">
-                  <div className="relative h-[220px] flex-shrink-0">
-                    <Image
-                      src={currentItem.image}
-                      alt={currentItem.name}
-                      fill
-                      className="object-cover"
-                      sizes="100vw"
-                      priority
-                    />
+              <div 
+                onClick={() => router.push(`/menu/${currentItem.id}`)}
+                className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300 h-[380px] flex flex-col overflow-hidden cursor-pointer"
+              >
+                <div className="relative h-[220px] flex-shrink-0">
+                  <Image
+                    src={currentItem.image}
+                    alt={currentItem.name}
+                    fill
+                    className="object-cover"
+                    sizes="100vw"
+                    priority
+                  />
+                </div>
+                <div className="p-3 flex flex-col">
+                  <h3 className="text-base font-bold text-gray-900 mb-2 truncate">
+                    {currentItem.name}
+                  </h3>
+                  <div className="mb-2">
+                    <span className="text-xl font-bold text-orange-600">
+                      {currentItem.calories}
+                    </span>
+                    <span className="text-xs text-gray-600 ml-1">kcal</span>
                   </div>
-                  <div className="p-3 flex flex-col">
-                    <h3 className="text-base font-bold text-gray-900 mb-2 truncate">
-                      {currentItem.name}
-                    </h3>
-                    <div className="mb-2">
-                      <span className="text-xl font-bold text-orange-600">
-                        {currentItem.calories}
-                      </span>
-                      <span className="text-xs text-gray-600 ml-1">kcal</span>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-600">タンパク質</span>
+                      <span className="font-semibold text-gray-900">{currentItem.protein}g</span>
                     </div>
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-gray-600">タンパク質</span>
-                        <span className="font-semibold text-gray-900">{currentItem.protein}g</span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-gray-600">脂質</span>
-                        <span className="font-semibold text-gray-900">{currentItem.fat}g</span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-gray-600">炭水化物</span>
-                        <span className="font-semibold text-gray-900">{currentItem.carbs}g</span>
-                      </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-600">脂質</span>
+                      <span className="font-semibold text-gray-900">{currentItem.fat}g</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-600">炭水化物</span>
+                      <span className="font-semibold text-gray-900">{currentItem.carbs}g</span>
                     </div>
                   </div>
                 </div>
-              </Link>
+              </div>
             </div>
           </div>
 

@@ -62,9 +62,6 @@ export default function MenuListPage() {
                         <span className="text-base font-bold text-orange-600">
                           {item.calories}kcal
                         </span>
-                        <span className="text-sm text-gray-600">
-                          ¥{item.price}
-                        </span>
                       </div>
                     </div>
                   </Link>
@@ -111,9 +108,6 @@ export default function MenuListPage() {
                       <div className="flex items-center gap-6">
                         <span className="text-2xl font-bold text-orange-600">
                           {item.calories}kcal
-                        </span>
-                        <span className="text-lg text-gray-700">
-                          ¥{item.price}
                         </span>
                       </div>
                       <div className="flex gap-6 mt-3 text-sm">
