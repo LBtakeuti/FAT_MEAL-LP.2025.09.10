@@ -16,7 +16,6 @@ const Header: React.FC = () => {
             <a href="#hero" className="text-gray-700 hover:text-orange-600 font-medium transition-colors">ホーム</a>
             <a href="#features" className="text-gray-700 hover:text-orange-600 font-medium transition-colors">こだわり</a>
             <a href="#menu" className="text-gray-700 hover:text-orange-600 font-medium transition-colors">メニュー</a>
-            <a href="#calculator" className="text-gray-700 hover:text-orange-600 font-medium transition-colors hidden md:inline">カロリー計算</a>
             <a href="#contact" className="text-gray-700 hover:text-orange-600 font-medium transition-colors">お問い合わせ</a>
           </nav>
         </div>

@@ -26,185 +26,117 @@ interface MenuDetailClientProps {
 }
 
 export default function MenuDetailClient({ menuItem }: MenuDetailClientProps) {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const currentItemIndex = menuItems.findIndex(item => item.id === menuItem.id);
+  
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       {/* Mobile Header */}
       <MobileHeader />
 
-      <main className="pt-14 sm:pt-0">
-        {/* Hero Image with Back Button Overlay */}
-        <div className="relative w-full h-[300px] sm:h-[400px] lg:h-[500px] border-t-[16px] border-b-[16px] border-white">
-          <Image
-            src={menuItem.image}
-            alt={menuItem.name}
-            fill
-            className="object-cover"
-            priority
-          />
-          
-          {/* Back Button - Simple icon only */}
-          <Link 
-            href="/" 
-            className="absolute top-4 left-4 z-10 hover:opacity-80 transition-opacity"
+      <main className="pt-14 pb-24 sm:pt-20">
+        <div className="max-w-[450px] sm:max-w-[700px] lg:max-w-[900px] xl:max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Title */}
+          <div className="text-center py-6 sm:py-8 lg:py-10">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900">
+              弁当<span className="text-orange-600">メニュー</span>一覧
+            </h1>
+          </div>
+
+          {/* Menu Card */}
+          <div className="bg-white rounded-3xl shadow-xl overflow-hidden mb-8 lg:mb-12">
+            {/* Image with larger size */}
+            <div className="relative w-full h-[350px] sm:h-[450px] lg:h-[500px] xl:h-[600px]">
+              <Image
+                src={menuItem.image}
+                alt={menuItem.name}
+                fill
+                className="object-cover"
+                priority
+              />
+            </div>
+
+            {/* Content with more padding */}
+            <div className="p-8 sm:p-10 lg:p-12 xl:p-16">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-gray-900 mb-4 lg:mb-6">
+                {menuItem.name}
+              </h2>
+              
+              {/* Calories display */}
+              <div className="mb-6 lg:mb-8">
+                <span className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-orange-600">
+                  {menuItem.calories}
+                </span>
+                <span className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl text-gray-600 ml-2">kcal</span>
+              </div>
+
+              {/* Nutrition info */}
+              <div className="space-y-4 lg:space-y-6">
+                <div className="flex justify-between py-3 lg:py-4 border-b border-gray-100">
+                  <span className="text-lg lg:text-xl xl:text-2xl text-gray-600">タンパク質</span>
+                  <span className="text-lg lg:text-xl xl:text-2xl font-semibold text-gray-900">{menuItem.protein}</span>
+                </div>
+                <div className="flex justify-between py-3 lg:py-4 border-b border-gray-100">
+                  <span className="text-lg lg:text-xl xl:text-2xl text-gray-600">脂質</span>
+                  <span className="text-lg lg:text-xl xl:text-2xl font-semibold text-gray-900">{menuItem.fat}</span>
+                </div>
+                <div className="flex justify-between py-3 lg:py-4">
+                  <span className="text-lg lg:text-xl xl:text-2xl text-gray-600">炭水化物</span>
+                  <span className="text-lg lg:text-xl xl:text-2xl font-semibold text-gray-900">{menuItem.carbs}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Carousel dots */}
+          <div className="flex justify-center gap-3 lg:gap-4 mb-10 lg:mb-12">
+            {menuItems.map((item, index) => (
+              <button
+                key={item.id}
+                onClick={() => window.location.href = `/menu/${item.id}`}
+                className={`h-3 lg:h-4 rounded-full transition-all ${
+                  index === currentItemIndex 
+                    ? 'w-10 lg:w-12 bg-orange-600' 
+                    : 'w-3 lg:w-4 bg-gray-300 hover:bg-gray-400'
+                }`}
+                aria-label={`View ${item.name}`}
+              />
+            ))}
+          </div>
+
+          {/* Action button */}
+          <button 
+            onClick={() => window.location.href = '/menu-list'}
+            className="w-full lg:max-w-lg lg:mx-auto lg:block bg-orange-600 text-white py-5 lg:py-6 rounded-full font-bold text-xl lg:text-2xl hover:bg-orange-700 transition-colors mb-6"
           >
-            <Image
-              src="/Frame 7.svg"
-              alt="戻る"
-              width={40}
-              height={40}
-              className="sm:w-12 sm:h-12"
-            />
-          </Link>
-        </div>
-
-        {/* Content */}
-        <div className="max-w-[800px] mx-auto px-4 py-8 sm:px-6 lg:px-8">
-          {/* Title and Price */}
-          <div className="mb-8">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              {menuItem.name}
-            </h2>
-            <div className="flex items-baseline gap-4">
-              <span className="text-4xl font-bold text-orange-600">
-                ¥{menuItem.price}
-              </span>
-              <span className="text-2xl font-semibold text-gray-700">
-                {menuItem.calories}kcal
-              </span>
-            </div>
-          </div>
-
-          {/* Description */}
-          <div className="mb-8">
-            <p className="text-lg text-gray-700 leading-relaxed">
-              {menuItem.description}
-            </p>
-          </div>
-
-          {/* Features */}
-          <div className="mb-8">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">
-              このメニューの特徴
-            </h3>
-            <ul className="space-y-2">
-              {menuItem.features.map((feature, index) => (
-                <li key={index} className="flex items-start">
-                  <span className="text-orange-600 mr-2">✓</span>
-                  <span className="text-gray-700">{feature}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Nutrition Facts */}
-          <div className="mb-8">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">
-              栄養成分表示（1食あたり）
-            </h3>
-            <div className="bg-gray-50 rounded-lg p-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">エネルギー</span>
-                  <span className="font-semibold">{menuItem.calories}kcal</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">タンパク質</span>
-                  <span className="font-semibold">{menuItem.protein}g</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">脂質</span>
-                  <span className="font-semibold">{menuItem.fat}g</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">炭水化物</span>
-                  <span className="font-semibold">{menuItem.carbs}g</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Ingredients */}
-          <div className="mb-8">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">
-              原材料
-            </h3>
-            <div className="bg-gray-50 rounded-lg p-6">
-              <p className="text-gray-700">
-                {menuItem.ingredients.join('、')}
-              </p>
-            </div>
-          </div>
-
-          {/* Allergens */}
-          <div className="mb-8">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">
-              アレルギー情報
-            </h3>
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
-              <p className="text-sm text-gray-600 mb-2">
-                本製品に含まれるアレルギー物質（特定原材料等）
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {menuItem.allergens.map((allergen, index) => (
-                  <span
-                    key={index}
-                    className="px-3 py-1 bg-orange-600 text-white rounded-full text-sm"
-                  >
-                    {allergen}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-8">
-            <button className="flex-1 bg-orange-600 text-white py-4 px-8 rounded-full text-lg font-semibold hover:bg-orange-700 transition-colors">
-              このメニューを注文する
-            </button>
-            <Link
-              href="/#menu"
-              className="flex-1 border-2 border-orange-600 text-orange-600 py-4 px-8 rounded-full text-lg font-semibold hover:bg-orange-50 transition-colors text-center"
-            >
-              他のメニューを見る
-            </Link>
-          </div>
-
-          {/* Related Items */}
-          <div className="border-t pt-8">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">
-              おすすめの組み合わせ
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {menuItems
-                .filter(item => item.id !== menuItem.id)
-                .slice(0, 3)
-                .map((item) => (
-                  <Link
-                    key={item.id}
-                    href={`/menu/${item.id}`}
-                    className="group"
-                  >
-                    <div className="relative h-[100px] rounded-lg overflow-hidden mb-2">
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        fill
-                        className="object-cover group-hover:scale-110 transition-transform"
-                      />
-                    </div>
-                    <p className="text-sm font-semibold text-gray-900 group-hover:text-orange-600 transition-colors">
-                      {item.name}
-                    </p>
-                    <p className="text-xs text-gray-600">
-                      {item.calories}kcal / ¥{item.price}
-                    </p>
-                  </Link>
-                ))}
-            </div>
-          </div>
+            ラインナップを見る
+          </button>
         </div>
       </main>
+
+      {/* Bottom Navigation for mobile */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
+        <div className="grid grid-cols-2 h-16">
+          <button 
+            onClick={() => window.location.href = '/purchase'}
+            className="flex items-center justify-center gap-2 text-white bg-orange-600 hover:bg-orange-700 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            <span className="font-medium">購入</span>
+          </button>
+          <button 
+            onClick={() => window.location.href = '/contact'}
+            className="flex items-center justify-center gap-2 text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            <span className="font-medium">お問い合わせ</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

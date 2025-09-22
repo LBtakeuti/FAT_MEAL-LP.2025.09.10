@@ -1,6 +1,7 @@
 'use client';
 // Force reload
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 const MobileHeader: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -45,9 +46,9 @@ const MobileHeader: React.FC = () => {
     <>
       <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md sm:hidden">
         <div className="flex items-center justify-between h-14 px-4">
-          <h1 className="text-xl font-bold text-orange-600">
+          <Link href="/" className="text-xl font-bold text-orange-600">
             ふとるめし
-          </h1>
+          </Link>
           {/* Hamburger Menu Button */}
           <button
             onClick={toggleMenu}

@@ -13,24 +13,23 @@ export default function NewsListPage() {
       <MobileHeader />
 
       <main className="pt-14 sm:pt-20 pb-20">
-        {/* Back Button - Fixed position on mobile */}
-        <div className="fixed top-20 left-4 z-10 sm:hidden">
-          <Link 
-            href="/" 
-            className="block hover:opacity-80 transition-opacity"
-          >
-            <Image
-              src="/Frame 7.svg"
-              alt="戻る"
-              width={92}
-              height={40}
-            />
-          </Link>
-        </div>
-
         <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto">
+          
+          {/* Back Button - Part of the page flow */}
+          <div className="sm:hidden mb-4 mt-2">
+            <Link 
+              href="/" 
+              className="inline-flex items-center text-orange-600 font-medium"
+            >
+              <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              <span>お知らせ一覧</span>
+            </Link>
+          </div>
+
           {/* Title */}
-          <div className="text-center mb-8 sm:mb-12 pt-16 sm:pt-0">
+          <div className="text-center mb-8 sm:mb-12">
             <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900">
               お知らせ
             </h1>
@@ -92,15 +91,9 @@ export default function NewsListPage() {
           <div className="hidden sm:block mt-12 text-center">
             <Link 
               href="/"
-              className="inline-flex items-center gap-2 bg-white border-2 border-orange-600 text-orange-600 px-6 py-3 rounded-full font-semibold hover:bg-orange-50 transition-colors"
+              className="inline-block bg-white border-2 border-orange-600 text-orange-600 px-8 py-3 rounded-full font-semibold hover:bg-orange-50 transition-colors"
             >
-              <Image
-                src="/Frame 7.svg"
-                alt="戻る"
-                width={24}
-                height={24}
-              />
-              <span>ホームに戻る</span>
+              ホームに戻る
             </Link>
           </div>
         </div>

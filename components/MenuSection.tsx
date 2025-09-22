@@ -3,9 +3,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { menuItems } from '@/data/menuData';
 
 const MenuSection: React.FC = () => {
+  const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
@@ -225,53 +227,59 @@ const MenuSection: React.FC = () => {
         {/* Desktop: All cards in a list */}
         <div className="hidden sm:block space-y-8">
           {menuItems.map((item, index) => (
-            <Link key={index} href={`/menu/${item.id}`} className="block">
-              <div className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer">
-                <div className="flex h-[280px]">
-                  <div className="relative w-[40%]">
-                    <Image
-                      src={item.image}
-                      alt={item.name}
-                      fill
-                      className="object-cover"
-                      sizes="40vw"
-                    />
-                  </div>
-                  <div className="w-[60%] p-6 flex flex-col justify-between">
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-3">
-                        {item.name}
-                      </h3>
-                      <div className="mb-3">
-                        <span className="text-4xl font-bold text-orange-600">
-                          {item.calories}
-                        </span>
-                        <span className="text-sm text-gray-600 ml-1">kcal</span>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">タンパク質</span>
-                        <span className="font-semibold text-gray-900">{item.protein}g</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">脂質</span>
-                        <span className="font-semibold text-gray-900">{item.fat}g</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-gray-600">炭水化物</span>
-                        <span className="font-semibold text-gray-900">{item.carbs}g</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-end mt-4">
-                      <span className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors text-sm">
-                        詳細を見る
+            <div 
+              key={index} 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                router.push(`/menu/${item.id}`);
+              }}
+              className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer"
+            >
+              <div className="flex h-[280px]">
+                <div className="relative w-[40%]">
+                  <Image
+                    src={item.image}
+                    alt={item.name}
+                    fill
+                    className="object-cover"
+                    sizes="40vw"
+                  />
+                </div>
+                <div className="w-[60%] p-6 flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-3">
+                      {item.name}
+                    </h3>
+                    <div className="mb-3">
+                      <span className="text-4xl font-bold text-orange-600">
+                        {item.calories}
                       </span>
+                      <span className="text-sm text-gray-600 ml-1">kcal</span>
                     </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">タンパク質</span>
+                      <span className="font-semibold text-gray-900">{item.protein}g</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">脂質</span>
+                      <span className="font-semibold text-gray-900">{item.fat}g</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">炭水化物</span>
+                      <span className="font-semibold text-gray-900">{item.carbs}g</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-end mt-4">
+                    <span className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors text-sm">
+                      詳細を見る
+                    </span>
                   </div>
                 </div>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       </div>

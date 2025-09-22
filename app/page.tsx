@@ -83,7 +83,7 @@ export default function Home() {
               <NewsSection />
             </SwiperSlide>
             <SwiperSlide>
-              <div className="min-h-screen">
+              <div className="min-h-screen bg-gray-900 pb-20 flex flex-col">
                 <Footer />
               </div>
             </SwiperSlide>
@@ -93,12 +93,12 @@ export default function Home() {
         </>
       ) : (
         <main className="normal-scroll">
-        <HeroSection />
-        <FeaturesSection />
-        <TargetUserSection />
-        <MenuSection />
-        <CTASection />
-        <NewsSection />
+          <HeroSection />
+          <FeaturesSection />
+          <TargetUserSection />
+          <MenuSection />
+          <CTASection />
+          <NewsSection />
           <Footer />
         </main>
       )}

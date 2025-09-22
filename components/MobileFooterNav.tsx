@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface MobileFooterNavProps {
   isVisible?: boolean;
 }
 
 const MobileFooterNav: React.FC<MobileFooterNavProps> = ({ isVisible = false }) => {
+  const router = useRouter();
   
   useEffect(() => {
     console.log('MobileFooterNav isVisible:', isVisible);
@@ -14,11 +16,8 @@ const MobileFooterNav: React.FC<MobileFooterNavProps> = ({ isVisible = false }) 
 
   const handleBookNowClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    // Navigate to pricing slide (index 5 after removing 3 feature slides)
-    const swiper = (window as any).swiper;
-    if (swiper) {
-      swiper.slideTo(5);
-    }
+    // Navigate to purchase page
+    router.push('/purchase');
   };
 
   const handleCallClick = () => {
@@ -26,11 +25,8 @@ const MobileFooterNav: React.FC<MobileFooterNavProps> = ({ isVisible = false }) 
   };
 
   const handleChatClick = () => {
-    // Navigate to pricing slide which has contact info (index 5)
-    const swiper = (window as any).swiper;
-    if (swiper) {
-      swiper.slideTo(5);
-    }
+    // Navigate to contact form page
+    router.push('/contact');
   };
 
   return (

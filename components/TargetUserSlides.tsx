@@ -48,15 +48,17 @@ export const TargetUserSlide1: React.FC = () => {
 
 export const TargetUserSlide2: React.FC = () => {
   return (
-    <section className="min-h-[100dvh] bg-white px-4 pt-16 pb-24">
-      <div className="max-w-[375px] md:max-w-[768px] lg:max-w-[1200px] mx-auto w-full h-full flex flex-col">
-        <div className="mb-8">
-          <h2 className="text-[18px] md:text-2xl font-bold text-gray-900 inline-block border-b-4 border-orange-600 pb-2">
+    <section className="h-[100dvh] bg-white px-4 pb-24 flex flex-col">
+      <div className="max-w-[375px] md:max-w-[768px] lg:max-w-[1200px] mx-auto w-full flex-1 flex flex-col">
+        {/* タイトル - 上部に配置 */}
+        <div className="pt-8 pb-4">
+          <h2 className="text-[18px] md:text-2xl font-bold text-gray-900 border-b-4 border-orange-600 pb-2">
             筋トレを頑張る社会人
           </h2>
         </div>
         
-        <div className="flex-1 flex flex-col">
+        {/* コンテンツエリア - 残りのスペースで上寄せ */}
+        <div className="flex-1 flex flex-col pt-4">
           <div className="space-y-5 text-base text-gray-700 leading-[1.8] mb-8">
             <p>
               筋肉を増やすには、トレーニングだけでなく、たんぱく質を中心に、糖質や脂質・ビタミン・ミネラルなど幅広い栄養素が必要になります。
@@ -69,7 +71,8 @@ export const TargetUserSlide2: React.FC = () => {
             </p>
           </div>
           
-          <div className="border-l-4 border-orange-600 pl-4 py-3 bg-orange-50 mb-4">
+          {/* 強調メッセージ - 少し余白を開けて配置 */}
+          <div className="border-l-4 border-orange-600 pl-4 py-3 bg-orange-50 mt-8">
             <p className="font-semibold text-orange-600 text-base leading-[1.6]">
               忙しい社会人には「ふとるめし」が最適解。ハードワーカーやトレーニーにもぴったりなお弁当になっています。
             </p>

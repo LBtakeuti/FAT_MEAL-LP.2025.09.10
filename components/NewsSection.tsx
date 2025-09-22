@@ -17,7 +17,7 @@ const NewsSection: React.FC = () => {
 
         {/* Mobile: Vertical list */}
         <div className="sm:hidden space-y-4">
-          {newsItems.slice(0, 2).map((item) => (
+          {newsItems.slice(0, 4).map((item) => (
             <Link
               key={item.id}
               href={`/news/${item.id}`}
@@ -46,8 +46,8 @@ const NewsSection: React.FC = () => {
 
         {/* Desktop: Grid layout */}
         <div className="hidden sm:block">
-          <div className="grid md:grid-cols-2 gap-6 mb-8">
-            {newsItems.slice(0, 4).map((item) => (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {newsItems.slice(0, 6).map((item) => (
               <Link
                 key={item.id}
                 href={`/news/${item.id}`}
@@ -55,11 +55,11 @@ const NewsSection: React.FC = () => {
               >
                 <div className="flex justify-between items-start mb-3">
                   <p className="text-sm text-gray-500">{item.date}</p>
-                  <svg className="w-5 h-5 text-orange-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-orange-600 group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">
+                <h3 className="text-base font-bold text-gray-900 mb-2 line-clamp-2">
                   {item.title}
                 </h3>
                 <p className="text-sm text-gray-600 line-clamp-2">
