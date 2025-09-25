@@ -4,15 +4,49 @@ import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { menuItems } from '@/data/menuData';
+
+interface MenuItem {
+  id: string;
+  name: string;
+  description: string;
+  price: string;
+  calories: string;
+  protein: string;
+  fat: string;
+  carbs: string;
+  image: string;
+}
 
 const MenuSection: React.FC = () => {
   const router = useRouter();
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const autoSwipeTimer = useRef<NodeJS.Timeout | null>(null);
   const lastInteractionTime = useRef<number>(Date.now());
+
+  // APIからメニューデータを取得
+  useEffect(() => {
+    fetchMenuItems();
+  }, []);
+
+  const fetchMenuItems = async () => {
+    try {
+      const response = await fetch('/api/menu');
+      if (response.ok) {
+        const data = await response.json();
+        setMenuItems(data.slice(0, 3)); // 最初の3つだけ表示
+      }
+    } catch (error) {
+      console.error('Failed to fetch menu items:', error);
+      // エラー時は空配列を設定
+      setMenuItems([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Minimum swipe distance (in px)
   const minSwipeDistance = 50;
@@ -84,9 +118,27 @@ const MenuSection: React.FC = () => {
     }
   };
 
+  // ローディング中の表示
+  if (isLoading) {
+    return (
+      <section className="h-[100dvh] sm:h-auto bg-white flex items-center justify-center">
+        <div className="text-gray-500">読み込み中...</div>
+      </section>
+    );
+  }
+
+  // データがない場合の表示
+  if (menuItems.length === 0) {
+    return (
+      <section className="h-[100dvh] sm:h-auto bg-white flex items-center justify-center">
+        <div className="text-gray-500">メニュー情報を取得できませんでした</div>
+      </section>
+    );
+  }
+
   const currentItem = menuItems[currentIndex];
 
-  const MenuCard = ({ item, compact = false }: { item: typeof menuItems[0], compact?: boolean }) => (
+  const MenuCard = ({ item, compact = false }: { item: MenuItem, compact?: boolean }) => (
     <div 
       onClick={() => router.push(`/menu/${item.id}`)}
       className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer"

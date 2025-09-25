@@ -30,9 +30,17 @@ const HamburgerMenu: React.FC = () => {
   const handleMenuClick = (href: string) => {
     setIsOpen(false);
     
-    // ページ遷移の場合
-    if (href.startsWith('/')) {
-      window.location.href = href;
+    // TOPや他のページ遷移の場合
+    if (href === '/' || href.startsWith('/')) {
+      // 現在のページが / の場合はトップにスクロール、それ以外はページ遷移
+      if (window.location.pathname === '/' && href === '/') {
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        });
+      } else {
+        window.location.href = href;
+      }
       return;
     }
     

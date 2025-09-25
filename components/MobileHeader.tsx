@@ -34,10 +34,28 @@ const MobileHeader: React.FC = () => {
   }, [isMenuOpen]);
 
   const handleNavClick = (href: string) => {
-    const targetId = href.replace('#', '');
-    const targetElement = document.getElementById(targetId);
-    if (targetElement) {
-      targetElement.scrollIntoView({ behavior: 'smooth' });
+    // TOPの場合（ホームページへ遷移またはトップへスクロール）
+    if (href === '#hero' || href === '/') {
+      if (window.location.pathname === '/') {
+        // 既にホームページにいる場合はトップへスクロール
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        // 他のページからはホームページへ遷移
+        window.location.href = '/';
+      }
+    } else if (href.startsWith('#')) {
+      // アンカーリンクの場合
+      if (window.location.pathname !== '/') {
+        // ホームページ以外からの場合は、ホームページに遷移してからスクロール
+        window.location.href = '/' + href;
+      } else {
+        // 既にホームページにいる場合は、その場所へスクロール
+        const targetId = href.replace('#', '');
+        const targetElement = document.getElementById(targetId);
+        if (targetElement) {
+          targetElement.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
     }
     closeMenu();
   };
@@ -80,7 +98,7 @@ const MobileHeader: React.FC = () => {
 
       {/* Drawer Menu */}
       <div
-        className={`fixed inset-y-0 right-0 w-full bg-white shadow-xl z-50 transform transition-transform duration-300 sm:hidden ${
+        className={`fixed inset-y-0 right-0 w-full bg-white shadow-xl z-[100] transform transition-transform duration-300 sm:hidden ${
           isMenuOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
         role="dialog"
@@ -88,7 +106,7 @@ const MobileHeader: React.FC = () => {
         aria-modal="true"
       >
         {/* Close button */}
-        <div className="flex justify-end p-4 border-b border-gray-100">
+        <div className="flex justify-end p-4 border-b border-gray-100 bg-white">
           <button
             onClick={closeMenu}
             className="text-gray-400 hover:text-gray-600 text-sm font-medium tracking-wider"
@@ -97,41 +115,96 @@ const MobileHeader: React.FC = () => {
           </button>
         </div>
 
-        <div className="h-full overflow-y-auto pb-20">
+        <div className="h-full overflow-y-auto pb-20 bg-white">
           {/* Main Navigation */}
-          <div className="py-8">
-            <nav>
+          <div className="py-8 bg-white">
+            <nav className="bg-white">
               <button
-                onClick={() => handleNavClick('#hero')}
-                className="block w-full text-left text-2xl font-medium text-orange-600 hover:bg-orange-50 transition-all py-6 px-8"
+                onClick={() => {
+                  // Swiperのスライド0（HeroSection）に移動
+                  if (window.location.pathname === '/') {
+                    const swiper = (window as any).swiper;
+                    if (swiper) {
+                      swiper.slideTo(0);
+                    }
+                  } else {
+                    window.location.href = '/';
+                  }
+                  closeMenu();
+                }}
+                className="block w-full text-left text-2xl font-medium text-orange-600 transition-all py-6 px-8"
               >
                 TOP
               </button>
               
               <button
-                onClick={() => handleNavClick('#features')}
-                className="block w-full text-left text-2xl font-medium text-orange-600 hover:bg-orange-50 transition-all py-6 px-8"
+                onClick={() => {
+                  // Swiperのスライド1（FeaturesSectionMobile）に移動
+                  if (window.location.pathname === '/') {
+                    const swiper = (window as any).swiper;
+                    if (swiper) {
+                      swiper.slideTo(1);
+                    }
+                  } else {
+                    window.location.href = '/';
+                  }
+                  closeMenu();
+                }}
+                className="block w-full text-left text-2xl font-medium text-orange-600 transition-all py-6 px-8"
               >
                 ふとるめしのこだわり
               </button>
               
               <button
-                onClick={() => handleNavClick('#target-users')}
-                className="block w-full text-left text-2xl font-medium text-orange-600 hover:bg-orange-50 transition-all py-6 px-8"
+                onClick={() => {
+                  // Swiperのスライド2（TargetUserSlide1）に移動
+                  if (window.location.pathname === '/') {
+                    const swiper = (window as any).swiper;
+                    if (swiper) {
+                      swiper.slideTo(2);
+                    }
+                  } else {
+                    window.location.href = '/';
+                  }
+                  closeMenu();
+                }}
+                className="block w-full text-left text-2xl font-medium text-orange-600 transition-all py-6 px-8"
               >
                 どんな人に必要？
               </button>
               
               <button
-                onClick={() => handleNavClick('#menu')}
-                className="block w-full text-left text-2xl font-medium text-orange-600 hover:bg-orange-50 transition-all py-6 px-8"
+                onClick={() => {
+                  // Swiperのスライド4（MenuSection）に移動
+                  if (window.location.pathname === '/') {
+                    const swiper = (window as any).swiper;
+                    if (swiper) {
+                      swiper.slideTo(4);
+                    }
+                  } else {
+                    window.location.href = '/';
+                  }
+                  closeMenu();
+                }}
+                className="block w-full text-left text-2xl font-medium text-orange-600 transition-all py-6 px-8"
               >
                 メニュー一覧
               </button>
               
               <button
-                onClick={() => handleNavClick('#news')}
-                className="block w-full text-left text-2xl font-medium text-orange-600 hover:bg-orange-50 transition-all py-6 px-8"
+                onClick={() => {
+                  // Swiperのスライド6（NewsSection）に移動
+                  if (window.location.pathname === '/') {
+                    const swiper = (window as any).swiper;
+                    if (swiper) {
+                      swiper.slideTo(6);
+                    }
+                  } else {
+                    window.location.href = '/';
+                  }
+                  closeMenu();
+                }}
+                className="block w-full text-left text-2xl font-medium text-orange-600 transition-all py-6 px-8"
               >
                 お知らせ
               </button>
