@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import MobileHeader from '@/components/MobileHeader';
@@ -273,4 +273,12 @@ const PurchasePage: React.FC = () => {
   );
 };
 
-export default PurchasePage;
+const PurchasePageContent = () => {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">読み込み中...</div>}>
+      <PurchasePage />
+    </Suspense>
+  );
+};
+
+export default PurchasePageContent;
