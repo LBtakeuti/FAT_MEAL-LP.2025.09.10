@@ -3,9 +3,10 @@ import { db } from '@/lib/db';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const { stock } = await request.json();
     
     if (typeof stock !== 'number' || stock < 0) {
@@ -15,7 +16,7 @@ export async function PUT(
       );
     }
     
-    const item = db.getMenuItem(params.id);
+    const item = db.getMenuItem(id);
     if (!item) {
       return NextResponse.json(
         { message: 'アイテムが見つかりません' },
@@ -24,7 +25,7 @@ export async function PUT(
     }
     
     // 在庫数のみ更新
-    const updatedItem = db.updateMenuItem(params.id, { stock });
+    const updatedItem = db.updateMenuItem(id, { stock });
     
     return NextResponse.json(updatedItem);
   } catch (error) {
