@@ -58,7 +58,13 @@ class Database {
     staticMenuItems.forEach(item => {
       this.menuItems.set(item.id, {
         ...item,
+        price: String(item.price), // numberからstringに変換
+        calories: String(item.calories), // numberからstringに変換
+        protein: String(item.protein), // numberからstringに変換
+        fat: String(item.fat), // numberからstringに変換
+        carbs: String(item.carbs), // numberからstringに変換
         images: [item.image], // 既存の画像を配列に変換
+        ingredients: item.ingredients.join(', '), // 配列からstringに変換
         stock: 300, // 初期在庫数
         createdAt: new Date(),
         updatedAt: new Date()
