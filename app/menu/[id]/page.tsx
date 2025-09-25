@@ -13,5 +13,14 @@ export default async function MenuDetailPage({ params }: { params: Promise<{ id:
     notFound();
   }
 
-  return <MenuDetailClient menuItem={menuItem} />;
+  // MenuItemDBからMenuItem形式に変換
+  const formattedMenuItem = {
+    ...menuItem,
+    image: menuItem.images?.[0] || '/placeholder-image.jpg', // 最初の画像をimageに設定
+    ingredients: typeof menuItem.ingredients === 'string' 
+      ? menuItem.ingredients.split(',').map((i: string) => i.trim())
+      : menuItem.ingredients
+  };
+
+  return <MenuDetailClient menuItem={formattedMenuItem} />;
 }
