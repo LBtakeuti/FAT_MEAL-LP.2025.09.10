@@ -107,17 +107,21 @@ function convertMemoryDbToAdapter() {
       },
       
       async create(item: any) {
-        const id = crypto.randomUUID();
-        const newItem = { 
-          ...item, 
-          id,
-          isPublished: item.is_published || false,
-          publishedAt: item.published_at || new Date().toISOString()
-        };
-        memoryDb.updateNewsItem(id, newItem);
+        // メモリDBに新規作成（createNewsItemを使用）
+        const newItem = memoryDb.createNewsItem({
+          title: item.title,
+          date: item.date,
+          category: item.category || '',
+          excerpt: item.excerpt,
+          content: item.content,
+          image: item.image,
+          isPublished: item.isPublished !== false,
+          publishedAt: item.publishedAt || (item.isPublished ? new Date().toISOString() : undefined)
+        });
         return {
           ...newItem,
-          created_at: new Date().toISOString()
+          created_at: newItem.createdAt || new Date().toISOString(),
+          updated_at: newItem.updatedAt || new Date().toISOString()
         };
       },
       
