@@ -8,8 +8,9 @@ export async function generateStaticParams() {
   }));
 }
 
-export default function NewsDetailPage({ params }: { params: { id: string } }) {
-  const newsItem = newsItems.find(item => item.id === params.id);
+export default async function NewsDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const newsItem = newsItems.find(item => item.id === id);
   
   if (!newsItem) {
     notFound();
