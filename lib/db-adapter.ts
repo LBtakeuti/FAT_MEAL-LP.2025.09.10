@@ -169,3 +169,9 @@ export async function getDatabaseAdapter() {
   }
   return dbAdapter || convertMemoryDbToAdapter();
 }
+
+// シンプルなgetter (メモリDBを直接返す)
+export function getDbAdapter() {
+  // Server Componentでは常にメモリDBを使用
+  return memoryDb;
+}
