@@ -9,21 +9,30 @@ const useSupabase = process.env.NEXT_PUBLIC_SUPABASE_URL &&
 
 // Supabaseが設定されていればSupabaseを使用、そうでなければメモリDB
 let dbAdapter: any;
+let dbAdapterPromise: Promise<any> | null = null;
 
-if (useSupabase) {
-  // Supabaseが設定されている場合
-  import('./supabase').then(module => {
-    dbAdapter = module.db;
-    console.log('Using Supabase database');
-  }).catch(error => {
-    console.error('Failed to load Supabase, falling back to memory DB:', error);
+// 初期化関数
+function initializeDatabase() {
+  if (useSupabase && !dbAdapterPromise) {
+    // Supabaseが設定されている場合
+    dbAdapterPromise = import('./supabase').then(module => {
+      dbAdapter = module.db;
+      console.log('Using Supabase database');
+      return dbAdapter;
+    }).catch(error => {
+      console.error('Failed to load Supabase, falling back to memory DB:', error);
+      dbAdapter = convertMemoryDbToAdapter();
+      return dbAdapter;
+    });
+  } else if (!dbAdapter) {
+    // メモリDBを使用
     dbAdapter = convertMemoryDbToAdapter();
-  });
-} else {
-  // メモリDBを使用
-  dbAdapter = convertMemoryDbToAdapter();
-  console.log('Using in-memory database (Supabase not configured)');
+    console.log('Using in-memory database (Supabase not configured)');
+  }
 }
+
+// 初期化を実行
+initializeDatabase();
 
 // メモリDBをSupabase互換のAPIに変換
 function convertMemoryDbToAdapter() {
@@ -162,11 +171,14 @@ export const database = dbAdapter || convertMemoryDbToAdapter();
 
 // 非同期でdbAdapterが設定されるのを待つ
 export async function getDatabaseAdapter() {
-  if (!dbAdapter && useSupabase) {
-    // Supabaseのロードを待つ
-    await new Promise(resolve => setTimeout(resolve, 100));
-    return dbAdapter || convertMemoryDbToAdapter();
+  // 初期化を確認
+  initializeDatabase();
+  
+  if (dbAdapterPromise) {
+    // Supabaseの初期化が進行中の場合は完了を待つ
+    return await dbAdapterPromise;
   }
+  
   return dbAdapter || convertMemoryDbToAdapter();
 }
 
