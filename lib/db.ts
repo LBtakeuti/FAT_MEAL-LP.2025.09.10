@@ -28,6 +28,8 @@ export interface NewsItemDB {
   content: string;
   excerpt: string;
   image?: string;
+  isPublished?: boolean;
+  publishedAt?: string;
   createdAt: Date;
   updatedAt: Date;
 }
