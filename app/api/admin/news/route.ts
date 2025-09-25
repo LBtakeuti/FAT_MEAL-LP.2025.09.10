@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { getDatabaseAdapter } from '@/lib/db-adapter';
 
 export async function GET(request: NextRequest) {
   try {
+    const dbAdapter = await getDatabaseAdapter();
+    
+    // Supabase APIが利用可能な場合
+    if (dbAdapter.news && dbAdapter.news.getAll) {
+      const newsItems = await dbAdapter.news.getAll();
+      return NextResponse.json(newsItems);
+    }
+    
+    // フォールバック: メモリDBを使用
+    const { db } = await import('@/lib/db');
     const newsItems = db.getAllNewsItems();
     return NextResponse.json(newsItems);
   } catch (error) {
@@ -17,7 +27,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
-    const newItem = db.createNewsItem({
+    const dbAdapter = await getDatabaseAdapter();
+    
+    const newsData = {
       title: data.title,
       date: data.date,
       category: data.category || '',
@@ -26,8 +38,17 @@ export async function POST(request: NextRequest) {
       image: data.image,
       isPublished: data.isPublished,
       publishedAt: data.isPublished ? new Date().toISOString() : undefined,
-    });
+    };
     
+    // Supabase APIが利用可能な場合
+    if (dbAdapter.news && dbAdapter.news.create) {
+      const newItem = await dbAdapter.news.create(newsData);
+      return NextResponse.json(newItem, { status: 201 });
+    }
+    
+    // フォールバック: メモリDBを使用
+    const { db } = await import('@/lib/db');
+    const newItem = db.createNewsItem(newsData);
     return NextResponse.json(newItem, { status: 201 });
   } catch (error) {
     console.error('Failed to create news:', error);

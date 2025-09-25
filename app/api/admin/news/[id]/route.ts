@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { getDatabaseAdapter } from '@/lib/db-adapter';
 
 export async function GET(
   request: NextRequest,
@@ -7,7 +7,15 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const item = db.getNewsItem(id);
+    const dbAdapter = await getDatabaseAdapter();
+    
+    let item;
+    if (dbAdapter.news && dbAdapter.news.getById) {
+      item = await dbAdapter.news.getById(id);
+    } else {
+      const { db } = await import('@/lib/db');
+      item = db.getNewsItem(id);
+    }
     
     if (!item) {
       return NextResponse.json(
@@ -33,8 +41,9 @@ export async function PUT(
   try {
     const { id } = await params;
     const data = await request.json();
+    const dbAdapter = await getDatabaseAdapter();
     
-    const updatedItem = db.updateNewsItem(id, {
+    const updateData = {
       title: data.title,
       date: data.date,
       category: data.category,
@@ -43,7 +52,15 @@ export async function PUT(
       image: data.image,
       isPublished: data.isPublished,
       publishedAt: data.isPublished ? new Date().toISOString() : undefined,
-    });
+    };
+    
+    let updatedItem;
+    if (dbAdapter.news && dbAdapter.news.update) {
+      updatedItem = await dbAdapter.news.update(id, updateData);
+    } else {
+      const { db } = await import('@/lib/db');
+      updatedItem = db.updateNewsItem(id, updateData);
+    }
     
     if (!updatedItem) {
       return NextResponse.json(
@@ -68,7 +85,15 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const success = db.deleteNewsItem(id);
+    const dbAdapter = await getDatabaseAdapter();
+    
+    let success;
+    if (dbAdapter.news && dbAdapter.news.delete) {
+      success = await dbAdapter.news.delete(id);
+    } else {
+      const { db } = await import('@/lib/db');
+      success = db.deleteNewsItem(id);
+    }
     
     if (!success) {
       return NextResponse.json(
