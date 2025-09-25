@@ -13,7 +13,7 @@ export interface MenuItemDB {
   carbs: string;
   images: string[]; // 複数画像対応
   features: string[];
-  ingredients: string[];
+  ingredients: string; // テキストに変更
   allergens: string[];
   stock: number; // 在庫数
   createdAt: Date;
