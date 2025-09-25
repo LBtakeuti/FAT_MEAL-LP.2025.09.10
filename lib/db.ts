@@ -24,7 +24,7 @@ export interface NewsItemDB {
   id: string;
   title: string;
   date: string;
-  category: string;
+  category?: string;
   content: string;
   excerpt: string;
   image?: string;
