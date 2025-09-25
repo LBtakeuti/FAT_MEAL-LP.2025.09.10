@@ -138,6 +138,27 @@ const MenuSection: React.FC = () => {
 
   const currentItem = menuItems[currentIndex];
 
+  // ローディングまたはデータがない場合の処理
+  if (isLoading || menuItems.length === 0 || !currentItem) {
+    return (
+      <section id="menu" className="py-8 sm:py-12 bg-orange-50">
+        <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3">
+              人気<span className="text-orange-600">メニュー</span>
+            </h2>
+            <p className="text-sm text-gray-600">
+              ボリューム満点！高カロリー・高タンパクの特製弁当
+            </p>
+          </div>
+          <div className="flex justify-center items-center h-[400px]">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   const MenuCard = ({ item, compact = false }: { item: MenuItem, compact?: boolean }) => (
     <div 
       onClick={() => router.push(`/menu/${item.id}`)}
