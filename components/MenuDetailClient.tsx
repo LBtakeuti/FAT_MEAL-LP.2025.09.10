@@ -230,14 +230,11 @@ export default function MenuDetailClient({ menuItem }: MenuDetailClientProps) {
               原材料
             </h2>
             <div className="bg-white border border-gray-200 rounded-xl p-6">
-              <ul className="space-y-2">
-                {menuItem.ingredients.map((ingredient, index) => (
-                  <li key={index} className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-orange-600 rounded-full"></span>
-                    <span className="text-gray-700 text-sm sm:text-base">{ingredient}</span>
-                  </li>
-                ))}
-              </ul>
+              <p className="text-gray-700 text-sm sm:text-base leading-relaxed">
+                {Array.isArray(menuItem.ingredients) 
+                  ? menuItem.ingredients.join('、')
+                  : menuItem.ingredients}
+              </p>
             </div>
           </div>
 
