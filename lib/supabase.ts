@@ -83,12 +83,13 @@ export interface MenuItemDB {
 export interface NewsItemDB {
   id: string;
   title: string;
+  date: string;
   content: string;
-  category: string;
-  image: string;
+  category?: string | null;
+  excerpt?: string | null;
+  image_url?: string | null;
   created_at: string;
-  published_at: string;
-  is_published: boolean;
+  updated_at?: string;
 }
 
 export interface ContactDB {
@@ -311,6 +312,7 @@ export const db = {
       
       if (error) {
         console.error('ニュース作成エラー:', error);
+        console.error('エラー詳細:', error.message, error.details, error.hint);
         return null;
       }
       

@@ -89,9 +89,9 @@ function convertMemoryDbToAdapter() {
           : items;
         return filtered.map(item => ({
           ...item,
+          image_url: item.image || null,
           created_at: new Date().toISOString(),
-          is_published: item.isPublished || false,
-          published_at: item.publishedAt || new Date().toISOString()
+          updated_at: new Date().toISOString()
         }));
       },
       
@@ -100,9 +100,9 @@ function convertMemoryDbToAdapter() {
         if (!item) return null;
         return {
           ...item,
+          image_url: item.image || null,
           created_at: new Date().toISOString(),
-          is_published: item.isPublished || false,
-          published_at: item.publishedAt || new Date().toISOString()
+          updated_at: new Date().toISOString()
         };
       },
       
@@ -114,9 +114,7 @@ function convertMemoryDbToAdapter() {
           category: item.category || '',
           excerpt: item.excerpt,
           content: item.content,
-          image: item.image,
-          isPublished: item.isPublished !== false,
-          publishedAt: item.publishedAt || (item.isPublished ? new Date().toISOString() : undefined)
+          image: item.image_url || item.image
         });
         return {
           ...newItem,

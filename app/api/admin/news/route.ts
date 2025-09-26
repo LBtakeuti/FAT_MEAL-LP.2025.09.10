@@ -31,13 +31,11 @@ export async function POST(request: NextRequest) {
     
     const newsData = {
       title: data.title,
-      date: data.date,
-      category: data.category || '',
-      excerpt: data.excerpt,
+      date: data.date || new Date().toLocaleDateString('ja-JP').replace(/\//g, '.'),
+      category: data.category || null,
+      excerpt: data.excerpt || null,
       content: data.content,
-      image: data.image,
-      isPublished: data.isPublished,
-      publishedAt: data.isPublished ? new Date().toISOString() : undefined,
+      image_url: data.image || null,
     };
     
     // Supabase APIが利用可能な場合
