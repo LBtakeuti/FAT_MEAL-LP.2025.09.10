@@ -84,12 +84,12 @@ export const TargetUserSlideMobile: React.FC = () => {
                 {/* コンテンツエリア */}
                 <div className="flex-1 flex flex-col">
                   <div className="space-y-3 text-base text-gray-700 leading-[1.6] mb-4">
-                    <p>{slides[0].description}</p>
+                    <p>{slides[0]?.description}</p>
                   </div>
                   
                   {/* チェックリスト */}
                   <div className="space-y-2 mb-4">
-                    {slides[0].features.map((feature, index) => (
+                    {slides[0]?.features?.map((feature, index) => (
                       <div key={index} className="flex items-center">
                         <svg className="w-5 h-5 text-orange-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
