@@ -114,11 +114,6 @@ export default function MenuDetailClient({ menuItem }: MenuDetailClientProps) {
                           fill
                           className="object-cover"
                         />
-                        {index === 0 && (
-                          <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs py-1 text-center">
-                            メイン
-                          </div>
-                        )}
                       </button>
                     ))}
                   </div>
@@ -133,9 +128,6 @@ export default function MenuDetailClient({ menuItem }: MenuDetailClientProps) {
                     </div>
                   )}
                 </div>
-                <p className="text-xs text-gray-600 text-center mt-2">
-                  {displayImages.length}枚の画像 • 横にスクロールできます
-                </p>
               </div>
             </div>
           )}
