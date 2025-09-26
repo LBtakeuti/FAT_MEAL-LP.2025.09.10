@@ -4,41 +4,53 @@ import React from 'react';
 
 export const TargetUserSlide1: React.FC = () => {
   return (
-    <section className="h-[100dvh] bg-white px-4 pb-24 flex flex-col">
+    <section className="h-[100dvh] bg-white px-4 pb-16 flex flex-col">
       <div className="max-w-[375px] md:max-w-[768px] lg:max-w-[1200px] mx-auto w-full flex-1 flex flex-col">
-        {/* タイトル - 画面の1/5 */}
-        <div className="h-[20vh] flex items-center justify-center">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 text-center leading-[1.3]">
-            <span className="block">どんな人に「<span className="text-orange-600">ふとるめし</span>」が</span>
-            <span className="block">必要なのか？</span>
+        {/* タイトル - コンパクトに */}
+        <div className="pt-4 pb-3">
+          <h1 className="text-lg sm:text-3xl md:text-4xl font-bold text-gray-900 text-center leading-[1.2]">
+            ふとるめしの<span className="text-orange-600">こだわり</span>
           </h1>
         </div>
         
         {/* サブタイトル */}
-        <div className="mb-4">
-          <h2 className="text-[18px] md:text-2xl font-bold text-gray-900 border-b-4 border-orange-600 pb-2 whitespace-nowrap">
-            思うように体重が増えないスポーツ選手
+        <div className="mb-3">
+          <h2 className="text-base md:text-2xl font-bold text-gray-900 border-l-4 border-orange-600 pl-3">
+            良質なタンパク質
           </h2>
         </div>
         
-        {/* コンテンツエリア - 残りのスペース */}
+        {/* イラスト - サイズ調整 */}
+        <div className="flex justify-center mb-3">
+          <img 
+            src="/target-user-1.svg" 
+            alt="プロテイン不要のイラスト" 
+            className="w-[180px] h-[180px] object-contain"
+          />
+        </div>
+        
+        {/* コンテンツエリア */}
         <div className="flex-1 flex flex-col">
-          <div className="space-y-4 text-base text-gray-700 leading-[1.8] mb-6">
-            <p className="text-base">
-              野球を頑張る学生にとって「体重を増やしたい！」と思う人は多い。特に小中学生などは体重がなかなか増えずに悩まれている選手もいる。
-            </p>
-            <p className="text-base">
-              「プロテインも摂取していますが、体重がなかなか増えません…」といった声があり、体重が増えないことは選手だけではなく親御さんにとっても大きな悩みになっている。
-            </p>
-            <p className="text-base">
-              頑張って食べようにも味が良くないと喉を通らない。白米ばかりでタンパク質が足りない。ホエイ・ソイプロテインどちらも体に合わない。
+          <div className="space-y-2.5 text-sm text-gray-700 leading-[1.5] mb-3">
+            <p>
+              プロテインが苦手、お腹を下してしまう。鶏むね肉は量が食べられない。そう言った方におすすめ！ふとるめしでは、味、量、質が担保されたお弁当を準備しています！
             </p>
           </div>
           
-          <div className="border-l-4 border-orange-600 pl-4 py-3 bg-orange-50 mb-4">
-            <p className="font-semibold text-orange-600 text-base leading-[1.6]">
-              ふとるめしは、全てのスポーツ選手の味方です。確かな味と計算されたPFCバランス。楽しくトレーニング、これがふとるめしの掲げるビジョンです。
-            </p>
+          {/* チェックリスト */}
+          <div className="space-y-1.5 mb-3">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-orange-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-sm text-gray-700">プロテイン不要</span>
+            </div>
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-orange-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-sm text-gray-700">美味しく摂取</span>
+            </div>
           </div>
         </div>
       </div>
@@ -48,33 +60,50 @@ export const TargetUserSlide1: React.FC = () => {
 
 export const TargetUserSlide2: React.FC = () => {
   return (
-    <section className="h-[100dvh] bg-white px-4 pb-24 flex flex-col">
+    <section className="h-[100dvh] bg-white px-4 pb-16 flex flex-col">
       <div className="max-w-[375px] md:max-w-[768px] lg:max-w-[1200px] mx-auto w-full flex-1 flex flex-col">
         {/* タイトル - 上部に配置 */}
-        <div className="pt-8 pb-4">
-          <h2 className="text-[18px] md:text-2xl font-bold text-gray-900 border-b-4 border-orange-600 pb-2">
-            筋トレを頑張る社会人
+        <div className="pt-6 pb-3">
+          <h2 className="text-base md:text-2xl font-bold text-gray-900 border-l-4 border-orange-600 pl-3">
+            高カロリー・高タンパク
           </h2>
         </div>
         
-        {/* コンテンツエリア - 残りのスペースで上寄せ */}
-        <div className="flex-1 flex flex-col pt-4">
-          <div className="space-y-5 text-base text-gray-700 leading-[1.8] mb-8">
+        {/* イラスト */}
+        <div className="flex justify-center mb-3">
+          <img 
+            src="/target-user-2.svg" 
+            alt="筋トレをする人のイラスト" 
+            className="w-[200px] h-[200px] object-contain"
+          />
+        </div>
+        
+        {/* コンテンツエリア */}
+        <div className="flex-1 flex flex-col justify-start">
+          <div className="space-y-2.5 text-sm text-gray-700 leading-[1.5] mb-3">
             <p>
-              筋肉を増やすには、トレーニングだけでなく、たんぱく質を中心に、糖質や脂質・ビタミン・ミネラルなど幅広い栄養素が必要になります。
+              体を大きくしたいなら、良質で高カロリーな食事が必須です！ふとるめしなら、1食あたり1,400kcal以上の高カロリー弁当をご用意。
             </p>
             <p>
-              つまり、あなたの経験は科学的に裏付けられており、忙しさによる栄養不足（特にタンパク質）が筋肉量の維持・増加を妨げ、結果として体重増加が困難になるという現象は実際に存在します。
-            </p>
-            <p>
-              筋トレの効果を最大化するためには、時間がない中でも栄養バランスを意識した食事の工夫が重要です。
+              さらにタンパク質は70g以上！トレーニング後の栄養補給に最適です。美味しく食べながら、理想の体づくりをサポートします。
             </p>
           </div>
           
-          {/* 強調メッセージ - 少し余白を開けて配置 */}
-          <div className="border-l-4 border-orange-600 pl-4 py-3 bg-orange-50 mt-8">
-            <p className="font-semibold text-orange-600 text-base leading-[1.6]">
-              忙しい社会人には「ふとるめし」が最適解。ハードワーカーやトレーニーにもぴったりなお弁当になっています。
+          {/* 栄養成分ハイライト */}
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div className="bg-orange-50 rounded-lg p-3 text-center">
+              <div className="text-2xl font-bold text-orange-600">1,400+</div>
+              <div className="text-xs text-gray-600">kcal/食</div>
+            </div>
+            <div className="bg-orange-50 rounded-lg p-3 text-center">
+              <div className="text-2xl font-bold text-orange-600">70g+</div>
+              <div className="text-xs text-gray-600">タンパク質</div>
+            </div>
+          </div>
+          
+          <div className="border-l-4 border-orange-600 pl-3 py-2 bg-orange-50">
+            <p className="font-semibold text-orange-600 text-sm leading-[1.4]">
+              毎日の食事が、あなたの成長につながる。
             </p>
           </div>
         </div>

@@ -51,10 +51,10 @@ const FeaturesSectionMobile: React.FC = () => {
   };
 
   return (
-    <section id="features" className="min-h-screen bg-white pt-8 pb-20 sm:hidden flex flex-col">
+    <section id="features" className="h-[100dvh] bg-white pt-6 pb-16 sm:hidden flex flex-col">
       <div className="max-w-[375px] px-4 mx-auto flex flex-col h-full">
-        <div className="text-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <div className="text-center mb-3">
+          <h2 className="text-xl font-bold text-gray-900 mb-1">
             ふとるめしの<span className="text-orange-600">こだわり</span>
           </h2>
         </div>
@@ -71,20 +71,20 @@ const FeaturesSectionMobile: React.FC = () => {
               key={index} 
               className="min-w-full snap-center px-3 flex flex-col"
             >
-              <div className="bg-white rounded-xl p-4 w-full h-full flex flex-col">
+              <div className="bg-white rounded-xl p-3 w-full h-full flex flex-col">
                 {/* Orange accent bar - Fixed height */}
-                <div className="relative h-[60px] mb-5">
+                <div className="relative h-[50px] mb-3">
                   <div className="absolute left-0 top-0 w-1 h-full bg-orange-600"></div>
-                  <h3 className="text-2xl font-bold text-gray-900 pl-4 mb-1">
+                  <h3 className="text-lg font-bold text-gray-900 pl-3 mb-1">
                     {feature.title}
                   </h3>
-                  <p className="text-sm text-gray-600 pl-4">
+                  <p className="text-xs text-gray-600 pl-3">
                     {feature.subtitle}
                   </p>
                 </div>
 
                 {/* Image - Transparent background */}
-                <div className="relative h-[180px] mb-5 rounded-lg overflow-hidden">
+                <div className="relative h-[150px] mb-3 rounded-lg overflow-hidden">
                   <Image
                     src={feature.image}
                     alt={feature.title}
@@ -95,16 +95,16 @@ const FeaturesSectionMobile: React.FC = () => {
                 </div>
 
                 {/* Description */}
-                <p className="text-sm text-gray-700 mb-5 leading-relaxed">
+                <p className="text-xs text-gray-700 mb-3 leading-[1.4]">
                   {feature.description}
                 </p>
 
                 {/* Feature items */}
-                <div className="space-y-2">
+                <div className="space-y-1">
                   {feature.items.map((item, itemIndex) => (
                     <div key={itemIndex} className="flex items-center">
-                      <span className="text-orange-600 mr-3 text-lg">✓</span>
-                      <span className="text-sm text-gray-700">{item}</span>
+                      <span className="text-orange-600 mr-2 text-sm">✓</span>
+                      <span className="text-xs text-gray-700">{item}</span>
                     </div>
                   ))}
                 </div>
@@ -114,7 +114,7 @@ const FeaturesSectionMobile: React.FC = () => {
         </div>
 
         {/* Pagination Dots */}
-        <div className="flex justify-center items-center gap-2 py-4 mb-12">
+        <div className="flex justify-center items-center gap-2 py-3">
           {features.map((_, index) => (
             <button
               key={index}
