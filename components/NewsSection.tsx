@@ -6,31 +6,31 @@ import { newsItems } from '@/data/newsData';
 
 const NewsSection: React.FC = () => {
   return (
-    <section className="h-[100dvh] sm:min-h-screen bg-gray-50 py-8 sm:py-20 pb-16 flex flex-col">
+    <section className="h-[100dvh] sm:min-h-screen bg-gray-50 py-10 sm:py-20 pb-20 flex flex-col">
       <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col">
         {/* Title */}
-        <div className="text-center mb-6 sm:mb-12">
-          <h2 className="text-xl sm:text-4xl md:text-5xl font-bold text-gray-900">
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900">
             お知らせ
           </h2>
         </div>
 
         {/* Mobile: Vertical list */}
         <div className="sm:hidden flex-1 flex flex-col">
-          <div className="space-y-3 flex-1">
+          <div className="space-y-4 flex-1">
             {newsItems.slice(0, 4).map((item) => (
               <Link
                 key={item.id}
                 href={`/news/${item.id}`}
-                className="block bg-white p-3 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                className="block bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow"
               >
-                <div className="flex justify-between items-start mb-1">
+                <div className="flex justify-between items-start mb-2">
                   <p className="text-xs text-gray-500">{item.date}</p>
-                  <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
-                <h3 className="text-xs font-bold text-gray-900 line-clamp-2">
+                <h3 className="text-sm font-bold text-gray-900 line-clamp-2">
                   {item.title}
                 </h3>
               </Link>
@@ -38,10 +38,10 @@ const NewsSection: React.FC = () => {
           </div>
 
           {/* View all button */}
-          <div className="mt-4">
+          <div className="mt-6">
             <Link
               href="/news"
-              className="block w-full bg-orange-600 text-white py-2.5 rounded-full text-center font-semibold text-sm hover:bg-orange-700 transition-colors"
+              className="block w-full bg-orange-600 text-white py-3 rounded-full text-center font-semibold text-base hover:bg-orange-700 transition-colors"
             >
               お知らせを見る
             </Link>

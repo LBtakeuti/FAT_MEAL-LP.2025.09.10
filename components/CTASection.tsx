@@ -49,8 +49,8 @@ const CTASection: React.FC = () => {
                   <span className="text-[10px] text-gray-700">全3種類×2個</span>
                 </div>
                 <div className="flex items-center">
-                  <span className="text-orange-600 mr-1 text-[10px]">✓</span>
-                  <span className="text-[10px] text-gray-700">送料無料</span>
+                  <span className="text-orange-600 mr-1 text-xs">✓</span>
+                  <span className="text-xs text-gray-700">送料無料</span>
                 </div>
               </div>
             </div>
@@ -72,8 +72,8 @@ const CTASection: React.FC = () => {
                   <span className="text-[10px] text-gray-700">全3種類×4個</span>
                 </div>
                 <div className="flex items-center">
-                  <span className="text-orange-600 mr-1 text-[10px]">✓</span>
-                  <span className="text-[10px] text-gray-700">送料無料</span>
+                  <span className="text-orange-600 mr-1 text-xs">✓</span>
+                  <span className="text-xs text-gray-700">送料無料</span>
                 </div>
                 <div className="flex items-center">
                   <span className="text-orange-600 mr-1 text-[10px]">✓</span>
@@ -99,8 +99,8 @@ const CTASection: React.FC = () => {
                   <span className="text-[10px] text-gray-700">全3種類×8個</span>
                 </div>
                 <div className="flex items-center">
-                  <span className="text-orange-600 mr-1 text-[10px]">✓</span>
-                  <span className="text-[10px] text-gray-700">送料無料</span>
+                  <span className="text-orange-600 mr-1 text-xs">✓</span>
+                  <span className="text-xs text-gray-700">送料無料</span>
                 </div>
                 <div className="flex items-center">
                   <span className="text-orange-600 mr-1 text-[10px]">✓</span>
