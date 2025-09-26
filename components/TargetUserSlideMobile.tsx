@@ -68,14 +68,14 @@ export const TargetUserSlideMobile: React.FC = () => {
                 {/* サブタイトル */}
                 <div className="mb-4">
                   <h2 className="text-lg md:text-2xl font-bold text-gray-900 border-l-4 border-orange-600 pl-3">
-                    {slides[0].title}
+                    {slides[0]?.title}
                   </h2>
                 </div>
                 
                 {/* イラスト */}
                 <div className="flex justify-center mb-4">
                   <img 
-                    src={slides[0].image}
+                    src={slides[0]?.image}
                     alt="プロテイン不要のイラスト" 
                     className="w-[200px] h-[200px] object-contain"
                   />
