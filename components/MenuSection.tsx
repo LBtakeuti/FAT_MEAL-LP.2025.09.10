@@ -145,7 +145,7 @@ const MenuSection: React.FC = () => {
         <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto">
           <div className="text-center mb-6">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-              人気<span className="text-orange-600">メニュー</span>
+              <span className="text-orange-600">メニュー</span>
             </h2>
             <p className="text-sm text-gray-600">
               ボリューム満点！高カロリー・高タンパクの特製弁当
@@ -213,7 +213,7 @@ const MenuSection: React.FC = () => {
       <div className="flex-1 flex flex-col sm:block max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto w-full pb-20 sm:pb-0">
         <div className="text-center mb-4 sm:mb-12 pt-8">
           <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900">
-            弁当<span className="text-orange-600">メニュー</span>一覧
+            <span className="text-orange-600">メニュー</span>
           </h2>
         </div>
 
