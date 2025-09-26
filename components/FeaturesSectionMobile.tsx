@@ -113,20 +113,25 @@ const FeaturesSectionMobile: React.FC = () => {
           ))}
         </div>
 
-        {/* Pagination Dots */}
-        <div className="flex justify-center items-center gap-2 py-4">
-          {features.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => scrollToSlide(index)}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                currentSlide === index 
-                  ? 'w-8 bg-orange-600' 
-                  : 'w-2 bg-gray-300'
-              }`}
-              aria-label={`Go to slide ${index + 1}`}
-            />
-          ))}
+        {/* Pagination Dots with Swipe Hint */}
+        <div className="py-4">
+          <div className="flex justify-center items-center gap-2 mb-2">
+            {features.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => scrollToSlide(index)}
+                className={`h-2.5 rounded-full transition-all duration-300 ${
+                  currentSlide === index 
+                    ? 'w-8 bg-orange-600' 
+                    : 'w-2.5 bg-gray-300 hover:bg-gray-400'
+                }`}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            ))}
+          </div>
+          <p className="text-center text-xs text-gray-500">
+            左右にスワイプ
+          </p>
         </div>
       </div>
 
