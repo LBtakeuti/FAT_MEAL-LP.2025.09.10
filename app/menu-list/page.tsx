@@ -1,14 +1,45 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { menuItems } from '@/data/menuData';
+import { menuItems as staticMenuItems } from '@/data/menuData';
 import MobileHeader from '@/components/MobileHeader';
 import { useRouter } from 'next/navigation';
 
 export default function MenuListPage() {
   const router = useRouter();
+  const [menuItems, setMenuItems] = useState(staticMenuItems);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchMenuItems();
+    
+    // 30秒ごとに更新
+    const interval = setInterval(() => {
+      fetchMenuItems();
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchMenuItems = async () => {
+    try {
+      const response = await fetch('/api/menu', {
+        cache: 'no-store'
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.length > 0) {
+          setMenuItems(data);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch menu items:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   return (
     <div className="h-[100dvh] bg-gray-50 flex flex-col">

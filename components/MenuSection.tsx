@@ -43,19 +43,21 @@ const MenuSection: React.FC = () => {
 
   // APIからメニューデータを取得（バックグラウンドで更新）
   useEffect(() => {
-    // 少し遅延させてバックグラウンドで取得
-    const timer = setTimeout(() => {
-      fetchMenuItems();
-    }, 100);
+    // 初回取得
+    fetchMenuItems();
     
-    return () => clearTimeout(timer);
+    // 30秒ごとに更新（管理画面での変更を反映）
+    const interval = setInterval(() => {
+      fetchMenuItems();
+    }, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const fetchMenuItems = async () => {
     try {
       const response = await fetch('/api/menu', {
-        // キャッシュを活用
-        next: { revalidate: 300 } // 5分間キャッシュ
+        cache: 'no-store' // キャッシュを無効化してリアルタイムデータを取得
       });
       if (response.ok) {
         const data = await response.json();
