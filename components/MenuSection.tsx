@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { menuItems as staticMenuData } from '@/data/menuData';
 
 interface MenuItem {
   id: string;
@@ -17,34 +18,55 @@ interface MenuItem {
   image: string;
 }
 
+// 静的データを初期値として変換
+const initialMenuItems: MenuItem[] = staticMenuData.slice(0, 3).map(item => ({
+  id: item.id,
+  name: item.name,
+  description: item.description,
+  price: String(item.price),
+  calories: String(item.calories),
+  protein: String(item.protein),
+  fat: String(item.fat),
+  carbs: String(item.carbs),
+  image: item.image
+}));
+
 const MenuSection: React.FC = () => {
   const router = useRouter();
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
+  const [isLoading, setIsLoading] = useState(false); // 初期データがあるのでfalse
   const [currentIndex, setCurrentIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const autoSwipeTimer = useRef<NodeJS.Timeout | null>(null);
   const lastInteractionTime = useRef<number>(Date.now());
 
-  // APIからメニューデータを取得
+  // APIからメニューデータを取得（バックグラウンドで更新）
   useEffect(() => {
-    fetchMenuItems();
+    // 少し遅延させてバックグラウンドで取得
+    const timer = setTimeout(() => {
+      fetchMenuItems();
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   const fetchMenuItems = async () => {
     try {
-      const response = await fetch('/api/menu');
+      const response = await fetch('/api/menu', {
+        // キャッシュを活用
+        next: { revalidate: 300 } // 5分間キャッシュ
+      });
       if (response.ok) {
         const data = await response.json();
-        setMenuItems(data.slice(0, 3)); // 最初の3つだけ表示
+        // データが取得できたら更新
+        if (data && data.length > 0) {
+          setMenuItems(data.slice(0, 3)); // 最初の3つだけ表示
+        }
       }
     } catch (error) {
       console.error('Failed to fetch menu items:', error);
-      // エラー時は空配列を設定
-      setMenuItems([]);
-    } finally {
-      setIsLoading(false);
+      // エラー時は静的データを維持
     }
   };
 
@@ -236,8 +258,9 @@ const MenuSection: React.FC = () => {
                     alt={currentItem.name}
                     fill
                     className="object-cover"
-                    sizes="100vw"
-                    priority
+                    sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
+                    priority={currentIndex === 0}
+                    loading={currentIndex === 0 ? "eager" : "lazy"}
                   />
                 </div>
                 <div className="p-3 flex flex-col">
