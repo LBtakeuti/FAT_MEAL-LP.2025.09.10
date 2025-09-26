@@ -69,9 +69,9 @@ const FeaturesSectionMobile: React.FC = () => {
           {features.map((feature, index) => (
             <div 
               key={index} 
-              className="min-w-full snap-center px-3 flex flex-col"
+              className="min-w-full snap-center px-3"
             >
-              <div className="bg-white rounded-xl p-4 w-full h-full flex flex-col">
+              <div className="bg-white rounded-xl p-4 w-full flex flex-col">
                 {/* Orange accent bar - Fixed height */}
                 <div className="relative h-[55px] mb-4">
                   <div className="absolute left-0 top-0 w-1 h-full bg-orange-600"></div>
