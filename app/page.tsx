@@ -69,6 +69,12 @@ export default function Home() {
               <FeaturesSectionMobile />
             </SwiperSlide>
             <SwiperSlide>
+              <TargetUserSlide1 />
+            </SwiperSlide>
+            <SwiperSlide>
+              <TargetUserSlide2 />
+            </SwiperSlide>
+            <SwiperSlide>
               <MenuSection />
             </SwiperSlide>
             <SwiperSlide>
