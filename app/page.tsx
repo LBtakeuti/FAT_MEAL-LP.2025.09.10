@@ -15,6 +15,7 @@ import FeaturesSectionMobile from '@/components/FeaturesSectionMobile';
 import { FeatureSlide1, FeatureSlide2, FeatureSlide3 } from '@/components/FeatureSlides';
 import TargetUserSection from '@/components/TargetUserSection';
 import { TargetUserSlide1, TargetUserSlide2 } from '@/components/TargetUserSlides';
+import TargetUserSlideMobile from '@/components/TargetUserSlideMobile';
 import MenuSection from '@/components/MenuSection';
 import CTASection from '@/components/CTASection';
 import NewsSection from '@/components/NewsSection';
@@ -68,10 +69,7 @@ export default function Home() {
               <FeaturesSectionMobile />
             </SwiperSlide>
             <SwiperSlide>
-              <TargetUserSlide1 />
-            </SwiperSlide>
-            <SwiperSlide>
-              <TargetUserSlide2 />
+              <TargetUserSlideMobile />
             </SwiperSlide>
             <SwiperSlide>
               <MenuSection />
