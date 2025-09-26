@@ -8,10 +8,8 @@ export const TargetUserSlide1: React.FC = () => {
       <div className="max-w-[375px] md:max-w-[768px] lg:max-w-[1200px] mx-auto w-full flex-1 flex flex-col">
         {/* タイトル */}
         <div className="pt-6 pb-4">
-          <h1 className="text-xl sm:text-3xl md:text-4xl font-bold text-gray-900 text-center leading-[1.3]">
-            どんな人に<br className="sm:hidden" />
-            「<span className="text-orange-600">ふとるめし</span>」が<br className="sm:hidden" />
-            必要なのか？
+          <h1 className="text-base sm:text-3xl md:text-4xl font-bold text-gray-900 text-center leading-[1.3]">
+            どんな人に「<span className="text-orange-600">ふとるめし</span>」が必要なのか？
           </h1>
         </div>
         
