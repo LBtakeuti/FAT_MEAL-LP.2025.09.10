@@ -11,7 +11,7 @@ const FeaturesSectionMobile: React.FC = () => {
     {
       title: '確かな味',
       subtitle: '',
-      description: '何度も改良を重ね、ご飯と合う最高のおかずをご用意！ご飯と合う味付けだから勝手にご飯が進み、苦なく体重を増やすことが可能！',
+      description: '何度も改良を重ね、ご飯と合う最高のおかずをご用意！\nご飯と合う味付けだから勝手にご飯が進み、苦なく体重を増やすことが可能！「もう太れない」から卒業！ふとるめしをご賞味あれ！',
       items: ['プロ監修', '味へのこだわり', '飽きない美味しさ'],
       image: '/5627_color.svg'
     },
@@ -51,7 +51,7 @@ const FeaturesSectionMobile: React.FC = () => {
   };
 
   return (
-    <section id="features" className="h-[100dvh] bg-white pt-8 pb-20 sm:hidden flex flex-col">
+    <section id="features" className="h-[100dvh] pt-8 pb-20 sm:hidden flex flex-col bg-[#fff7ed]">
       <div className="max-w-[375px] px-4 mx-auto flex flex-col h-full">
         <div className="text-center mb-4">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
@@ -72,19 +72,23 @@ const FeaturesSectionMobile: React.FC = () => {
               className="min-w-full snap-center px-3"
             >
               <div className="bg-white rounded-xl p-4 w-full flex flex-col">
-                {/* Orange accent bar - Fixed height */}
-                <div className="relative h-[55px] mb-4">
-                  <div className="absolute left-0 top-0 w-1 h-full bg-orange-600"></div>
-                  <h3 className="text-xl font-bold text-gray-900 pl-3 mb-1">
-                    {feature.title}
-                  </h3>
-                  <p className="text-sm text-gray-600 pl-3">
-                    {feature.subtitle}
-                  </p>
+                {/* Orange accent bar */}
+                <div className="flex items-start mb-4">
+                  <div className="w-1 bg-orange-600 rounded-full mr-3" />
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-1">
+                      {feature.title}
+                    </h3>
+                    {feature.subtitle && (
+                      <p className="text-sm text-gray-600">
+                        {feature.subtitle}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
-                {/* Image - Transparent background */}
-                <div className="relative h-[170px] mb-4 rounded-lg overflow-hidden">
+                {/* Image */}
+                <div className="relative h-[170px] mb-4 rounded-lg overflow-hidden bg-white">
                   <Image
                     src={feature.image}
                     alt={feature.title}

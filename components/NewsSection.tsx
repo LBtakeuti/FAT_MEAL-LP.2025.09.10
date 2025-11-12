@@ -6,7 +6,7 @@ import { newsItems } from '@/data/newsData';
 
 const NewsSection: React.FC = () => {
   return (
-    <section className="h-[100dvh] sm:min-h-screen bg-gray-50 py-10 sm:py-20 pb-20 flex flex-col">
+    <section className="min-h-[100dvh] sm:min-h-screen bg-[#fff7ed] py-8 sm:py-20 pb-24 flex flex-col">
       <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col">
         {/* Title */}
         <div className="text-center mb-8 sm:mb-12">
@@ -16,13 +16,13 @@ const NewsSection: React.FC = () => {
         </div>
 
         {/* Mobile: Vertical list */}
-        <div className="sm:hidden flex-1 flex flex-col">
-          <div className="space-y-4 flex-1">
+        <div className="sm:hidden flex-1 flex flex-col justify-between">
+          <div className="space-y-3">
             {newsItems.slice(0, 4).map((item) => (
               <Link
                 key={item.id}
                 href={`/news/${item.id}`}
-                className="block bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                className="block bg-[#fffaf3] p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow"
               >
                 <div className="flex justify-between items-start mb-2">
                   <p className="text-xs text-gray-500">{item.date}</p>
@@ -55,7 +55,7 @@ const NewsSection: React.FC = () => {
               <Link
                 key={item.id}
                 href={`/news/${item.id}`}
-                className="block bg-white p-6 rounded-xl shadow-sm hover:shadow-lg transition-shadow group"
+                className="block bg-[#fffaf3] p-6 rounded-xl shadow-sm hover:shadow-lg transition-shadow group"
               >
                 <div className="flex justify-between items-start mb-3">
                   <p className="text-sm text-gray-500">{item.date}</p>

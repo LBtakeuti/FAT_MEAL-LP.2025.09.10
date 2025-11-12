@@ -23,21 +23,35 @@ function validateEnv(): SupabaseEnv {
   return { url, anonKey, serviceRoleKey };
 }
 
-// クライアント側用のSupabaseクライアント
+// シングルトンインスタンス
+let browserClientInstance: ReturnType<typeof createClient> | null = null;
+let serverClientInstance: ReturnType<typeof createClient> | null = null;
+
+// クライアント側用のSupabaseクライアント（シングルトン）
 export function createBrowserClient() {
+  if (browserClientInstance) {
+    return browserClientInstance;
+  }
+
   const { url, anonKey } = validateEnv();
   
-  return createClient(url, anonKey, {
+  browserClientInstance = createClient(url, anonKey, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true
     }
   });
+  
+  return browserClientInstance;
 }
 
-// サーバー側用のSupabaseクライアント（管理者権限）
+// サーバー側用のSupabaseクライアント（管理者権限・シングルトン）
 export function createServerClient() {
+  if (serverClientInstance) {
+    return serverClientInstance;
+  }
+
   const { url, serviceRoleKey } = validateEnv();
   
   if (!serviceRoleKey) {
@@ -46,12 +60,14 @@ export function createServerClient() {
     );
   }
   
-  return createClient(url, serviceRoleKey, {
+  serverClientInstance = createClient(url, serviceRoleKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false
     }
   });
+  
+  return serverClientInstance;
 }
 
 // デフォルトのクライアント（クライアント側用）

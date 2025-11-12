@@ -29,7 +29,7 @@ body {
 
 body {
   color: var(--foreground);
-  background: var(--background);
+  /* background is set via Tailwind classes in layout.tsx */
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

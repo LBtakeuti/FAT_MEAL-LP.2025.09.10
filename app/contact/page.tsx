@@ -65,12 +65,27 @@ const ContactPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (validateForm()) {
-      // TODO: 実際の送信処理
+    if (!validateForm()) return;
+
+    try {
+      const res = await fetch('/api/contact/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Slack notification failed');
+      }
+
       alert('お問い合わせを受け付けました。担当者より追ってご連絡いたします。');
       router.push('/');
+    } catch (error) {
+      console.error(error);
+      alert('送信に失敗しました。時間をおいて再度お試しください。');
     }
   };
 
@@ -224,6 +239,28 @@ const ContactPage: React.FC = () => {
                 {errors.message && <p className="text-red-500 text-xs mt-1">{errors.message}</p>}
               </div>
 
+              {/* プライバシーポリシー同意 */}
+              <div className="pt-4">
+                <label className="flex items-start space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="privacyPolicy"
+                    checked={formData.privacyPolicy}
+                    onChange={handleInputChange}
+                    className="mt-1"
+                  />
+                  <span className="text-sm text-gray-700">
+                    このサイトはreCAPTCHAによって保護されており、Google
+                    <a href="https://policies.google.com/privacy" className="text-blue-500 hover:underline mx-1" target="_blank" rel="noopener noreferrer">プライバシーポリシー</a>
+                    および
+                    <a href="https://policies.google.com/terms" className="text-blue-500 hover:underline mx-1" target="_blank" rel="noopener noreferrer">利用規約</a>
+                    が適用されることに同意します。
+                    <span className="text-red-500 ml-1">必須</span>
+                  </span>
+                </label>
+                {errors.privacyPolicy && <p className="text-red-500 text-xs mt-1 ml-6">{errors.privacyPolicy}</p>}
+              </div>
+
               {/* 送信ボタン */}
               <div className="text-center pt-4">
                 <button
@@ -232,17 +269,6 @@ const ContactPage: React.FC = () => {
                 >
                   送信
                 </button>
-              </div>
-
-              {/* reCAPTCHA notice */}
-              <div className="text-xs text-gray-500 text-center">
-                <p>
-                  このサイトはreCAPTCHAによって保護されており、Google
-                  <a href="https://policies.google.com/privacy" className="text-blue-500 hover:underline ml-1">プライバシーポリシー</a>
-                  および
-                  <a href="https://policies.google.com/terms" className="text-blue-500 hover:underline ml-1">利用規約</a>
-                  が適用されます。
-                </p>
               </div>
             </form>
           </div>

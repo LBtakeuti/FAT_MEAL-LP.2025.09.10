@@ -5,7 +5,7 @@ import Image from 'next/image';
 
 const TargetUserSection: React.FC = () => {
   return (
-    <section id="target-users" className="min-h-screen bg-white py-20">
+    <section id="target-users" className="min-h-screen bg-[#fff7ed] py-20">
       <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight">
@@ -28,10 +28,10 @@ const TargetUserSection: React.FC = () => {
             </div>
             <div className="space-y-4 text-lg text-gray-700 leading-relaxed">
               <p>
-                野球を頑張る学生にとって「体重を増やしたい！」と思う人は多い。特に小中学生などは体重がなかなか増えずに悩まれている選手もいる。「プロテインも摂取していますが、体重がなかなか増えません…」といった声があり、体重が増えないことは選手だけではなく親御さんにとっても大きな悩みになっている。
+                スポーツを全力で頑張る学生にとって「体重を増やしたい！」と思う人は多い。特に小中学生などは体重がなかなか増えずに悩まれている選手もいる。「プロテインも摂取していますが、体重がなかなか増えません…」といった声があり、体重が増えないことは選手だけではなく親御さんにとっても大きな悩みになっている。
               </p>
               <p>
-                頑張って食べようにも味が良くないと喉を通らない。白米ばかりでタンパク質が足りない。ホエイ・ソイプロテインどちらも体に合わない。
+                頑張って食べようにも味が良くないと喉を通らない。おかずだけでは物足りず、かといって大量に食べるのは難しい。ホエイ・ソイプロテインどちらも体に合わない。
               </p>
               <div className="border-l-4 border-orange-600 pl-4 py-2 mt-6">
                 <p className="font-semibold text-orange-600 text-xl">

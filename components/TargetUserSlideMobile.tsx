@@ -9,13 +9,13 @@ export const TargetUserSlideMobile: React.FC = () => {
   const slides = [
     {
       title: '良質なタンパク質',
-      image: '/target-user-1.svg',
+      image: '/22657774.png',
       description: 'プロテインが苦手、お腹を下してしまう。鶏むね肉は量が食べられない。そう言った方におすすめ！ふとるめしでは、味、量、質が担保されたお弁当を準備しています！',
       features: ['プロテイン不要', '美味しく摂取']
     },
     {
       title: '高カロリー・高タンパク',
-      image: '/target-user-2.svg',
+      image: '/exercise-weights.svg',
       description: '体を大きくしたいなら、良質で高カロリーな食事が必須です！ふとるめしなら、1食あたり1,400kcal以上の高カロリー弁当をご用意。',
       additionalDescription: 'さらにタンパク質は70g以上！トレーニング後の栄養補給に最適です。美味しく食べながら、理想の体づくりをサポートします。',
       stats: [

@@ -17,7 +17,7 @@ const FeaturesSection: React.FC = () => {
     {
       title: '確かな味',
       description: `何度も改良を重ね、ご飯と合う最高のおかずをご用意！
-ご飯と合う味付けだから勝手にご飯が進み、苦なく体重を増やすことが可能！`,
+ご飯と合う味付けだから勝手にご飯が進み、苦なく体重を増やすことが可能！「もう太れない」から卒業！ふとるめしをご賞味あれ！`,
       image: '/5627_color.svg',
       align: 'right' as const
     },
@@ -32,7 +32,7 @@ const FeaturesSection: React.FC = () => {
   ];
 
   return (
-    <section id="features" className="min-h-screen bg-white py-20 overflow-hidden">
+    <section id="features" className="min-h-screen bg-[#fff7ed] py-20 overflow-hidden">
       <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 whitespace-nowrap">

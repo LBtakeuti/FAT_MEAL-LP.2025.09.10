@@ -56,7 +56,7 @@ export const FeatureSlide2: React.FC = () => {
           </h3>
           <p className="text-base text-gray-700 leading-relaxed whitespace-pre-line">
             {`何度も改良を重ね、ご飯と合う最高のおかずをご用意！
-ご飯と合う味付けだから勝手にご飯が進み、苦なく体重を増やすことが可能！`}
+ご飯と合う味付けだから勝手にご飯が進み、苦なく体重を増やすことが可能！「もう太れない」から卒業！ふとるめしをご賞味あれ！`}
           </p>
         </div>
       </div>

@@ -10,6 +10,7 @@ import Header from '@/components/Header';
 import MobileHeader from '@/components/MobileHeader';
 import MobileFooterNav from '@/components/MobileFooterNav';
 import HeroSection from '@/components/HeroSection';
+import FutorumeshiOverviewSection from '@/components/FutorumeshiOverviewSection';
 import FeaturesSection from '@/components/FeaturesSection';
 import FeaturesSectionMobile from '@/components/FeaturesSectionMobile';
 import { FeatureSlide1, FeatureSlide2, FeatureSlide3 } from '@/components/FeatureSlides';
@@ -66,6 +67,9 @@ export default function Home() {
               <HeroSection />
             </SwiperSlide>
             <SwiperSlide>
+              <FutorumeshiOverviewSection />
+            </SwiperSlide>
+            <SwiperSlide>
               <FeaturesSectionMobile />
             </SwiperSlide>
             <SwiperSlide>
@@ -95,6 +99,7 @@ export default function Home() {
       ) : (
         <main className="normal-scroll">
           <HeroSection />
+          <FutorumeshiOverviewSection />
           <FeaturesSection />
           <TargetUserSection />
           <MenuSection />

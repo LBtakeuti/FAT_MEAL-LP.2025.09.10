@@ -11,18 +11,13 @@ const CTASection: React.FC = () => {
   };
 
   return (
-    <section id="pricing" className="h-[100dvh] sm:min-h-screen bg-gradient-to-b from-gray-50 to-white pt-6 sm:py-32 pb-16 sm:pb-20 relative flex flex-col">
+    <section id="pricing" className="min-h-[88vh] sm:min-h-screen bg-gradient-to-b from-gray-50 to-white pt-6 sm:py-32 pb-16 sm:pb-20 relative flex flex-col">
       <div className="absolute top-0 left-0 right-0 h-32 bg-gray-50"></div>
       <div className="relative max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col">
         <div className="text-center mb-2 sm:mb-12">
           <h2 className="text-lg sm:text-4xl md:text-5xl font-bold text-gray-900 mb-1 sm:mb-4">
-            今すぐ<span className="text-orange-600">ふとるめし</span>を
-            <span className="block sm:inline">始めよう</span>
+            <span className="text-orange-600">ふとるめし</span>を試してみよう
           </h2>
-          <p className="text-xs sm:text-lg text-gray-600 mt-0.5 sm:mt-4">
-            あなたの健康的な体重増加をサポート
-            <span className="hidden sm:inline">します</span>
-          </p>
         </div>
 
         <div className="text-center mb-2 sm:mb-8">
@@ -32,7 +27,7 @@ const CTASection: React.FC = () => {
         </div>
 
         {/* Mobile: Vertical layout - Compact for one screen */}
-        <div className="sm:hidden flex-1 flex flex-col justify-between space-y-2">
+        <div className="sm:hidden flex-1 flex flex-col justify-between space-y-2 pb-4">
           {/* 6個セット */}
           <div className="bg-white border-2 border-gray-200 rounded-lg px-2 py-3" style={{minHeight: '75px'}}>
             <div className="bg-orange-600 text-white px-2 py-0.5 rounded-md inline-block mb-1">

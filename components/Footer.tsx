@@ -17,10 +17,10 @@ const Footer: React.FC = () => {
           <div>
             <h4 className="font-semibold mb-4">サービス</h4>
             <ul className="space-y-2 text-gray-400 text-sm">
-              <li><a href="#" className="hover:text-white transition-colors">メニュー一覧</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">料金プラン</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">配送について</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">よくある質問</a></li>
+              <li><a href="/menu-list" className="hover:text-white transition-colors">メニュー一覧</a></li>
+              <li><a href="/#pricing" className="hover:text-white transition-colors">料金プラン</a></li>
+              <li><a href="/contact" className="hover:text-white transition-colors">お問い合わせ</a></li>
+              <li><a href="/news" className="hover:text-white transition-colors">お知らせ</a></li>
             </ul>
           </div>
         </div>

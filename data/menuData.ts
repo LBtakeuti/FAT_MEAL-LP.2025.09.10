@@ -23,15 +23,14 @@ export const menuItems: MenuItem[] = [
     carbs: 120,
     price: 1290,
     image: 'https://images.unsplash.com/photo-1626645738196-c2a7c87a8f58?w=800&q=80',
-    description: 'ジューシーな唐揚げと塩焼き鮭の豪華な組み合わせ。白米350gでボリューム満点、タンパク質79gの高栄養弁当。',
+    description: 'ジューシーな唐揚げと塩焼き鮭の豪華な組み合わせ。おかずだけでボリューム満点460g、タンパク質79gの高栄養弁当。',
     features: [
       '高タンパク質79g',
-      'ボリューム満点810g',
+      'おかずボリューム460g',
       '和風副菜付き',
       'カロリー1430kcal'
     ],
     ingredients: [
-      '白米350g',
       '鶏の唐揚げ200g',
       '鮭塩焼き120g',
       'ほうれん草胡麻和え60g',
@@ -55,15 +54,14 @@ export const menuItems: MenuItem[] = [
     carbs: 115,
     price: 1390,
     image: 'https://images.unsplash.com/photo-1564671165093-20688ff1fffa?w=800&q=80',
-    description: 'ジューシーなハンバーグと鶏むね肉ステーキのWメイン。ガーリックライスで食欲増進、タンパク質92gの最強弁当。',
+    description: 'ジューシーなハンバーグと鶏むね肉ステーキのWメイン。おかずだけで560gの大ボリューム、タンパク質92gの最強弁当。',
     features: [
       '超高タンパク質92g',
       'Wメイン構成',
-      'ガーリックライス300g',
+      'おかずボリューム560g',
       'カロリー1550kcal'
     ],
     ingredients: [
-      'ガーリックライス300g',
       'ハンバーグ（合挽き）180g',
       '鶏むね肉ステーキ200g',
       'マッシュポテト100g',
@@ -88,15 +86,14 @@ export const menuItems: MenuItem[] = [
     carbs: 125,
     price: 1420,
     image: 'https://images.unsplash.com/photo-1603360946369-dc9bb6258143?w=800&q=80',
-    description: '本格中華の回鍋肉と油淋鶏のボリューム満点弁当。白米350gで食べ応え抜群、カロリー1670kcalの最強メニュー。',
+    description: '本格中華の回鍋肉と油淋鶏のボリューム満点弁当。おかずだけで480gの食べ応え、カロリー1670kcalの最強メニュー。',
     features: [
       '最高カロリー1670kcal',
       '本格中華料理',
       '高タンパク質88g',
-      '総重量830g'
+      'おかずボリューム480g'
     ],
     ingredients: [
-      '白米350g',
       '回鍋肉（豚肉200g）',
       '油淋鶏200g',
       '春雨サラダ80g'
