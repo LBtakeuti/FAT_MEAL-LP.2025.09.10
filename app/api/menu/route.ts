@@ -29,7 +29,7 @@ async function fetchWithRetry<T>(
 export async function GET(request: NextRequest) {
   try {
     const db = await getDatabaseAdapter();
-    const menuItems = await fetchWithRetry(() => db.menu.getAll());
+    const menuItems = await fetchWithRetry<any[]>(() => db.menu.getAll());
     
     // フロントエンド用に整形
     const formattedItems = menuItems.map((item: any) => ({
