@@ -9,7 +9,7 @@ export const TargetUserSlideMobile: React.FC = () => {
   const slides = [
     {
       title: '良質なタンパク質',
-      image: '/22657774.png',
+      image: '/unnamed1.jpg',
       description: 'プロテインが苦手、お腹を下してしまう。鶏むね肉は量が食べられない。そう言った方におすすめ！ふとるめしでは、味、量、質が担保されたお弁当を準備しています！',
       features: ['プロテイン不要', '美味しく摂取']
     },

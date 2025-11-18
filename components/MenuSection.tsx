@@ -57,7 +57,12 @@ const MenuSection: React.FC = () => {
   const fetchMenuItems = async () => {
     try {
       const response = await fetch('/api/menu', {
-        cache: 'no-store' // キャッシュを無効化してリアルタイムデータを取得
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
       });
       if (response.ok) {
         const data = await response.json();
@@ -145,7 +150,7 @@ const MenuSection: React.FC = () => {
   // ローディング中の表示
   if (isLoading) {
     return (
-      <section className="h-[100dvh] sm:h-auto bg-white flex items-center justify-center">
+      <section className="h-[100dvh] sm:h-auto bg-[#fff7ed] flex items-center justify-center">
         <div className="text-gray-500">読み込み中...</div>
       </section>
     );
@@ -154,7 +159,7 @@ const MenuSection: React.FC = () => {
   // データがない場合の表示
   if (menuItems.length === 0) {
     return (
-      <section className="h-[100dvh] sm:h-auto bg-white flex items-center justify-center">
+      <section className="h-[100dvh] sm:h-auto bg-[#fff7ed] flex items-center justify-center">
         <div className="text-gray-500">メニュー情報を取得できませんでした</div>
       </section>
     );
@@ -186,7 +191,7 @@ const MenuSection: React.FC = () => {
   const MenuCard = ({ item, compact = false }: { item: MenuItem, compact?: boolean }) => (
     <div 
       onClick={() => router.push(`/menu/${item.id}`)}
-      className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+      className="bg-[#fff7ed] rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer"
     >
       <div className="flex flex-col">
         <div className="relative h-[70px]">
@@ -233,7 +238,7 @@ const MenuSection: React.FC = () => {
   );
 
   return (
-    <section id="menu" className="h-[100dvh] sm:h-auto bg-white flex flex-col sm:block sm:py-20 sm:pb-20">
+    <section id="menu" className="min-h-[100dvh] sm:h-auto bg-[#fff7ed] flex flex-col sm:block sm:py-20 sm:pb-20">
       <div className="flex-1 flex flex-col sm:block max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto w-full pb-20 sm:pb-0">
         <div className="text-center mb-4 sm:mb-12 pt-8">
           <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900">
@@ -244,7 +249,7 @@ const MenuSection: React.FC = () => {
         {/* Mobile: Single card with pagination and swipe */}
         <div className="sm:hidden flex-1 flex flex-col">
           <div 
-            className="flex-1 px-4 mb-2 overflow-hidden flex items-center justify-center"
+            className="flex-1 px-4 mb-2 overflow-visible flex items-center justify-center"
             onTouchStart={onTouchStart}
             onTouchMove={onTouchMove}
             onTouchEnd={onTouchEnd}
@@ -252,7 +257,7 @@ const MenuSection: React.FC = () => {
             <div className="w-full max-w-[340px]">
               <div 
                 onClick={() => router.push(`/menu/${currentItem.id}`)}
-                className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300 h-[380px] flex flex-col overflow-hidden cursor-pointer"
+                className="bg-[#fff7ed] shadow-lg hover:shadow-xl transition-shadow duration-300 h-[360px] flex flex-col overflow-hidden cursor-pointer"
               >
                 <div className="relative h-[220px] flex-shrink-0">
                   <Image
@@ -331,7 +336,7 @@ const MenuSection: React.FC = () => {
                 e.stopPropagation();
                 router.push(`/menu/${item.id}`);
               }}
-              className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer"
+              className="bg-[#fff7ed] rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer"
             >
               <div className="flex h-[280px]">
                 <div className="relative w-[40%]">

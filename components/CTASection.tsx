@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 const CTASection: React.FC = () => {
@@ -10,9 +10,38 @@ const CTASection: React.FC = () => {
     router.push(`/purchase?plan=${plan}`);
   };
 
+  const mobilePlans = [
+    {
+      id: 'plan-6',
+      label: '6個セット',
+      price: '¥7,440',
+      subtitle: '3種類×2個ずつ',
+      features: ['全3種類×2個', '送料無料'],
+      minHeight: 75,
+    },
+    {
+      id: 'plan-12',
+      label: '12個セット',
+      price: '¥14,280',
+      subtitle: '3種類×4個ずつ',
+      features: ['全3種類×4個', '送料無料', '1食¥1,190'],
+      minHeight: 85,
+    },
+    {
+      id: 'plan-24',
+      label: '24個セット',
+      price: '¥27,360',
+      subtitle: '3種類×8個ずつ',
+      features: ['全3種類×8個', '送料無料', '1食¥1,140'],
+      minHeight: 85,
+    },
+  ];
+
+  const [selectedPlan, setSelectedPlan] = useState(mobilePlans[0].id);
+
   return (
-    <section id="pricing" className="min-h-[88vh] sm:min-h-screen bg-gradient-to-b from-gray-50 to-white pt-6 sm:py-32 pb-16 sm:pb-20 relative flex flex-col">
-      <div className="absolute top-0 left-0 right-0 h-32 bg-gray-50"></div>
+    <section id="pricing" className="min-h-[88vh] sm:min-h-screen bg-[#fff7ed] pt-6 sm:py-32 pb-16 sm:pb-20 relative flex flex-col">
+      <div className="absolute top-0 left-0 right-0 h-32 bg-[#fff7ed]"></div>
       <div className="relative max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col">
         <div className="text-center mb-2 sm:mb-12">
           <h2 className="text-lg sm:text-4xl md:text-5xl font-bold text-gray-900 mb-1 sm:mb-4">
@@ -28,87 +57,44 @@ const CTASection: React.FC = () => {
 
         {/* Mobile: Vertical layout - Compact for one screen */}
         <div className="sm:hidden flex-1 flex flex-col justify-between space-y-2 pb-4">
-          {/* 6個セット */}
-          <div className="bg-white border-2 border-gray-200 rounded-lg px-2 py-3" style={{minHeight: '75px'}}>
-            <div className="bg-orange-600 text-white px-2 py-0.5 rounded-md inline-block mb-1">
-              <span className="font-bold text-xs">6個セット</span>
-            </div>
-            <div className="text-center">
-              <div className="text-lg font-bold text-gray-900 leading-tight">
-                ¥7,440
-              </div>
-              <p className="text-[10px] text-gray-600 mb-0.5">3種類×2個ずつ</p>
-              <div className="space-y-0 text-left">
-                <div className="flex items-center">
-                  <span className="text-orange-600 mr-1 text-[10px]">✓</span>
-                  <span className="text-[10px] text-gray-700">全3種類×2個</span>
+          {mobilePlans.map((plan) => {
+            const selected = selectedPlan === plan.id;
+            return (
+              <button
+                key={plan.id}
+                type="button"
+                onClick={() => {
+                  setSelectedPlan(plan.id);
+                  handlePurchase(plan.id);
+                }}
+                className={`text-left rounded-lg border-2 px-3 py-3 transition-all ${
+                  selected ? 'border-orange-500 bg-white shadow-md' : 'border-gray-200 bg-white'
+                }`}
+                style={{ minHeight: plan.minHeight }}
+              >
+                <div className="bg-orange-600 text-white px-2 py-0.5 rounded-md inline-block mb-1">
+                  <span className="font-bold text-xs">{plan.label}</span>
                 </div>
-                <div className="flex items-center">
-                  <span className="text-orange-600 mr-1 text-xs">✓</span>
-                  <span className="text-xs text-gray-700">送料無料</span>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-gray-900 leading-tight">{plan.price}</div>
+                  <p className="text-[10px] text-gray-600 mb-0.5">{plan.subtitle}</p>
+                  <div className="space-y-0 text-left">
+                    {plan.features.map((feature, idx) => (
+                      <div className="flex items-center" key={idx}>
+                        <span className="text-orange-600 mr-1 text-[10px]">✓</span>
+                        <span className="text-[10px] text-gray-700">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 12個セット */}
-          <div className="bg-white border-2 border-gray-200 rounded-lg px-2 py-3" style={{minHeight: '85px'}}>
-            <div className="bg-orange-600 text-white px-2 py-0.5 rounded-md inline-block mb-1">
-              <span className="font-bold text-xs">12個セット</span>
-            </div>
-            <div className="text-center">
-              <div className="text-lg font-bold text-gray-900 leading-tight">
-                ¥14,280
-              </div>
-              <p className="text-[10px] text-gray-600 mb-0.5">3種類×4個ずつ</p>
-              <div className="space-y-0 text-left">
-                <div className="flex items-center">
-                  <span className="text-orange-600 mr-1 text-[10px]">✓</span>
-                  <span className="text-[10px] text-gray-700">全3種類×4個</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="text-orange-600 mr-1 text-xs">✓</span>
-                  <span className="text-xs text-gray-700">送料無料</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="text-orange-600 mr-1 text-[10px]">✓</span>
-                  <span className="text-[10px] text-gray-700">1食¥1,190</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 24個セット */}
-          <div className="bg-white border-2 border-gray-200 rounded-lg px-2 py-3" style={{minHeight: '85px'}}>
-            <div className="bg-orange-600 text-white px-2 py-0.5 rounded-md inline-block mb-1">
-              <span className="font-bold text-xs">24個セット</span>
-            </div>
-            <div className="text-center">
-              <div className="text-lg font-bold text-gray-900 leading-tight">
-                ¥27,360
-              </div>
-              <p className="text-[10px] text-gray-600 mb-0.5">3種類×8個ずつ</p>
-              <div className="space-y-0 text-left">
-                <div className="flex items-center">
-                  <span className="text-orange-600 mr-1 text-[10px]">✓</span>
-                  <span className="text-[10px] text-gray-700">全3種類×8個</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="text-orange-600 mr-1 text-xs">✓</span>
-                  <span className="text-xs text-gray-700">送料無料</span>
-                </div>
-                <div className="flex items-center">
-                  <span className="text-orange-600 mr-1 text-[10px]">✓</span>
-                  <span className="text-[10px] text-gray-700">1食¥1,140</span>
-                </div>
-              </div>
-            </div>
-          </div>
+              </button>
+            );
+          })}
 
           {/* 購入へ進むボタン */}
           <div className="mt-3">
             <button 
-              onClick={() => router.push('/purchase')}
+              onClick={() => handlePurchase(selectedPlan)}
               className="w-full bg-orange-600 text-white py-2 rounded-lg font-bold text-sm hover:bg-orange-700 transition-colors">
               購入へ進む
             </button>

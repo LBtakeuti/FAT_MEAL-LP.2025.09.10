@@ -11,11 +11,11 @@ const FeaturesSection: React.FC = () => {
 鶏むね肉は量が食べられない。
 そう言った方におすすめ！
 ふとるめしでは、味、量、質が担保されたお弁当を準備しています！`,
-      image: '/22657774.png',
+      image: '/unnamed1.jpg',
       align: 'left' as const
     },
     {
-      title: '確かな味',
+      title: '圧倒的な「味」',
       description: `何度も改良を重ね、ご飯と合う最高のおかずをご用意！
 ご飯と合う味付けだから勝手にご飯が進み、苦なく体重を増やすことが可能！「もう太れない」から卒業！ふとるめしをご賞味あれ！`,
       image: '/5627_color.svg',
@@ -65,13 +65,13 @@ const FeaturesSection: React.FC = () => {
               </div>
 
               {/* 画像エリア */}
-              <div className={`flex-1 w-full ${feature.title === '確かな味' ? 'max-w-[400px]' : 'max-w-[500px]'}`}>
-                <div className={`rounded-2xl ${feature.title === '確かな味' ? 'h-[280px] lg:h-[320px]' : 'h-[380px] lg:h-[420px]'} w-full flex items-center justify-center`}>
+              <div className={`flex-1 w-full ${feature.title === '圧倒的な「味」' ? 'max-w-[400px]' : 'max-w-[500px]'}`}>
+                <div className={`rounded-2xl ${feature.title === '圧倒的な「味」' ? 'h-[280px] lg:h-[320px]' : 'h-[380px] lg:h-[420px]'} w-full flex items-center justify-center`}>
                   <Image 
                     src={feature.image} 
                     alt={feature.title}
-                    width={feature.title === '確かな味' ? 320 : 420}
-                    height={feature.title === '確かな味' ? 320 : 420}
+                    width={feature.title === '圧倒的な「味」' ? 320 : 420}
+                    height={feature.title === '圧倒的な「味」' ? 320 : 420}
                     className="object-contain h-full w-auto max-h-full"
                   />
                 </div>

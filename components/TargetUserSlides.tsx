@@ -7,36 +7,36 @@ export const TargetUserSlide1: React.FC = () => {
     <section className="min-h-[100dvh] bg-[#fff7ed] px-4 pb-24 flex flex-col">
       <div className="max-w-[375px] md:max-w-[768px] lg:max-w-[1200px] mx-auto w-full flex-1 flex flex-col">
         {/* タイトル */}
-        <div className="pt-6 pb-4">
-          <h1 className="text-base sm:text-3xl md:text-4xl font-bold text-gray-900 text-center leading-[1.3]">
+        <div className="pt-4 pb-2">
+          <h1 className="text-base sm:text-3xl md:text-4xl font-bold text-gray-900 text-center leading-[1.2]">
             どんな人に「<span className="text-orange-600">ふとるめし</span>」が必要なのか？
           </h1>
         </div>
         
         {/* サブタイトル */}
-        <div className="mb-4">
+        <div className="mb-2">
           <h2 className="text-base md:text-2xl font-bold text-gray-900 border-l-4 border-orange-600 pl-3">
             思うように体重が増えないスポーツ選手
           </h2>
         </div>
         
         {/* イラスト - スポーツ選手のイラストに変更 */}
-        <div className="flex justify-center mb-4">
+        <div className="flex justify-center mb-2">
           <img 
-            src="/baseball-g896c8cd97_640.jpg" 
-            alt="野球を頑張るスポーツ選手" 
-            className="w-[160px] h-[160px] object-cover rounded-lg"
+            src="/hutorumesi_sensyu.svg" 
+            alt="スイングをする野球選手" 
+            className="w-[200px] h-[200px] sm:w-[240px] sm:h-[240px] object-contain mix-blend-multiply"
           />
         </div>
         
         {/* コンテンツエリア */}
         <div className="flex-1 flex flex-col">
-          <div className="space-y-2 text-[clamp(0.78rem,3.1vw,0.95rem)] text-gray-700 leading-[1.45] mb-3">
+          <div className="space-y-1.5 text-[clamp(0.75rem,2.8vw,0.9rem)] text-gray-700 leading-[1.4] mb-2">
             <p>
               スポーツを全力で頑張る学生にとって「体重を増やしたい！」と思う人は多い。特に小中学生などは体重がなかなか増えずに悩まれている選手もいる。
             </p>
             <p>
-              「プロテインも摂取していますが、体重がなかなか増えません…」といった声があり、体重が増えないことは選手だけではなく親御さんにとっても大きな悩みになっている。
+              <span className="font-semibold text-orange-600">「プロテインを飲んでいますが、体重がなかなか増えません…」</span>といった声があり、体重が増えないことは選手だけではなく親御さんにとっても大きな悩みになっている。
             </p>
             <p>
               頑張って食べようにも味が良くないと喉を通らない。おかずだけでは物足りず、かといって大量に食べるのは難しい。ホエイ・ソイプロテインどちらも体に合わない。
@@ -44,8 +44,8 @@ export const TargetUserSlide1: React.FC = () => {
           </div>
           
           {/* ハイライト */}
-          <div className="border-l-4 border-orange-600 pl-3 py-1.5 bg-orange-50 mb-2.5">
-            <p className="font-semibold text-orange-600 text-[clamp(0.78rem,3vw,0.95rem)] leading-[1.35]">
+          <div className="border-l-4 border-orange-600 pl-3 py-1 bg-orange-50 mb-2">
+            <p className="font-semibold text-orange-600 text-[clamp(0.75rem,2.8vw,0.9rem)] leading-[1.3]">
               ふとるめしは、全てのスポーツ選手の味方です。確かな味と計算されたPFCバランス。楽しくトレーニング、これがふとるめしの掲げるビジョンです。
             </p>
           </div>
@@ -69,9 +69,9 @@ export const TargetUserSlide2: React.FC = () => {
         {/* イラスト */}
         <div className="flex justify-center mb-4">
           <img 
-            src="/exercise-weights.svg" 
-            alt="筋トレをする社会人" 
-            className="w-[170px] h-[170px] object-contain"
+            src="/unnamed1.jpg" 
+            alt="スイングをする野球選手" 
+            className="w-[200px] h-[200px] sm:w-[240px] sm:h-[240px] object-contain mix-blend-multiply"
           />
         </div>
         

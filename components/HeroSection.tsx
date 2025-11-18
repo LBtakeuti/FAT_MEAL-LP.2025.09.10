@@ -9,7 +9,7 @@ const HeroSection: React.FC = () => {
       {/* お弁当画像 - 画面中央に配置 */}
       <div className="absolute inset-0 z-0">
         <Image
-          src="/photo-1602273660127-a0000560a4c1.jpeg"
+          src="/FOOD.avif"
           alt="和食料理"
           fill
           className="object-cover object-center md:object-[center_60%]"
@@ -18,14 +18,15 @@ const HeroSection: React.FC = () => {
       </div>
       
       <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto text-center animate-fadeIn relative z-10">
-        <div className="mb-8 sm:mb-8">
-          <h2 className="font-bold text-white text-[clamp(2.25rem,7vw,4.75rem)] leading-[1.1] mb-4 sm:mb-4">
-            <span className="block sm:inline">もっと<span className="text-orange-600">カロリー</span>を、</span>
-            <span className="block sm:inline">もっと<span className="text-orange-600">栄養</span>を。</span>
-          </h2>
-          <p className="text-2xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mt-5 sm:mt-6">
-            脅威の平均<span className="text-3xl sm:text-3xl md:text-4xl lg:text-5xl">1500</span>kcal
-          </p>
+        <div className="relative w-full h-auto">
+          <Image
+            src="/hutorumeshi.back1.png"
+            alt="もっとカロリーを、もっと栄養を、努力にブースト。"
+            width={800}
+            height={400}
+            className="w-full h-auto object-contain"
+            priority
+          />
         </div>
       </div>
     </section>

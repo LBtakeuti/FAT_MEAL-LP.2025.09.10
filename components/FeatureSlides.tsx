@@ -52,7 +52,7 @@ export const FeatureSlide2: React.FC = () => {
         {/* Feature Content */}
         <div>
           <h3 className="text-2xl font-bold text-gray-900 mb-4 inline-block border-b-4 border-orange-600 pb-1">
-            確かな味
+            圧倒的な「味」
           </h3>
           <p className="text-base text-gray-700 leading-relaxed whitespace-pre-line">
             {`何度も改良を重ね、ご飯と合う最高のおかずをご用意！

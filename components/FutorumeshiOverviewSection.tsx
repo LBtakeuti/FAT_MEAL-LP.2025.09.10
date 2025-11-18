@@ -13,47 +13,37 @@ const FutorumeshiOverviewSection: React.FC = () => {
       {/* モバイル版: 狭い幅で中央配置 */}
       <div className="max-w-[360px] w-full px-4 sm:hidden text-center relative -translate-y-4">
         <header className="space-y-2">
-          <span className="inline-flex items-center justify-center gap-2 text-[clamp(0.5rem,2.1vw,0.6rem)] font-semibold tracking-[0.28em] uppercase text-orange-600">
+          <span className="inline-flex items-center justify-center gap-2 text-[clamp(0.6rem,2.5vw,0.75rem)] font-semibold tracking-[0.28em] uppercase text-orange-600">
             <span className="block h-[1px] w-6 bg-orange-400" />
             About Futoru Meshi
             <span className="block h-[1px] w-6 bg-orange-400" />
           </span>
-          <h2 className="font-bold text-gray-900 leading-[1.1] text-[clamp(1.35rem,5.2vw,1.6rem)]">
+          <h2 className="font-bold text-gray-900 leading-[1.1] text-[clamp(1.6rem,6vw,2rem)]">
             ふとるめしとは
           </h2>
-          <p className="text-[clamp(0.82rem,3.4vw,0.98rem)] text-gray-600 leading-[1.5]">
-            量が足りない、味が薄い、ご飯が進まない――<br />
-            既存の宅食でよく聞く悩みを解消し、ボリューム・味・ご飯との相性を妥協なく追求したお弁当です。
+          <p className="text-[clamp(1rem,4vw,1.2rem)] text-gray-600 leading-[1.5]">
+            <span className="font-bold text-orange-600 text-[clamp(1.1rem,4.5vw,1.4rem)] whitespace-nowrap">量が足りない、味が薄い、ご飯が進まない</span> 既存の宅食サービスでよく聞く悩みを解消し、ボリューム・味・ご飯との相性を妥協なく追求したお弁当です。
           </p>
         </header>
 
-        <div className="mt-3 grid gap-3 text-[clamp(0.82rem,3.3vw,0.98rem)] text-gray-700 leading-[1.5] text-left">
+        <div className="mt-3 grid gap-3 text-[clamp(1rem,4vw,1.15rem)] text-gray-700 leading-[1.5] text-left">
           <div className="space-y-2.5">
-            <p>
-              忙しくてコンビニ食が続いてしまう。<br />
-              だけど筋トレも頑張って体を大きくしたい。
-            </p>
-            <p>
-              体重を増やしフィジカルを強化したい。<br />
-              飛距離を伸ばし、当たり負けしない体を作りたい。
-            </p>
             <p className="text-gray-800">
-              そんな悩みに応える“力強い”味方が「ふとるめし」。<br />
               栄養管理士監修の高カロリー×高栄養設計で、免疫アップもフィジカル強化もサポートします。
             </p>
           </div>
 
           <div className="space-y-2.5">
-            <ul className="space-y-1.5 list-disc list-inside">
+            <ul className="space-y-1.5 list-disc list-inside text-[clamp(1rem,4vw,1.15rem)]">
               <li>食べやすさと満足感を追求した主菜</li>
               <li>ご飯が進む味付けと計算されたPFCバランス</li>
               <li>「食べ切れない・続かない」という壁を越える味とボリューム</li>
             </ul>
             <div className="text-center space-y-1">
-              <p className="text-[clamp(0.95rem,3.6vw,1.1rem)] text-gray-900 font-semibold tracking-wide">
+              <p className="text-[clamp(1.1rem,4.5vw,1.3rem)] text-gray-900 font-semibold tracking-wide">
                 努力にブーストを、もっと栄養を。
               </p>
-              <p className="text-[clamp(0.9rem,3.4vw,1.05rem)] lg:text-lg text-gray-500">
+              <p className="text-[clamp(1rem,4vw,1.2rem)] lg:text-lg text-gray-500">
                 これが「ふとるめし」の掲げるビジョンです。
               </p>
             </div>
@@ -76,7 +66,7 @@ const FutorumeshiOverviewSection: React.FC = () => {
                 ふとるめしとは
               </h2>
               <p className="text-[clamp(1rem,1.3vw,1.1rem)] lg:text-lg text-gray-600 leading-relaxed">
-                量が足りない、味が薄い、ご飯が進まない――既存の宅食でよく聞く悩みを解消し、ボリューム・味・ご飯との相性を妥協なく追求したお弁当です。
+                <span className="font-bold text-orange-600 text-[clamp(1.15rem,1.5vw,1.3rem)] lg:text-xl whitespace-nowrap">量が足りない、味が薄い、ご飯が進まない</span> 既存の宅食サービスでよく聞く悩みを解消し、ボリューム・味・ご飯との相性を妥協なく追求したお弁当です。
               </p>
             </header>
             <div className="relative w-full aspect-[4/3] rounded-3xl overflow-hidden shadow-lg">
@@ -93,14 +83,8 @@ const FutorumeshiOverviewSection: React.FC = () => {
           {/* 右カラム: 詳細説明 */}
           <div className="space-y-6 text-[clamp(1rem,1.25vw,1.1rem)] lg:text-lg text-gray-700 leading-relaxed">
             <div className="space-y-4">
-              <p>
-                忙しくてコンビニ食が続いてしまう。だけど筋トレも頑張って体を大きくしたい。
-              </p>
-              <p>
-                体重を増やしフィジカルを強化したい。飛距離を伸ばし、当たり負けしない体を作りたい。
-              </p>
               <p className="text-gray-800 font-medium">
-                そんな悩みに応える“力強い”味方が「ふとるめし」。栄養管理士監修の高カロリー×高栄養設計で、免疫アップもフィジカル強化もサポートします。
+                栄養管理士監修の高カロリー×高栄養設計で、免疫アップもフィジカル強化もサポートします。
               </p>
             </div>
 

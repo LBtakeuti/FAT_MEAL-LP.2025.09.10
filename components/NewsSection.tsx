@@ -6,7 +6,7 @@ import { newsItems } from '@/data/newsData';
 
 const NewsSection: React.FC = () => {
   return (
-    <section className="min-h-[100dvh] sm:min-h-screen bg-[#fff7ed] py-8 sm:py-20 pb-24 flex flex-col">
+    <section className="min-h-[100dvh] sm:min-h-screen bg-[#fff7ed] pt-8 sm:pt-20 pb-28 sm:pb-24 flex flex-col">
       <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col">
         {/* Title */}
         <div className="text-center mb-8 sm:mb-12">
@@ -16,8 +16,8 @@ const NewsSection: React.FC = () => {
         </div>
 
         {/* Mobile: Vertical list */}
-        <div className="sm:hidden flex-1 flex flex-col justify-between">
-          <div className="space-y-3">
+        <div className="sm:hidden flex-1 flex flex-col">
+          <div className="space-y-3 flex-1 overflow-y-auto">
             {newsItems.slice(0, 4).map((item) => (
               <Link
                 key={item.id}
@@ -38,7 +38,7 @@ const NewsSection: React.FC = () => {
           </div>
 
           {/* View all button */}
-          <div className="mt-6">
+          <div className="mt-6 mb-20">
             <Link
               href="/news"
               className="block w-full bg-orange-600 text-white py-3 rounded-full text-center font-semibold text-base hover:bg-orange-700 transition-colors"
