@@ -249,7 +249,7 @@ export const db = {
       
       const { error } = await client
         .from('menu_items')
-        .update({ ...updates, updated_at: new Date().toISOString() })
+        .update({ ...updates, updated_at: new Date().toISOString() } as any)
         .eq('id', id);
       
       if (error) {
@@ -340,7 +340,7 @@ export const db = {
       
       const { error } = await client
         .from('news_items')
-        .update(updates)
+        .update(updates as any)
         .eq('id', id);
       
       if (error) {
@@ -409,7 +409,7 @@ export const db = {
       
       const { error } = await client
         .from('contacts')
-        .update({ status })
+        .update({ status } as any)
         .eq('id', id);
       
       if (error) {
