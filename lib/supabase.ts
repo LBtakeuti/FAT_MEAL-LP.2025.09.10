@@ -232,7 +232,7 @@ export const db = {
       
       const { data, error } = await client
         .from('menu_items')
-        .insert(item)
+        .insert(item as any)
         .select()
         .single();
       
@@ -322,7 +322,7 @@ export const db = {
       
       const { data, error } = await client
         .from('news_items')
-        .insert(item)
+        .insert(item as any)
         .select()
         .single();
       
@@ -376,7 +376,7 @@ export const db = {
       
       const { data, error } = await client
         .from('contacts')
-        .insert({ ...contact, status: 'pending' })
+        .insert({ ...contact, status: 'pending' } as any)
         .select()
         .single();
       
