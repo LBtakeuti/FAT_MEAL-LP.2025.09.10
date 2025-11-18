@@ -247,9 +247,9 @@ export const db = {
     async update(id: string, updates: Partial<MenuItemDB>): Promise<boolean> {
       const client = createServerClient();
       
-      const { error } = await client
-        .from('menu_items')
-        .update({ ...updates, updated_at: new Date().toISOString() } as any)
+      const { error } = await (client
+        .from('menu_items') as any)
+        .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id);
       
       if (error) {
@@ -338,9 +338,9 @@ export const db = {
     async update(id: string, updates: Partial<NewsItemDB>): Promise<boolean> {
       const client = createServerClient();
       
-      const { error } = await client
-        .from('news_items')
-        .update(updates as any)
+      const { error } = await (client
+        .from('news_items') as any)
+        .update(updates)
         .eq('id', id);
       
       if (error) {
@@ -407,9 +407,9 @@ export const db = {
     async updateStatus(id: string, status: ContactDB['status']): Promise<boolean> {
       const client = createServerClient();
       
-      const { error } = await client
-        .from('contacts')
-        .update({ status } as any)
+      const { error } = await (client
+        .from('contacts') as any)
+        .update({ status })
         .eq('id', id);
       
       if (error) {
