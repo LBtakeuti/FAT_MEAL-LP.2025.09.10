@@ -43,12 +43,16 @@ const MenuSection: React.FC = () => {
 
   // APIからメニューデータを取得（バックグラウンドで更新）
   useEffect(() => {
-    // 初回取得
-    fetchMenuItems();
+    // 初回取得（エラーを抑制）
+    fetchMenuItems().catch(() => {
+      // エラーは無視して静的データを使用
+    });
     
     // 30秒ごとに更新（管理画面での変更を反映）
     const interval = setInterval(() => {
-      fetchMenuItems();
+      fetchMenuItems().catch(() => {
+        // エラーは無視して静的データを使用
+      });
     }, 30000);
     
     return () => clearInterval(interval);
@@ -56,14 +60,21 @@ const MenuSection: React.FC = () => {
 
   const fetchMenuItems = async () => {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒でタイムアウト
+      
       const response = await fetch('/api/menu', {
         method: 'GET',
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
           'Expires': '0'
-        }
+        },
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
+      
       if (response.ok) {
         const data = await response.json();
         // データが取得できたら更新
@@ -72,8 +83,8 @@ const MenuSection: React.FC = () => {
         }
       }
     } catch (error) {
-      console.error('Failed to fetch menu items:', error);
-      // エラー時は静的データを維持
+      // エラー時は静的データを維持（完全に無視）
+      // ネットワークエラー、タイムアウト、その他のエラーをすべて無視
     }
   };
 

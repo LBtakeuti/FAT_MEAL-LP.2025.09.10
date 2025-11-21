@@ -10,11 +10,6 @@ const FutorumeshiOverviewSection: React.FC = () => {
       {/* モバイル版: 狭い幅で中央配置 */}
       <div className="max-w-[400px] w-full px-6 mx-auto sm:hidden text-center">
         <header className="space-y-1 px-2 mb-3">
-          <span className="inline-flex items-center justify-center gap-2 text-[clamp(0.6rem,2.5vw,0.75rem)] font-semibold tracking-[0.28em] uppercase text-orange-600">
-            <span className="block h-[1px] w-6 bg-orange-400" />
-            About Futoru Meshi
-            <span className="block h-[1px] w-6 bg-orange-400" />
-          </span>
           <h2 className="font-bold text-gray-900 leading-[1.1] text-[clamp(1.6rem,6vw,2rem)]">
             ふとるめしとは
           </h2>
@@ -41,11 +36,6 @@ const FutorumeshiOverviewSection: React.FC = () => {
           {/* 左カラム: テキスト */}
           <div className="space-y-8">
             <header className="space-y-4">
-              <span className="inline-flex items-center gap-2 text-xs font-semibold tracking-[0.3em] uppercase text-orange-600">
-                <span className="block h-[1px] w-8 bg-orange-400" />
-                About Futoru Meshi
-                <span className="block h-[1px] w-8 bg-orange-400" />
-              </span>
               <h2 className="font-bold text-gray-900 leading-tight text-[clamp(2.5rem,3.5vw,3rem)]">
                 ふとるめしとは
               </h2>
