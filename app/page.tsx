@@ -21,6 +21,7 @@ import MenuSection from '@/components/MenuSection';
 import CTASection from '@/components/CTASection';
 import NewsSection from '@/components/NewsSection';
 import Footer from '@/components/Footer';
+import LineFloatingButton from '@/components/LineFloatingButton';
 
 export default function Home() {
   const [isSwipeMode, setIsSwipeMode] = useState(false);
@@ -28,21 +29,18 @@ export default function Home() {
   const [swiperInstance, setSwiperInstance] = useState<SwiperType | null>(null);
 
   useEffect(() => {
-    const checkScreenSize = () => {
-      // モバイル（640px未満）で縦スワイプモード、タブレット/PC（640px以上）で通常スクロール
-      // Tailwindの sm: ブレークポイントと一致させる
-      const shouldSwipe = window.innerWidth < 640;
-      setIsSwipeMode(shouldSwipe);
-    };
-
-    checkScreenSize();
-    window.addEventListener('resize', checkScreenSize);
-    return () => window.removeEventListener('resize', checkScreenSize);
+    // スワイプモードを無効化し、常に通常スクロールモードを使用
+    setIsSwipeMode(false);
   }, []);
   return (
     <>
-      {!isSwipeMode && <Header />}
-      {isSwipeMode && <MobileHeader />}
+      {/* モバイルではMobileHeader、デスクトップではHeader */}
+      <div className="sm:hidden">
+        <MobileHeader />
+      </div>
+      <div className="hidden sm:block">
+        <Header />
+      </div>
       {isSwipeMode ? (
         <>
           <main className="swipe-container">
@@ -95,19 +93,34 @@ export default function Home() {
             </Swiper>
           </main>
           <MobileFooterNav isVisible={showFooterNav} />
+          <LineFloatingButton />
         </>
       ) : (
         <main className="normal-scroll">
           <HeroSection />
           <FutorumeshiOverviewSection />
-          <FeaturesSection />
-          <TargetUserSection />
+          {/* モバイルではモバイル用コンポーネント、デスクトップではデスクトップ用コンポーネント */}
+          <div className="sm:hidden">
+            <FeaturesSectionMobile />
+            <TargetUserSlide1 />
+            <TargetUserSlide2 />
+          </div>
+          <div className="hidden sm:block">
+            <FeaturesSection />
+            <TargetUserSection />
+          </div>
           <MenuSection />
           <CTASection />
           <NewsSection />
           <Footer />
+          {/* モバイルではフッターナビゲーションを表示 */}
+          <div className="sm:hidden">
+            <MobileFooterNav isVisible={true} />
+          </div>
         </main>
       )}
+      {/* LINE公式アカウント追従ボタン */}
+      <LineFloatingButton />
     </>
   );
 }

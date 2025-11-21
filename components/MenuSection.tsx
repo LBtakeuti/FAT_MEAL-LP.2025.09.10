@@ -238,9 +238,9 @@ const MenuSection: React.FC = () => {
   );
 
   return (
-    <section id="menu" className="min-h-[100dvh] sm:h-auto bg-[#fff7ed] flex flex-col sm:block sm:py-20 sm:pb-20">
+    <section id="menu" className="bg-[#fff7ed] flex flex-col sm:block py-4 sm:py-8">
       <div className="flex-1 flex flex-col sm:block max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto w-full pb-20 sm:pb-0">
-        <div className="text-center mb-4 sm:mb-12 pt-8">
+        <div className="text-center mb-3 sm:mb-8">
           <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900">
             <span className="text-orange-600">メニュー</span>
           </h2>

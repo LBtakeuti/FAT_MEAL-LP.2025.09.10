@@ -32,7 +32,7 @@ const FeaturesSection: React.FC = () => {
   ];
 
   return (
-    <section id="features" className="min-h-screen bg-[#fff7ed] py-20 overflow-hidden">
+    <section id="features" className="bg-[#fff7ed] py-12 sm:py-20 overflow-hidden">
       <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 whitespace-nowrap">

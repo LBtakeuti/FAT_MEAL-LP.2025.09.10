@@ -51,8 +51,8 @@ const FeaturesSectionMobile: React.FC = () => {
   };
 
   return (
-    <section id="features" className="h-[100dvh] pt-8 pb-20 sm:hidden flex flex-col bg-[#fff7ed]">
-      <div className="max-w-[375px] px-4 mx-auto flex flex-col h-full">
+    <section id="features" className="py-8 sm:hidden flex flex-col bg-[#fff7ed]">
+      <div className="max-w-[375px] px-4 mx-auto flex flex-col">
         <div className="text-center mb-4">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             ふとるめしの<span className="text-orange-600">こだわり</span>
@@ -71,7 +71,7 @@ const FeaturesSectionMobile: React.FC = () => {
               key={index} 
               className="min-w-full snap-center px-3"
             >
-              <div className="bg-white rounded-xl p-4 w-full flex flex-col">
+              <div className="w-full flex flex-col">
                 {/* Orange accent bar */}
                 <div className="flex items-start mb-4">
                   <div className="w-1 bg-orange-600 rounded-full mr-3" />
@@ -88,12 +88,12 @@ const FeaturesSectionMobile: React.FC = () => {
                 </div>
 
                 {/* Image */}
-                <div className="relative h-[170px] mb-4 rounded-lg overflow-hidden bg-white">
+                <div className="relative h-[170px] mb-4 overflow-hidden bg-transparent">
                   <Image
                     src={feature.image}
                     alt={feature.title}
                     fill
-                    className="object-contain"
+                    className="object-contain bg-transparent"
                     sizes="(max-width: 640px) 100vw, 50vw"
                   />
                 </div>
@@ -133,9 +133,6 @@ const FeaturesSectionMobile: React.FC = () => {
               />
             ))}
           </div>
-          <p className="text-center text-xs text-gray-500">
-            左右にスワイプ
-          </p>
         </div>
       </div>
 

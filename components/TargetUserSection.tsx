@@ -5,7 +5,7 @@ import Image from 'next/image';
 
 const TargetUserSection: React.FC = () => {
   return (
-    <section id="target-users" className="min-h-screen bg-[#fff7ed] py-20">
+    <section id="target-users" className="bg-[#fff7ed] py-12 sm:py-20">
       <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight">

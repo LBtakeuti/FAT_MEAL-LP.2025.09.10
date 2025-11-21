@@ -40,10 +40,10 @@ const CTASection: React.FC = () => {
   const [selectedPlan, setSelectedPlan] = useState(mobilePlans[0].id);
 
   return (
-    <section id="pricing" className="min-h-[88vh] sm:min-h-screen bg-[#fff7ed] pt-6 sm:py-32 pb-16 sm:pb-20 relative flex flex-col">
+    <section id="pricing" className="bg-[#fff7ed] py-6 sm:py-12 relative flex flex-col">
       <div className="absolute top-0 left-0 right-0 h-32 bg-[#fff7ed]"></div>
-      <div className="relative max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col">
-        <div className="text-center mb-2 sm:mb-12">
+      <div className="relative w-full max-w-lg px-4 md:max-w-3xl md:px-6 lg:max-w-7xl lg:px-8 mx-auto flex-1 flex flex-col">
+        <div className="text-center mb-2 sm:mb-8">
           <h2 className="text-lg sm:text-4xl md:text-5xl font-bold text-gray-900 mb-1 sm:mb-4">
             <span className="text-orange-600">ふとるめし</span>を試してみよう
           </h2>
@@ -198,12 +198,6 @@ const CTASection: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
-
-        <div className="mt-12 text-center">
-          <p className="text-gray-600 mt-2">
-            ※ セット購入のみ（定期購買はございません）
-          </p>
         </div>
       </div>
     </section>

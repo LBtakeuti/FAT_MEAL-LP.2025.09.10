@@ -4,7 +4,7 @@ import React from 'react';
 
 export const TargetUserSlide1: React.FC = () => {
   return (
-    <section className="min-h-[100dvh] bg-[#fff7ed] px-4 pb-24 flex flex-col">
+    <section className="bg-[#fff7ed] px-4 py-8 sm:py-20 flex flex-col">
       <div className="max-w-[375px] md:max-w-[768px] lg:max-w-[1200px] mx-auto w-full flex-1 flex flex-col">
         {/* タイトル */}
         <div className="pt-4 pb-2">
@@ -57,7 +57,7 @@ export const TargetUserSlide1: React.FC = () => {
 
 export const TargetUserSlide2: React.FC = () => {
   return (
-    <section className="min-h-[100dvh] bg-[#fff7ed] px-4 pb-24 flex flex-col">
+    <section className="bg-[#fff7ed] px-4 py-8 sm:py-20 flex flex-col">
       <div className="max-w-[375px] md:max-w-[768px] lg:max-w-[1200px] mx-auto w-full flex-1 flex flex-col">
         {/* サブタイトル */}
         <div className="pt-8 pb-4">

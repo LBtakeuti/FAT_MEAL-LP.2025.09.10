@@ -101,10 +101,7 @@ body {
     min-height: 100dvh;
   }
   
-  .normal-scroll {
-    display: none;
-  }
-  
+  /* 通常スクロールモードを有効化 */
   .normal-scroll section {
     padding-top: 70px;
   }

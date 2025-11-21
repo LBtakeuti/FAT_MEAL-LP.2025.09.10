@@ -6,10 +6,10 @@ import { newsItems } from '@/data/newsData';
 
 const NewsSection: React.FC = () => {
   return (
-    <section className="min-h-[100dvh] sm:min-h-screen bg-[#fff7ed] pt-8 sm:pt-20 pb-28 sm:pb-24 flex flex-col">
+    <section className="bg-[#fff7ed] pt-6 sm:pt-12 pb-20 sm:pb-12 flex flex-col">
       <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col">
         {/* Title */}
-        <div className="text-center mb-8 sm:mb-12">
+        <div className="text-center mb-6 sm:mb-8">
           <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900">
             お知らせ
           </h2>
@@ -38,7 +38,7 @@ const NewsSection: React.FC = () => {
           </div>
 
           {/* View all button */}
-          <div className="mt-6 mb-20">
+          <div className="mt-6 mb-0">
             <Link
               href="/news"
               className="block w-full bg-orange-600 text-white py-3 rounded-full text-center font-semibold text-base hover:bg-orange-700 transition-colors"
