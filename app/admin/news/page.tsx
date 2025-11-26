@@ -7,10 +7,14 @@ import { useRouter } from 'next/navigation';
 interface NewsItem {
   id: string;
   title: string;
+  content: string;
   date: string;
-  category?: string;
-  excerpt: string;
-  isPublished?: boolean;
+  category: string | null;
+  image: string | null;
+  excerpt: string | null;
+  summary: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export default function AdminNewsPage() {
@@ -106,7 +110,7 @@ export default function AdminNewsPage() {
                         {item.title}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {item.excerpt.substring(0, 50)}...
+                        {item.excerpt ? item.excerpt.substring(0, 50) + '...' : item.content.substring(0, 50) + '...'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -116,12 +120,8 @@ export default function AdminNewsPage() {
                       {item.category || '未分類'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        item.isPublished !== false
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {item.isPublished !== false ? '公開' : '下書き'}
+                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                        公開中
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

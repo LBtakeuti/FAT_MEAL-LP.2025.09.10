@@ -10,8 +10,9 @@ export default function NewNewsPage() {
     date: new Date().toISOString().split('T')[0],
     category: '',
     excerpt: '',
+    summary: '',
     content: '',
-    isPublished: true,
+    image: '',
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -107,17 +108,31 @@ export default function NewNewsPage() {
 
             <div>
               <label htmlFor="excerpt" className="block text-sm font-medium text-gray-700">
-                概要 <span className="text-red-500">*</span>
+                概要（一覧表示用）
               </label>
               <textarea
                 id="excerpt"
                 name="excerpt"
-                required
                 rows={2}
                 value={formData.excerpt}
                 onChange={handleChange}
                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
                 placeholder="一覧に表示される短い説明文"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="summary" className="block text-sm font-medium text-gray-700">
+                サマリー
+              </label>
+              <textarea
+                id="summary"
+                name="summary"
+                rows={3}
+                value={formData.summary}
+                onChange={handleChange}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                placeholder="ニュースのサマリー"
               />
             </div>
 
@@ -137,18 +152,19 @@ export default function NewNewsPage() {
               />
             </div>
 
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="isPublished"
-                name="isPublished"
-                checked={formData.isPublished}
-                onChange={handleChange}
-                className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
-              />
-              <label htmlFor="isPublished" className="ml-2 block text-sm text-gray-900">
-                すぐに公開する
+            <div>
+              <label htmlFor="image" className="block text-sm font-medium text-gray-700">
+                画像URL
               </label>
+              <input
+                type="url"
+                id="image"
+                name="image"
+                value={formData.image}
+                onChange={handleChange}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                placeholder="https://example.com/image.jpg"
+              />
             </div>
 
             <div className="flex justify-between pt-4">

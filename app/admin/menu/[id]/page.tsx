@@ -1,33 +1,47 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 
 interface MenuItem {
   id: string;
   name: string;
-  description: string;
-  price: string;
-  calories: string;
-  protein: string;
-  fat: string;
-  carbs: string;
-  images: string[];
-  features: string[];
-  ingredients: string;
+  description: string | null;
+  price: number | null;
+  calories: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+  main_image: string | null;
+  sub_images: string[];
+  ingredients: string[];
   allergens: string[];
-  stock: number;
+  is_active: boolean;
+  display_order: number;
 }
 
 export default function EditMenuPage({ params: promiseParams }: { params: Promise<{ id: string }> }) {
   const params = use(promiseParams);
   const router = useRouter();
-  const [item, setItem] = useState<MenuItem | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [formData, setFormData] = useState<MenuItem | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    price: '',
+    calories: '',
+    protein: '',
+    fat: '',
+    carbs: '',
+    main_image: '',
+    sub_images: ['', '', '', ''],
+    ingredients: [] as string[],
+    allergens: [] as string[],
+    is_active: true,
+    display_order: 0,
+  });
+  const [ingredientInput, setIngredientInput] = useState('');
+  const [allergenInput, setAllergenInput] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetchMenuItem();
@@ -37,484 +51,416 @@ export default function EditMenuPage({ params: promiseParams }: { params: Promis
     try {
       const response = await fetch(`/api/admin/menu/${params.id}`);
       if (response.ok) {
-        const data = await response.json();
-        setItem(data);
-        setFormData(data);
+        const data: MenuItem = await response.json();
+        setFormData({
+          name: data.name,
+          description: data.description || '',
+          price: data.price?.toString() || '',
+          calories: data.calories.toString(),
+          protein: data.protein.toString(),
+          fat: data.fat.toString(),
+          carbs: data.carbs.toString(),
+          main_image: data.main_image || '',
+          sub_images: [
+            data.sub_images[0] || '',
+            data.sub_images[1] || '',
+            data.sub_images[2] || '',
+            data.sub_images[3] || ''
+          ],
+          ingredients: data.ingredients || [],
+          allergens: data.allergens || [],
+          is_active: data.is_active,
+          display_order: data.display_order,
+        });
       } else {
+        alert('メニューの取得に失敗しました');
         router.push('/admin/menu');
       }
     } catch (error) {
-      console.error('Failed to fetch menu item:', error);
+      console.error('Failed to fetch menu:', error);
       router.push('/admin/menu');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData) return;
+    setSubmitting(true);
 
-    setIsSaving(true);
     try {
       const response = await fetch(`/api/admin/menu/${params.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          sub_images: formData.sub_images.filter(img => img.trim() !== ''),
+        }),
       });
 
       if (response.ok) {
         router.push('/admin/menu');
+      } else {
+        const error = await response.json();
+        alert(`更新に失敗しました: ${error.message}`);
       }
     } catch (error) {
-      console.error('Failed to update menu item:', error);
+      console.error('Failed to update menu:', error);
+      alert('エラーが発生しました');
     } finally {
-      setIsSaving(false);
+      setSubmitting(false);
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || !formData) return;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value, type } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+    }));
+  };
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const formData2 = new FormData();
-      formData2.append('file', file);
+  const handleSubImageChange = (index: number, value: string) => {
+    const newSubImages = [...formData.sub_images];
+    newSubImages[index] = value;
+    setFormData(prev => ({ ...prev, sub_images: newSubImages }));
+  };
 
-      try {
-        const response = await fetch('/api/admin/upload', {
-          method: 'POST',
-          body: formData2,
-        });
-
-        if (response.ok) {
-          const { url } = await response.json();
-          setFormData({ ...formData, images: [...formData.images, url] });
-        }
-      } catch (error) {
-        console.error('Failed to upload image:', error);
-      }
+  const addIngredient = () => {
+    if (ingredientInput.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        ingredients: [...prev.ingredients, ingredientInput.trim()]
+      }));
+      setIngredientInput('');
     }
   };
 
-  const removeImage = (index: number) => {
-    if (!formData) return;
-    const newImages = formData.images.filter((_, i) => i !== index);
-    setFormData({ ...formData, images: newImages });
+  const removeIngredient = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      ingredients: prev.ingredients.filter((_, i) => i !== index)
+    }));
   };
 
-  const moveImage = (index: number, direction: 'up' | 'down') => {
-    if (!formData) return;
-    const newImages = [...formData.images];
-    const newIndex = direction === 'up' ? index - 1 : index + 1;
-    
-    if (newIndex < 0 || newIndex >= newImages.length) return;
-    
-    [newImages[index], newImages[newIndex]] = [newImages[newIndex], newImages[index]];
-    setFormData({ ...formData, images: newImages });
-  };
-
-  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-    
-    if (!formData) return;
-    
-    const files = Array.from(e.dataTransfer.files);
-    for (const file of files) {
-      if (file.type.startsWith('image/')) {
-        const formData2 = new FormData();
-        formData2.append('file', file);
-        
-        try {
-          const response = await fetch('/api/admin/upload', {
-            method: 'POST',
-            body: formData2,
-          });
-          
-          if (response.ok) {
-            const { url } = await response.json();
-            setFormData(prev => prev ? { ...prev, images: [...prev.images, url] } : prev);
-          }
-        } catch (error) {
-          console.error('Failed to upload image:', error);
-        }
-      }
+  const addAllergen = () => {
+    if (allergenInput.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        allergens: [...prev.allergens, allergenInput.trim()]
+      }));
+      setAllergenInput('');
     }
   };
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(true);
+  const removeAllergen = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      allergens: prev.allergens.filter((_, i) => i !== index)
+    }));
   };
 
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleChange = (field: keyof MenuItem, value: any) => {
-    if (!formData) return;
-    setFormData({ ...formData, [field]: value });
-  };
-
-  const handleArrayChange = (field: 'features' | 'allergens', index: number, value: string) => {
-    if (!formData) return;
-    const newArray = [...formData[field]];
-    newArray[index] = value;
-    setFormData({ ...formData, [field]: newArray });
-  };
-
-  const addArrayItem = (field: 'features' | 'allergens') => {
-    if (!formData) return;
-    setFormData({ ...formData, [field]: [...formData[field], ''] });
-  };
-
-  const removeArrayItem = (field: 'features' | 'allergens', index: number) => {
-    if (!formData) return;
-    const newArray = formData[field].filter((_, i) => i !== index);
-    setFormData({ ...formData, [field]: newArray });
-  };
-
-  if (isLoading) {
-    return <div className="text-center py-8">読み込み中...</div>;
-  }
-
-  if (!formData) {
-    return <div className="text-center py-8">データが見つかりません</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">読み込み中...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">弁当編集</h1>
-        <button
-          onClick={() => router.push('/admin/menu')}
-          className="px-4 py-2 text-gray-600 hover:text-gray-900"
-        >
-          キャンセル
-        </button>
-      </div>
-
-      <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6">
-        {/* 画像管理 */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">商品画像</h2>
-          <div className="mb-4">
-            <p className="text-sm text-gray-600 mb-2">
-              複数の画像をアップロードできます。1枚目の画像がメインとして表示されます。
-            </p>
+    <div className="min-h-screen bg-gray-100">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white shadow rounded-lg">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h1 className="text-2xl font-bold text-gray-900">弁当メニュー編集</h1>
           </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {formData.images && formData.images.map((image, index) => (
-                <div key={index} className="relative group">
-                  <div className="relative w-full h-40 bg-gray-100 rounded-lg overflow-hidden">
-                    <Image
-                      src={image}
-                      alt={`商品画像 ${index + 1}`}
-                      fill
-                      className="object-cover"
+
+          <form onSubmit={handleSubmit} className="px-6 py-4 space-y-6">
+            {/* 基本情報 */}
+            <div>
+              <h2 className="text-lg font-semibold mb-4">基本情報</h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                    メニュー名 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    required
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm px-3 py-2 border"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                    説明文
+                  </label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    rows={3}
+                    value={formData.description}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm px-3 py-2 border"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="price" className="block text-sm font-medium text-gray-700">
+                    価格（円）
+                  </label>
+                  <input
+                    type="number"
+                    id="price"
+                    name="price"
+                    min="0"
+                    value={formData.price}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm px-3 py-2 border"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 画像 */}
+            <div>
+              <h2 className="text-lg font-semibold mb-4">画像</h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="main_image" className="block text-sm font-medium text-gray-700">
+                    メイン画像URL
+                  </label>
+                  <input
+                    type="url"
+                    id="main_image"
+                    name="main_image"
+                    value={formData.main_image}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm px-3 py-2 border"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    サブ画像URL（最大4枚）
+                  </label>
+                  {formData.sub_images.map((img, index) => (
+                    <input
+                      key={index}
+                      type="url"
+                      value={img}
+                      onChange={(e) => handleSubImageChange(index, e.target.value)}
+                      className="mt-2 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm px-3 py-2 border"
+                      placeholder={`サブ画像${index + 1}`}
                     />
-                    {index === 0 && (
-                      <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
-                        メイン画像
-                      </div>
-                    )}
-                  </div>
-                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {index > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => moveImage(index, 'up')}
-                        className="bg-white p-1 rounded shadow hover:bg-gray-100"
-                        title="前へ移動"
-                      >
-                        ↑
-                      </button>
-                    )}
-                    {index < formData.images.length - 1 && (
-                      <button
-                        type="button"
-                        onClick={() => moveImage(index, 'down')}
-                        className="bg-white p-1 rounded shadow hover:bg-gray-100"
-                        title="後へ移動"
-                      >
-                        ↓
-                      </button>
-                    )}
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* 栄養成分 */}
+            <div>
+              <h2 className="text-lg font-semibold mb-4">栄養成分</h2>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="calories" className="block text-sm font-medium text-gray-700">
+                    カロリー（kcal） <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    id="calories"
+                    name="calories"
+                    required
+                    min="0"
+                    value={formData.calories}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm px-3 py-2 border"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="protein" className="block text-sm font-medium text-gray-700">
+                    タンパク質（g） <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    id="protein"
+                    name="protein"
+                    required
+                    min="0"
+                    step="0.1"
+                    value={formData.protein}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm px-3 py-2 border"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="fat" className="block text-sm font-medium text-gray-700">
+                    脂質（g） <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    id="fat"
+                    name="fat"
+                    required
+                    min="0"
+                    step="0.1"
+                    value={formData.fat}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm px-3 py-2 border"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="carbs" className="block text-sm font-medium text-gray-700">
+                    炭水化物（g） <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    id="carbs"
+                    name="carbs"
+                    required
+                    min="0"
+                    step="0.1"
+                    value={formData.carbs}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm px-3 py-2 border"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 成分表記 */}
+            <div>
+              <h2 className="text-lg font-semibold mb-4">成分表記</h2>
+              
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={ingredientInput}
+                  onChange={(e) => setIngredientInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addIngredient())}
+                  className="flex-1 border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm px-3 py-2 border"
+                  placeholder="成分を入力してEnter"
+                />
+                <button
+                  type="button"
+                  onClick={addIngredient}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  追加
+                </button>
+              </div>
+              
+              <div className="mt-2 flex flex-wrap gap-2">
+                {formData.ingredients.map((ingredient, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"
+                  >
+                    {ingredient}
                     <button
                       type="button"
-                      onClick={() => removeImage(index)}
-                      className="bg-red-600 text-white p-1 rounded shadow hover:bg-red-700"
-                      title="削除"
+                      onClick={() => removeIngredient(index)}
+                      className="ml-2 text-blue-600 hover:text-blue-800"
                     >
                       ×
                     </button>
-                  </div>
-                  <p className="text-xs text-gray-600 mt-1 text-center">
-                    画像 {index + 1}
-                  </p>
-                </div>
-              ))}
-            
-            {/* 画像追加ボタン */}
-            <div 
-              className="relative"
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-            >
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                id="image-upload"
-              />
-              <label
-                htmlFor="image-upload"
-                className={`flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer transition-all ${
-                  isDragging 
-                    ? 'bg-blue-50 border-blue-400' 
-                    : 'bg-gray-50 border-gray-300 hover:bg-gray-100 hover:border-gray-400'
-                }`}
-              >
-                <svg 
-                  className={`w-8 h-8 mb-2 ${isDragging ? 'text-blue-500' : 'text-gray-400'}`}
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* アレルゲン表記 */}
+            <div>
+              <h2 className="text-lg font-semibold mb-4">アレルゲン表記</h2>
+              
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={allergenInput}
+                  onChange={(e) => setAllergenInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addAllergen())}
+                  className="flex-1 border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm px-3 py-2 border"
+                  placeholder="アレルゲンを入力してEnter"
+                />
+                <button
+                  type="button"
+                  onClick={addAllergen}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
                 >
-                  {isDragging ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  )}
-                </svg>
-                <span className={`text-sm ${isDragging ? 'text-blue-600' : 'text-gray-500'}`}>
-                  {isDragging ? 'ドロップして追加' : '画像を追加'}
-                </span>
-                <span className="text-xs text-gray-400 mt-1">クリックまたはドラッグ</span>
-              </label>
+                  追加
+                </button>
+              </div>
+              
+              <div className="mt-2 flex flex-wrap gap-2">
+                {formData.allergens.map((allergen, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-red-100 text-red-800"
+                  >
+                    {allergen}
+                    <button
+                      type="button"
+                      onClick={() => removeAllergen(index)}
+                      className="ml-2 text-red-600 hover:text-red-800"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* 基本情報 */}
-          <div>
-            <h2 className="text-xl font-semibold mb-4">基本情報</h2>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                商品名
-              </label>
+            {/* 公開設定 */}
+            <div className="flex items-center">
               <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => handleChange('name', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
+                type="checkbox"
+                id="is_active"
+                name="is_active"
+                checked={formData.is_active}
+                onChange={handleChange}
+                className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
               />
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                説明
+              <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900">
+                公開する
               </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => handleChange('description', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows={3}
-                required
-              />
             </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                価格
-              </label>
-              <input
-                type="text"
-                value={formData.price}
-                onChange={(e) => handleChange('price', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                在庫数
-              </label>
-              <input
-                type="number"
-                value={formData.stock}
-                onChange={(e) => handleChange('stock', parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                min="0"
-                required
-              />
-            </div>
-          </div>
-
-          {/* 栄養情報 */}
-          <div>
-            <h2 className="text-xl font-semibold mb-4">栄養情報</h2>
-            
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                カロリー
-              </label>
-              <input
-                type="text"
-                value={formData.calories}
-                onChange={(e) => handleChange('calories', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                タンパク質
-              </label>
-              <input
-                type="text"
-                value={formData.protein}
-                onChange={(e) => handleChange('protein', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                脂質
-              </label>
-              <input
-                type="text"
-                value={formData.fat}
-                onChange={(e) => handleChange('fat', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                炭水化物
-              </label>
-              <input
-                type="text"
-                value={formData.carbs}
-                onChange={(e) => handleChange('carbs', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* 特徴 */}
-        <div className="mt-6">
-          <h2 className="text-xl font-semibold mb-4">
-            特徴
-            <button
-              type="button"
-              onClick={() => addArrayItem('features')}
-              className="ml-4 text-sm text-blue-600 hover:text-blue-700"
-            >
-              + 追加
-            </button>
-          </h2>
-          {formData.features.map((feature, index) => (
-            <div key={index} className="flex gap-2 mb-2">
-              <input
-                type="text"
-                value={feature}
-                onChange={(e) => handleArrayChange('features', index, e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+            {/* 送信ボタン */}
+            <div className="flex justify-between pt-4">
               <button
                 type="button"
-                onClick={() => removeArrayItem('features', index)}
-                className="px-3 py-2 text-red-600 hover:text-red-700"
+                onClick={() => router.push('/admin/menu')}
+                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
               >
-                削除
+                キャンセル
               </button>
-            </div>
-          ))}
-        </div>
-
-        {/* 原材料 */}
-        <div className="mt-6">
-          <h2 className="text-xl font-semibold mb-4">原材料</h2>
-          <textarea
-            value={formData.ingredients}
-            onChange={(e) => setFormData({ ...formData, ingredients: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            rows={4}
-            placeholder="例: 鶏肉、小麦粉、卵、タルタルソース、キャベツ、白米"
-          />
-          <p className="text-sm text-gray-500 mt-1">カンマ区切りで入力してください</p>
-        </div>
-
-        {/* アレルギー情報 */}
-        <div className="mt-6">
-          <h2 className="text-xl font-semibold mb-4">
-            アレルギー情報
-            <button
-              type="button"
-              onClick={() => addArrayItem('allergens')}
-              className="ml-4 text-sm text-blue-600 hover:text-blue-700"
-            >
-              + 追加
-            </button>
-          </h2>
-          {formData.allergens.map((allergen, index) => (
-            <div key={index} className="flex gap-2 mb-2">
-              <input
-                type="text"
-                value={allergen}
-                onChange={(e) => handleArrayChange('allergens', index, e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
               <button
-                type="button"
-                onClick={() => removeArrayItem('allergens', index)}
-                className="px-3 py-2 text-red-600 hover:text-red-700"
+                type="submit"
+                disabled={submitting}
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50"
               >
-                削除
+                {submitting ? '更新中...' : '更新'}
               </button>
             </div>
-          ))}
+          </form>
         </div>
-
-        {/* 送信ボタン */}
-        <div className="mt-8 flex justify-end gap-4">
-          <button
-            type="button"
-            onClick={() => router.push('/admin/menu')}
-            className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-          >
-            キャンセル
-          </button>
-          <button
-            type="submit"
-            disabled={isSaving}
-            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-          >
-            {isSaving ? '保存中...' : '保存'}
-          </button>
-        </div>
-      </form>
+      </div>
     </div>
   );
 }

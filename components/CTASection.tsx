@@ -40,8 +40,38 @@ const CTASection: React.FC = () => {
   const [selectedPlan, setSelectedPlan] = useState(mobilePlans[0].id);
 
   return (
-    <section id="pricing" className="bg-[#fff7ed] py-6 sm:py-12 relative flex flex-col">
-      <div className="absolute top-0 left-0 right-0 h-32 bg-[#fff7ed]"></div>
+    <section id="pricing" className="relative overflow-hidden bg-[#fff7ed] py-6 sm:py-12 flex flex-col">
+      {/* 上部の波形 */}
+      <div className="absolute top-0 left-0 w-full overflow-hidden leading-none" style={{ transform: 'translateY(-1px)' }}>
+        <svg
+          className="relative block w-full h-16 sm:h-24"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 1200 120"
+          preserveAspectRatio="none"
+        >
+          <path
+            d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"
+            className="fill-orange-100"
+          ></path>
+        </svg>
+      </div>
+
+      {/* 下部の波形 */}
+      <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none" style={{ transform: 'translateY(1px)' }}>
+        <svg
+          className="relative block w-full h-16 sm:h-24"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 1200 120"
+          preserveAspectRatio="none"
+          style={{ transform: 'scaleY(-1)' }}
+        >
+          <path
+            d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"
+            className="fill-white"
+          ></path>
+        </svg>
+      </div>
+
       <div className="relative w-full max-w-lg px-4 md:max-w-3xl md:px-6 lg:max-w-7xl lg:px-8 mx-auto flex-1 flex flex-col">
         <div className="text-center mb-2 sm:mb-8">
           <h2 className="text-lg sm:text-4xl md:text-5xl font-bold text-gray-900 mb-1 sm:mb-4">

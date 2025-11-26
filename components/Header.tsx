@@ -1,18 +1,29 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 
 const Header: React.FC = () => {
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md hidden sm:block">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-orange-600">
-              ふとるめし
-            </h1>
+    <header className="relative bg-white shadow-md hidden sm:block">
+      <div className="max-w-7xl mx-auto px-4 py-4">
+        <div className="flex flex-col items-center">
+          {/* ロゴ中央配置 */}
+          <div className="mb-4">
+            <Link href="/">
+              <Image
+                src="/fat_Logo2-2.png"
+                alt="ふとるめし"
+                width={540}
+                height={180}
+                className="h-24 w-auto"
+                priority
+              />
+            </Link>
           </div>
-          <nav className="flex items-center space-x-2 md:space-x-4 lg:space-x-8 text-sm lg:text-base">
+          {/* メニュー項目 */}
+          <nav className="flex items-center space-x-2 md:space-x-4 lg:space-x-8 text-sm lg:text-base font-antique">
             <a href="/" className="text-gray-700 hover:text-orange-600 font-medium transition-colors">ホーム</a>
             <a href="#features" className="text-gray-700 hover:text-orange-600 font-medium transition-colors">こだわり</a>
             <a href="/menu-list" className="text-gray-700 hover:text-orange-600 font-medium transition-colors">メニュー</a>

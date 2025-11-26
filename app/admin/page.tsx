@@ -7,6 +7,8 @@ export default function AdminDashboard() {
     totalMenuItems: 0,
     totalStock: 0,
     totalNews: 0,
+    totalContacts: 0,
+    pendingContacts: 0,
     lowStockItems: 0
   });
 
@@ -37,13 +39,16 @@ export default function AdminDashboard() {
         </div>
         
         <div className="bg-white p-6 rounded-lg shadow">
-          <div className="text-gray-600 text-sm">総在庫数</div>
-          <div className="text-3xl font-bold mt-2">{stats.totalStock}</div>
+          <div className="text-gray-600 text-sm">ニュース記事</div>
+          <div className="text-3xl font-bold mt-2">{stats.totalNews}</div>
         </div>
         
         <div className="bg-white p-6 rounded-lg shadow">
-          <div className="text-gray-600 text-sm">ニュース記事</div>
-          <div className="text-3xl font-bold mt-2">{stats.totalNews}</div>
+          <div className="text-gray-600 text-sm">お問い合わせ</div>
+          <div className="text-3xl font-bold mt-2">{stats.totalContacts}</div>
+          {stats.pendingContacts > 0 && (
+            <div className="text-xs text-orange-600 mt-1">未対応: {stats.pendingContacts}件</div>
+          )}
         </div>
         
         <div className="bg-white p-6 rounded-lg shadow">
@@ -55,7 +60,7 @@ export default function AdminDashboard() {
       
       <div className="bg-white p-6 rounded-lg shadow">
         <h2 className="text-xl font-bold mb-4">クイックアクション</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <a
             href="/admin/menu/new"
             className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
@@ -68,6 +73,13 @@ export default function AdminDashboard() {
             className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
           >
             <span>ニュースを投稿</span>
+          </a>
+          
+          <a
+            href="/admin/contacts"
+            className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors"
+          >
+            <span>お問い合わせ確認</span>
           </a>
           
           <a

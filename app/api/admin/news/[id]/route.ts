@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabaseAdapter } from '@/lib/db-adapter';
+import { createServerClient } from '@/lib/supabase';
+import { verifyAuth } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
@@ -7,28 +8,26 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const dbAdapter = await getDatabaseAdapter();
+    const supabase = createServerClient();
     
-    let item;
-    if (dbAdapter.news && dbAdapter.news.getById) {
-      item = await dbAdapter.news.getById(id);
-    } else {
-      const { db } = await import('@/lib/db');
-      item = db.getNewsItem(id);
-    }
+    const { data, error } = await supabase
+      .from('news')
+      .select('*')
+      .eq('id', id)
+      .single();
     
-    if (!item) {
+    if (error || !data) {
       return NextResponse.json(
         { message: 'ニュースが見つかりません' },
         { status: 404 }
       );
     }
     
-    return NextResponse.json(item);
-  } catch (error) {
+    return NextResponse.json(data);
+  } catch (error: any) {
     console.error('Failed to fetch news:', error);
     return NextResponse.json(
-      { message: 'ニュースの取得に失敗しました' },
+      { message: 'ニュースの取得に失敗しました', error: error.message },
       { status: 500 }
     );
   }
@@ -39,41 +38,57 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
-    const data = await request.json();
-    const dbAdapter = await getDatabaseAdapter();
-    
-    const updateData = {
-      title: data.title,
-      date: data.date,
-      category: data.category,
-      excerpt: data.excerpt,
-      content: data.content,
-      image: data.image,
-      isPublished: data.isPublished,
-      publishedAt: data.isPublished ? new Date().toISOString() : undefined,
-    };
-    
-    let updatedItem;
-    if (dbAdapter.news && dbAdapter.news.update) {
-      updatedItem = await dbAdapter.news.update(id, updateData);
-    } else {
-      const { db } = await import('@/lib/db');
-      updatedItem = db.updateNewsItem(id, updateData);
+    // 認証チェック
+    const authResult = await verifyAuth(request);
+    if (!authResult.authenticated) {
+      return NextResponse.json(
+        { message: '認証が必要です' },
+        { status: 401 }
+      );
     }
     
-    if (!updatedItem) {
+    const { id } = await params;
+    const body = await request.json();
+    const supabase = createServerClient();
+    
+    // バリデーション
+    if (!body.title || !body.content) {
       return NextResponse.json(
-        { message: 'ニュースが見つかりません' },
+        { message: 'タイトルと本文は必須です' },
+        { status: 400 }
+      );
+    }
+    
+    const updateData = {
+      title: body.title,
+      content: body.content,
+      date: body.date || new Date().toISOString().split('T')[0],
+      category: body.category || null,
+      image: body.image || null,
+      excerpt: body.excerpt || null,
+      summary: body.summary || null,
+      updated_at: new Date().toISOString(),
+    };
+    
+    const { data, error } = await supabase
+      .from('news')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error || !data) {
+      return NextResponse.json(
+        { message: 'ニュースの更新に失敗しました', error: error?.message },
         { status: 404 }
       );
     }
     
-    return NextResponse.json(updatedItem);
-  } catch (error) {
+    return NextResponse.json(data);
+  } catch (error: any) {
     console.error('Failed to update news:', error);
     return NextResponse.json(
-      { message: 'ニュースの更新に失敗しました' },
+      { message: 'ニュースの更新に失敗しました', error: error.message },
       { status: 500 }
     );
   }
@@ -84,29 +99,35 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
-    const dbAdapter = await getDatabaseAdapter();
-    
-    let success;
-    if (dbAdapter.news && dbAdapter.news.delete) {
-      success = await dbAdapter.news.delete(id);
-    } else {
-      const { db } = await import('@/lib/db');
-      success = db.deleteNewsItem(id);
+    // 認証チェック
+    const authResult = await verifyAuth(request);
+    if (!authResult.authenticated) {
+      return NextResponse.json(
+        { message: '認証が必要です' },
+        { status: 401 }
+      );
     }
     
-    if (!success) {
+    const { id } = await params;
+    const supabase = createServerClient();
+    
+    const { error } = await supabase
+      .from('news')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
       return NextResponse.json(
-        { message: 'ニュースが見つかりません' },
-        { status: 404 }
+        { message: 'ニュースの削除に失敗しました', error: error.message },
+        { status: 500 }
       );
     }
     
     return NextResponse.json({ message: '削除しました' });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to delete news:', error);
     return NextResponse.json(
-      { message: 'ニュースの削除に失敗しました' },
+      { message: 'ニュースの削除に失敗しました', error: error.message },
       { status: 500 }
     );
   }

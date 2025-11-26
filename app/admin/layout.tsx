@@ -27,6 +27,7 @@ export default function AdminLayout({
     { href: '/admin', label: 'ダッシュボード' },
     { href: '/admin/menu', label: '弁当管理' },
     { href: '/admin/news', label: 'ニュース管理' },
+    { href: '/admin/contacts', label: 'お問い合わせ管理' },
     { href: '/admin/inventory', label: '在庫管理' },
   ];
 

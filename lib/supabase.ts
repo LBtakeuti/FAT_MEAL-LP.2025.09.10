@@ -99,13 +99,14 @@ export interface MenuItemDB {
 export interface NewsItemDB {
   id: string;
   title: string;
-  date: string;
   content: string;
-  category?: string | null;
-  excerpt?: string | null;
-  image_url?: string | null;
+  date: string;
+  category: string | null;
+  image: string | null;
+  excerpt: string | null;
+  summary: string | null;
   created_at: string;
-  updated_at?: string;
+  updated_at: string;
 }
 
 export interface ContactDB {
@@ -279,17 +280,14 @@ export const db = {
   
   // ニュース
   news: {
-    async getAll(publishedOnly = false): Promise<NewsItemDB[]> {
+    async getAll(): Promise<NewsItemDB[]> {
       const client = createBrowserClient();
       if (!client) return [];
       
-      let query = client.from('news_items').select('*');
-      
-      if (publishedOnly) {
-        query = query.eq('is_published', true);
-      }
-      
-      const { data, error } = await query.order('published_at', { ascending: false });
+      const { data, error } = await client
+        .from('news')
+        .select('*')
+        .order('date', { ascending: false });
       
       if (error) {
         console.error('ニュース取得エラー:', error);
@@ -304,7 +302,7 @@ export const db = {
       if (!client) return null;
       
       const { data, error } = await client
-        .from('news_items')
+        .from('news')
         .select('*')
         .eq('id', id)
         .single();
@@ -317,11 +315,11 @@ export const db = {
       return data;
     },
     
-    async create(item: Omit<NewsItemDB, 'id' | 'created_at'>): Promise<NewsItemDB | null> {
+    async create(item: Omit<NewsItemDB, 'id' | 'created_at' | 'updated_at'>): Promise<NewsItemDB | null> {
       const client = createServerClient();
       
-      const { data, error } = await client
-        .from('news_items')
+      const { data, error} = await client
+        .from('news')
         .insert(item as any)
         .select()
         .single();
@@ -339,8 +337,8 @@ export const db = {
       const client = createServerClient();
       
       const { error } = await (client
-        .from('news_items') as any)
-        .update(updates)
+        .from('news') as any)
+        .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id);
       
       if (error) {
@@ -355,7 +353,7 @@ export const db = {
       const client = createServerClient();
       
       const { error } = await client
-        .from('news_items')
+        .from('news')
         .delete()
         .eq('id', id);
       

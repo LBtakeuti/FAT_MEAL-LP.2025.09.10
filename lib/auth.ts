@@ -1,49 +1,110 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-
-// ハードコードされた管理者認証情報（本番環境では環境変数を使用）
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-// パスワード: admin123 のハッシュ値
-const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || '$2b$10$SZmfJkOUTYKq..1dqWHtDOpe6HaV1ycuwsccq.KB1OhTu1bm4IlVS';
+import { createServerClient } from './supabase';
 
 export interface AdminUser {
-  username: string;
+  id: string;
+  email: string;
 }
 
-export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-  const bcrypt = await import('bcryptjs');
-  return bcrypt.compare(password, hashedPassword);
-}
-
-export async function generateToken(user: AdminUser): Promise<string> {
-  const jwt = await import('jsonwebtoken');
-  return jwt.sign(user, JWT_SECRET, { expiresIn: '24h' });
-}
-
-export async function verifyToken(token: string): Promise<AdminUser | null> {
+/**
+ * Supabase認証を使用してユーザーを認証
+ * @param email メールアドレス
+ * @param password パスワード
+ * @returns 認証成功時はユーザー情報、失敗時はnull
+ */
+export async function authenticateUser(email: string, password: string): Promise<AdminUser | null> {
   try {
-    const jwt = await import('jsonwebtoken');
-    return jwt.verify(token, JWT_SECRET) as AdminUser;
-  } catch {
+    const supabase = createServerClient();
+    
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      console.error('認証エラー:', error.message);
+      return null;
+    }
+
+    if (!data.user) {
+      return null;
+    }
+
+    return {
+      id: data.user.id,
+      email: data.user.email || email,
+    };
+  } catch (error) {
+    console.error('認証処理エラー:', error);
     return null;
   }
 }
 
-export async function authenticateUser(username: string, password: string): Promise<AdminUser | null> {
-  if (username === ADMIN_USERNAME) {
-    const isValid = await verifyPassword(password, ADMIN_PASSWORD_HASH);
-    if (isValid) {
-      return { username };
+/**
+ * Supabaseセッショントークンを取得
+ * @param email メールアドレス
+ * @param password パスワード
+ * @returns セッショントークン
+ */
+export async function getSessionToken(email: string, password: string): Promise<string | null> {
+  try {
+    const supabase = createServerClient();
+    
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error || !data.session) {
+      return null;
     }
+
+    return data.session.access_token;
+  } catch (error) {
+    console.error('セッション取得エラー:', error);
+    return null;
   }
-  return null;
 }
 
+/**
+ * トークンを検証してユーザー情報を取得
+ * @param token アクセストークン
+ * @returns ユーザー情報
+ */
+export async function verifyToken(token: string): Promise<AdminUser | null> {
+  try {
+    const supabase = createServerClient();
+    
+    const { data, error } = await supabase.auth.getUser(token);
+
+    if (error || !data.user) {
+      return null;
+    }
+
+    return {
+      id: data.user.id,
+      email: data.user.email || '',
+    };
+  } catch (error) {
+    console.error('トークン検証エラー:', error);
+    return null;
+  }
+}
+
+/**
+ * リクエストから認証トークンを取得
+ * @param req NextRequest
+ * @returns トークン
+ */
 export function getAuthToken(req: NextRequest): string | undefined {
   return req.cookies.get('auth-token')?.value;
 }
 
+/**
+ * レスポンスに認証Cookieをセット
+ * @param res NextResponse
+ * @param token トークン
+ */
 export function setAuthCookie(res: NextResponse, token: string): void {
   res.cookies.set('auth-token', token, {
     httpOnly: true,
@@ -54,6 +115,23 @@ export function setAuthCookie(res: NextResponse, token: string): void {
   });
 }
 
+/**
+ * 認証Cookieをクリア
+ * @param res NextResponse
+ */
 export function clearAuthCookie(res: NextResponse): void {
   res.cookies.delete('auth-token');
+}
+
+/**
+ * Supabaseからサインアウト
+ * @param token アクセストークン
+ */
+export async function signOut(token?: string): Promise<void> {
+  try {
+    const supabase = createServerClient();
+    await supabase.auth.signOut();
+  } catch (error) {
+    console.error('サインアウトエラー:', error);
+  }
 }

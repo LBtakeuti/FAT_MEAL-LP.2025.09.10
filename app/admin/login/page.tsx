@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 export default function AdminLoginPage() {
   const router = useRouter();
   const [credentials, setCredentials] = useState({
-    username: '',
+    email: '',
     password: ''
   });
   const [error, setError] = useState('');
@@ -50,14 +50,14 @@ export default function AdminLoginPage() {
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-              ユーザー名
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              メールアドレス
             </label>
             <input
-              type="text"
-              id="username"
-              value={credentials.username}
-              onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
+              type="email"
+              id="email"
+              value={credentials.email}
+              onChange={(e) => setCredentials({ ...credentials, email: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
@@ -91,12 +91,6 @@ export default function AdminLoginPage() {
             {isLoading ? 'ログイン中...' : 'ログイン'}
           </button>
         </form>
-        
-        <div className="mt-4 text-sm text-gray-600 text-center">
-          <p>デモ用認証情報:</p>
-          <p>ユーザー名: admin</p>
-          <p>パスワード: admin123</p>
-        </div>
       </div>
     </div>
   );

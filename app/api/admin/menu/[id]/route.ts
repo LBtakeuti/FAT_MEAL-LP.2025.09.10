@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabaseAdapter } from '@/lib/db-adapter';
+import { createServerClient } from '@/lib/supabase';
+import { verifyAuth } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
@@ -7,19 +8,26 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const db = await getDatabaseAdapter();
-    const item = await db.menu.getById(id);
-    if (!item) {
+    const supabase = createServerClient();
+    
+    const { data, error } = await supabase
+      .from('menu_items')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error || !data) {
       return NextResponse.json(
-        { message: 'アイテムが見つかりません' },
+        { message: 'メニューが見つかりません' },
         { status: 404 }
       );
     }
-    return NextResponse.json(item);
-  } catch (error) {
-    console.error('Menu item fetch error:', error);
+    
+    return NextResponse.json(data);
+  } catch (error: any) {
+    console.error('Failed to fetch menu item:', error);
     return NextResponse.json(
-      { message: 'サーバーエラーが発生しました' },
+      { message: 'メニューの取得に失敗しました', error: error.message },
       { status: 500 }
     );
   }
@@ -30,24 +38,63 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
-    const db = await getDatabaseAdapter();
-    const data = await request.json();
-    const success = await db.menu.update(id, data);
-    
-    if (!success) {
+    // 認証チェック
+    const authResult = await verifyAuth(request);
+    if (!authResult.authenticated) {
       return NextResponse.json(
-        { message: 'アイテムが見つかりません' },
+        { message: '認証が必要です' },
+        { status: 401 }
+      );
+    }
+    
+    const { id } = await params;
+    const body = await request.json();
+    const supabase = createServerClient();
+    
+    // バリデーション
+    if (!body.name || !body.calories || body.protein === undefined || body.fat === undefined || body.carbs === undefined) {
+      return NextResponse.json(
+        { message: '必須項目が不足しています' },
+        { status: 400 }
+      );
+    }
+    
+    const updateData = {
+      name: body.name,
+      description: body.description || null,
+      price: body.price || null,
+      calories: parseInt(body.calories),
+      protein: parseFloat(body.protein),
+      fat: parseFloat(body.fat),
+      carbs: parseFloat(body.carbs),
+      main_image: body.main_image || null,
+      sub_images: body.sub_images || [],
+      ingredients: body.ingredients || [],
+      allergens: body.allergens || [],
+      is_active: body.is_active !== false,
+      display_order: body.display_order || 0,
+      updated_at: new Date().toISOString(),
+    };
+    
+    const { data, error } = await supabase
+      .from('menu_items')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error || !data) {
+      return NextResponse.json(
+        { message: 'メニューの更新に失敗しました', error: error?.message },
         { status: 404 }
       );
     }
     
-    const updatedItem = await db.menu.getById(id);
-    return NextResponse.json(updatedItem);
-  } catch (error) {
-    console.error('Menu item update error:', error);
+    return NextResponse.json(data);
+  } catch (error: any) {
+    console.error('Failed to update menu item:', error);
     return NextResponse.json(
-      { message: 'サーバーエラーが発生しました' },
+      { message: 'メニューの更新に失敗しました', error: error.message },
       { status: 500 }
     );
   }
@@ -58,25 +105,35 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params;
-    const db = await getDatabaseAdapter();
-    const success = await db.menu.delete(id);
-    
-    if (!success) {
+    // 認証チェック
+    const authResult = await verifyAuth(request);
+    if (!authResult.authenticated) {
       return NextResponse.json(
-        { message: 'アイテムが見つかりません' },
-        { status: 404 }
+        { message: '認証が必要です' },
+        { status: 401 }
       );
     }
     
+    const { id } = await params;
+    const supabase = createServerClient();
+    
+    const { error } = await supabase
+      .from('menu_items')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      return NextResponse.json(
+        { message: 'メニューの削除に失敗しました', error: error.message },
+        { status: 500 }
+      );
+    }
+    
+    return NextResponse.json({ message: '削除しました' });
+  } catch (error: any) {
+    console.error('Failed to delete menu item:', error);
     return NextResponse.json(
-      { message: '削除しました' },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error('Menu item delete error:', error);
-    return NextResponse.json(
-      { message: 'サーバーエラーが発生しました' },
+      { message: 'メニューの削除に失敗しました', error: error.message },
       { status: 500 }
     );
   }

@@ -1,24 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabaseAdapter } from '@/lib/db-adapter';
+import { createServerClient } from '@/lib/supabase';
+import { verifyAuth } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
-    const dbAdapter = await getDatabaseAdapter();
+    const supabase = createServerClient();
     
-    // Supabase APIが利用可能な場合
-    if (dbAdapter.news && dbAdapter.news.getAll) {
-      const newsItems = await dbAdapter.news.getAll();
-      return NextResponse.json(newsItems);
+    const { data, error } = await supabase
+      .from('news')
+      .select('*')
+      .order('date', { ascending: false });
+    
+    if (error) {
+      console.error('ニュース取得エラー:', error);
+      return NextResponse.json(
+        { message: 'ニュースの取得に失敗しました', error: error.message },
+        { status: 500 }
+      );
     }
     
-    // フォールバック: メモリDBを使用
-    const { db } = await import('@/lib/db');
-    const newsItems = db.getAllNewsItems();
-    return NextResponse.json(newsItems);
-  } catch (error) {
+    return NextResponse.json(data || []);
+  } catch (error: any) {
     console.error('Failed to fetch news:', error);
     return NextResponse.json(
-      { message: 'ニュースの取得に失敗しました' },
+      { message: 'ニュースの取得に失敗しました', error: error.message },
       { status: 500 }
     );
   }
@@ -26,32 +31,55 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.json();
-    const dbAdapter = await getDatabaseAdapter();
-    
-    const newsData = {
-      title: data.title,
-      date: data.date || new Date().toLocaleDateString('ja-JP').replace(/\//g, '.'),
-      category: data.category || null,
-      excerpt: data.excerpt || null,
-      content: data.content,
-      image_url: data.image || null,
-    };
-    
-    // Supabase APIが利用可能な場合
-    if (dbAdapter.news && dbAdapter.news.create) {
-      const newItem = await dbAdapter.news.create(newsData);
-      return NextResponse.json(newItem, { status: 201 });
+    // 認証チェック
+    const authResult = await verifyAuth(request);
+    if (!authResult.authenticated) {
+      return NextResponse.json(
+        { message: '認証が必要です' },
+        { status: 401 }
+      );
     }
     
-    // フォールバック: メモリDBを使用
-    const { db } = await import('@/lib/db');
-    const newItem = db.createNewsItem(newsData);
-    return NextResponse.json(newItem, { status: 201 });
-  } catch (error) {
+    const body = await request.json();
+    const supabase = createServerClient();
+    
+    // バリデーション
+    if (!body.title || !body.content) {
+      return NextResponse.json(
+        { message: 'タイトルと本文は必須です' },
+        { status: 400 }
+      );
+    }
+    
+    const newsData = {
+      title: body.title,
+      content: body.content,
+      date: body.date || new Date().toISOString().split('T')[0],
+      category: body.category || null,
+      image: body.image || null,
+      excerpt: body.excerpt || null,
+      summary: body.summary || null,
+    };
+    
+    const { data, error } = await supabase
+      .from('news')
+      .insert(newsData)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('ニュース作成エラー:', error);
+      return NextResponse.json(
+        { message: 'ニュースの作成に失敗しました', error: error.message },
+        { status: 500 }
+      );
+    }
+    
+    return NextResponse.json(data, { status: 201 });
+  } catch (error: any) {
     console.error('Failed to create news:', error);
     return NextResponse.json(
-      { message: 'ニュースの作成に失敗しました' },
+      { message: 'ニュースの作成に失敗しました', error: error.message },
       { status: 500 }
     );
   }

@@ -18,6 +18,22 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ボタンのデフォルトスタイルをリセット */
+button {
+  background: none;
+  border: none;
+  outline: none;
+  box-shadow: none !important;
+}
+
+button:focus,
+button:hover,
+button:active {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 html,
@@ -25,6 +41,18 @@ body {
   max-width: 100vw;
   overflow-x: hidden;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", Meiryo, sans-serif;
+}
+
+/* アンチック体フォント設定 */
+.font-antique {
+  font-family: "游明朝", "Yu Mincho", YuMincho, "ヒラギノ明朝 ProN W3", "Hiragino Mincho ProN", "HG明朝E", "ＭＳ Ｐ明朝", "ＭＳ 明朝", serif;
+  font-weight: 500;
+}
+
+/* 全ての見出しにアンチック体を適用 */
+h1, h2, h3, h4, h5, h6 {
+  font-family: "游明朝", "Yu Mincho", YuMincho, "ヒラギノ明朝 ProN W3", "Hiragino Mincho ProN", "HG明朝E", "ＭＳ Ｐ明朝", "ＭＳ 明朝", serif;
+  font-weight: 500;
 }
 
 body {

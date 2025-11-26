@@ -63,12 +63,12 @@ const LineFloatingButton: React.FC = () => {
           </svg>
         </button>
 
-        <a
-          href="https://lin.ee/AqKWBrV"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="LINE公式アカウント"
-        >
+    <a
+      href="https://lin.ee/AqKWBrV"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="LINE公式アカウント"
+    >
           <div className="flex flex-col items-end gap-0">
         {/* テキストバッジ */}
         <div className="bg-white text-gray-900 font-bold text-xs sm:text-base md:text-lg px-3 py-2 sm:px-4 sm:py-3 rounded-lg shadow-md border-2 border-[#06C755] whitespace-nowrap mb-1">
@@ -99,7 +99,7 @@ const LineFloatingButton: React.FC = () => {
           <div className="absolute inset-0 bg-[#06C755] rounded-full animate-ping opacity-20"></div>
         </div>
       </div>
-        </a>
+    </a>
       </div>
     </div>
   );

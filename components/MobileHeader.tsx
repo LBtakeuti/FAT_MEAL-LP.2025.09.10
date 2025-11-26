@@ -1,7 +1,8 @@
 'use client';
-// Force reload
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const MobileHeader: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -14,73 +15,41 @@ const MobileHeader: React.FC = () => {
     setIsMenuOpen(false);
   };
 
-  // Handle escape key
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isMenuOpen) {
-        closeMenu();
-      }
-    };
-
-    if (isMenuOpen) {
-      document.addEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'hidden';
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = '';
-    };
-  }, [isMenuOpen]);
-
-  const handleNavClick = (href: string) => {
-    // TOPの場合（ホームページへ遷移またはトップへスクロール）
-    if (href === '#hero' || href === '/') {
-      if (window.location.pathname === '/') {
-        // 既にホームページにいる場合はトップへスクロール
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else {
-        // 他のページからはホームページへ遷移
-        window.location.href = '/';
-      }
-    } else if (href.startsWith('#')) {
-      // アンカーリンクの場合
-      if (window.location.pathname !== '/') {
-        // ホームページ以外からの場合は、ホームページに遷移してからスクロール
-        window.location.href = '/' + href;
-      } else {
-        // 既にホームページにいる場合は、その場所へスクロール
-        const targetId = href.replace('#', '');
-        const targetElement = document.getElementById(targetId);
-        if (targetElement) {
-          targetElement.scrollIntoView({ behavior: 'smooth' });
-        }
-      }
-    }
-    closeMenu();
-  };
-
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md sm:hidden">
-        <div className="flex items-center justify-between h-14 px-4">
-          <Link href="/" className="text-xl font-bold text-orange-600">
-            ふとるめし
+      {/* Header - 常に表示 */}
+      <header className="fixed top-0 left-0 right-0 bg-white shadow-md sm:hidden z-50">
+        <div className="flex items-center justify-between h-16 px-4">
+          <Link href="/" className="ml-4">
+            <Image
+              src="/fat_Logo2-2.png"
+              alt="ふとるめし"
+              width={240}
+              height={80}
+              className="h-12 w-auto"
+              priority
+            />
           </Link>
-          {/* Hamburger Menu Button */}
+          
+          {/* Hamburger Menu Button - ×に変わるアニメーション */}
           <button
             onClick={toggleMenu}
-            className="h-10 w-10 flex flex-col justify-center items-center rounded-lg hover:bg-gray-100 transition-colors"
+            className="h-10 w-10 flex flex-col justify-center items-center focus:outline-none focus:ring-0 focus:shadow-none active:bg-transparent tap-highlight-transparent hover:bg-transparent"
+            style={{ 
+              WebkitTapHighlightColor: 'transparent',
+              boxShadow: 'none',
+              outline: 'none'
+            }}
             aria-label={isMenuOpen ? 'メニューを閉じる' : 'メニューを開く'}
           >
             <div className="relative w-6 h-5">
-              <span className={`absolute left-0 w-full h-0.5 bg-gray-500 transition-all duration-300 ${
+              <span className={`absolute left-0 w-full h-0.5 bg-gray-700 transition-all duration-300 ease-in-out ${
                 isMenuOpen ? 'top-2 rotate-45' : 'top-0'
               }`} />
-              <span className={`absolute left-0 top-2 w-full h-0.5 bg-gray-500 transition-all duration-300 ${
+              <span className={`absolute left-0 top-2 w-full h-0.5 bg-gray-700 transition-all duration-300 ease-in-out ${
                 isMenuOpen ? 'opacity-0' : 'opacity-100'
               }`} />
-              <span className={`absolute left-0 w-full h-0.5 bg-gray-500 transition-all duration-300 ${
+              <span className={`absolute left-0 w-full h-0.5 bg-gray-700 transition-all duration-300 ease-in-out ${
                 isMenuOpen ? 'top-2 -rotate-45' : 'top-4'
               }`} />
             </div>
@@ -88,181 +57,115 @@ const MobileHeader: React.FC = () => {
         </div>
       </header>
 
-      {/* Backdrop */}
-      {isMenuOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 sm:hidden"
-          onClick={closeMenu}
-        />
-      )}
-
-      {/* Drawer Menu */}
+      {/* Dropdown Menu - ヒーローセクションの上に被せる */}
       <div
-        className={`fixed inset-y-0 right-0 w-full bg-white shadow-xl z-[100] transform transition-transform duration-300 sm:hidden ${
-          isMenuOpen ? 'translate-x-0' : 'translate-x-full'
+        className={`fixed top-16 left-0 right-0 overflow-hidden transition-all duration-300 ease-in-out bg-white sm:hidden z-40 ${
+          isMenuOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
         }`}
-        role="dialog"
-        aria-label="サイトナビゲーション"
-        aria-modal="true"
       >
-        {/* Close button */}
-        <div className="flex justify-end p-4 border-b border-gray-100 bg-white">
-          <button
-            onClick={closeMenu}
-            className="text-gray-400 hover:text-gray-600 text-sm font-medium tracking-wider"
-          >
-            CLOSE
-          </button>
-        </div>
-
-        <div className="h-full overflow-y-auto pb-20 bg-white">
-          {/* Main Navigation */}
-          <div className="py-8 bg-white">
-            <nav className="bg-white">
+        <nav className="border-t border-gray-200 shadow-lg">
+            <div className="py-2">
               <button
                 onClick={() => {
-                  // Swiperのスライド0（HeroSection）に移動
                   if (window.location.pathname === '/') {
                     const swiper = (window as any).swiper;
-                    if (swiper) {
-                      swiper.slideTo(0);
-                    }
+                    if (swiper) swiper.slideTo(0);
                   } else {
                     window.location.href = '/';
                   }
                   closeMenu();
                 }}
-                className="block w-full text-left text-2xl font-medium text-orange-600 transition-all py-6 px-8"
+                className="block w-full text-left px-6 py-3 text-orange-600 hover:bg-orange-50 transition-colors font-medium text-lg"
               >
                 TOP
               </button>
               
               <button
                 onClick={() => {
-                  // Swiperのスライド1（FeaturesSectionMobile）に移動
                   if (window.location.pathname === '/') {
                     const swiper = (window as any).swiper;
-                    if (swiper) {
-                      swiper.slideTo(1);
-                    }
+                    if (swiper) swiper.slideTo(1);
                   } else {
                     window.location.href = '/';
                   }
                   closeMenu();
                 }}
-                className="block w-full text-left text-2xl font-medium text-orange-600 transition-all py-6 px-8"
+                className="block w-full text-left px-6 py-3 text-orange-600 hover:bg-orange-50 transition-colors font-medium text-lg"
               >
                 ふとるめしのこだわり
               </button>
               
               <button
                 onClick={() => {
-                  // Swiperのスライド2（TargetUserSlide1）に移動
                   if (window.location.pathname === '/') {
                     const swiper = (window as any).swiper;
-                    if (swiper) {
-                      swiper.slideTo(2);
-                    }
+                    if (swiper) swiper.slideTo(2);
                   } else {
                     window.location.href = '/';
                   }
                   closeMenu();
                 }}
-                className="block w-full text-left text-2xl font-medium text-orange-600 transition-all py-6 px-8"
+                className="block w-full text-left px-6 py-3 text-orange-600 hover:bg-orange-50 transition-colors font-medium text-lg"
               >
                 どんな人に必要？
               </button>
               
               <button
                 onClick={() => {
-                  // Swiperのスライド4（MenuSection）に移動
                   if (window.location.pathname === '/') {
                     const swiper = (window as any).swiper;
-                    if (swiper) {
-                      swiper.slideTo(4);
-                    }
+                    if (swiper) swiper.slideTo(4);
                   } else {
                     window.location.href = '/';
                   }
                   closeMenu();
                 }}
-                className="block w-full text-left text-2xl font-medium text-orange-600 transition-all py-6 px-8"
+                className="block w-full text-left px-6 py-3 text-orange-600 hover:bg-orange-50 transition-colors font-medium text-lg"
               >
                 メニュー一覧
               </button>
               
               <button
                 onClick={() => {
-                  // Swiperのスライド6（NewsSection）に移動
                   if (window.location.pathname === '/') {
                     const swiper = (window as any).swiper;
-                    if (swiper) {
-                      swiper.slideTo(6);
-                    }
+                    if (swiper) swiper.slideTo(6);
                   } else {
                     window.location.href = '/';
                   }
                   closeMenu();
                 }}
-                className="block w-full text-left text-2xl font-medium text-orange-600 transition-all py-6 px-8"
+                className="block w-full text-left px-6 py-3 text-orange-600 hover:bg-orange-50 transition-colors font-medium text-lg"
               >
                 お知らせ
               </button>
-            </nav>
-          </div>
 
-          {/* Divider */}
-          <div className="border-t border-gray-200 mx-8"></div>
-
-          {/* Secondary Navigation */}
-          <div className="py-8">
-            <nav>
               <button
                 onClick={() => {
                   window.location.href = '/contact';
                   closeMenu();
                 }}
-                className="block w-full text-left text-lg text-gray-700 hover:bg-gray-50 hover:text-orange-600 transition-all py-5 px-8"
+                className="block w-full text-left px-6 py-3 text-orange-600 hover:bg-orange-50 transition-colors font-medium text-lg"
               >
                 お問い合わせ
               </button>
-              <button
-                onClick={() => {
-                  window.location.href = '/menu-list';
-                  closeMenu();
-                }}
-                className="block w-full text-left text-lg text-gray-700 hover:bg-gray-50 hover:text-orange-600 transition-all py-5 px-8"
-              >
-                全メニューを見る
-              </button>
-              <button
-                onClick={() => {
-                  window.location.href = '/terms';
-                  closeMenu();
-                }}
-                className="block w-full text-left text-lg text-gray-700 hover:bg-gray-50 hover:text-orange-600 transition-all py-5 px-8"
-              >
-                利用規約
-              </button>
-              <button
-                onClick={() => {
-                  window.location.href = '/privacy';
-                  closeMenu();
-                }}
-                className="block w-full text-left text-lg text-gray-700 hover:bg-gray-50 hover:text-orange-600 transition-all py-5 px-8"
-              >
-                プライバシーポリシー
-              </button>
-            </nav>
-          </div>
-
-          {/* Social Links - 準備中 */}
-          <div className="px-8 py-8 border-t border-gray-200">
-            <div className="text-center">
-              <p className="text-sm text-gray-400">SNSアカウント準備中</p>
             </div>
-          </div>
-        </div>
+
+            {/* LINE Button */}
+            <div className="px-6 py-4 border-t border-gray-200">
+              <a
+                href="https://line.me/R/ti/p/@your-line-id"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full bg-[#06C755] text-white py-3 rounded-lg hover:bg-[#05b04b] transition-colors font-medium"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314" />
+                </svg>
+                LINEで友だち追加
+              </a>
+            </div>
+          </nav>
       </div>
     </>
   );
