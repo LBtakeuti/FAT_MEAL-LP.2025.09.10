@@ -28,7 +28,7 @@ export async function GET(
       protein: item.protein,
       fat: item.fat,
       carbs: item.carbs,
-      image: item.images && item.images.length > 0 ? item.images[0] : '/bento_1.jpeg',
+      image: item.images && item.images.length > 0 ? item.images[0] : '/default-bento.jpeg',
       images: item.images,
       features: item.features,
       ingredients: item.ingredients,

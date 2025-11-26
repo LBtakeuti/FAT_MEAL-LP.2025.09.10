@@ -62,41 +62,30 @@ const StatsSection: React.FC = () => {
           </p>
         </div>
 
-        {/* 数字カード */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
+        {/* 数字表示 - シンプルなレイアウト */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12 lg:gap-16">
           {stats.map((stat, index) => (
-            <div
-              key={index}
-              className="relative bg-white rounded-3xl shadow-xl overflow-hidden hover:shadow-2xl transition-shadow"
-            >
-              {/* グラデーション背景 */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-5`}></div>
-              
-              <div className="relative p-8 sm:p-10 lg:p-12 text-center">
-                {/* 数字 */}
-                <div className="mb-4">
-                  <span className={`text-6xl sm:text-7xl lg:text-8xl font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent`}>
-                    {stat.number}
-                  </span>
-                  <span className={`text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent ml-2`}>
-                    {stat.unit}
-                  </span>
-                  <span className="text-2xl sm:text-3xl text-gray-400 ml-1">オーバー</span>
-                </div>
-
-                {/* ラベル */}
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">
-                  {stat.label}
-                </h3>
-
-                {/* 説明 */}
-                <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
-                  {stat.description}
-                </p>
+            <div key={index} className="text-center">
+              {/* 数字 */}
+              <div className="mb-4 whitespace-nowrap">
+                <span className={`text-[clamp(3rem,8vw,5rem)] font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent`}>
+                  {stat.number}
+                </span>
+                <span className={`text-[clamp(1.5rem,4vw,2.5rem)] font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent ml-1`}>
+                  {stat.unit}
+                </span>
+                <span className="text-[clamp(1.25rem,3vw,1.875rem)] text-gray-400 ml-1">オーバー</span>
               </div>
 
-              {/* 装飾 */}
-              <div className={`absolute -bottom-10 -right-10 w-40 h-40 bg-gradient-to-br ${stat.color} opacity-10 rounded-full blur-3xl`}></div>
+              {/* ラベル */}
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">
+                {stat.label}
+              </h3>
+
+              {/* 説明 */}
+              <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
+                {stat.description}
+              </p>
             </div>
           ))}
         </div>

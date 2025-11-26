@@ -5,7 +5,6 @@ const TargetUsersSection: React.FC = () => {
   const targets = [
     {
       title: '思うように体重が増えない\nスポーツ選手',
-      image: '/baseball-g24ce42811_640.jpg',
       description:
         'スポーツを全力で頑張る学生にとって「体重を増やしたい！」と思う人は多い。特に小中学生などは体重がなかなか増えずに悩まれている選手もいる。',
       quote: 'プロテインを飲んでいますが、体重がなかなか増えません…',
@@ -15,7 +14,6 @@ const TargetUsersSection: React.FC = () => {
     },
     {
       title: '筋トレを頑張る\n社会人',
-      image: '/FOOD.avif',
       description:
         '筋肉を増やすには、トレーニングだけでなく、たんぱく質を中心に、糖質や脂質・ビタミン・ミネラルなど幅広い栄養素が必要になります。',
       quote: '',
@@ -72,25 +70,10 @@ const TargetUsersSection: React.FC = () => {
           {targets.map((target, index) => (
             <div
               key={index}
-              className={`flex flex-col ${
-                index % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'
-              } gap-6 sm:gap-8 lg:gap-12 items-center`}
+              className="max-w-3xl mx-auto"
             >
-              {/* 画像 */}
-              <div className="w-full lg:w-1/2">
-                <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-xl">
-                  <Image
-                    src={target.image}
-                    alt={target.title}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 1024px) 100vw, 50vw"
-                  />
-                </div>
-              </div>
-
               {/* コンテンツ */}
-              <div className="w-full lg:w-1/2 space-y-4 sm:space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {/* ラベル */}
                 <div className="inline-block bg-orange-500 text-white px-4 py-2 rounded-lg font-bold text-sm tracking-wider">
                   {target.label}

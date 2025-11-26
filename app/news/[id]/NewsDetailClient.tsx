@@ -3,34 +3,42 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { NewsItem } from '@/data/newsData';
+import { NewsItem, newsItems } from '@/data/newsData';
 import MobileHeader from '@/components/MobileHeader';
+import Header from '@/components/Header';
 
 interface NewsDetailClientProps {
   newsItem: NewsItem;
 }
 
 const NewsDetailClient: React.FC<NewsDetailClientProps> = ({ newsItem }) => {
+  // 現在の記事を除いた最新3件のニュースを取得
+  const relatedNews = newsItems
+    .filter(item => item.id !== newsItem.id)
+    .slice(0, 3);
   return (
     <div className="min-h-screen bg-white">
       {/* Mobile Header */}
       <MobileHeader />
+      
+      {/* Desktop Header */}
+      <Header />
 
       <main className="pt-14 sm:pt-20 pb-20">
-        {/* Back Button - Fixed position on mobile */}
-        <div className="fixed top-20 left-4 z-10 sm:hidden">
-          <Link 
-            href="/news" 
-            className="inline-flex items-center bg-white/90 hover:bg-white text-gray-700 px-3 py-2 rounded-full shadow-lg hover:shadow-xl transition-all"
-          >
-            <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            <span className="text-sm font-medium">お知らせ一覧</span>
-          </Link>
-        </div>
-
-        <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[800px] lg:px-8 mx-auto pt-16 sm:pt-0">
+        <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[800px] lg:px-8 mx-auto">
+          
+          {/* Breadcrumb Navigation */}
+          <div className="mb-6">
+            <Link 
+              href="/news" 
+              className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              <span className="text-sm">お知らせ一覧</span>
+            </Link>
+          </div>
 
           {/* Article Header */}
           <div className="mb-8">
@@ -64,6 +72,44 @@ const NewsDetailClient: React.FC<NewsDetailClientProps> = ({ newsItem }) => {
             </div>
           </div>
 
+          {/* Related News Section */}
+          {relatedNews.length > 0 && (
+            <div className="mt-16 pt-8 border-t border-gray-200">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">おすすめニュース</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                {relatedNews.map((item) => (
+                  <Link
+                    key={item.id}
+                    href={`/news/${item.id}`}
+                    className="group bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
+                  >
+                    {item.image && (
+                      <div className="relative w-full h-40 overflow-hidden">
+                        <Image
+                          src={item.image}
+                          alt={item.title}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                    )}
+                    <div className="p-4">
+                      <p className="text-xs text-gray-500 mb-2">{item.date}</p>
+                      <h3 className="text-sm font-bold text-gray-900 line-clamp-2 group-hover:text-orange-600 transition-colors">
+                        {item.title}
+                      </h3>
+                      {item.excerpt && (
+                        <p className="text-xs text-gray-600 mt-2 line-clamp-2">
+                          {item.excerpt}
+                        </p>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Navigation Footer - Desktop Only */}
           <div className="hidden sm:block mt-12 pt-8 border-t border-gray-200">
             <div className="flex justify-between gap-4">
@@ -85,29 +131,6 @@ const NewsDetailClient: React.FC<NewsDetailClientProps> = ({ newsItem }) => {
                 </svg>
                 ホームへ戻る
               </Link>
-            </div>
-          </div>
-
-          {/* Footer Links */}
-          <div className="mt-12 bg-gray-50 rounded-xl p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">ストア基本情報</h3>
-            <div className="grid sm:grid-cols-2 gap-6">
-              <div>
-                <h4 className="font-semibold text-gray-700 mb-2">定期コース一覧</h4>
-                <ul className="space-y-1 text-sm text-gray-600">
-                  <li>すべてのメニュー</li>
-                  <li>ベーシックコース</li>
-                  <li>ローカーボコース</li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-700 mb-2">ストア基本情報</h4>
-                <ul className="space-y-1 text-sm text-gray-600">
-                  <li>運営会社</li>
-                  <li>個人情報保護方針</li>
-                  <li>特商法に関する記載</li>
-                </ul>
-              </div>
             </div>
           </div>
         </div>

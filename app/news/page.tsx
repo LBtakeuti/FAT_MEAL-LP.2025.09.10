@@ -5,26 +5,30 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { newsItems } from '@/data/newsData';
 import MobileHeader from '@/components/MobileHeader';
+import Header from '@/components/Header';
 
 export default function NewsListPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Mobile Header */}
       <MobileHeader />
+      
+      {/* Desktop Header */}
+      <Header />
 
       <main className="pt-14 sm:pt-20 pb-20">
         <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto">
           
-          {/* Back Button - Part of the page flow */}
-          <div className="sm:hidden mb-4 mt-2">
+          {/* Breadcrumb Navigation */}
+          <div className="mb-6">
             <Link 
               href="/" 
-              className="inline-flex items-center text-orange-600 font-medium"
+              className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
             >
-              <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-              <span>お知らせ一覧</span>
+              <span className="text-sm">ホーム</span>
             </Link>
           </div>
 

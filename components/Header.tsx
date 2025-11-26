@@ -13,7 +13,7 @@ const Header: React.FC = () => {
           <div className="mb-4">
             <Link href="/">
               <Image
-                src="/fat_Logo2-2.png"
+                src="/logo-header.png"
                 alt="ふとるめし"
                 width={540}
                 height={180}

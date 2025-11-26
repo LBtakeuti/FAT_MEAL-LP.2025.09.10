@@ -10,7 +10,7 @@ const HeroSection: React.FC = () => {
       <div className="absolute inset-0 z-0">
         {/* SP用画像 */}
         <Image
-          src="/SPfat.png"
+          src="/hero-mobile-bg.png"
           alt="和食料理"
           fill
           className="sm:hidden object-cover object-center"
@@ -18,7 +18,7 @@ const HeroSection: React.FC = () => {
         />
         {/* PC用画像 */}
         <Image
-          src="/FOOD.avif"
+          src="/hero-desktop-bg.avif"
           alt="和食料理"
           fill
           className="hidden sm:block object-cover object-center md:object-[center_60%]"
@@ -29,7 +29,7 @@ const HeroSection: React.FC = () => {
       <div className="max-w-[375px] px-4 md:max-w-[600px] md:px-6 lg:max-w-[800px] lg:px-8 mx-auto text-center animate-fadeIn relative z-10">
         <div className="relative w-full h-auto">
               <Image
-                src="/hero2-11.svg"
+                src="/hero-main-text.svg"
                 alt="もっとカロリーを、もっと栄養を、努力にブースト。"
                 width={800}
                 height={400}

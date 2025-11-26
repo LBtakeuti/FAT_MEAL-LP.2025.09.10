@@ -22,7 +22,7 @@ const MobileHeader: React.FC = () => {
         <div className="flex items-center justify-between h-16 px-4">
           <Link href="/" className="ml-4">
             <Image
-              src="/fat_Logo2-2.png"
+              src="/logo-header.png"
               alt="ふとるめし"
               width={240}
               height={80}
