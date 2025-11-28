@@ -4,7 +4,6 @@ const ProblemsSection: React.FC = () => {
   const problems = [
     '食べても食べても太れない',
     '筋トレしても体重が増えない',
-    '胃腸が弱くて量が食べられない',
     '高カロリーな食事を作る時間がない',
     'プロテインだけでは栄養が偏る',
   ];
@@ -65,18 +64,12 @@ const ProblemsSection: React.FC = () => {
         </div>
 
         {/* 結論テキスト */}
-        <div className="text-center font-antique leading-none">
-          <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-orange-600 mb-1">
-            カロリー不足
+        <div className="text-center font-antique leading-none -mt-6 sm:-mt-8">
+          <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
+            その悩み！
           </p>
-          <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mb-1">
-            と
-          </p>
-          <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-orange-600 mb-2">
-            栄養バランスの乱れ
-          </p>
-          <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
-            が原因かもしれません！
+          <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-orange-600">
+            「ふとるめし」で全て解決！
           </p>
         </div>
       </div>

@@ -18,7 +18,7 @@ const HeroSection: React.FC = () => {
         />
         {/* PC用画像 */}
         <Image
-          src="/hero-desktop-bg.avif"
+          src="/hero-PC.png"
           alt="和食料理"
           fill
           className="hidden sm:block object-cover object-center md:object-[center_60%]"
