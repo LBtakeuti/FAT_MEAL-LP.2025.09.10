@@ -4,7 +4,8 @@ import Image from 'next/image';
 const TargetUsersSection: React.FC = () => {
   const targets = [
     {
-      title: '思うように体重が増えない\nスポーツ選手',
+      title: '思うように体重が増えない スポーツ選手',
+      image: '/baseball-g24ce42811_640.jpg',
       description:
         'スポーツを全力で頑張る学生にとって「体重を増やしたい！」と思う人は多い。特に小中学生などは体重がなかなか増えずに悩まれている選手もいる。',
       quote: 'プロテインを飲んでいますが、体重がなかなか増えません…',
@@ -13,7 +14,8 @@ const TargetUsersSection: React.FC = () => {
       label: 'SPORTS',
     },
     {
-      title: '筋トレを頑張る\n社会人',
+      title: '筋トレを頑張る 社会人',
+      image: '/FOOD.avif',
       description:
         '筋肉を増やすには、トレーニングだけでなく、たんぱく質を中心に、糖質や脂質・ビタミン・ミネラルなど幅広い栄養素が必要になります。',
       quote: '',
@@ -59,10 +61,22 @@ const TargetUsersSection: React.FC = () => {
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* ヘッダー */}
         <div className="text-center mb-10 sm:mb-16">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-            どんな人に<br className="sm:hidden" />
-            ふとるめしが必要なのか
-          </h2>
+          {/* セクションタイトル */}
+          <div className="text-center mb-10 sm:mb-16 relative">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 relative z-10">
+              どんな人に<br className="sm:hidden" />
+              ふとるめしが必要なのか
+            </h2>
+            <div className="flex justify-center -mt-6 sm:-mt-8 relative z-0">
+              <Image
+                src="/b_simple_111_0M 2.png"
+                alt=""
+                width={3923}
+                height={465}
+                className="w-full max-w-3xl h-auto"
+              />
+            </div>
+          </div>
         </div>
 
         {/* ターゲットカード */}
@@ -70,17 +84,32 @@ const TargetUsersSection: React.FC = () => {
           {targets.map((target, index) => (
             <div
               key={index}
-              className="max-w-3xl mx-auto"
+              className={`flex flex-col ${
+                index % 2 === 0 ? 'lg:flex-row' : 'lg:flex-row-reverse'
+              } gap-6 sm:gap-8 lg:gap-12 items-center`}
             >
+              {/* 画像 */}
+              <div className="w-full lg:w-1/2">
+                <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-xl">
+                  <Image
+                    src={target.image}
+                    alt={target.title}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                  />
+                </div>
+              </div>
+
               {/* コンテンツ */}
-              <div className="space-y-4 sm:space-y-6">
+              <div className="w-full lg:w-1/2 space-y-4 sm:space-y-6">
                 {/* ラベル */}
                 <div className="inline-block bg-orange-500 text-white px-4 py-2 rounded-lg font-bold text-sm tracking-wider">
                   {target.label}
                 </div>
 
                 {/* タイトル */}
-                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight whitespace-pre-line">
+                <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl font-bold text-gray-900 leading-tight whitespace-nowrap">
                   {target.title}
                 </h3>
 

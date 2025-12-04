@@ -1,15 +1,16 @@
 import React from 'react';
+import Image from 'next/image';
 
 const ProblemsSection: React.FC = () => {
-  const problems = [
-    '食べても食べても太れない',
-    '筋トレしても体重が増えない',
-    '高カロリーな食事を作る時間がない',
-    'プロテインだけでは栄養が偏る',
+  const speechBubbles = [
+    '/e1081_1 1.svg',
+    '/e1081_1 5.svg',
+    '/e1081_1 6.svg',
+    '/e1081_1 7.svg',
   ];
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-white to-orange-50 py-12 sm:py-20">
+    <section className="relative overflow-hidden bg-gradient-to-b from-white to-orange-50 pt-32 sm:pt-40 lg:pt-48 pb-12 sm:pb-20">
       {/* 上部の波形 - 白背景から遷移 */}
       <div className="absolute top-0 left-0 w-full overflow-hidden leading-none" style={{ transform: 'translateY(-1px)' }}>
         <svg
@@ -41,35 +42,102 @@ const ProblemsSection: React.FC = () => {
         </svg>
       </div>
 
-      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* ヘッダー */}
-        <div className="text-center mb-8 sm:mb-12">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-            こんなお悩み<br className="sm:hidden" />ありませんか？
+      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* セクション見出し */}
+        <div className="text-center mb-4 sm:mb-6">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
+            こんな悩みありませんか？
           </h2>
         </div>
 
-        {/* 悩みリスト */}
-        <div className="space-y-4 sm:space-y-5 mb-10 sm:mb-16">
-          {problems.map((problem, index) => (
-            <div
-              key={index}
-              className="bg-white p-4 sm:p-6 rounded-xl border-2 border-gray-300"
-            >
-              <p className="text-base sm:text-lg lg:text-xl text-gray-700 font-medium leading-relaxed">
-                {problem}
-              </p>
-            </div>
-          ))}
+        {/* 吹き出しSVGと人のイラスト用スペース - モバイル・PC共通 */}
+        <div className="relative w-full mb-10 sm:mb-16 min-h-[350px] sm:min-h-[500px] lg:min-h-[600px] flex items-center justify-center">
+          {/* 中央：人のイラスト用スペース */}
+          <div className="absolute w-full max-w-[200px] sm:max-w-[380px] lg:max-w-[420px] h-[250px] sm:h-[400px] lg:h-[500px] flex items-center justify-center">
+            {/* 後で人のイラストを配置 */}
+          </div>
+
+          {/* 半円状に配置された吹き出しSVG - PCの配置を保持、モバイルはサイズのみ縮小 */}
+          {/* 1つ目: 左端 */}
+          <div
+            className="absolute w-[105px] sm:w-[220px] lg:w-[280px] max-w-[105px] sm:max-w-[220px] lg:max-w-[280px] overflow-hidden"
+            style={{
+              left: '12%',
+              top: '50%',
+              transform: 'translate(-50%, -50%)',
+            }}
+          >
+            <Image
+              src={speechBubbles[0]}
+              alt=""
+              width={423}
+              height={283}
+              className="w-full h-auto object-contain max-w-full"
+            />
+          </div>
+
+          {/* 2つ目: 左上 */}
+          <div
+            className="absolute w-[105px] sm:w-[220px] lg:w-[280px] max-w-[105px] sm:max-w-[220px] lg:max-w-[280px] overflow-hidden"
+            style={{
+              left: '32%',
+              top: '20%',
+              transform: 'translate(-50%, -50%)',
+            }}
+          >
+            <Image
+              src={speechBubbles[1]}
+              alt=""
+              width={423}
+              height={283}
+              className="w-full h-auto object-contain max-w-full"
+            />
+          </div>
+
+          {/* 3つ目: 右上 */}
+          <div
+            className="absolute w-[105px] sm:w-[220px] lg:w-[280px] max-w-[105px] sm:max-w-[220px] lg:max-w-[280px] overflow-hidden"
+            style={{
+              left: '68%',
+              top: '20%',
+              transform: 'translate(-50%, -50%)',
+            }}
+          >
+            <Image
+              src={speechBubbles[2]}
+              alt=""
+              width={423}
+              height={283}
+              className="w-full h-auto object-contain max-w-full"
+            />
+          </div>
+
+          {/* 4つ目: 右端 */}
+          <div
+            className="absolute w-[105px] sm:w-[220px] lg:w-[280px] max-w-[105px] sm:max-w-[220px] lg:max-w-[280px] overflow-hidden"
+            style={{
+              left: '88%',
+              top: '50%',
+              transform: 'translate(-50%, -50%)',
+            }}
+          >
+            <Image
+              src={speechBubbles[3]}
+              alt=""
+              width={423}
+              height={283}
+              className="w-full h-auto object-contain max-w-full"
+            />
+          </div>
         </div>
 
         {/* 結論テキスト */}
-        <div className="text-center font-antique leading-none -mt-6 sm:-mt-8">
+        <div className="text-center font-antique">
           <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-            その悩み！
+            今までの常識を覆す、ふとるめし。
           </p>
-          <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-orange-600">
-            「ふとるめし」で全て解決！
+          <p className="text-lg sm:text-xl lg:text-2xl font-bold text-orange-600">
+            ぜひご賞味あれ！
           </p>
         </div>
       </div>

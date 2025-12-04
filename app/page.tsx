@@ -1,6 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Swiper as SwiperType } from 'swiper';
+import { Mousewheel } from 'swiper/modules';
+import 'swiper/css';
 
 import Header from '@/components/Header';
 import MobileHeader from '@/components/MobileHeader';
@@ -10,69 +14,106 @@ import ProblemsSection from '@/components/ProblemsSection';
 import AboutSection from '@/components/AboutSection';
 import StatsSection from '@/components/StatsSection';
 import TargetUsersSection from '@/components/TargetUsersSection';
+import PurchaseFlowSection from '@/components/PurchaseFlowSection';
 import MenuSection from '@/components/MenuSection';
 import CTASection from '@/components/CTASection';
-import FAQSection from '@/components/FAQSection';
-import PurchaseFlowSection from '@/components/PurchaseFlowSection';
 import NewsSection from '@/components/NewsSection';
 import Footer from '@/components/Footer';
 import LineFloatingButton from '@/components/LineFloatingButton';
 
 export default function Home() {
+  const [isSwipeMode, setIsSwipeMode] = useState(false);
+  const [showFooterNav, setShowFooterNav] = useState(false);
+  const [swiperInstance, setSwiperInstance] = useState<SwiperType | null>(null);
+
+  useEffect(() => {
+    // スワイプモードを無効化し、常に通常スクロールモードを使用
+    setIsSwipeMode(false);
+  }, []);
   return (
     <>
-      {/* ヘッダー */}
+      {/* モバイルではMobileHeader、デスクトップではHeader */}
       <div className="sm:hidden">
         <MobileHeader />
       </div>
       <div className="hidden sm:block">
         <Header />
       </div>
-
-      {/* メインコンテンツ */}
-      <main className="normal-scroll">
-        {/* モバイル用スペーサー（ヘッダー分の余白） */}
-        <div className="h-16 sm:hidden"></div>
-        
-        {/* 1. ヒーローセクション */}
-        <HeroSection />
-
-        {/* 2. 共感・課題提起セクション */}
-        <ProblemsSection />
-
-        {/* 3. ふとるめしとは（簡潔版） */}
-        <AboutSection />
-
-        {/* 4. 数字で見る「ふとるめし」 */}
-        <StatsSection />
-
-        {/* 5. どんな人にふとるめしが必要なのか */}
-        <TargetUsersSection />
-
-        {/* 6. メニュー紹介 */}
-        <MenuSection />
-
-        {/* 7. セット・プラン */}
-        <CTASection />
-
-        {/* 8. よくある質問（FAQ） */}
-        <FAQSection />
-
-        {/* 9. 購入の流れ */}
-        <PurchaseFlowSection />
-
-        {/* 10. お知らせ */}
-        <NewsSection />
-
-        {/* フッター */}
-        <Footer />
-
-        {/* モバイルフッターナビゲーション */}
-        <div className="sm:hidden">
-          <MobileFooterNav isVisible={true} />
-        </div>
-      </main>
-
+      {isSwipeMode ? (
+        <>
+          <main className="swipe-container">
+            <Swiper
+            direction="vertical"
+            mousewheel={true}
+            speed={600}
+            modules={[Mousewheel]}
+            className="mySwiper"
+            onInit={(swiper: SwiperType) => {
+              setSwiperInstance(swiper);
+              // Store swiper instance globally for footer nav
+              (window as any).swiper = swiper;
+            }}
+            onSlideChange={(swiper: SwiperType) => {
+              // Show footer nav after hero section (slide index 0)
+              console.log('Slide changed to:', swiper.activeIndex);
+              setShowFooterNav(swiper.activeIndex > 0);
+            }}
+          >
+            <SwiperSlide>
+              <HeroSection />
+            </SwiperSlide>
+            <SwiperSlide>
+              <ProblemsSection />
+            </SwiperSlide>
+            <SwiperSlide>
+              <AboutSection />
+            </SwiperSlide>
+            <SwiperSlide>
+              <MenuSection />
+            </SwiperSlide>
+            <SwiperSlide>
+              <TargetUsersSection />
+            </SwiperSlide>
+            <SwiperSlide>
+              <PurchaseFlowSection />
+            </SwiperSlide>
+            <SwiperSlide>
+              <StatsSection />
+            </SwiperSlide>
+            <SwiperSlide>
+              <CTASection />
+            </SwiperSlide>
+            <SwiperSlide>
+              <NewsSection />
+            </SwiperSlide>
+            <SwiperSlide>
+              <div className="min-h-screen bg-gray-900 pb-20 flex flex-col">
+                <Footer />
+              </div>
+            </SwiperSlide>
+            </Swiper>
+          </main>
+          <MobileFooterNav isVisible={showFooterNav} />
+          <LineFloatingButton />
+        </>
+      ) : (
+        <main className="normal-scroll">
+          <HeroSection />
+          <ProblemsSection />
+          <AboutSection />
+          <MenuSection />
+          <TargetUsersSection />
+          <PurchaseFlowSection />
+          <StatsSection />
+          <CTASection />
+          <NewsSection />
+          <Footer />
+          {/* モバイルではフッターナビゲーションを表示 */}
+          <div className="sm:hidden">
+            <MobileFooterNav isVisible={true} />
+          </div>
+        </main>
+      )}
       {/* LINE公式アカウント追従ボタン */}
       <LineFloatingButton />
     </>

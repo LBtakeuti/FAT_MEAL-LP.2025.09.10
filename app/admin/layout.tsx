@@ -25,6 +25,7 @@ export default function AdminLayout({
 
   const menuItems = [
     { href: '/admin', label: 'ダッシュボード' },
+    { href: '/admin/orders', label: '注文管理' },
     { href: '/admin/menu', label: '弁当管理' },
     { href: '/admin/news', label: 'ニュース管理' },
     { href: '/admin/contacts', label: 'お問い合わせ管理' },

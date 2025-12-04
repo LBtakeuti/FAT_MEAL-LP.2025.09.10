@@ -7,21 +7,25 @@ const PurchaseFlowSection: React.FC = () => {
       number: 1,
       title: 'セット選択',
       description: 'お好みのセットやメニューを選択',
+      image: '/step1-select-menu.svg',
     },
     {
       number: 2,
       title: '配送先入力',
       description: 'お届け先情報とお支払い方法を入力',
+      image: '/Step1.png',
     },
     {
       number: 3,
       title: 'お届け',
       description: '最短で翌日お届け（地域により異なります）',
+      image: '/Step2.png',
     },
     {
       number: 4,
       title: 'レンジで温めて完成！',
       description: '電子レンジで温めるだけですぐに食べられます',
+      image: '/Step3.png',
     },
   ];
 
@@ -61,9 +65,21 @@ const PurchaseFlowSection: React.FC = () => {
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* ヘッダー */}
         <div className="text-center mb-10 sm:mb-16">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-            購入の流れ
-          </h2>
+          {/* セクションタイトル */}
+          <div className="text-center mb-10 sm:mb-16 relative">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 relative z-10">
+              購入の流れ
+            </h2>
+            <div className="flex justify-center -mt-6 sm:-mt-8 relative z-0">
+              <Image
+                src="/b_simple_111_0M 2.png"
+                alt=""
+                width={3923}
+                height={465}
+                className="w-full max-w-3xl h-auto"
+              />
+            </div>
+          </div>
           <p className="text-base sm:text-lg text-gray-600">
             簡単4ステップでお届け
           </p>
@@ -76,75 +92,18 @@ const PurchaseFlowSection: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
             {steps.map((step, index) => (
-              <div key={index} className="relative">
-                {/* モバイル用接続線 */}
-                {index < steps.length - 1 && (
-                  <div className="lg:hidden absolute left-1/2 top-full w-1 h-6 bg-orange-300 -translate-x-1/2"></div>
-                )}
-
-                <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 hover:shadow-xl transition-shadow relative border border-gray-200">
-                  {/* SVG画像 */}
-                  {index === 0 ? (
-                    <div className="flex justify-center mb-4">
-                      <div className="overflow-hidden rounded-lg">
-                        <Image
-                          src="/step1-select-menu.svg"
-                          alt="ふとるめし"
-                          width={200}
-                          height={200}
-                          className="w-40 h-40 sm:w-52 sm:h-52 block"
-                          style={{ display: 'block' }}
-                          unoptimized
-                        />
-                      </div>
-                    </div>
-                  ) : index === 1 ? (
-                    <div className="flex justify-center mb-4">
-                      <div className="overflow-hidden rounded-lg">
-                        <Image
-                          src="/step2-delivery-info.svg"
-                          alt="配送先入力"
-                          width={200}
-                          height={200}
-                          className="w-40 h-40 sm:w-52 sm:h-52 block"
-                          style={{ display: 'block' }}
-                          unoptimized
-                        />
-                      </div>
-                    </div>
-                  ) : index === 2 ? (
-                    <div className="flex justify-center mb-4">
-                      <div className="overflow-hidden rounded-lg">
-                        <Image
-                          src="/step3-delivery.svg"
-                          alt="お届け"
-                          width={200}
-                          height={200}
-                          className="w-40 h-40 sm:w-52 sm:h-52 block"
-                          style={{ display: 'block' }}
-                          unoptimized
-                        />
-                      </div>
-                    </div>
-                  ) : index === 3 ? (
-                    <div className="flex justify-center mb-4">
-                      <div className="overflow-hidden rounded-lg">
-                        <Image
-                          src="/step4-enjoy.svg"
-                          alt="お召し上がり"
-                          width={200}
-                          height={200}
-                          className="w-40 h-40 sm:w-52 sm:h-52 block"
-                          style={{ display: 'block' }}
-                          unoptimized
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-7xl sm:text-8xl font-bold text-orange-100 text-center mb-4">
-                      {step.number}
-                    </div>
-                  )}
+              <div key={index} className="relative flex">
+                <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 hover:shadow-xl transition-shadow relative flex flex-col w-full h-full">
+                  {/* 画像 */}
+                  <div className="mb-4 flex justify-center items-center h-32 sm:h-40">
+                    <Image
+                      src={step.image}
+                      alt={step.title}
+                      width={200}
+                      height={200}
+                      className="w-full max-w-[180px] h-full object-contain"
+                    />
+                  </div>
 
                   {/* タイトル */}
                   <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 text-center">
@@ -152,7 +111,7 @@ const PurchaseFlowSection: React.FC = () => {
                   </h3>
 
                   {/* 説明 */}
-                  <p className="text-sm sm:text-base text-gray-600 leading-relaxed text-center">
+                  <p className="text-sm sm:text-base text-gray-600 leading-relaxed text-center flex-grow">
                     {step.description}
                   </p>
 

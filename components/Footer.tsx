@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 
 const Footer: React.FC = () => {
   return (
@@ -8,10 +9,15 @@ const Footer: React.FC = () => {
       <div className="max-w-6xl mx-auto w-full">
         <div className="grid md:grid-cols-2 gap-8 mb-8">
           <div>
-            <h3 className="text-2xl font-bold text-orange-600 mb-4">ふとるめし</h3>
-            <p className="text-gray-400 text-sm">
-              高カロリー・高栄養の冷凍宅食サービス
-            </p>
+            <div className="mb-4 flex justify-center md:justify-start md:ml-12">
+              <Image
+                src="/footer-logo.png"
+                alt="ふとるめし"
+                width={200}
+                height={100}
+                className="h-auto w-auto max-h-20 sm:max-h-32"
+              />
+            </div>
           </div>
           
           <div>

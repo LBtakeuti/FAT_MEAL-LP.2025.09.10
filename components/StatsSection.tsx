@@ -160,7 +160,7 @@ const StatsSection: React.FC = () => {
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* セクションタイトル */}
         <div className="text-center mb-10 sm:mb-16 relative">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 font-antique relative z-10">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 relative z-10">
             データで見る<br className="sm:hidden" />「ふとるめし」
           </h2>
           <div className="flex justify-center -mt-6 sm:-mt-8 relative z-0">
@@ -169,7 +169,7 @@ const StatsSection: React.FC = () => {
               alt=""
               width={3923}
               height={465}
-              className="w-full max-w-2xl h-auto"
+              className="w-full max-w-3xl h-auto"
             />
           </div>
         </div>
@@ -348,24 +348,6 @@ const StatsSection: React.FC = () => {
           )}
         </div>
 
-        {/* ふとるめしの強み */}
-        <div className="mb-16 sm:mb-20">
-          <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-8 font-antique text-center">ふとるめしの強み</h3>
-          <div className="flex flex-col gap-6 sm:gap-8 mb-8">
-            <div className="text-left">
-              <p className="text-4xl sm:text-5xl font-bold text-orange-600 mb-2">900</p>
-              <p className="text-gray-600 mb-4">kcal（平均カロリー）</p>
-            </div>
-            <div className="text-left">
-              <p className="text-4xl sm:text-5xl font-bold text-orange-600 mb-2">70</p>
-              <p className="text-gray-600 mb-4">タンパク質 g</p>
-            </div>
-            <div className="text-left">
-              <p className="text-2xl sm:text-3xl font-bold text-orange-600 mb-2">管理栄養士</p>
-              <p className="text-gray-600 mb-4">監修</p>
-            </div>
-          </div>
-        </div>
 
       </div>
     </section>

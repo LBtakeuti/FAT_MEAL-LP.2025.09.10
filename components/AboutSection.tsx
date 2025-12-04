@@ -23,7 +23,7 @@ const AboutSection: React.FC = () => {
   return (
     <section className="relative overflow-hidden bg-white py-12 sm:py-20">
       {/* 上部の波形 - オレンジ背景から遷移 */}
-      <div className="absolute top-0 left-0 w-full overflow-hidden leading-none" style={{ transform: 'translateY(-1px)' }}>
+      <div className="absolute top-0 left-0 w-full overflow-hidden leading-none z-10" style={{ transform: 'translateY(-1px)' }}>
         <svg
           className="relative block w-full h-16 sm:h-24"
           xmlns="http://www.w3.org/2000/svg"
@@ -38,7 +38,7 @@ const AboutSection: React.FC = () => {
       </div>
 
       {/* 下部の波形 - 次のセクションへの遷移 */}
-      <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none" style={{ transform: 'translateY(1px)' }}>
+      <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none z-10" style={{ transform: 'translateY(1px)' }}>
         <svg
           className="relative block w-full h-16 sm:h-24"
           xmlns="http://www.w3.org/2000/svg"
@@ -53,19 +53,24 @@ const AboutSection: React.FC = () => {
         </svg>
       </div>
 
-      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 z-20">
         {/* ヘッダー */}
         <div className="text-center mb-10 sm:mb-16">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 sm:mb-6">
-            ふとるめしとは
-          </h2>
-          <p className="text-base sm:text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            <span className="font-bold text-orange-600">量が足りない、味が薄い、ご飯が進まない</span>
-            <br className="hidden sm:block" />
-            既存の宅食サービスでよく聞く悩みを解消し、
-            <br className="hidden sm:block" />
-            ボリューム・味・ご飯との相性を妥協なく追求したお弁当です。
-          </p>
+          {/* セクションタイトル */}
+          <div className="text-center mb-10 sm:mb-16 relative">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 relative z-10">
+              ふとるめしとは
+            </h2>
+            <div className="flex justify-center -mt-6 sm:-mt-8 relative z-0">
+              <Image
+                src="/b_simple_111_0M 2.png"
+                alt=""
+                width={3923}
+                height={465}
+                className="w-full max-w-3xl h-auto"
+              />
+            </div>
+          </div>
         </div>
 
         {/* 3つの特徴 */}
