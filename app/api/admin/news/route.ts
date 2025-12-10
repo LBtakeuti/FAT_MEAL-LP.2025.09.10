@@ -61,8 +61,8 @@ export async function POST(request: NextRequest) {
       summary: body.summary || null,
     };
     
-    const { data, error } = await supabase
-      .from('news')
+    const { data, error } = await (supabase
+      .from('news') as any)
       .insert(newsData)
       .select()
       .single();

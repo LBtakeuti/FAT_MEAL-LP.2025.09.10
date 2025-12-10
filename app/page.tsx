@@ -13,7 +13,6 @@ import HeroSection from '@/components/HeroSection';
 import ProblemsSection from '@/components/ProblemsSection';
 import AboutSection from '@/components/AboutSection';
 import StatsSection from '@/components/StatsSection';
-import TargetUsersSection from '@/components/TargetUsersSection';
 import PurchaseFlowSection from '@/components/PurchaseFlowSection';
 import MenuSection from '@/components/MenuSection';
 import CTASection from '@/components/CTASection';
@@ -72,16 +71,13 @@ export default function Home() {
               <MenuSection />
             </SwiperSlide>
             <SwiperSlide>
-              <TargetUsersSection />
-            </SwiperSlide>
-            <SwiperSlide>
-              <PurchaseFlowSection />
+              <CTASection />
             </SwiperSlide>
             <SwiperSlide>
               <StatsSection />
             </SwiperSlide>
             <SwiperSlide>
-              <CTASection />
+              <PurchaseFlowSection />
             </SwiperSlide>
             <SwiperSlide>
               <NewsSection />
@@ -102,10 +98,9 @@ export default function Home() {
           <ProblemsSection />
           <AboutSection />
           <MenuSection />
-          <TargetUsersSection />
-          <PurchaseFlowSection />
-          <StatsSection />
           <CTASection />
+          <StatsSection />
+          <PurchaseFlowSection />
           <NewsSection />
           <Footer />
           {/* モバイルではフッターナビゲーションを表示 */}

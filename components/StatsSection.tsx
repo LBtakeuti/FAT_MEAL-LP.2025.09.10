@@ -348,7 +348,6 @@ const StatsSection: React.FC = () => {
           )}
         </div>
 
-
       </div>
     </section>
   );

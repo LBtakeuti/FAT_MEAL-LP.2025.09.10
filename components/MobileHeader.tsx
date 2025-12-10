@@ -19,14 +19,14 @@ const MobileHeader: React.FC = () => {
     <>
       {/* Header - 常に表示 */}
       <header className="fixed top-0 left-0 right-0 bg-white shadow-md sm:hidden z-50">
-        <div className="flex items-center justify-between h-16 px-4">
+        <div className="flex items-center justify-between h-20 px-4">
           <Link href="/" className="ml-4">
             <Image
               src="/logo-header.png"
               alt="ふとるめし"
               width={240}
               height={80}
-              className="h-12 w-auto"
+              className="h-14 w-auto"
               priority
             />
           </Link>
@@ -43,13 +43,13 @@ const MobileHeader: React.FC = () => {
             aria-label={isMenuOpen ? 'メニューを閉じる' : 'メニューを開く'}
           >
             <div className="relative w-6 h-5">
-              <span className={`absolute left-0 w-full h-0.5 bg-gray-700 transition-all duration-300 ease-in-out ${
+              <span className={`absolute left-0 w-full h-0.5 bg-[#374151] transition-all duration-300 ease-in-out ${
                 isMenuOpen ? 'top-2 rotate-45' : 'top-0'
               }`} />
-              <span className={`absolute left-0 top-2 w-full h-0.5 bg-gray-700 transition-all duration-300 ease-in-out ${
+              <span className={`absolute left-0 top-2 w-full h-0.5 bg-[#374151] transition-all duration-300 ease-in-out ${
                 isMenuOpen ? 'opacity-0' : 'opacity-100'
               }`} />
-              <span className={`absolute left-0 w-full h-0.5 bg-gray-700 transition-all duration-300 ease-in-out ${
+              <span className={`absolute left-0 w-full h-0.5 bg-[#374151] transition-all duration-300 ease-in-out ${
                 isMenuOpen ? 'top-2 -rotate-45' : 'top-4'
               }`} />
             </div>
@@ -59,7 +59,7 @@ const MobileHeader: React.FC = () => {
 
       {/* Dropdown Menu - ヒーローセクションの上に被せる */}
       <div
-        className={`fixed top-16 left-0 right-0 overflow-hidden transition-all duration-300 ease-in-out bg-white sm:hidden z-40 ${
+        className={`fixed top-20 left-0 right-0 overflow-hidden transition-all duration-300 ease-in-out bg-white sm:hidden z-40 ${
           isMenuOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
         }`}
       >

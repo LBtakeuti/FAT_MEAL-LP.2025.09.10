@@ -42,6 +42,10 @@ export default function EditMenuPage({ params: promiseParams }: { params: Promis
   const [allergenInput, setAllergenInput] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [draggingMain, setDraggingMain] = useState(false);
+  const [draggingSub, setDraggingSub] = useState<number | null>(null);
+  const [uploadingMain, setUploadingMain] = useState(false);
+  const [uploadingSub, setUploadingSub] = useState<number | null>(null);
 
   useEffect(() => {
     fetchMenuItem();
@@ -162,6 +166,92 @@ export default function EditMenuPage({ params: promiseParams }: { params: Promis
     }));
   };
 
+  const handleFileUpload = async (file: File, isSubImage: boolean = false, subIndex?: number) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      if (isSubImage && subIndex !== undefined) {
+        setUploadingSub(subIndex);
+      } else {
+        setUploadingMain(true);
+      }
+
+      const response = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (isSubImage && subIndex !== undefined) {
+          handleSubImageChange(subIndex, data.url);
+        } else {
+          setFormData(prev => ({ ...prev, main_image: data.url }));
+        }
+      } else {
+        alert('画像のアップロードに失敗しました');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('エラーが発生しました');
+    } finally {
+      if (isSubImage && subIndex !== undefined) {
+        setUploadingSub(null);
+      } else {
+        setUploadingMain(false);
+      }
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent, isSubImage: boolean = false, subIndex?: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isSubImage && subIndex !== undefined) {
+      setDraggingSub(subIndex);
+    } else {
+      setDraggingMain(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDraggingMain(false);
+    setDraggingSub(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, isSubImage: boolean = false, subIndex?: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (isSubImage && subIndex !== undefined) {
+      setDraggingSub(null);
+    } else {
+      setDraggingMain(false);
+    }
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      if (file.type.startsWith('image/')) {
+        handleFileUpload(file, isSubImage, subIndex);
+      } else {
+        alert('画像ファイルを選択してください');
+      }
+    }
+  };
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>, isSubImage: boolean = false, subIndex?: number) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      handleFileUpload(file, isSubImage, subIndex);
+    }
+    // 同じファイルを再度選択できるようにリセット
+    e.target.value = '';
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -239,16 +329,65 @@ export default function EditMenuPage({ params: promiseParams }: { params: Promis
               
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="main_image" className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="main_image" className="block text-sm font-medium text-gray-700 mb-2">
                     メイン画像URL
                   </label>
+                  <div
+                    onDragOver={(e) => handleDragOver(e)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e)}
+                    className={`mt-1 border-2 border-dashed rounded-md p-6 text-center transition-colors ${
+                      draggingMain
+                        ? 'border-orange-500 bg-orange-50'
+                        : 'border-gray-300 bg-gray-50'
+                    }`}
+                  >
+                    {uploadingMain ? (
+                      <div className="text-gray-600">アップロード中...</div>
+                    ) : formData.main_image ? (
+                      <div className="relative">
+                        <img
+                          src={formData.main_image}
+                          alt="プレビュー"
+                          className="max-w-full max-h-64 mx-auto object-contain border border-gray-300 rounded"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, main_image: '' }))}
+                          className="mt-2 text-sm text-red-600 hover:text-red-800"
+                        >
+                          画像を削除
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-sm text-gray-600 mb-2">
+                          画像をドラッグ&ドロップするか、クリックして選択
+                        </p>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleFileInput(e)}
+                          className="hidden"
+                          id="main_image_file"
+                        />
+                        <label
+                          htmlFor="main_image_file"
+                          className="inline-block px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 cursor-pointer text-sm"
+                        >
+                          ファイルを選択
+                        </label>
+                      </>
+                    )}
+                  </div>
                   <input
-                    type="url"
+                    type="text"
                     id="main_image"
                     name="main_image"
                     value={formData.main_image}
                     onChange={handleChange}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm px-3 py-2 border"
+                    className="mt-2 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm px-3 py-2 border"
+                    placeholder="https://example.com/image.jpg または上記からアップロード（任意）"
                   />
                 </div>
 
@@ -257,14 +396,63 @@ export default function EditMenuPage({ params: promiseParams }: { params: Promis
                     サブ画像URL（最大4枚）
                   </label>
                   {formData.sub_images.map((img, index) => (
-                    <input
-                      key={index}
-                      type="url"
-                      value={img}
-                      onChange={(e) => handleSubImageChange(index, e.target.value)}
-                      className="mt-2 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm px-3 py-2 border"
-                      placeholder={`サブ画像${index + 1}`}
-                    />
+                    <div key={index} className="mt-2">
+                      <div
+                        onDragOver={(e) => handleDragOver(e, true, index)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, true, index)}
+                        className={`border-2 border-dashed rounded-md p-4 text-center transition-colors ${
+                          draggingSub === index
+                            ? 'border-orange-500 bg-orange-50'
+                            : 'border-gray-300 bg-gray-50'
+                        }`}
+                      >
+                        {uploadingSub === index ? (
+                          <div className="text-gray-600 text-sm">アップロード中...</div>
+                        ) : img ? (
+                          <div className="relative">
+                            <img
+                              src={img}
+                              alt={`サブ画像${index + 1} プレビュー`}
+                              className="max-w-full max-h-48 mx-auto object-contain border border-gray-300 rounded"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleSubImageChange(index, '')}
+                              className="mt-2 text-xs text-red-600 hover:text-red-800"
+                            >
+                              画像を削除
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <p className="text-xs text-gray-600 mb-2">
+                              画像をドラッグ&ドロップするか、クリックして選択
+                            </p>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleFileInput(e, true, index)}
+                              className="hidden"
+                              id={`sub_image_file_${index}`}
+                            />
+                            <label
+                              htmlFor={`sub_image_file_${index}`}
+                              className="inline-block px-3 py-1 bg-orange-600 text-white rounded-md hover:bg-orange-700 cursor-pointer text-xs"
+                            >
+                              ファイルを選択
+                            </label>
+                          </>
+                        )}
+                      </div>
+                      <input
+                        type="text"
+                        value={img}
+                        onChange={(e) => handleSubImageChange(index, e.target.value)}
+                        className="mt-2 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm px-3 py-2 border"
+                        placeholder={`サブ画像${index + 1} URL または上記からアップロード（任意）`}
+                      />
+                    </div>
                   ))}
                 </div>
               </div>

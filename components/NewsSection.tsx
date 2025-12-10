@@ -1,10 +1,73 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { newsItems } from '@/data/newsData';
+
+interface NewsItem {
+  id: string;
+  title: string;
+  date: string;
+  excerpt: string | null;
+  content: string;
+  image: string | null;
+}
 
 const NewsSection: React.FC = () => {
+  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchNews = async () => {
+      try {
+        const res = await fetch('/api/news');
+        if (res.ok) {
+          const data = await res.json();
+          setNewsItems(data);
+        }
+      } catch (error) {
+        console.error('ニュースの取得に失敗しました:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNews();
+  }, []);
+
+  // 日付をフォーマット（YYYY-MM-DD → YYYY.MM.DD）
+  const formatDate = (dateStr: string) => {
+    return dateStr.replace(/-/g, '.');
+  };
+
+  if (loading) {
+    return (
+      <section className="relative overflow-hidden bg-[#fff7ed] pt-6 sm:pt-12 pb-20 sm:pb-12 flex flex-col">
+        <div className="relative max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col">
+          <div className="text-center mb-6 sm:mb-8">
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900">
+              お知らせ
+            </h2>
+          </div>
+          <div className="text-center text-gray-500">読み込み中...</div>
+        </div>
+      </section>
+    );
+  }
+
+  if (newsItems.length === 0) {
+    return (
+      <section className="relative overflow-hidden bg-[#fff7ed] pt-6 sm:pt-12 pb-20 sm:pb-12 flex flex-col">
+        <div className="relative max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col">
+          <div className="text-center mb-6 sm:mb-8">
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900">
+              お知らせ
+            </h2>
+          </div>
+          <div className="text-center text-gray-500">現在お知らせはありません</div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="relative overflow-hidden bg-[#fff7ed] pt-6 sm:pt-12 pb-20 sm:pb-12 flex flex-col">
       {/* 上部の波形 */}
@@ -40,7 +103,7 @@ const NewsSection: React.FC = () => {
                 className="block bg-[#fffaf3] p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow"
               >
                 <div className="flex justify-between items-start mb-2">
-                  <p className="text-xs text-gray-500">{item.date}</p>
+                  <p className="text-xs text-gray-500">{formatDate(item.date)}</p>
                   <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
@@ -73,7 +136,7 @@ const NewsSection: React.FC = () => {
                 className="block bg-[#fffaf3] p-6 rounded-xl shadow-sm hover:shadow-lg transition-shadow group"
               >
                 <div className="flex justify-between items-start mb-3">
-                  <p className="text-sm text-gray-500">{item.date}</p>
+                  <p className="text-sm text-gray-500">{formatDate(item.date)}</p>
                   <svg className="w-5 h-5 text-orange-600 group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
@@ -82,7 +145,7 @@ const NewsSection: React.FC = () => {
                   {item.title}
                 </h3>
                 <p className="text-sm text-gray-600 line-clamp-2">
-                  {item.excerpt}
+                  {item.excerpt || ''}
                 </p>
               </Link>
             ))}

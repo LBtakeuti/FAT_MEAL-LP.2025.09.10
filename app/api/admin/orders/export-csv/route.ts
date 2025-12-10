@@ -1,14 +1,27 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 
+// Order型を定義
+interface Order {
+  order_number: string;
+  customer_name: string;
+  address: string;
+  menu_set: string;
+  quantity: number;
+  phone: string;
+  email: string;
+  status: string;
+  created_at: string;
+}
+
 export async function GET() {
   try {
     const supabase = createServerClient();
 
-    const { data: orders, error } = await supabase
-      .from('orders')
+    const { data: orders, error } = await (supabase
+      .from('orders') as any)
       .select('*')
-      .order('order_number', { ascending: true });
+      .order('order_number', { ascending: true }) as { data: Order[] | null; error: any };
 
     if (error) {
       console.error('Orders fetch error:', error);

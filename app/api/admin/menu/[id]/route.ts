@@ -76,8 +76,8 @@ export async function PUT(
       updated_at: new Date().toISOString(),
     };
     
-    const { data, error } = await supabase
-      .from('menu_items')
+    const { data, error } = await (supabase
+      .from('menu_items') as any)
       .update(updateData)
       .eq('id', id)
       .select()

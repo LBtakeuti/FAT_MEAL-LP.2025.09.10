@@ -31,37 +31,6 @@ const PurchaseFlowSection: React.FC = () => {
 
   return (
     <section className="relative overflow-hidden bg-white py-12 sm:py-20">
-      {/* 上部の波形 */}
-      <div className="absolute top-0 left-0 w-full overflow-hidden leading-none" style={{ transform: 'translateY(-1px)' }}>
-        <svg
-          className="relative block w-full h-16 sm:h-24"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 1200 120"
-          preserveAspectRatio="none"
-        >
-          <path
-            d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"
-            className="fill-orange-50"
-          ></path>
-        </svg>
-      </div>
-
-      {/* 下部の波形 */}
-      <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none" style={{ transform: 'translateY(1px)' }}>
-        <svg
-          className="relative block w-full h-16 sm:h-24"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 1200 120"
-          preserveAspectRatio="none"
-          style={{ transform: 'scaleY(-1)' }}
-        >
-          <path
-            d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"
-            className="fill-orange-50"
-          ></path>
-        </svg>
-      </div>
-
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* ヘッダー */}
         <div className="text-center mb-10 sm:mb-16">
@@ -129,13 +98,10 @@ const PurchaseFlowSection: React.FC = () => {
         <div className="mt-12 sm:mt-16 text-center">
           <a
             href="#menu"
-            className="inline-block bg-gradient-to-r from-orange-500 to-red-500 text-white px-10 sm:px-12 py-4 sm:py-5 rounded-xl font-bold text-lg sm:text-xl hover:from-orange-600 hover:to-red-600 transition-all shadow-xl hover:shadow-2xl transform hover:scale-105"
+            className="inline-block bg-orange-500 text-white px-10 sm:px-12 py-4 sm:py-5 rounded-xl font-bold text-lg sm:text-xl hover:bg-orange-600 transition-all shadow-xl hover:shadow-2xl transform hover:scale-105"
           >
             今すぐ注文する
           </a>
-          <p className="mt-4 text-sm sm:text-base text-gray-600">
-            ※ 初回限定キャンペーン実施中
-          </p>
         </div>
       </div>
     </section>

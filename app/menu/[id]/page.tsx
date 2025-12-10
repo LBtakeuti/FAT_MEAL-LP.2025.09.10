@@ -1,25 +1,33 @@
 import { notFound } from 'next/navigation';
 import MenuDetailClient from '@/components/MenuDetailClient';
-import { getDatabaseAdapter } from '@/lib/db-adapter';
+import { getMenuItemById, menuItems } from '@/data/menuData';
+
+// 静的パラメータを生成（ビルド時に全メニューページを事前生成）
+export function generateStaticParams() {
+  return menuItems.map((item) => ({
+    id: item.id,
+  }));
+}
 
 export default async function MenuDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  
-  // データベースから取得（Supabase対応）
-  const db = await getDatabaseAdapter();
-  const menuItem = await db.menu.getById(id);
+
+  // ローカルデータから取得（シンプル）
+  const menuItem = getMenuItemById(id);
 
   if (!menuItem) {
     notFound();
   }
 
-  // MenuItemDBからMenuItem形式に変換
+  // MenuDetailClientに渡す形式に変換
   const formattedMenuItem = {
     ...menuItem,
-    image: menuItem.images?.[0] || '/placeholder-image.jpg', // 最初の画像をimageに設定
-    ingredients: typeof menuItem.ingredients === 'string' 
-      ? menuItem.ingredients.split(',').map((i: string) => i.trim())
-      : menuItem.ingredients
+    images: [menuItem.image],
+    price: String(menuItem.price),
+    calories: String(menuItem.calories),
+    protein: String(menuItem.protein),
+    fat: String(menuItem.fat),
+    carbs: String(menuItem.carbs),
   };
 
   return <MenuDetailClient menuItem={formattedMenuItem} />;

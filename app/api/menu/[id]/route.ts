@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabaseAdapter } from '@/lib/db-adapter';
+import { createServerClient } from '@/lib/supabase';
 
 // 公開API - 認証不要
 export async function GET(
@@ -8,35 +8,53 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const db = await getDatabaseAdapter();
-    const item = await db.menu.getById(id);
-    
-    if (!item) {
+    const supabase = createServerClient();
+
+    // UUIDかスラッグかを判定
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+    let data: any, error;
+    if (isUUID) {
+      const result = await supabase
+        .from('menu_items')
+        .select('*')
+        .eq('id', id)
+        .single();
+      data = result.data;
+      error = result.error;
+    } else {
+      const result = await supabase
+        .from('menu_items')
+        .select('*')
+        .eq('slug', id)
+        .single();
+      data = result.data;
+      error = result.error;
+    }
+
+    if (error || !data) {
       return NextResponse.json(
         { message: 'メニューが見つかりません' },
         { status: 404 }
       );
     }
-    
-    // フロントエンド用に整形
-    const formattedItem = {
-      id: item.id,
-      name: item.name,
-      description: item.description,
-      price: item.price,
-      calories: item.calories,
-      protein: item.protein,
-      fat: item.fat,
-      carbs: item.carbs,
-      image: item.images && item.images.length > 0 ? item.images[0] : '/default-bento.jpeg',
-      images: item.images,
-      features: item.features,
-      ingredients: item.ingredients,
-      allergens: item.allergens,
-      stock: item.stock
+
+    // フロント用にフィールド名を変換
+    const menuItem = {
+      id: data.slug || data.id,
+      name: data.name,
+      description: data.description,
+      price: String(data.price),
+      calories: String(data.calories),
+      protein: String(data.protein),
+      fat: String(data.fat),
+      carbs: String(data.carbs),
+      image: data.main_image,
+      ingredients: data.ingredients || [],
+      allergens: data.allergens || []
     };
-    
-    return NextResponse.json(formattedItem);
+
+    return NextResponse.json(menuItem);
   } catch (error) {
     console.error('Menu item fetch error:', error);
     return NextResponse.json(

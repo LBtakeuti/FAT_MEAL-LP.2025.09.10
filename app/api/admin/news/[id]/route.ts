@@ -70,8 +70,8 @@ export async function PUT(
       updated_at: new Date().toISOString(),
     };
     
-    const { data, error } = await supabase
-      .from('news')
+    const { data, error } = await (supabase
+      .from('news') as any)
       .update(updateData)
       .eq('id', id)
       .select()

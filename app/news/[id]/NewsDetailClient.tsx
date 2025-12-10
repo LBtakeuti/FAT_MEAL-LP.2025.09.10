@@ -3,34 +3,49 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { NewsItem, newsItems } from '@/data/newsData';
 import MobileHeader from '@/components/MobileHeader';
 import Header from '@/components/Header';
 
-interface NewsDetailClientProps {
-  newsItem: NewsItem;
+interface NewsItem {
+  id: string;
+  title: string;
+  date: string;
+  excerpt: string | null;
+  content: string;
+  image: string | null;
 }
 
-const NewsDetailClient: React.FC<NewsDetailClientProps> = ({ newsItem }) => {
+interface NewsDetailClientProps {
+  newsItem: NewsItem;
+  allNews: NewsItem[];
+}
+
+const NewsDetailClient: React.FC<NewsDetailClientProps> = ({ newsItem, allNews }) => {
   // 現在の記事を除いた最新3件のニュースを取得
-  const relatedNews = newsItems
+  const relatedNews = allNews
     .filter(item => item.id !== newsItem.id)
     .slice(0, 3);
+
+  // 日付をフォーマット（YYYY-MM-DD → YYYY.MM.DD）
+  const formatDate = (dateStr: string) => {
+    return dateStr.replace(/-/g, '.');
+  };
+
   return (
     <div className="min-h-screen bg-white">
       {/* Mobile Header */}
       <MobileHeader />
-      
+
       {/* Desktop Header */}
       <Header />
 
       <main className="pt-14 sm:pt-20 pb-20">
         <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[800px] lg:px-8 mx-auto">
-          
+
           {/* Breadcrumb Navigation */}
           <div className="mb-6">
-            <Link 
-              href="/news" 
+            <Link
+              href="/news"
               className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
             >
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -42,7 +57,7 @@ const NewsDetailClient: React.FC<NewsDetailClientProps> = ({ newsItem }) => {
 
           {/* Article Header */}
           <div className="mb-8">
-            <p className="text-sm text-gray-500 mb-3">{newsItem.date}</p>
+            <p className="text-sm text-gray-500 mb-3">{formatDate(newsItem.date)}</p>
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               {newsItem.title}
             </h1>
@@ -94,7 +109,7 @@ const NewsDetailClient: React.FC<NewsDetailClientProps> = ({ newsItem }) => {
                       </div>
                     )}
                     <div className="p-4">
-                      <p className="text-xs text-gray-500 mb-2">{item.date}</p>
+                      <p className="text-xs text-gray-500 mb-2">{formatDate(item.date)}</p>
                       <h3 className="text-sm font-bold text-gray-900 line-clamp-2 group-hover:text-orange-600 transition-colors">
                         {item.title}
                       </h3>

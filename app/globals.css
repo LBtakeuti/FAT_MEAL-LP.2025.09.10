@@ -4,7 +4,7 @@
 
 
 :root {
-  --foreground: #1a1a1a;
+  --foreground: #5A5A5A;
   --background: #ffffff;
   
   /* Safe Area CSS Variables */
@@ -128,10 +128,22 @@ body {
     padding-right: 16px;
     min-height: 100dvh;
   }
-  
+
+  /* ヒーローセクションはパディングなし（スワイプモード） */
+  .swiper-slide section#hero {
+    padding: 0;
+    min-height: auto;
+  }
+
   /* 通常スクロールモードを有効化 */
   .normal-scroll section {
     padding-top: 70px;
+  }
+
+  /* ヒーローセクションはパディングなし（通常スクロール）、ただしヘッダー分のマージンは確保 */
+  .normal-scroll section#hero {
+    padding: 0;
+    margin-top: 80px;
   }
 }
 
@@ -140,13 +152,18 @@ body {
   .swipe-container {
     display: none;
   }
-  
+
   .swipe-indicator {
     display: none;
   }
-  
+
   .normal-scroll section {
     padding: clamp(32px, 5vh, 56px) 24px;
+  }
+
+  /* ヒーローセクションはパディングなし */
+  .normal-scroll section#hero {
+    padding: 0;
   }
 }
 

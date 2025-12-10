@@ -135,3 +135,32 @@ export async function signOut(token?: string): Promise<void> {
     console.error('サインアウトエラー:', error);
   }
 }
+
+/**
+ * 認証結果の型定義
+ */
+export interface AuthResult {
+  authenticated: boolean;
+  user?: AdminUser;
+}
+
+/**
+ * リクエストの認証を検証
+ * @param req NextRequest
+ * @returns 認証結果
+ */
+export async function verifyAuth(req: NextRequest): Promise<AuthResult> {
+  const token = getAuthToken(req);
+
+  if (!token) {
+    return { authenticated: false };
+  }
+
+  const user = await verifyToken(token);
+
+  if (!user) {
+    return { authenticated: false };
+  }
+
+  return { authenticated: true, user };
+}

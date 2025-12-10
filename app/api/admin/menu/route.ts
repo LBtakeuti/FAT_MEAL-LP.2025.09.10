@@ -68,8 +68,8 @@ export async function POST(request: NextRequest) {
       display_order: body.display_order || 0,
     };
     
-    const { data, error } = await supabase
-      .from('menu_items')
+    const { data, error } = await (supabase
+      .from('menu_items') as any)
       .insert(menuData)
       .select()
       .single();

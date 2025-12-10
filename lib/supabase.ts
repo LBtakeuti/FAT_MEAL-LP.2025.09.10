@@ -211,20 +211,54 @@ export const db = {
     },
     
     async getById(id: string): Promise<MenuItemDB | null> {
-      const client = createBrowserClient();
-      if (!client) return null;
-      
-      const { data, error } = await client
-        .from('menu_items')
-        .select('*')
-        .eq('id', id)
-        .single();
-      
+      // サーバーサイドかクライアントサイドかを判定
+      const isServer = typeof window === 'undefined';
+
+      let client;
+      if (isServer) {
+        // サーバーサイドではservice role keyがあればそれを使用、なければanon keyで
+        const { url, anonKey, serviceRoleKey } = validateEnv();
+        client = createClient(url, serviceRoleKey || anonKey, {
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false
+          }
+        });
+      } else {
+        client = createBrowserClient();
+        if (!client) return null;
+      }
+
+      // UUIDかスラッグかを判定
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+      let data, error;
+      if (isUUID) {
+        // UUIDの場合はidで検索
+        const result = await client
+          .from('menu_items')
+          .select('*')
+          .eq('id', id)
+          .single();
+        data = result.data;
+        error = result.error;
+      } else {
+        // スラッグの場合はslugカラムで検索
+        const result = await client
+          .from('menu_items')
+          .select('*')
+          .eq('slug', id)
+          .single();
+        data = result.data;
+        error = result.error;
+      }
+
       if (error) {
-        console.error('メニュー取得エラー:', error);
+        console.error('メニュー取得エラー:', JSON.stringify(error, null, 2));
+        console.error('エラー詳細:', error.message, error.code, error.details, error.hint);
         return null;
       }
-      
+
       return data;
     },
     

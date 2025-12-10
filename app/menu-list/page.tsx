@@ -5,6 +5,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { menuItems as staticMenuItems } from '@/data/menuData';
 import MobileHeader from '@/components/MobileHeader';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import { useRouter } from 'next/navigation';
 
 export default function MenuListPage() {
@@ -41,15 +43,31 @@ export default function MenuListPage() {
     }
   };
   
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">読み込み中...</p>
+        </div>
+      </div>
+    );
+  }
+  
   return (
-    <div className="h-[100dvh] bg-gray-50 flex flex-col">
-      {/* Mobile Header */}
-      <MobileHeader />
+    <div className="min-h-screen bg-white flex flex-col">
+      {/* Headers */}
+      <div className="sm:hidden">
+        <MobileHeader />
+      </div>
+      <div className="hidden sm:block">
+        <Header />
+      </div>
 
-      <main className="flex-1 pt-14 sm:pt-20 pb-20 flex flex-col">
-        <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto w-full flex-1 flex flex-col">
+      <main className="flex-1 pt-14 sm:pt-20 pb-12 sm:pb-20">
+        <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto w-full">
           {/* Back button */}
-          <div className="mt-4 mb-4">
+          <div className="mb-6 sm:mb-8">
             <button
               onClick={() => router.push('/')}
               className="inline-flex items-center text-gray-600 hover:text-orange-600 transition-colors"
@@ -61,119 +79,76 @@ export default function MenuListPage() {
             </button>
           </div>
           
-          <div className="text-center mb-4 sm:mb-12">
-            <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900">
-              弁当<span className="text-orange-600">メニュー</span>一覧
+          {/* Page Title */}
+          <div className="mb-6 sm:mb-12">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
+              メニュー一覧
             </h1>
           </div>
 
-          {/* Mobile: Vertical cards with left image, right text */}
-          <div className="sm:hidden bg-white rounded-lg shadow-sm p-4 flex-1 flex flex-col justify-between">
-            <div className="flex-1 flex flex-col justify-evenly">
-              {menuItems.map((item, index) => (
-                <div key={index}>
-                  <Link href={`/menu/${item.id}`} className="flex gap-3 py-3 px-1">
-                    <div className="relative w-[80px] h-[80px] flex-shrink-0">
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        fill
-                        className="object-cover rounded-lg"
-                        sizes="80px"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-sm font-bold text-gray-900 mb-1">
-                        {item.name}
-                      </h3>
-                      <p className="text-[11px] text-gray-600 mb-2 leading-relaxed">
-                        {item.description}
-                      </p>
-                      <div className="flex items-center gap-3">
-                        <span className="text-base font-bold text-orange-600">
-                          {item.calories}kcal
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
-                  {index < menuItems.length - 1 && (
-                    <div className="border-b border-gray-100 mx-2"></div>
-                  )}
-                </div>
-              ))}
-            </div>
-            
-            {/* Purchase Button */}
-            <div className="mt-4">
-              <button
-                onClick={() => router.push('/purchase')}
-                className="w-full bg-orange-600 text-white py-3 rounded-full font-semibold hover:bg-orange-700 transition-colors"
+          {/* Grid Layout */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            {menuItems.map((item) => (
+              <Link
+                key={item.id}
+                href={`/menu/${item.id}`}
+                className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer flex flex-col"
               >
-                購入へ進む
-              </button>
-            </div>
-          </div>
-
-          {/* Desktop: Vertical cards similar to mobile */}
-          <div className="hidden sm:flex sm:flex-col sm:flex-1 max-w-[900px] mx-auto w-full">
-            <div className="bg-white rounded-xl shadow-sm p-6 space-y-6 flex-1">
-              {menuItems.map((item, index) => (
-                <div key={index} className="border-b border-gray-100 pb-6 last:border-0">
-                  <Link href={`/menu/${item.id}`} className="flex gap-6 hover:bg-gray-50 p-4 -m-4 rounded-lg transition-colors">
-                    <div className="relative w-[150px] h-[150px] flex-shrink-0">
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        fill
-                        className="object-cover rounded-lg"
-                        sizes="150px"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">
-                        {item.name}
-                      </h3>
-                      <p className="text-gray-600 mb-3 line-clamp-2">
-                        {item.description}
-                      </p>
-                      <div className="flex items-center gap-6">
-                        <span className="text-2xl font-bold text-orange-600">
-                          {item.calories}kcal
-                        </span>
-                      </div>
-                      <div className="flex gap-6 mt-3 text-sm">
-                        <div>
-                          <span className="text-gray-500">タンパク質</span>
-                          <span className="font-semibold text-gray-900 ml-1">{item.protein}g</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">脂質</span>
-                          <span className="font-semibold text-gray-900 ml-1">{item.fat}g</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">炭水化物</span>
-                          <span className="font-semibold text-gray-900 ml-1">{item.carbs}g</span>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
+                {/* Image */}
+                <div className="relative w-full h-[200px] sm:h-[220px]">
+                  <Image
+                    src={item.image}
+                    alt={item.name}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                  />
                 </div>
-              ))}
-              
-              {/* Purchase Button */}
-              <div className="pt-6">
-                <button
-                  onClick={() => router.push('/purchase')}
-                  className="w-full bg-orange-600 text-white py-4 rounded-full font-semibold text-lg hover:bg-orange-700 transition-colors"
-                >
-                  購入へ進む
-                </button>
-              </div>
-            </div>
+                
+                {/* Content */}
+                <div className="p-4 sm:p-5 flex flex-col flex-grow">
+                  {/* Menu Name */}
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2 line-clamp-2">
+                    {item.name}
+                  </h3>
+                  
+                  {/* Calories */}
+                  <div className="mb-2">
+                    <span className="text-xl sm:text-2xl font-bold text-orange-600">
+                      {item.calories}
+                    </span>
+                    <span className="text-sm text-gray-600 ml-1">kcal</span>
+                  </div>
+                  
+                  {/* Description */}
+                  <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-2 flex-grow">
+                    {item.description}
+                  </p>
+                  
+                  {/* Nutrition Info */}
+                  <div className="space-y-1 text-xs sm:text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">タンパク質</span>
+                      <span className="font-semibold text-gray-900">{item.protein}g</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">脂質</span>
+                      <span className="font-semibold text-gray-900">{item.fat}g</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">炭水化物</span>
+                      <span className="font-semibold text-gray-900">{item.carbs}g</span>
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
           </div>
-
         </div>
       </main>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

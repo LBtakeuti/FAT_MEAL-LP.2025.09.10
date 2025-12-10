@@ -40,6 +40,8 @@ const MenuSection: React.FC = () => {
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const autoSwipeTimer = useRef<NodeJS.Timeout | null>(null);
   const lastInteractionTime = useRef<number>(Date.now());
+  const [isTitleVisible, setIsTitleVisible] = useState(false);
+  const titleRef = useRef<HTMLDivElement>(null);
 
   // APIからメニューデータを取得（バックグラウンドで更新）
   useEffect(() => {
@@ -56,6 +58,30 @@ const MenuSection: React.FC = () => {
     }, 30000);
     
     return () => clearInterval(interval);
+  }, []);
+
+  // タイトルのスクロールアニメーション用
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setIsTitleVisible(true);
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    if (titleRef.current) {
+      observer.observe(titleRef.current);
+    }
+
+    return () => {
+      if (titleRef.current) {
+        observer.unobserve(titleRef.current);
+      }
+    };
   }, []);
 
   const fetchMenuItems = async () => {
@@ -183,11 +209,15 @@ const MenuSection: React.FC = () => {
     return (
       <section id="menu" className="py-8 sm:py-12 bg-orange-50">
         <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3">
+          <div className="mb-6 -mt-2 sm:-mt-1">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
               <span className="text-orange-600">メニュー</span>
             </h2>
-            <p className="text-sm text-gray-600">
+            {/* アンダーライン */}
+            <div className="relative h-0.5 bg-gray-300 overflow-hidden">
+              <div className="absolute top-0 left-0 h-full bg-orange-500 w-full" />
+            </div>
+            <p className="text-sm text-gray-600 mt-4">
               ボリューム満点！高カロリー・高タンパクの特製弁当
             </p>
           </div>
@@ -249,12 +279,37 @@ const MenuSection: React.FC = () => {
   );
 
   return (
-    <section id="menu" className="bg-[#fff7ed] flex flex-col sm:block py-4 sm:py-8">
-      <div className="flex-1 flex flex-col sm:block max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto w-full pb-20 sm:pb-0">
-        <div className="text-center mb-3 sm:mb-8">
-          <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900">
-            <span className="text-orange-600">メニュー</span>
-          </h2>
+    <section id="menu" className="relative overflow-hidden bg-[#fff7ed] flex flex-col sm:block py-4 sm:py-8">
+      {/* 上部の波形 */}
+      <div className="absolute top-0 left-0 w-full overflow-hidden leading-none z-10" style={{ transform: 'translateY(-1px)' }}>
+        <svg
+          className="relative block w-full h-16 sm:h-24"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 1200 120"
+          preserveAspectRatio="none"
+        >
+          <path
+            d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"
+            className="fill-white"
+          ></path>
+        </svg>
+      </div>
+      
+      <div className="relative z-20 flex-1 flex flex-col sm:block max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto w-full pb-20 sm:pb-0">
+        <div ref={titleRef} className="mb-3 sm:mb-8 -mt-2 sm:-mt-1">
+          <div className="mb-2">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+              <span className="text-orange-600">メニュー</span>
+            </h2>
+          </div>
+          {/* アンダーライン */}
+          <div className="relative h-0.5 bg-gray-300 overflow-hidden">
+            <div
+              className={`absolute top-0 left-0 h-full bg-orange-500 transition-all duration-1000 ease-out ${
+                isTitleVisible ? 'w-full' : 'w-0'
+              }`}
+            />
+          </div>
         </div>
 
         {/* Mobile: Single card with pagination and swipe */}
@@ -337,8 +392,8 @@ const MenuSection: React.FC = () => {
           </div>
         </div>
 
-        {/* Desktop: All cards in a list */}
-        <div className="hidden sm:block space-y-8">
+        {/* Desktop: Grid layout */}
+        <div className="hidden sm:grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {menuItems.map((item, index) => (
             <div 
               key={index} 
@@ -347,49 +402,45 @@ const MenuSection: React.FC = () => {
                 e.stopPropagation();
                 router.push(`/menu/${item.id}`);
               }}
-              className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer"
+              className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer flex flex-col"
             >
-              <div className="flex h-[280px]">
-                <div className="relative w-[40%]">
-                  <Image
-                    src={item.image}
-                    alt={item.name}
-                    fill
-                    className="object-cover"
-                    sizes="40vw"
-                  />
+              <div className="relative w-full h-[200px]">
+                <Image
+                  src={item.image}
+                  alt={item.name}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 50vw, 33vw"
+                />
+              </div>
+              <div className="p-6 flex flex-col flex-grow">
+                <h3 className="text-xl font-bold text-gray-900 mb-3">
+                  {item.name}
+                </h3>
+                <div className="mb-4">
+                  <span className="text-3xl font-bold text-orange-600">
+                    {item.calories}
+                  </span>
+                  <span className="text-sm text-gray-600 ml-1">kcal</span>
                 </div>
-                <div className="w-[60%] p-6 flex flex-col justify-between">
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-3">
-                      {item.name}
-                    </h3>
-                    <div className="mb-3">
-                      <span className="text-4xl font-bold text-orange-600">
-                        {item.calories}
-                      </span>
-                      <span className="text-sm text-gray-600 ml-1">kcal</span>
-                    </div>
+                <div className="space-y-2 mb-4 flex-grow">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">タンパク質</span>
+                    <span className="font-semibold text-gray-900">{item.protein}g</span>
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">タンパク質</span>
-                      <span className="font-semibold text-gray-900">{item.protein}g</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">脂質</span>
-                      <span className="font-semibold text-gray-900">{item.fat}g</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">炭水化物</span>
-                      <span className="font-semibold text-gray-900">{item.carbs}g</span>
-                    </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">脂質</span>
+                    <span className="font-semibold text-gray-900">{item.fat}g</span>
                   </div>
-                  <div className="flex items-center justify-end mt-4">
-                    <span className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors text-sm">
-                      詳細を見る
-                    </span>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">炭水化物</span>
+                    <span className="font-semibold text-gray-900">{item.carbs}g</span>
                   </div>
+                </div>
+                <div className="flex items-center justify-center mt-auto">
+                  <span className="bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700 transition-colors text-sm">
+                    詳細を見る
+                  </span>
                 </div>
               </div>
             </div>

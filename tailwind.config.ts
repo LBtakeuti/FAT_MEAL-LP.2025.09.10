@@ -18,6 +18,18 @@ export default {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        gray: {
+          50: '#f9fafb',
+          100: '#f3f4f6',
+          200: '#e5e7eb',
+          300: '#d1d5db',
+          400: '#9ca3af',
+          500: '#6b7280',
+          600: '#5A5A5A',
+          700: '#5A5A5A',
+          800: '#5A5A5A',
+          900: '#5A5A5A',
+        },
         orange: {
           50: '#fff7ed',
           100: '#ffedd5',

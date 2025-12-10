@@ -28,8 +28,8 @@ export async function PATCH(
       );
     }
     
-    const { data, error } = await supabase
-      .from('contacts')
+    const { data, error } = await (supabase
+      .from('contacts') as any)
       .update({ status: body.status })
       .eq('id', id)
       .select()
@@ -90,6 +90,7 @@ export async function DELETE(
     );
   }
 }
+
 
 
 
