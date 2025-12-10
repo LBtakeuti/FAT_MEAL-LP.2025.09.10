@@ -1,25 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { Resend } from 'resend';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-05-28.basil',
-});
+// 遅延初期化（ビルド時にエラーを防ぐ）
+function getStripeClient() {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error('STRIPE_SECRET_KEY is not set');
+  }
+  return new Stripe(process.env.STRIPE_SECRET_KEY);
+}
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+async function getResendClient() {
+  const { Resend } = await import('resend');
+  if (!process.env.RESEND_API_KEY) {
+    return null;
+  }
+  return new Resend(process.env.RESEND_API_KEY);
+}
 
 export async function POST(request: NextRequest) {
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!webhookSecret) {
+    console.error('STRIPE_WEBHOOK_SECRET is not set');
+    return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 });
+  }
+
   const body = await request.text();
-  const signature = request.headers.get('stripe-signature')!;
+  const signature = request.headers.get('stripe-signature');
+
+  if (!signature) {
+    return NextResponse.json({ error: 'No signature provided' }, { status: 400 });
+  }
 
   let event: Stripe.Event;
+  const stripe = getStripeClient();
 
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-  } catch (err: any) {
-    console.error('Webhook signature verification failed:', err.message);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    console.error('Webhook signature verification failed:', message);
     return NextResponse.json({ error: 'Webhook signature verification failed' }, { status: 400 });
   }
 
@@ -28,7 +48,7 @@ export async function POST(request: NextRequest) {
     const session = event.data.object as Stripe.Checkout.Session;
 
     try {
-      await handleSuccessfulPayment(session);
+      await handleSuccessfulPayment(session, stripe);
     } catch (error) {
       console.error('Error handling successful payment:', error);
       return NextResponse.json({ error: 'Error processing payment' }, { status: 500 });
@@ -38,7 +58,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ received: true });
 }
 
-async function handleSuccessfulPayment(session: Stripe.Checkout.Session) {
+async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe: Stripe) {
   const customerEmail = session.customer_details?.email;
   const customerName = session.customer_details?.name;
   const amountTotal = session.amount_total;
@@ -83,6 +103,12 @@ interface OrderEmailParams {
 
 async function sendOrderConfirmationEmail(params: OrderEmailParams) {
   const { email, name, orderId, amount, items } = params;
+
+  const resend = await getResendClient();
+  if (!resend) {
+    console.error('RESEND_API_KEY is not set, skipping email');
+    return;
+  }
 
   const itemsList = items
     .map(item => `・${item.description} × ${item.quantity}`)
@@ -143,7 +169,7 @@ async function sendOrderConfirmationEmail(params: OrderEmailParams) {
 </html>
   `;
 
-  const { data, error } = await resend.emails.send({
+  const { error } = await resend.emails.send({
     from: 'ふとるめし <noreply@resend.dev>',
     to: email,
     subject: '【ふとるめし】ご注文ありがとうございます',
@@ -154,8 +180,6 @@ async function sendOrderConfirmationEmail(params: OrderEmailParams) {
     console.error('Failed to send email:', error);
     throw error;
   }
-
-  return data;
 }
 
 // Slack通知
