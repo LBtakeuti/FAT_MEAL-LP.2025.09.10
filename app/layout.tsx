@@ -3,21 +3,24 @@ import "./globals.css";
 
 
 export const metadata: Metadata = {
-  title: "ふとるめし - 高カロリー・高栄養の冷凍宅食サービス",
-  description: "食べたいのに食べられない方のための高カロリー宅食サービス。管理栄養士監修で1食600kcal以上。体重増加をサポートします。",
+  title: "ふとるめし - 高カロリー・高タンパクの冷凍弁当",
+  description: "ふとるめしは、努力する人を応援し続けます。平均Cal900オーバー、タンパク質70gオーバー。脅威の弁当をご覧あれ。",
+  metadataBase: new URL('https://www.futorumeshi.com'),
   icons: {
     icon: '/logo-favicon.png',
     apple: '/logo-favicon.png',
   },
   openGraph: {
-    title: "ふとるめし - 高カロリー・高栄養の冷凍宅食サービス",
-    description: "食べたいのに食べられない方のための高カロリー宅食サービス。管理栄養士監修で1食600kcal以上。体重増加をサポートします。",
+    title: "ふとるめし - 高カロリー・高タンパクの冷凍弁当",
+    description: "ふとるめしは、努力する人を応援し続けます。平均Cal900オーバー、タンパク質70gオーバー。脅威の弁当をご覧あれ。",
+    url: 'https://www.futorumeshi.com',
+    siteName: 'ふとるめし',
     images: [
       {
         url: '/logo-favicon.png',
         width: 1200,
         height: 630,
-        alt: 'ふとるめし',
+        alt: 'ふとるめし - 高カロリー・高タンパクの冷凍弁当',
       },
     ],
     locale: 'ja_JP',
@@ -25,8 +28,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: "ふとるめし - 高カロリー・高栄養の冷凍宅食サービス",
-    description: "食べたいのに食べられない方のための高カロリー宅食サービス。管理栄養士監修で1食600kcal以上。体重増加をサポートします。",
+    title: "ふとるめし - 高カロリー・高タンパクの冷凍弁当",
+    description: "ふとるめしは、努力する人を応援し続けます。平均Cal900オーバー、タンパク質70gオーバー。脅威の弁当をご覧あれ。",
     images: ['/logo-favicon.png'],
   },
 };

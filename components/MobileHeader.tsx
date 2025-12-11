@@ -74,40 +74,6 @@ const MobileHeader: React.FC = () => {
                 onClick={() => {
                   if (window.location.pathname === '/') {
                     const swiper = (window as any).swiper;
-                    if (swiper) swiper.slideTo(0);
-                  } else {
-                    window.location.href = '/';
-                  }
-                  closeMenu();
-                }}
-                className="block w-full text-left px-6 py-4 text-orange-600 hover:bg-orange-50 active:bg-orange-100 transition-colors font-medium text-lg"
-                style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
-              >
-                TOP
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (window.location.pathname === '/') {
-                    const swiper = (window as any).swiper;
-                    if (swiper) swiper.slideTo(2);
-                  } else {
-                    window.location.href = '/';
-                  }
-                  closeMenu();
-                }}
-                className="block w-full text-left px-6 py-4 text-orange-600 hover:bg-orange-50 active:bg-orange-100 transition-colors font-medium text-lg"
-                style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
-              >
-                どんな人に必要？
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (window.location.pathname === '/') {
-                    const swiper = (window as any).swiper;
                     if (swiper) swiper.slideTo(4);
                   } else {
                     window.location.href = '/';
