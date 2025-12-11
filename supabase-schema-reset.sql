@@ -120,13 +120,59 @@ COMMENT ON COLUMN public.contacts.message IS 'メッセージ内容';
 COMMENT ON COLUMN public.contacts.status IS 'ステータス（pending/responded/closed）';
 
 -- ==========================================
--- 5. Row Level Security (RLS) 設定
+-- 5. 注文テーブル
+-- ==========================================
+
+CREATE TABLE public.orders (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_number SERIAL,
+    stripe_session_id TEXT UNIQUE NOT NULL,
+    stripe_payment_intent_id TEXT,
+    customer_name TEXT NOT NULL,
+    customer_email TEXT NOT NULL,
+    phone TEXT,
+    address TEXT,
+    menu_set TEXT NOT NULL,
+    quantity INTEGER NOT NULL DEFAULT 1,
+    amount INTEGER NOT NULL,
+    currency TEXT NOT NULL DEFAULT 'jpy',
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'shipped', 'delivered', 'cancelled')),
+    notes TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- インデックス
+CREATE INDEX idx_orders_created_at ON public.orders(created_at DESC);
+CREATE INDEX idx_orders_status ON public.orders(status);
+CREATE INDEX idx_orders_customer_email ON public.orders(customer_email);
+CREATE INDEX idx_orders_stripe_session_id ON public.orders(stripe_session_id);
+
+-- コメント
+COMMENT ON TABLE public.orders IS '注文情報';
+COMMENT ON COLUMN public.orders.order_number IS '注文番号（連番）';
+COMMENT ON COLUMN public.orders.stripe_session_id IS 'Stripe Checkout Session ID';
+COMMENT ON COLUMN public.orders.stripe_payment_intent_id IS 'Stripe Payment Intent ID';
+COMMENT ON COLUMN public.orders.customer_name IS '顧客名';
+COMMENT ON COLUMN public.orders.customer_email IS '顧客メールアドレス';
+COMMENT ON COLUMN public.orders.phone IS '電話番号';
+COMMENT ON COLUMN public.orders.address IS '配送先住所';
+COMMENT ON COLUMN public.orders.menu_set IS '注文セット内容';
+COMMENT ON COLUMN public.orders.quantity IS '数量';
+COMMENT ON COLUMN public.orders.amount IS '合計金額';
+COMMENT ON COLUMN public.orders.currency IS '通貨';
+COMMENT ON COLUMN public.orders.status IS 'ステータス';
+COMMENT ON COLUMN public.orders.notes IS '備考';
+
+-- ==========================================
+-- 6. Row Level Security (RLS) 設定
 -- ==========================================
 
 -- RLSを有効化
 ALTER TABLE public.menu_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.news ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.contacts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 
 -- 読み取りポリシー（全ユーザー）
 CREATE POLICY "menu_items_select_policy" ON public.menu_items
@@ -165,6 +211,20 @@ CREATE POLICY "contacts_admin_update_policy" ON public.contacts
     USING (auth.role() = 'authenticated')
     WITH CHECK (auth.role() = 'authenticated');
 
+-- 注文管理（Webhook用のINSERTと管理者用の閲覧・更新）
+CREATE POLICY "orders_service_insert_policy" ON public.orders
+    FOR INSERT
+    WITH CHECK (true);
+
+CREATE POLICY "orders_admin_select_policy" ON public.orders
+    FOR SELECT
+    USING (auth.role() = 'authenticated');
+
+CREATE POLICY "orders_admin_update_policy" ON public.orders
+    FOR UPDATE
+    USING (auth.role() = 'authenticated')
+    WITH CHECK (auth.role() = 'authenticated');
+
 -- ==========================================
 -- 6. 更新日時の自動更新トリガー
 -- ==========================================
@@ -190,6 +250,12 @@ CREATE TRIGGER update_news_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION public.update_updated_at_column();
 
+-- 注文のトリガー
+CREATE TRIGGER update_orders_updated_at
+    BEFORE UPDATE ON public.orders
+    FOR EACH ROW
+    EXECUTE FUNCTION public.update_updated_at_column();
+
 -- ==========================================
 -- 7. サンプルデータ（オプション）
 -- ==========================================
@@ -207,6 +273,7 @@ INSERT INTO public.news (title, content, date, category) VALUES
 -- ==========================================
 -- スクリプト完了
 -- ==========================================
+
 
 
 

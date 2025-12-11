@@ -12,7 +12,6 @@ const HamburgerMenu: React.FC = () => {
 
   const menuItems: MenuItem[] = [
     { label: 'TOP', href: '/' },
-    { label: 'ふとるめしのこだわり', href: 'slide-1' },
     { label: 'どんな人に必要？', href: 'slide-2' },
     { label: 'メニュー一覧', href: '/menu-list' },
     { label: 'お知らせ', href: 'slide-6' },

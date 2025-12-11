@@ -9,6 +9,7 @@ export default function AdminDashboard() {
     totalNews: 0,
     totalContacts: 0,
     pendingContacts: 0,
+    pendingOrders: 0,
     lowStockItems: 0
   });
 
@@ -52,42 +53,13 @@ export default function AdminDashboard() {
         </div>
         
         <div className="bg-white p-6 rounded-lg shadow">
-          <div className="text-gray-600 text-sm">在庫警告</div>
-          <div className="text-3xl font-bold text-red-600 mt-2">{stats.lowStockItems}</div>
-          <div className="text-xs text-gray-500 mt-1">在庫50個以下</div>
-        </div>
-      </div>
-      
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-xl font-bold mb-4">クイックアクション</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <a
-            href="/admin/menu/new"
-            className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
-          >
-            <span>新しい弁当を追加</span>
-          </a>
-          
-          <a
-            href="/admin/news/new"
-            className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-colors"
-          >
-            <span>ニュースを投稿</span>
-          </a>
-          
-          <a
-            href="/admin/contacts"
-            className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-colors"
-          >
-            <span>お問い合わせ確認</span>
-          </a>
-          
-          <a
-            href="/admin/inventory"
-            className="flex items-center justify-center p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-colors"
-          >
-            <span>在庫を確認</span>
-          </a>
+          <div className="text-gray-600 text-sm">未処理注文</div>
+          <div className={`text-3xl font-bold mt-2 ${stats.pendingOrders > 0 ? 'text-orange-600' : 'text-gray-900'}`}>
+            {stats.pendingOrders}
+          </div>
+          {stats.pendingOrders > 0 && (
+            <div className="text-xs text-orange-600 mt-1">対応が必要です</div>
+          )}
         </div>
       </div>
     </div>

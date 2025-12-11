@@ -36,8 +36,8 @@ const MenuSection: React.FC = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
   const [isLoading, setIsLoading] = useState(false); // 初期データがあるのでfalse
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [animationPhase, setAnimationPhase] = useState<'idle' | 'exit' | 'entering' | 'enter'>('idle');
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('left');
   const autoSwipeTimer = useRef<NodeJS.Timeout | null>(null);
   const lastInteractionTime = useRef<number>(Date.now());
   const [isTitleVisible, setIsTitleVisible] = useState(false);
@@ -114,9 +114,6 @@ const MenuSection: React.FC = () => {
     }
   };
 
-  // Minimum swipe distance (in px)
-  const minSwipeDistance = 50;
-
   // Reset auto-swipe timer
   const resetAutoSwipeTimer = () => {
     lastInteractionTime.current = Date.now();
@@ -145,43 +142,48 @@ const MenuSection: React.FC = () => {
     };
   }, []);
 
-  const handlePrevious = () => {
-    setCurrentIndex((prev) => (prev - 1 + menuItems.length) % menuItems.length);
+  const animateToIndex = (newIndex: number, direction: 'left' | 'right') => {
+    if (animationPhase !== 'idle') return;
+
+    setSlideDirection(direction);
+    setAnimationPhase('exit');
+
+    // Exit animation完了後、インデックス変更して入場アニメーション
+    setTimeout(() => {
+      setCurrentIndex(newIndex);
+      // まず入場開始位置に配置（反対側から）
+      setAnimationPhase('entering');
+
+      // 次のフレームで入場アニメーション開始
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setAnimationPhase('enter');
+
+          // Enter animation complete
+          setTimeout(() => {
+            setAnimationPhase('idle');
+          }, 300);
+        });
+      });
+    }, 300);
+
     resetAutoSwipeTimer();
+  };
+
+  const handlePrevious = () => {
+    const newIndex = (currentIndex - 1 + menuItems.length) % menuItems.length;
+    animateToIndex(newIndex, 'right'); // 右方向にスライド（前へ）
   };
 
   const handleNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % menuItems.length);
-    resetAutoSwipeTimer();
+    const newIndex = (currentIndex + 1) % menuItems.length;
+    animateToIndex(newIndex, 'left'); // 左方向にスライド（次へ）
   };
 
   const handleDotClick = (index: number) => {
-    setCurrentIndex(index);
-    resetAutoSwipeTimer();
-  };
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
-  };
-
-  const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-
-    if (isLeftSwipe) {
-      handleNext();
-    }
-    if (isRightSwipe) {
-      handlePrevious();
-    }
+    if (index === currentIndex) return;
+    const direction = index > currentIndex ? 'left' : 'right';
+    animateToIndex(index, direction);
   };
 
   // ローディング中の表示
@@ -312,18 +314,41 @@ const MenuSection: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile: Single card with pagination and swipe */}
+        {/* Mobile: Single card with left/right buttons */}
         <div className="sm:hidden flex-1 flex flex-col">
-          <div 
-            className="flex-1 px-4 mb-2 overflow-visible flex items-center justify-center"
-            onTouchStart={onTouchStart}
-            onTouchMove={onTouchMove}
-            onTouchEnd={onTouchEnd}
-          >
-            <div className="w-full max-w-[340px]">
-              <div 
+          <div className="flex-1 relative flex items-center justify-center px-2 mb-2">
+            {/* Left Arrow Button */}
+            <button
+              type="button"
+              onClick={handlePrevious}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center bg-white/90 rounded-full shadow-lg active:bg-orange-100 transition-colors"
+              style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
+              aria-label="前のメニュー"
+            >
+              <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+
+            {/* Menu Card */}
+            <div className="w-full max-w-[280px] mx-8 overflow-hidden">
+              <div
                 onClick={() => router.push(`/menu/${currentItem.id}`)}
-                className="bg-white shadow-lg hover:shadow-xl transition-shadow duration-300 h-[360px] flex flex-col overflow-hidden cursor-pointer"
+                className={`bg-white shadow-lg hover:shadow-xl h-[360px] flex flex-col overflow-hidden cursor-pointer rounded-lg ${
+                  animationPhase === 'entering'
+                    ? '' // トランジションなし（即座に配置）
+                    : 'transition-all duration-300 ease-out'
+                } ${
+                  animationPhase === 'exit'
+                    ? slideDirection === 'left'
+                      ? '-translate-x-full opacity-0'
+                      : 'translate-x-full opacity-0'
+                    : animationPhase === 'entering'
+                      ? slideDirection === 'left'
+                        ? 'translate-x-full opacity-0' // 右から入場するため右に配置
+                        : '-translate-x-full opacity-0' // 左から入場するため左に配置
+                      : 'translate-x-0 opacity-100'
+                }`}
               >
                 <div className="relative h-[220px] flex-shrink-0">
                   <Image
@@ -363,6 +388,19 @@ const MenuSection: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Right Arrow Button */}
+            <button
+              type="button"
+              onClick={handleNext}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center bg-white/90 rounded-full shadow-lg active:bg-orange-100 transition-colors"
+              style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
+              aria-label="次のメニュー"
+            >
+              <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
           </div>
 
           {/* Pagination dots */}
@@ -370,12 +408,14 @@ const MenuSection: React.FC = () => {
             {menuItems.map((_, index) => (
               <button
                 key={index}
+                type="button"
                 onClick={() => handleDotClick(index)}
                 className={`h-2.5 rounded-full transition-all duration-300 ${
-                  index === currentIndex 
-                    ? 'bg-orange-600 w-7' 
+                  index === currentIndex
+                    ? 'bg-orange-600 w-7'
                     : 'bg-gray-300 w-2.5 hover:bg-gray-400'
                 }`}
+                style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
                 aria-label={`Go to menu item ${index + 1}`}
               />
             ))}

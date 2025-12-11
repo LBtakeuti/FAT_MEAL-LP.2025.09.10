@@ -17,9 +17,9 @@ export default function LegalPage() {
         <Header />
       </div>
 
-      <main className="pt-16 sm:pt-20 pb-20">
-        <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1000px] lg:px-8 mx-auto">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 text-center mb-8">
+      <main className="pt-24 sm:pt-20 pb-20">
+        <div className="max-w-[375px] px-6 sm:px-4 md:max-w-[768px] md:px-6 lg:max-w-[1000px] lg:px-8 mx-auto">
+          <h1 className="text-xl sm:text-3xl md:text-4xl font-bold text-gray-900 text-center mb-8 break-words">
             特定商取引法に基づく表記
           </h1>
 

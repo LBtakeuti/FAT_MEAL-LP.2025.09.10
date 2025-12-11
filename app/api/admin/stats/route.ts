@@ -1,21 +1,46 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { NextResponse } from 'next/server';
+import { createServerClient } from '@/lib/supabase';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const menuItems = db.getAllMenuItems();
-    const newsItems = db.getAllNewsItems();
-    
-    const totalStock = menuItems.reduce((sum, item) => sum + item.stock, 0);
-    const lowStockItems = menuItems.filter(item => item.stock <= 50).length;
-    
+    const supabase = createServerClient();
+
+    // 並列でデータを取得（ordersは別途エラーハンドリング）
+    const [menuResult, newsResult, contactsResult, pendingContactsResult] = await Promise.all([
+      supabase.from('menu_items').select('id, is_active'),
+      supabase.from('news').select('id'),
+      supabase.from('contacts').select('id'),
+      supabase.from('contacts').select('id').eq('status', 'pending'),
+    ]);
+
+    // ordersテーブルは別途取得（エラーを無視）
+    let pendingOrders: any[] = [];
+    try {
+      const ordersResult = await (supabase.from('orders') as any).select('id').eq('status', 'pending');
+      pendingOrders = ordersResult.data || [];
+    } catch {
+      // ordersテーブルがない場合は空配列
+      pendingOrders = [];
+    }
+
+    const menuItems = menuResult.data || [];
+    const newsItems = newsResult.data || [];
+    const contacts = contactsResult.data || [];
+    const pendingContacts = pendingContactsResult.data || [];
+
+    // 非公開メニュー数
+    const inactiveMenuItems = menuItems.filter((item: any) => !item.is_active).length;
+
     const stats = {
       totalMenuItems: menuItems.length,
-      totalStock,
+      totalStock: 0,
       totalNews: newsItems.length,
-      lowStockItems
+      totalContacts: contacts.length,
+      pendingContacts: pendingContacts.length,
+      pendingOrders: pendingOrders.length,
+      lowStockItems: inactiveMenuItems
     };
-    
+
     return NextResponse.json(stats);
   } catch (error) {
     console.error('Stats error:', error);

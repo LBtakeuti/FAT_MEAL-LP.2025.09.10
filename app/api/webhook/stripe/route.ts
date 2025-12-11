@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { createServerClient } from '@/lib/supabase';
 
 // 遅延初期化（ビルド時にエラーを防ぐ）
 function getStripeClient() {
@@ -15,6 +16,16 @@ async function getResendClient() {
     return null;
   }
   return new Resend(process.env.RESEND_API_KEY);
+}
+
+// Supabaseクライアント（遅延初期化）
+function getSupabaseClient() {
+  try {
+    return createServerClient();
+  } catch (error) {
+    console.error('Failed to create Supabase client:', error);
+    return null;
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -61,6 +72,8 @@ export async function POST(request: NextRequest) {
 async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe: Stripe) {
   const customerEmail = session.customer_details?.email;
   const customerName = session.customer_details?.name;
+  const customerPhone = session.customer_details?.phone;
+  const customerAddress = session.customer_details?.address;
   const amountTotal = session.amount_total;
 
   if (!customerEmail) {
@@ -70,6 +83,57 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe:
 
   // 注文詳細を取得
   const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+
+  // 注文内容を文字列に変換
+  const menuSet = lineItems.data
+    .map(item => `${item.description} × ${item.quantity}`)
+    .join(', ');
+
+  // 住所を文字列に変換
+  const addressString = customerAddress
+    ? [
+        customerAddress.postal_code,
+        customerAddress.state,
+        customerAddress.city,
+        customerAddress.line1,
+        customerAddress.line2
+      ].filter(Boolean).join(' ')
+    : '';
+
+  // 数量を計算（全商品の合計数量）
+  const totalQuantity = lineItems.data.reduce((sum, item) => sum + (item.quantity || 1), 0);
+
+  // データベースに注文を保存
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    try {
+      const { error: dbError } = await (supabase
+        .from('orders') as any)
+        .insert({
+          stripe_session_id: session.id,
+          stripe_payment_intent_id: session.payment_intent as string || null,
+          customer_name: customerName || 'お客様',
+          customer_email: customerEmail,
+          phone: customerPhone || '',
+          address: addressString,
+          menu_set: menuSet,
+          quantity: totalQuantity,
+          amount: amountTotal || 0,
+          currency: session.currency || 'jpy',
+          status: 'pending',
+        });
+
+      if (dbError) {
+        console.error('Failed to save order to database:', dbError);
+      } else {
+        console.log('Order saved to database successfully');
+      }
+    } catch (error) {
+      console.error('Error saving order to database:', error);
+    }
+  } else {
+    console.error('Supabase client not available, order not saved to database');
+  }
 
   // メール送信
   await sendOrderConfirmationEmail({
