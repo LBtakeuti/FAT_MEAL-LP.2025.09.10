@@ -350,8 +350,13 @@ const MenuSection: React.FC = () => {
             <button
               type="button"
               onClick={handlePrevious}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-30 w-10 h-10 flex items-center justify-center bg-white/90 rounded-full shadow-lg active:bg-orange-100 transition-colors"
-              style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
+              className="absolute left-0 z-30 w-10 h-10 flex items-center justify-center bg-white/90 rounded-full shadow-lg active:bg-orange-100"
+              style={{
+                WebkitTapHighlightColor: 'transparent',
+                touchAction: 'manipulation',
+                top: '50%',
+                transform: 'translateY(-50%)'
+              }}
               aria-label="前のメニュー"
             >
               <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -427,8 +432,13 @@ const MenuSection: React.FC = () => {
             <button
               type="button"
               onClick={handleNext}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-30 w-10 h-10 flex items-center justify-center bg-white/90 rounded-full shadow-lg active:bg-orange-100 transition-colors"
-              style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
+              className="absolute right-0 z-30 w-10 h-10 flex items-center justify-center bg-white/90 rounded-full shadow-lg active:bg-orange-100"
+              style={{
+                WebkitTapHighlightColor: 'transparent',
+                touchAction: 'manipulation',
+                top: '50%',
+                transform: 'translateY(-50%)'
+              }}
               aria-label="次のメニュー"
             >
               <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
