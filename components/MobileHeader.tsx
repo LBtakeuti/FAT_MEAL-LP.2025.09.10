@@ -120,10 +120,20 @@ const MobileHeader: React.FC = () => {
                 type="button"
                 onClick={() => {
                   if (window.location.pathname === '/') {
-                    const swiper = (window as any).swiper;
-                    if (swiper) swiper.slideTo(6);
+                    // トップページの場合はスムーズスクロール
+                    setTimeout(() => {
+                      const element = document.querySelector('#news');
+                      if (element) {
+                        const offsetTop = element.getBoundingClientRect().top + window.pageYOffset - 80;
+                        window.scrollTo({
+                          top: offsetTop,
+                          behavior: 'smooth'
+                        });
+                      }
+                    }, 100);
                   } else {
-                    window.location.href = '/';
+                    // トップページ以外にいる場合は、トップページに遷移
+                    window.location.href = '/#news';
                   }
                   closeMenu();
                 }}

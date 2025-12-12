@@ -33,6 +33,32 @@ const NewsSection: React.FC = () => {
     fetchNews();
   }, []);
 
+  // URLハッシュ（#news）の処理
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (window.location.hash === '#news') {
+        setTimeout(() => {
+          const newsSection = document.getElementById('news');
+          if (newsSection) {
+            const offsetTop = newsSection.getBoundingClientRect().top + window.pageYOffset - 80;
+            window.scrollTo({
+              top: offsetTop,
+              behavior: 'smooth'
+            });
+          }
+        }, 100);
+      }
+    };
+
+    // 初回ロード時とハッシュ変更時の処理
+    handleHashChange();
+    window.addEventListener('hashchange', handleHashChange);
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, []);
+
   // 日付をフォーマット（YYYY-MM-DD → YYYY.MM.DD）
   const formatDate = (dateStr: string) => {
     return dateStr.replace(/-/g, '.');

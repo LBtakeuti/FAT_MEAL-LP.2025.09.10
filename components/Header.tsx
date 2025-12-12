@@ -26,7 +26,7 @@ const Header: React.FC = () => {
           <nav className="flex items-center space-x-2 md:space-x-4 lg:space-x-8 text-sm lg:text-base font-antique">
             <a href="/" className="text-[#374151] hover:text-orange-600 font-medium transition-colors">ホーム</a>
             <a href="/menu-list" className="text-[#374151] hover:text-orange-600 font-medium transition-colors">メニュー</a>
-            <a href="/news" className="text-[#374151] hover:text-orange-600 font-medium transition-colors">お知らせ</a>
+            <a href="/#news" className="text-[#374151] hover:text-orange-600 font-medium transition-colors">お知らせ</a>
             <a href="/contact" className="text-[#374151] hover:text-orange-600 font-medium transition-colors">お問い合わせ</a>
           </nav>
         </div>
