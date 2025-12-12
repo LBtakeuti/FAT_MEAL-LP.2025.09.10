@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
+import { createServerClient } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    
+    const bucket = (formData.get('bucket') as string) || 'menu-images';
+
     if (!file) {
       return NextResponse.json(
         { message: 'ファイルが選択されていません' },
@@ -14,30 +14,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ファイル名を生成（タイムスタンプ + オリジナルファイル名）
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    
-    const timestamp = Date.now();
-    const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const fileName = `${timestamp}-${originalName}`;
-    
-    // uploadsディレクトリのパスを確認・作成
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-    try {
-      await mkdir(uploadDir, { recursive: true });
-    } catch (error) {
-      // ディレクトリが既に存在する場合は無視
+    // ファイル名を生成（タイムスタンプ + ランダム文字列）
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+    // Supabase Storageにアップロード
+    const supabase = createServerClient();
+
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      console.error('Supabase Storage upload error:', error);
+      return NextResponse.json(
+        { message: `アップロードに失敗しました: ${error.message}` },
+        { status: 500 }
+      );
     }
-    
-    // ファイルを保存
-    const filePath = path.join(uploadDir, fileName);
-    await writeFile(filePath, buffer);
-    
-    // URLパスを返す
-    const url = `/uploads/${fileName}`;
-    
-    return NextResponse.json({ url });
+
+    // 公開URLを取得
+    const { data: { publicUrl } } = supabase.storage
+      .from(bucket)
+      .getPublicUrl(fileName);
+
+    return NextResponse.json({ url: publicUrl });
   } catch (error) {
     console.error('Upload error:', error);
     return NextResponse.json(
