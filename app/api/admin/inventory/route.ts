@@ -5,8 +5,8 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = createServerClient();
 
-    const { data, error } = await supabase
-      .from('menu_items')
+    const { data, error } = await (supabase
+      .from('menu_items') as any)
       .select('id, name, main_image, sub_images, stock, price, is_active')
       .order('display_order', { ascending: true });
 
