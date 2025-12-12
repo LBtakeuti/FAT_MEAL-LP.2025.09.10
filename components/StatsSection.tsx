@@ -4,6 +4,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 
 const StatsSection: React.FC = () => {
+  // 画面幅を追跡
+  const [isMobile, setIsMobile] = useState(true);
+
   // 補食側のツールチップ
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -17,6 +20,18 @@ const StatsSection: React.FC = () => {
   const futorumeshiButtonRefDesktop = useRef<HTMLButtonElement>(null);
   const futorumeshiTooltipRef = useRef<HTMLDivElement>(null);
   const [futorumeshiTooltipPosition, setFutorumeshiTooltipPosition] = useState({ top: 0, left: 0 });
+
+  // 画面幅をチェック
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    return () => {
+      window.removeEventListener('resize', checkIsMobile);
+    };
+  }, []);
 
   // 補食側のツールチップ位置を計算
   const calculateTooltipPosition = (btn: HTMLButtonElement) => {
@@ -305,7 +320,7 @@ const StatsSection: React.FC = () => {
               className="absolute w-[calc(100%-2rem)] sm:w-96 p-4 bg-gray-900 text-white rounded-lg z-[100] left-4 sm:left-auto"
               style={{
                 top: tooltipPosition.top > 0 ? `${tooltipPosition.top}px` : '100px',
-                ...(tooltipPosition.left > 0 ? { left: `${tooltipPosition.left}px` } : {}),
+                ...(!isMobile && tooltipPosition.left > 0 ? { left: `${tooltipPosition.left}px` } : {}),
                 boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2)',
               }}
             >
@@ -330,7 +345,7 @@ const StatsSection: React.FC = () => {
               className="absolute w-auto max-w-[calc(100%-2rem)] sm:max-w-md p-4 bg-gray-900 text-white rounded-lg z-[100] left-4 sm:left-auto"
               style={{
                 top: futorumeshiTooltipPosition.top > 0 ? `${futorumeshiTooltipPosition.top}px` : '100px',
-                ...(futorumeshiTooltipPosition.left > 0 ? { left: `${futorumeshiTooltipPosition.left}px` } : {}),
+                ...(!isMobile && futorumeshiTooltipPosition.left > 0 ? { left: `${futorumeshiTooltipPosition.left}px` } : {}),
                 boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2)',
               }}
             >

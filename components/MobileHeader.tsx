@@ -69,11 +69,22 @@ const MobileHeader: React.FC = () => {
         </div>
       </header>
 
+      {/* 透明な背景オーバーレイ（外部タッチ検知用） */}
+      {isMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-0 sm:hidden z-[9999]"
+          onClick={closeMenu}
+          onTouchStart={closeMenu}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Dropdown Menu - ヒーローセクションの上に被せる */}
       <div
         className={`fixed top-20 left-0 right-0 overflow-hidden transition-all duration-300 ease-in-out bg-white sm:hidden z-[10000] ${
           isMenuOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
         }`}
+        onClick={(e) => e.stopPropagation()}
       >
         <nav className="border-t border-gray-200 shadow-lg">
             <div className="py-2">
