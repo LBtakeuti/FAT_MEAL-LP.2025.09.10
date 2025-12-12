@@ -20,7 +20,15 @@ const MobileHeader: React.FC = () => {
       {/* Header - 常に表示 */}
       <header className="fixed top-0 left-0 right-0 bg-white shadow-md sm:hidden z-[10001]">
         <div className="flex items-center justify-between h-20 px-4">
-          <Link href="/" className="ml-4">
+          <Link 
+            href="/" 
+            className="ml-4"
+            onClick={() => {
+              if (isMenuOpen) {
+                closeMenu();
+              }
+            }}
+          >
             <Image
               src="/logo-header.png"
               alt="ふとるめし"
@@ -72,13 +80,24 @@ const MobileHeader: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  if (window.location.pathname === '/') {
-                    const swiper = (window as any).swiper;
-                    if (swiper) swiper.slideTo(4);
-                  } else {
-                    window.location.href = '/';
-                  }
                   closeMenu();
+                  // ページ内アンカーの場合
+                  if (window.location.pathname === '/') {
+                    // トップページの場合はスムーズスクロール
+                    setTimeout(() => {
+                      const element = document.querySelector('#menu');
+                      if (element) {
+                        const offsetTop = element.getBoundingClientRect().top + window.pageYOffset - 80;
+                        window.scrollTo({
+                          top: offsetTop,
+                          behavior: 'smooth'
+                        });
+                      }
+                    }, 100);
+                  } else {
+                    // トップページ以外にいる場合は、トップページに遷移
+                    window.location.href = '/#menu';
+                  }
                 }}
                 className="block w-full text-left px-6 py-4 text-orange-600 hover:bg-orange-50 active:bg-orange-100 transition-colors font-medium text-lg"
                 style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}

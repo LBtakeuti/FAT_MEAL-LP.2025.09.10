@@ -38,9 +38,21 @@ const NewsSection: React.FC = () => {
     return dateStr.replace(/-/g, '.');
   };
 
+  // お知らせセクションへスクロール
+  const scrollToNewsSection = (e: React.MouseEvent<HTMLDivElement>) => {
+    // 子要素（リンクなど）のクリックは無視
+    if ((e.target as HTMLElement).closest('a')) {
+      return;
+    }
+    const newsSection = document.getElementById('news');
+    if (newsSection) {
+      newsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   if (loading) {
     return (
-      <section className="relative overflow-hidden bg-[#fff7ed] pt-6 sm:pt-12 pb-20 sm:pb-12 flex flex-col">
+      <section id="news" className="relative overflow-hidden bg-[#fff7ed] pt-6 sm:pt-12 pb-20 sm:pb-12 flex flex-col">
         <div className="relative max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col">
           <div className="text-center mb-6 sm:mb-8">
             <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900">
@@ -55,7 +67,7 @@ const NewsSection: React.FC = () => {
 
   if (newsItems.length === 0) {
     return (
-      <section className="relative overflow-hidden bg-[#fff7ed] pt-6 sm:pt-12 pb-20 sm:pb-12 flex flex-col">
+      <section id="news" className="relative overflow-hidden bg-[#fff7ed] pt-6 sm:pt-12 pb-20 sm:pb-12 flex flex-col">
         <div className="relative max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col">
           <div className="text-center mb-6 sm:mb-8">
             <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900">
@@ -85,7 +97,10 @@ const NewsSection: React.FC = () => {
         </svg>
       </div>
 
-      <div className="relative max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col">
+      <div 
+        className="relative max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col cursor-pointer"
+        onClick={scrollToNewsSection}
+      >
         {/* Title */}
         <div className="text-center mb-6 sm:mb-8">
           <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900">
