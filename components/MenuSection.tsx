@@ -320,9 +320,9 @@ const MenuSection: React.FC = () => {
             {/* Left Arrow Button */}
             <button
               type="button"
-              disabled
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center bg-white/90 rounded-full shadow-lg opacity-50 cursor-not-allowed transition-colors"
-              style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'none', pointerEvents: 'none' }}
+              onClick={handlePrevious}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-30 w-10 h-10 flex items-center justify-center bg-white/90 rounded-full shadow-lg active:bg-orange-100 transition-colors"
+              style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
               aria-label="前のメニュー"
             >
               <svg className="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -393,7 +393,7 @@ const MenuSection: React.FC = () => {
             <button
               type="button"
               onClick={handleNext}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 flex items-center justify-center bg-white/90 rounded-full shadow-lg active:bg-orange-100 transition-colors"
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-30 w-10 h-10 flex items-center justify-center bg-white/90 rounded-full shadow-lg active:bg-orange-100 transition-colors"
               style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
               aria-label="次のメニュー"
             >
