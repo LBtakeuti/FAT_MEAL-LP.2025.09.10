@@ -6,11 +6,17 @@ interface Order {
   id: string;
   order_number: number;
   customer_name: string;
+  customer_name_kana: string;
   customer_email: string;
+  phone: string;
+  postal_code: string;
+  prefecture: string;
+  city: string;
+  address_detail: string;
+  building: string;
   address: string;
   menu_set: string;
   quantity: number;
-  phone: string;
   email?: string; // 後方互換性のため
   amount: number;
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
@@ -22,6 +28,7 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'>('all');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchOrders();
@@ -219,42 +226,113 @@ export default function AdminOrdersPage() {
                 </tr>
               ) : (
                 filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      #{order.order_number}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {order.customer_name}
-                    </td>
-                    <td className="px-4 py-4 text-sm text-gray-900">
-                      {order.customer_email || order.email}
-                    </td>
-                    <td className="px-4 py-4 text-sm text-gray-900 max-w-xs">
-                      <div className="truncate" title={order.menu_set}>
-                        {order.menu_set}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      ¥{order.amount?.toLocaleString() || '-'}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <select
-                        value={order.status}
-                        onChange={(e) => handleStatusChange(order.id, e.target.value as Order['status'])}
-                        disabled={updatingId === order.id}
-                        className={`text-sm rounded-lg border-gray-300 focus:ring-orange-500 focus:border-orange-500 ${getStatusBadgeClass(order.status)} ${updatingId === order.id ? 'opacity-50' : ''}`}
-                      >
-                        <option value="pending">注文受付</option>
-                        <option value="confirmed">注文確定</option>
-                        <option value="shipped">発送済</option>
-                        <option value="delivered">配達完了</option>
-                        <option value="cancelled">キャンセル</option>
-                      </select>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(order.created_at).toLocaleString('ja-JP')}
-                    </td>
-                  </tr>
+                  <React.Fragment key={order.id}>
+                    <tr
+                      className="hover:bg-gray-50 cursor-pointer"
+                      onClick={() => setExpandedOrderId(expandedOrderId === order.id ? null : order.id)}
+                    >
+                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <span className="flex items-center gap-2">
+                          <svg
+                            className={`w-4 h-4 transition-transform ${expandedOrderId === order.id ? 'rotate-90' : ''}`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                          #{order.order_number}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {order.customer_name}
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-900">
+                        {order.customer_email || order.email}
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-900 max-w-xs">
+                        <div className="truncate" title={order.menu_set}>
+                          {order.menu_set}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        ¥{order.amount?.toLocaleString() || '-'}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        <select
+                          value={order.status}
+                          onChange={(e) => handleStatusChange(order.id, e.target.value as Order['status'])}
+                          disabled={updatingId === order.id}
+                          className={`text-sm rounded-lg border-gray-300 focus:ring-orange-500 focus:border-orange-500 ${getStatusBadgeClass(order.status)} ${updatingId === order.id ? 'opacity-50' : ''}`}
+                        >
+                          <option value="pending">注文受付</option>
+                          <option value="confirmed">注文確定</option>
+                          <option value="shipped">発送済</option>
+                          <option value="delivered">配達完了</option>
+                          <option value="cancelled">キャンセル</option>
+                        </select>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(order.created_at).toLocaleString('ja-JP')}
+                      </td>
+                    </tr>
+                    {/* 詳細表示行 */}
+                    {expandedOrderId === order.id && (
+                      <tr className="bg-gray-50">
+                        <td colSpan={7} className="px-6 py-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* お客様情報 */}
+                            <div className="bg-white rounded-lg p-4 shadow-sm">
+                              <h4 className="font-semibold text-gray-900 mb-3 border-b pb-2">お客様情報</h4>
+                              <dl className="space-y-2 text-sm">
+                                <div className="flex">
+                                  <dt className="w-24 text-gray-500">お名前</dt>
+                                  <dd className="text-gray-900">{order.customer_name}</dd>
+                                </div>
+                                {order.customer_name_kana && (
+                                  <div className="flex">
+                                    <dt className="w-24 text-gray-500">フリガナ</dt>
+                                    <dd className="text-gray-900">{order.customer_name_kana}</dd>
+                                  </div>
+                                )}
+                                <div className="flex">
+                                  <dt className="w-24 text-gray-500">メール</dt>
+                                  <dd className="text-gray-900">{order.customer_email || order.email}</dd>
+                                </div>
+                                <div className="flex">
+                                  <dt className="w-24 text-gray-500">電話番号</dt>
+                                  <dd className="text-gray-900">{order.phone || '-'}</dd>
+                                </div>
+                              </dl>
+                            </div>
+                            {/* 配送先情報 */}
+                            <div className="bg-white rounded-lg p-4 shadow-sm">
+                              <h4 className="font-semibold text-gray-900 mb-3 border-b pb-2">配送先</h4>
+                              <dl className="space-y-2 text-sm">
+                                <div className="flex">
+                                  <dt className="w-24 text-gray-500">郵便番号</dt>
+                                  <dd className="text-gray-900">〒{order.postal_code || '-'}</dd>
+                                </div>
+                                <div className="flex">
+                                  <dt className="w-24 text-gray-500">住所</dt>
+                                  <dd className="text-gray-900">
+                                    {order.prefecture || order.city || order.address_detail ? (
+                                      <>
+                                        {order.prefecture}{order.city}{order.address_detail}
+                                        {order.building && <><br />{order.building}</>}
+                                      </>
+                                    ) : (
+                                      order.address || '-'
+                                    )}
+                                  </dd>
+                                </div>
+                              </dl>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))
               )}
             </tbody>

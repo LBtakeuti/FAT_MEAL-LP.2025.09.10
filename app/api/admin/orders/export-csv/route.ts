@@ -5,11 +5,19 @@ import { createServerClient } from '@/lib/supabase';
 interface Order {
   order_number: string;
   customer_name: string;
+  customer_name_kana: string;
+  customer_email: string;
+  phone: string;
+  postal_code: string;
+  prefecture: string;
+  city: string;
+  address_detail: string;
+  building: string;
   address: string;
   menu_set: string;
   quantity: number;
-  phone: string;
-  email: string;
+  amount: number;
+  email?: string; // 後方互換性
   status: string;
   created_at: string;
 }
@@ -33,13 +41,19 @@ export async function GET() {
 
     // CSVヘッダー
     const headers = [
-      '注文者ID',
+      '注文番号',
       '氏名',
-      '住所',
-      'セット',
-      '数',
-      '電話番号',
+      'フリガナ',
       'メールアドレス',
+      '電話番号',
+      '郵便番号',
+      '都道府県',
+      '市区町村',
+      '番地',
+      '建物名',
+      '注文内容',
+      '数量',
+      '金額',
       'ステータス',
       '注文日時'
     ];
@@ -48,11 +62,17 @@ export async function GET() {
     const rows = orders?.map((order) => [
       order.order_number,
       order.customer_name,
-      order.address,
+      order.customer_name_kana || '',
+      order.customer_email || order.email || '',
+      order.phone || '',
+      order.postal_code || '',
+      order.prefecture || '',
+      order.city || '',
+      order.address_detail || '',
+      order.building || '',
       order.menu_set,
       order.quantity,
-      order.phone,
-      order.email,
+      order.amount || 0,
       order.status,
       new Date(order.created_at).toLocaleString('ja-JP')
     ]) || [];

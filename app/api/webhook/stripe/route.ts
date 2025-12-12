@@ -10,6 +10,21 @@ function getStripeClient() {
   return new Stripe(process.env.STRIPE_SECRET_KEY);
 }
 
+// セット商品から弁当数を計算
+function calculateMealsFromDescription(description: string): number {
+  // "ふとるめし3個セット" → 3, "ふとるめし6個セット" → 6, etc.
+  const match = description.match(/(\d+)個セット/);
+  if (match) {
+    return parseInt(match[1], 10);
+  }
+  // "3種類×1個ずつ" → 3, "3種類×2個ずつ" → 6
+  const multiMatch = description.match(/(\d+)種類×(\d+)個/);
+  if (multiMatch) {
+    return parseInt(multiMatch[1], 10) * parseInt(multiMatch[2], 10);
+  }
+  return 1;
+}
+
 async function getResendClient() {
   const { Resend } = await import('resend');
   if (!process.env.RESEND_API_KEY) {
@@ -153,8 +168,75 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe:
     items: lineItems.data,
   });
 
+  // 在庫を減らす
+  await reduceInventory(lineItems.data);
+
   console.log('Order confirmation email sent to:', customerEmail);
   console.log('Slack notification sent');
+  console.log('Inventory reduced');
+}
+
+// 在庫を減らす関数
+async function reduceInventory(items: Stripe.LineItem[]) {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    console.error('Supabase client not available, inventory not reduced');
+    return;
+  }
+
+  // 購入された商品から総弁当数を計算
+  let totalMealsToReduce = 0;
+  for (const item of items) {
+    const description = item.description || '';
+    const quantity = item.quantity || 1;
+    const mealsPerItem = calculateMealsFromDescription(description);
+    totalMealsToReduce += mealsPerItem * quantity;
+  }
+
+  if (totalMealsToReduce === 0) {
+    console.log('No meals to reduce from inventory');
+    return;
+  }
+
+  try {
+    // 全ての有効なメニューアイテムを取得
+    const { data: menuItems, error: fetchError } = await supabase
+      .from('menu_items')
+      .select('id, name, stock')
+      .eq('is_active', true)
+      .gt('stock', 0);
+
+    if (fetchError) {
+      console.error('Failed to fetch menu items:', fetchError);
+      return;
+    }
+
+    if (!menuItems || menuItems.length === 0) {
+      console.error('No active menu items found');
+      return;
+    }
+
+    // 各メニューアイテムから均等に在庫を減らす
+    // 3種類のセットなので、1セットにつき各弁当1個ずつ減らす
+    const reductionPerItem = Math.ceil(totalMealsToReduce / menuItems.length);
+
+    for (const menuItem of menuItems) {
+      const newStock = Math.max(0, menuItem.stock - reductionPerItem);
+
+      const { error: updateError } = await supabase
+        .from('menu_items')
+        .update({ stock: newStock, updated_at: new Date().toISOString() })
+        .eq('id', menuItem.id);
+
+      if (updateError) {
+        console.error(`Failed to update stock for ${menuItem.name}:`, updateError);
+      } else {
+        console.log(`Stock updated for ${menuItem.name}: ${menuItem.stock} -> ${newStock}`);
+      }
+    }
+  } catch (error) {
+    console.error('Error reducing inventory:', error);
+  }
 }
 
 interface OrderEmailParams {

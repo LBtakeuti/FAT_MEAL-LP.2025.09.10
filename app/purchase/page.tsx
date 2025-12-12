@@ -25,7 +25,7 @@ const planOptions: PlanOption[] = [
     price: 3600,
     description: '3種類×1個ずつ',
     perMeal: 1200,
-    stripeLink: 'https://buy.stripe.com/9B6cN63BBerTbrAadK6Zy02',
+    stripeLink: 'https://buy.stripe.com/test_5kQcN69ZZ2Jb3Z80Da6Zy0m',
     comingSoon: false,
   },
   {
@@ -35,7 +35,7 @@ const planOptions: PlanOption[] = [
     price: 7200,
     description: '3種類×2個ずつ',
     perMeal: 1200,
-    stripeLink: 'https://buy.stripe.com/bJedRa3BBcjL0MW2Li6Zy03',
+    stripeLink: 'https://buy.stripe.com/test_aFafZiegf97z3Z8clS6Zy0n',
     comingSoon: false,
   },
   {
@@ -45,7 +45,7 @@ const planOptions: PlanOption[] = [
     price: 10800,
     description: '3種類×3個ずつ',
     perMeal: 1200,
-    stripeLink: 'https://buy.stripe.com/eVqdRa5JJdnPbrA1He6Zy04',
+    stripeLink: 'https://buy.stripe.com/test_dRmaEY9ZZ0B3dzIclS6Zy0o',
     comingSoon: true,
   }
 ];
@@ -62,15 +62,28 @@ interface CustomerInfo {
   city: string;
   address: string;
   building: string;
-  deliveryDate: string;
-  deliveryTime: string;
-  specialRequests: string;
 }
 
 // カートアイテムの型
 interface CartItem {
   planId: string;
   quantity: number;
+}
+
+// 在庫状況の型
+interface InventoryStatus {
+  available: boolean;
+  minStock: number;
+  sets: {
+    'plan-3': boolean;
+    'plan-6': boolean;
+    'plan-9': boolean;
+  };
+  maxQuantity: {
+    'plan-3': number;
+    'plan-6': number;
+    'plan-9': number;
+  };
 }
 
 const PurchasePage: React.FC = () => {
@@ -83,6 +96,9 @@ const PurchasePage: React.FC = () => {
     { planId: 'plan-6', quantity: 0 },
     { planId: 'plan-9', quantity: 0 },
   ]);
+  // 在庫状況
+  const [inventory, setInventory] = useState<InventoryStatus | null>(null);
+  const [inventoryLoading, setInventoryLoading] = useState(true);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
     lastName: '',
     firstName: '',
@@ -95,9 +111,6 @@ const PurchasePage: React.FC = () => {
     city: '',
     address: '',
     building: '',
-    deliveryDate: '',
-    deliveryTime: '',
-    specialRequests: '',
   });
   const [errors, setErrors] = useState<Partial<CustomerInfo>>({});
 
@@ -112,7 +125,26 @@ const PurchasePage: React.FC = () => {
     'WELCOME1000': 1000,
     'FUTORU1000': 1000,
     'START1000': 1000,   // ふとるめしスタート記念割引
+    'FUTORUMESHI1000': 1000,
   };
+
+  // 在庫状況を取得
+  useEffect(() => {
+    const fetchInventory = async () => {
+      try {
+        const response = await fetch('/api/inventory/check');
+        if (response.ok) {
+          const data = await response.json();
+          setInventory(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch inventory:', error);
+      } finally {
+        setInventoryLoading(false);
+      }
+    };
+    fetchInventory();
+  }, []);
 
   useEffect(() => {
     const planParam = searchParams.get('plan');
@@ -170,22 +202,6 @@ const PurchasePage: React.FC = () => {
       item.planId === planId ? { ...item, quantity: Math.max(0, newQuantity) } : item
     ));
   };
-
-  const getMinDeliveryDate = () => {
-    const date = new Date();
-    date.setDate(date.getDate() + 3);
-    return date.toISOString().split('T')[0];
-  };
-
-  const deliveryTimeOptions = [
-    { value: '', label: '指定なし' },
-    { value: '08-12', label: '午前中（8:00-12:00）' },
-    { value: '12-14', label: '12:00-14:00' },
-    { value: '14-16', label: '14:00-16:00' },
-    { value: '16-18', label: '16:00-18:00' },
-    { value: '18-20', label: '18:00-20:00' },
-    { value: '19-21', label: '19:00-21:00' },
-  ];
 
   const prefectures = [
     '北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県',
@@ -275,7 +291,6 @@ const PurchasePage: React.FC = () => {
     if (!customerInfo.prefecture) newErrors.prefecture = '都道府県を選択してください';
     if (!customerInfo.city.trim()) newErrors.city = '市区町村を入力してください';
     if (!customerInfo.address.trim()) newErrors.address = '番地を入力してください';
-    if (!customerInfo.deliveryDate) newErrors.deliveryDate = '配送希望日を選択してください';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -360,8 +375,33 @@ const PurchasePage: React.FC = () => {
     </div>
   );
 
+  // プランが在庫切れかどうかをチェック
+  const isPlanOutOfStock = (planId: string): boolean => {
+    if (!inventory) return false;
+    return !inventory.sets[planId as keyof typeof inventory.sets];
+  };
+
+  // プランの最大購入可能数を取得
+  const getMaxQuantity = (planId: string): number => {
+    if (!inventory) return 99;
+    return inventory.maxQuantity[planId as keyof typeof inventory.maxQuantity] || 0;
+  };
+
   const renderPlanSelection = () => (
     <div className="space-y-6">
+      {/* 在庫切れ警告 */}
+      {inventory && !inventory.available && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 text-red-700">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span className="font-medium">現在、在庫切れのため販売を停止しております。</span>
+          </div>
+          <p className="text-sm text-red-600 mt-1">再入荷までしばらくお待ちください。</p>
+        </div>
+      )}
+
       {/* セット選択（カート形式） */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <h2 className="text-xl font-bold text-gray-900 mb-2">
@@ -372,11 +412,13 @@ const PurchasePage: React.FC = () => {
           {planOptions.map((plan) => {
             const cartItem = cart.find(item => item.planId === plan.id);
             const quantity = cartItem?.quantity || 0;
+            const outOfStock = isPlanOutOfStock(plan.id);
+            const maxQty = getMaxQuantity(plan.id);
             return (
               <div
                 key={plan.id}
                 className={`relative rounded-lg border-2 p-4 transition-all ${
-                  plan.comingSoon
+                  plan.comingSoon || outOfStock
                     ? 'border-gray-200'
                     : quantity > 0
                       ? 'border-orange-500 bg-orange-50'
@@ -389,6 +431,16 @@ const PurchasePage: React.FC = () => {
                     <div className="text-center">
                       <span className="text-xl font-bold text-gray-500">Coming Soon</span>
                       <p className="text-sm text-gray-400 mt-1">準備中</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* 在庫切れオーバーレイ */}
+                {!plan.comingSoon && outOfStock && (
+                  <div className="absolute inset-0 bg-red-50/80 backdrop-blur-[2px] rounded-lg z-10 flex items-center justify-center">
+                    <div className="text-center">
+                      <span className="text-xl font-bold text-red-500">在庫切れ</span>
+                      <p className="text-sm text-red-400 mt-1">申し訳ございません</p>
                     </div>
                   </div>
                 )}
@@ -416,7 +468,7 @@ const PurchasePage: React.FC = () => {
                   <div className="flex items-center space-x-3 ml-4">
                     <button
                       onClick={() => updateCartQuantity(plan.id, quantity - 1)}
-                      disabled={quantity <= 0 || plan.comingSoon}
+                      disabled={quantity <= 0 || plan.comingSoon || outOfStock}
                       className="w-10 h-10 rounded-full border-2 border-gray-300 flex items-center justify-center hover:border-orange-600 hover:text-orange-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -426,7 +478,7 @@ const PurchasePage: React.FC = () => {
                     <span className="text-2xl font-bold text-gray-900 w-8 text-center">{quantity}</span>
                     <button
                       onClick={() => updateCartQuantity(plan.id, quantity + 1)}
-                      disabled={plan.comingSoon}
+                      disabled={plan.comingSoon || outOfStock || quantity >= maxQty}
                       className="w-10 h-10 rounded-full border-2 border-gray-300 flex items-center justify-center hover:border-orange-600 hover:text-orange-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -435,6 +487,13 @@ const PurchasePage: React.FC = () => {
                     </button>
                   </div>
                 </div>
+
+                {/* 残り在庫表示 */}
+                {!plan.comingSoon && !outOfStock && maxQty <= 10 && (
+                  <div className="mt-2 text-sm text-orange-600">
+                    残り {maxQty} セットのみ
+                  </div>
+                )}
 
                 {/* 小計表示 */}
                 {quantity > 0 && !plan.comingSoon && (
@@ -721,49 +780,6 @@ const PurchasePage: React.FC = () => {
         </div>
       </div>
 
-      {/* 配送オプション */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">
-          配送オプション
-        </h2>
-        <div className="space-y-4">
-          {/* 配送希望日 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              配送希望日 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="date"
-              name="deliveryDate"
-              value={customerInfo.deliveryDate}
-              min={getMinDeliveryDate()}
-              onChange={handleInputChange}
-              className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none ${errors.deliveryDate ? 'border-red-500' : 'border-gray-300 focus:border-orange-600'}`}
-            />
-            {errors.deliveryDate && <p className="text-red-500 text-xs mt-1">{errors.deliveryDate}</p>}
-            <p className="text-xs text-gray-500 mt-1">※3営業日以降からお届け可能です</p>
-          </div>
-
-          {/* 配送時間帯 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              配送時間帯
-            </label>
-            <select
-              name="deliveryTime"
-              value={customerInfo.deliveryTime}
-              onChange={handleInputChange}
-              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-orange-600 focus:outline-none"
-            >
-              {deliveryTimeOptions.map(option => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-          </div>
-
-        </div>
-      </div>
-
       {/* ボタン */}
       <div className="flex gap-4">
         <button
@@ -918,18 +934,6 @@ const PurchasePage: React.FC = () => {
               {customerInfo.building && <><br />{customerInfo.building}</>}
             </dd>
           </div>
-          <div className="flex">
-            <dt className="w-32 text-sm text-gray-600">配送希望日</dt>
-            <dd className="flex-1 text-gray-900">{customerInfo.deliveryDate}</dd>
-          </div>
-          {customerInfo.deliveryTime && (
-            <div className="flex">
-              <dt className="w-32 text-sm text-gray-600">配送時間帯</dt>
-              <dd className="flex-1 text-gray-900">
-                {deliveryTimeOptions.find(o => o.value === customerInfo.deliveryTime)?.label}
-              </dd>
-            </div>
-          )}
         </dl>
       </div>
 

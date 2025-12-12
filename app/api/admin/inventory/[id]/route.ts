@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { createServerClient } from '@/lib/supabase';
 
 export async function PUT(
   request: NextRequest,
@@ -8,26 +8,39 @@ export async function PUT(
   try {
     const { id } = await params;
     const { stock } = await request.json();
-    
+
     if (typeof stock !== 'number' || stock < 0) {
       return NextResponse.json(
         { message: '在庫数は0以上の数値である必要があります' },
         { status: 400 }
       );
     }
-    
-    const item = db.getMenuItem(id);
-    if (!item) {
+
+    const supabase = createServerClient();
+
+    // 在庫数のみ更新
+    const { data, error } = await supabase
+      .from('menu_items')
+      .update({ stock, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Stock update error:', error);
+      if (error.code === 'PGRST116') {
+        return NextResponse.json(
+          { message: 'アイテムが見つかりません' },
+          { status: 404 }
+        );
+      }
       return NextResponse.json(
-        { message: 'アイテムが見つかりません' },
-        { status: 404 }
+        { message: 'サーバーエラーが発生しました' },
+        { status: 500 }
       );
     }
-    
-    // 在庫数のみ更新
-    const updatedItem = db.updateMenuItem(id, { stock });
-    
-    return NextResponse.json(updatedItem);
+
+    return NextResponse.json(data);
   } catch (error) {
     console.error('Stock update error:', error);
     return NextResponse.json(
