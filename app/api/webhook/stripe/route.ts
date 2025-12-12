@@ -200,8 +200,8 @@ async function reduceInventory(items: Stripe.LineItem[]) {
 
   try {
     // 全ての有効なメニューアイテムを取得
-    const { data: menuItems, error: fetchError } = await supabase
-      .from('menu_items')
+    const { data: menuItems, error: fetchError } = await (supabase
+      .from('menu_items') as any)
       .select('id, name, stock')
       .eq('is_active', true)
       .gt('stock', 0);
@@ -220,11 +220,11 @@ async function reduceInventory(items: Stripe.LineItem[]) {
     // 3種類のセットなので、1セットにつき各弁当1個ずつ減らす
     const reductionPerItem = Math.ceil(totalMealsToReduce / menuItems.length);
 
-    for (const menuItem of menuItems) {
+    for (const menuItem of menuItems as any[]) {
       const newStock = Math.max(0, menuItem.stock - reductionPerItem);
 
-      const { error: updateError } = await supabase
-        .from('menu_items')
+      const { error: updateError } = await (supabase
+        .from('menu_items') as any)
         .update({ stock: newStock, updated_at: new Date().toISOString() })
         .eq('id', menuItem.id);
 
