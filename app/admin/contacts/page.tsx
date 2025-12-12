@@ -5,7 +5,9 @@ import Link from 'next/link';
 
 interface Contact {
   id: string;
+  title: string;
   name: string;
+  name_kana: string;
   email: string;
   phone: string;
   message: string;
@@ -17,6 +19,7 @@ export default function AdminContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'responded' | 'closed'>('all');
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
 
   useEffect(() => {
     fetchContacts();
@@ -45,7 +48,7 @@ export default function AdminContactsPage() {
         },
         body: JSON.stringify({ status: newStatus }),
       });
-      
+
       if (response.ok) {
         fetchContacts();
       }
@@ -61,9 +64,12 @@ export default function AdminContactsPage() {
       const response = await fetch(`/api/admin/contacts/${id}`, {
         method: 'DELETE',
       });
-      
+
       if (response.ok) {
         fetchContacts();
+        if (selectedContact?.id === id) {
+          setSelectedContact(null);
+        }
       }
     } catch (error) {
       console.error('Failed to delete contact:', error);
@@ -96,7 +102,7 @@ export default function AdminContactsPage() {
     }
   };
 
-  const filteredContacts = contacts.filter(contact => 
+  const filteredContacts = contacts.filter(contact =>
     filter === 'all' ? true : contact.status === filter
   );
 
@@ -175,52 +181,71 @@ export default function AdminContactsPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     日時
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    名前
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    件名
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    連絡先
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    お名前(漢字)
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    メッセージ
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    お名前(カナ)
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    メール
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    電話番号
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     ステータス
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     操作
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredContacts.map((contact) => (
-                  <tr key={contact.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <tr
+                    key={contact.id}
+                    className={`hover:bg-gray-50 cursor-pointer ${selectedContact?.id === contact.id ? 'bg-orange-50' : ''}`}
+                    onClick={() => setSelectedContact(contact)}
+                  >
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(contact.created_at).toLocaleString('ja-JP')}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 max-w-[120px] truncate">
+                        {contact.title || '-'}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
                         {contact.name}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{contact.email}</div>
-                      {contact.phone && (
-                        <div className="text-sm text-gray-500">{contact.phone}</div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 max-w-md truncate">
-                        {contact.message}
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-500">
+                        {contact.name_kana || '-'}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{contact.email}</div>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-500">{contact.phone || '-'}</div>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <select
                         value={contact.status}
-                        onChange={(e) => handleStatusChange(contact.id, e.target.value as Contact['status'])}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          handleStatusChange(contact.id, e.target.value as Contact['status']);
+                        }}
+                        onClick={(e) => e.stopPropagation()}
                         className={`px-2 py-1 text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(contact.status)}`}
                       >
                         <option value="pending">未対応</option>
@@ -228,9 +253,12 @@ export default function AdminContactsPage() {
                         <option value="closed">完了</option>
                       </select>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
-                        onClick={() => handleDelete(contact.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(contact.id);
+                        }}
                         className="text-red-600 hover:text-red-900"
                       >
                         削除
@@ -247,15 +275,76 @@ export default function AdminContactsPage() {
             )}
           </div>
         </div>
+
+        {/* 詳細パネル */}
+        {selectedContact && (
+          <div className="mt-6 bg-white shadow rounded-lg">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-lg font-bold text-gray-900">お問い合わせ詳細</h2>
+              <button
+                onClick={() => setSelectedContact(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6">
+              <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">件名</dt>
+                  <dd className="mt-1 text-sm text-gray-900">{selectedContact.title || '（なし）'}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">受信日時</dt>
+                  <dd className="mt-1 text-sm text-gray-900">
+                    {new Date(selectedContact.created_at).toLocaleString('ja-JP')}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">お名前(漢字)</dt>
+                  <dd className="mt-1 text-sm text-gray-900">{selectedContact.name}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">お名前(カナ)</dt>
+                  <dd className="mt-1 text-sm text-gray-900">{selectedContact.name_kana || '（なし）'}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">メールアドレス</dt>
+                  <dd className="mt-1 text-sm text-gray-900">
+                    <a href={`mailto:${selectedContact.email}`} className="text-orange-600 hover:underline">
+                      {selectedContact.email}
+                    </a>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">電話番号</dt>
+                  <dd className="mt-1 text-sm text-gray-900">
+                    {selectedContact.phone ? (
+                      <a href={`tel:${selectedContact.phone}`} className="text-orange-600 hover:underline">
+                        {selectedContact.phone}
+                      </a>
+                    ) : '（なし）'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-sm font-medium text-gray-500">ステータス</dt>
+                  <dd className="mt-1">
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(selectedContact.status)}`}>
+                      {getStatusLabel(selectedContact.status)}
+                    </span>
+                  </dd>
+                </div>
+              </dl>
+              <div className="mt-4">
+                <dt className="text-sm font-medium text-gray-500">メッセージ</dt>
+                <dd className="mt-1 text-sm text-gray-900 whitespace-pre-wrap bg-gray-50 p-4 rounded-lg">
+                  {selectedContact.message || '（なし）'}
+                </dd>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
-
-
-
-
-
-
-

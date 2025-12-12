@@ -9,23 +9,18 @@ export async function POST(req: NextRequest) {
     const name = `${body.lastName ?? ''} ${body.firstName ?? ''}`.trim() || '未入力';
     const nameKana = `${body.lastNameKana ?? ''} ${body.firstNameKana ?? ''}`.trim() || '';
 
-    // メッセージに件名とカナを含める形で保存
-    const fullMessage = [
-      body.title ? `【件名】${body.title}` : '',
-      nameKana ? `【氏名カナ】${nameKana}` : '',
-      body.message || ''
-    ].filter(Boolean).join('\n\n');
-
     // 1. Supabaseにお問い合わせを保存
     const supabase = createServerClient();
 
     const { data: contactData, error: dbError } = await (supabase
       .from('contacts') as any)
       .insert({
+        title: body.title || '',
         name: name,
+        name_kana: nameKana,
         email: body.email || '',
         phone: body.phone || '',
-        message: fullMessage,
+        message: body.message || '',
         status: 'pending'
       })
       .select()
@@ -33,7 +28,6 @@ export async function POST(req: NextRequest) {
 
     if (dbError) {
       console.error('Database insert error:', dbError);
-      // データベースエラーでも処理は続行（Slack通知は試みる）
     } else {
       console.log('Contact saved to database:', contactData?.id);
     }
@@ -48,11 +42,11 @@ export async function POST(req: NextRequest) {
           {
             color: '#f97316',
             fields: [
+              { title: '件名', value: body.title || '（なし）', short: false },
               { title: '氏名', value: name, short: true },
               { title: '氏名(カナ)', value: nameKana || '未入力', short: true },
               { title: 'メール', value: body.email || '未入力', short: true },
               { title: '電話番号', value: body.phone || '未入力', short: true },
-              { title: '件名', value: body.title || '（なし）', short: false },
               { title: 'メッセージ', value: body.message || '（なし）', short: false },
             ],
             footer: 'ふとるめし LP 問い合わせフォーム',
@@ -71,11 +65,9 @@ export async function POST(req: NextRequest) {
         if (!slackRes.ok) {
           const text = await slackRes.text();
           console.error('Slack response error:', slackRes.status, text);
-          // Slack通知失敗してもデータベース保存が成功していれば続行
         }
       } catch (slackError) {
         console.error('Slack notification error:', slackError);
-        // Slack通知失敗してもデータベース保存が成功していれば続行
       }
     } else {
       console.warn('Slack webhook URL not configured. Skipping Slack notification.');
