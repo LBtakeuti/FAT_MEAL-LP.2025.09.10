@@ -109,14 +109,13 @@ const HamburgerMenu: React.FC = () => {
       </button>
 
       {/* 背景オーバーレイ */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 sm:hidden"
-          onClick={() => setIsOpen(false)}
-          onTouchEnd={() => setIsOpen(false)}
-          aria-hidden="true"
-        />
-      )}
+      <div
+        className={`fixed inset-0 bg-black/50 z-40 sm:hidden transition-opacity duration-300 ${
+          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={() => setIsOpen(false)}
+        aria-hidden="true"
+      />
 
       {/* ドロワーメニュー */}
       <div
