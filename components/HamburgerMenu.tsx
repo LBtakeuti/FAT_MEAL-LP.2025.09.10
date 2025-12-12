@@ -12,8 +12,8 @@ const HamburgerMenu: React.FC = () => {
 
   const menuItems: MenuItem[] = [
     { label: 'TOP', href: '/' },
-    { label: 'メニュー一覧', href: '/menu-list' },
-    { label: 'お知らせ', href: '/news' },
+    { label: 'メニュー一覧', href: '#menu' },
+    { label: 'お知らせ', href: '#news' },
     { label: 'お問い合わせ', href: '/contact' },
   ];
 
@@ -27,7 +27,26 @@ const HamburgerMenu: React.FC = () => {
   
   const handleMenuClick = (href: string) => {
     setIsOpen(false);
-    
+
+    // ページ内アンカーの場合
+    if (href.startsWith('#')) {
+      // トップページ以外にいる場合は、トップページに遷移
+      if (window.location.pathname !== '/') {
+        window.location.href = '/' + href;
+        return;
+      }
+      // トップページの場合はスムーズスクロール
+      const element = document.querySelector(href);
+      if (element) {
+        const offsetTop = element.getBoundingClientRect().top + window.pageYOffset - 56;
+        window.scrollTo({
+          top: offsetTop,
+          behavior: 'smooth'
+        });
+      }
+      return;
+    }
+
     // TOPや他のページ遷移の場合
     if (href === '/' || href.startsWith('/')) {
       // 現在のページが / の場合はトップにスクロール、それ以外はページ遷移
@@ -40,28 +59,6 @@ const HamburgerMenu: React.FC = () => {
         window.location.href = href;
       }
       return;
-    }
-    
-    // スライドへの遷移の場合
-    if (href.startsWith('slide-')) {
-      const slideIndex = parseInt(href.split('-')[1]);
-      const swiper = (window as any).swiper;
-      if (swiper) {
-        swiper.slideTo(slideIndex);
-      }
-      return;
-    }
-    
-    // ページ内アンカーの場合
-    if (href.startsWith('#')) {
-      const element = document.querySelector(href);
-      if (element) {
-        const offsetTop = element.getBoundingClientRect().top + window.pageYOffset - 56;
-        window.scrollTo({
-          top: offsetTop,
-          behavior: 'smooth'
-        });
-      }
     }
   };
 

@@ -69,7 +69,7 @@ const NewsSection: React.FC = () => {
   }
 
   return (
-    <section className="relative overflow-hidden bg-[#fff7ed] pt-6 sm:pt-12 pb-20 sm:pb-12 flex flex-col">
+    <section id="news" className="relative overflow-hidden bg-[#fff7ed] pt-6 sm:pt-12 pb-20 sm:pb-12 flex flex-col">
       {/* 上部の波形 */}
       <div className="absolute top-0 left-0 w-full overflow-hidden leading-none" style={{ transform: 'translateY(-1px)' }}>
         <svg
