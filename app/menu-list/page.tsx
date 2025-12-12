@@ -64,10 +64,10 @@ export default function MenuListPage() {
         <Header />
       </div>
 
-      <main className="flex-1 pt-14 sm:pt-20 pb-12 sm:pb-20">
+      <main className="flex-1 pt-20 sm:pt-20 pb-12 sm:pb-20">
         <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto w-full">
           {/* Back button */}
-          <div className="mb-6 sm:mb-8">
+          <div className="pt-2 pb-2 mb-4 sm:mb-8 sm:pt-0 sm:pb-0">
             <button
               onClick={() => router.push('/')}
               className="inline-flex items-center text-gray-600 hover:text-orange-600 transition-colors"

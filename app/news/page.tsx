@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import MobileHeader from '@/components/MobileHeader';
 import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 
 interface NewsItem {
   id: string;
@@ -48,20 +49,20 @@ export default function NewsListPage() {
       {/* Desktop Header */}
       <Header />
 
-      <main className="pt-14 sm:pt-20 pb-20">
+      <main className="pt-20 sm:pt-20 pb-20">
         <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto">
 
           {/* Breadcrumb Navigation */}
-          <div className="mb-6">
-            <Link
-              href="/"
+          <div className="mb-6 mt-4 sm:mt-0">
+            <button
+              onClick={() => window.history.back()}
               className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
             >
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-              <span className="text-sm">ホーム</span>
-            </Link>
+              <span className="text-sm">戻る</span>
+            </button>
           </div>
 
           {/* Title */}
@@ -142,6 +143,9 @@ export default function NewsListPage() {
           </div>
         </div>
       </main>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }
