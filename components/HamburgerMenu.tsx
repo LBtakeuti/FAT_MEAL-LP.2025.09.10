@@ -109,14 +109,15 @@ const HamburgerMenu: React.FC = () => {
       </button>
 
       {/* 背景オーバーレイ */}
-      <div
-        className={`fixed inset-0 z-40 sm:hidden transition-all duration-300 ${
-          isOpen ? 'bg-black/60 visible' : 'bg-transparent invisible'
-        }`}
-        onClick={() => setIsOpen(false)}
-        onTouchStart={() => setIsOpen(false)}
-        aria-hidden="true"
-      />
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 sm:hidden"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
+          onClick={() => setIsOpen(false)}
+          onTouchStart={() => setIsOpen(false)}
+          aria-hidden="true"
+        />
+      )}
 
       {/* ドロワーメニュー */}
       <div
