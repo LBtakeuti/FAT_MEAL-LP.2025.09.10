@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 最小在庫数を計算（全ての弁当の在庫の最小値）
-    const stocks = (data || []).map(item => item.stock || 0);
+    const stocks = (data || []).map((item: any) => item.stock || 0);
     const minStock = stocks.length > 0 ? Math.min(...stocks) : 0;
 
     // 販売可能なセット数を計算
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
         'plan-6': Math.floor(minStock / 2),
         'plan-9': Math.floor(minStock / 3),
       },
-      items: (data || []).map(item => ({
+      items: (data || []).map((item: any) => ({
         id: item.id,
         name: item.name,
         stock: item.stock || 0,
