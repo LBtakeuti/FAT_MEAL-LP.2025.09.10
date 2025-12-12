@@ -25,7 +25,7 @@ const planOptions: PlanOption[] = [
     price: 3600,
     description: '3種類×1個ずつ',
     perMeal: 1200,
-    stripeLink: 'https://buy.stripe.com/test_5kQcN69ZZ2Jb3Z80Da6Zy0m',
+    stripeLink: 'https://buy.stripe.com/4gMfZi5JJ4RjdzI3Pm6Zy08',
     comingSoon: false,
   },
   {
@@ -35,7 +35,7 @@ const planOptions: PlanOption[] = [
     price: 7200,
     description: '3種類×2個ずつ',
     perMeal: 1200,
-    stripeLink: 'https://buy.stripe.com/test_aFafZiegf97z3Z8clS6Zy0n',
+    stripeLink: 'https://buy.stripe.com/dRmfZi5JJgA1gLUgC86Zy09',
     comingSoon: false,
   },
   {
@@ -45,7 +45,7 @@ const planOptions: PlanOption[] = [
     price: 10800,
     description: '3種類×3個ずつ',
     perMeal: 1200,
-    stripeLink: 'https://buy.stripe.com/test_dRmaEY9ZZ0B3dzIclS6Zy0o',
+    stripeLink: 'https://buy.stripe.com/9B628s7RRfvXbrA3Pm6Zy0a',
     comingSoon: true,
   }
 ];
