@@ -31,12 +31,12 @@ export default function MenuDetailClient({ menuItem }: MenuDetailClientProps) {
   const router = useRouter();
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({});
-  
+
   // 複数画像対応
-  const displayImages = menuItem.images && menuItem.images.length > 0 
-    ? menuItem.images 
+  const displayImages = menuItem.images && menuItem.images.length > 0
+    ? menuItem.images
     : [menuItem.image];
-  
+
   const handleBack = () => {
     // 履歴がある場合は前のページに戻る、ない場合はメニューリストへ
     if (window.history.length > 1) {
@@ -52,7 +52,7 @@ export default function MenuDetailClient({ menuItem }: MenuDetailClientProps) {
       [section]: !prev[section]
     }));
   };
-  
+
   return (
     <div className="min-h-screen bg-white">
       {/* Headers */}
@@ -99,8 +99,8 @@ export default function MenuDetailClient({ menuItem }: MenuDetailClientProps) {
                     key={index}
                     onClick={() => setSelectedImageIndex(index)}
                     className={`relative flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden transition-all ${
-                      selectedImageIndex === index 
-                        ? 'ring-2 ring-orange-600' 
+                      selectedImageIndex === index
+                        ? 'ring-2 ring-orange-600'
                         : 'opacity-60 hover:opacity-100'
                     }`}
                   >
@@ -133,56 +133,6 @@ export default function MenuDetailClient({ menuItem }: MenuDetailClientProps) {
 
             {/* Expandable Sections */}
             <div className="space-y-0 border-t border-gray-200">
-              {/* 栄養成分表示 */}
-              <div className="border-b border-gray-200">
-                <button
-                  onClick={() => toggleSection('nutrition')}
-                  className="w-full flex items-center justify-between py-4 text-left"
-                >
-                  <span className="text-base font-medium text-gray-900">栄養成分表示</span>
-                  <svg
-                    className={`w-5 h-5 text-gray-500 transition-transform ${
-                      expandedSections.nutrition ? 'rotate-45' : ''
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                </button>
-                {expandedSections.nutrition && (
-                  <div className="pb-4">
-                    <div className="bg-gray-50 rounded-lg p-4 mb-3">
-                      <div className="text-center mb-4">
-                        <div className="text-3xl font-bold text-orange-600 mb-1">
-                          {menuItem.calories}
-                        </div>
-                        <div className="text-xs text-gray-600">kcal</div>
-                      </div>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">タンパク質</span>
-                          <span className="font-semibold text-gray-900">{menuItem.protein}g</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">脂質</span>
-                          <span className="font-semibold text-gray-900">{menuItem.fat}g</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">炭水化物</span>
-                          <span className="font-semibold text-gray-900">{menuItem.carbs}g</span>
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-xs text-gray-600">
-                      ※1個当たりの栄養成分となります。<br />
-                      ※栄養成分値は目安として変更になる場合があります。
-                    </p>
-                  </div>
-                )}
-              </div>
-
               {/* 原材料 */}
               <div className="border-b border-gray-200">
                 <button
@@ -204,7 +154,7 @@ export default function MenuDetailClient({ menuItem }: MenuDetailClientProps) {
                 {expandedSections.ingredients && (
                   <div className="pb-4">
                     <p className="text-sm text-gray-700 leading-relaxed">
-                      {Array.isArray(menuItem.ingredients) 
+                      {Array.isArray(menuItem.ingredients)
                         ? menuItem.ingredients.join('、')
                         : menuItem.ingredients}
                     </p>
@@ -240,8 +190,7 @@ export default function MenuDetailClient({ menuItem }: MenuDetailClientProps) {
                       ))}
                     </div>
                     <p className="text-xs text-gray-600">
-                      ※1個当たりの栄養成分となります。<br />
-                      ※栄養成分値は目安として変更になる場合があります。
+                      ※アレルギー情報は目安です。詳細はお問い合わせください。
                     </p>
                   </div>
                 )}
@@ -286,8 +235,8 @@ export default function MenuDetailClient({ menuItem }: MenuDetailClientProps) {
                         key={index}
                         onClick={() => setSelectedImageIndex(index)}
                         className={`relative w-20 h-20 rounded-lg overflow-hidden transition-all ${
-                          selectedImageIndex === index 
-                            ? 'ring-2 ring-orange-600' 
+                          selectedImageIndex === index
+                            ? 'ring-2 ring-orange-600'
                             : 'opacity-60 hover:opacity-100'
                         }`}
                       >
@@ -320,30 +269,11 @@ export default function MenuDetailClient({ menuItem }: MenuDetailClientProps) {
                   {menuItem.description}
                 </p>
 
-                {/* Nutrition Info */}
-                <div className="bg-gray-50 rounded-xl p-6 mb-6">
-                  <h2 className="text-lg font-bold text-gray-900 mb-4">栄養成分表示</h2>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                      <span className="text-gray-600">タンパク質</span>
-                      <span className="text-lg font-bold text-gray-900">{menuItem.protein}g</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                      <span className="text-gray-600">脂質</span>
-                      <span className="text-lg font-bold text-gray-900">{menuItem.fat}g</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2">
-                      <span className="text-gray-600">炭水化物</span>
-                      <span className="text-lg font-bold text-gray-900">{menuItem.carbs}g</span>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Ingredients */}
                 <div className="mb-6">
                   <h2 className="text-lg font-bold text-gray-900 mb-3">原材料</h2>
                   <p className="text-sm text-gray-700 leading-relaxed">
-                    {Array.isArray(menuItem.ingredients) 
+                    {Array.isArray(menuItem.ingredients)
                       ? menuItem.ingredients.join('、')
                       : menuItem.ingredients}
                   </p>
@@ -360,15 +290,14 @@ export default function MenuDetailClient({ menuItem }: MenuDetailClientProps) {
                     ))}
                   </div>
                   <p className="text-xs text-gray-600">
-                    ※1個当たりの栄養成分となります。<br />
-                    ※栄養成分値は目安として変更になる場合があります。
+                    ※アレルギー情報は目安です。詳細はお問い合わせください。
                   </p>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        
+
         {/* Footer */}
         <Footer />
       </main>
