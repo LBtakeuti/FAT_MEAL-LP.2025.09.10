@@ -1,11 +1,12 @@
 {
+  "permissions": {
+    "allow": [
+      "mcp__stripe__create_payment_link",
+      "mcp__supabase__execute_sql"
+    ]
+  },
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "serena"
-  ],
-  "permissions": {
-    "allow": [
-      "mcp__stripe__create_payment_link"
-    ]
-  }
+  ]
 }
