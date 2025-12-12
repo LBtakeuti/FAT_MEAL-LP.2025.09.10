@@ -19,8 +19,8 @@ export async function PUT(
     const supabase = createServerClient();
 
     // 在庫数のみ更新
-    const { data, error } = await supabase
-      .from('menu_items')
+    const { data, error } = await (supabase
+      .from('menu_items') as any)
       .update({ stock, updated_at: new Date().toISOString() })
       .eq('id', id)
       .select()
