@@ -110,10 +110,11 @@ const HamburgerMenu: React.FC = () => {
 
       {/* 背景オーバーレイ */}
       <div
-        className={`fixed inset-0 bg-black/50 z-40 sm:hidden transition-opacity duration-300 ${
-          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        className={`fixed inset-0 z-40 sm:hidden transition-all duration-300 ${
+          isOpen ? 'bg-black/60 visible' : 'bg-transparent invisible'
         }`}
         onClick={() => setIsOpen(false)}
+        onTouchStart={() => setIsOpen(false)}
         aria-hidden="true"
       />
 
