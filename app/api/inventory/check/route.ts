@@ -6,8 +6,8 @@ export async function GET(request: NextRequest) {
     const supabase = createServerClient();
 
     // 有効なメニューアイテムの在庫を取得
-    const { data, error } = await supabase
-      .from('menu_items')
+    const { data, error } = await (supabase
+      .from('menu_items') as any)
       .select('id, name, stock, is_active')
       .eq('is_active', true);
 
