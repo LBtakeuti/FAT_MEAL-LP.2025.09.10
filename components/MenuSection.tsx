@@ -43,6 +43,10 @@ const MenuSection: React.FC = () => {
   const [isTitleVisible, setIsTitleVisible] = useState(false);
   const titleRef = useRef<HTMLDivElement>(null);
 
+  // スワイプ用の状態
+  const touchStartX = useRef<number>(0);
+  const touchEndX = useRef<number>(0);
+
   // APIからメニューデータを取得（バックグラウンドで更新）
   useEffect(() => {
     // 初回取得（エラーを抑制）
@@ -184,6 +188,31 @@ const MenuSection: React.FC = () => {
     if (index === currentIndex) return;
     const direction = index > currentIndex ? 'left' : 'right';
     animateToIndex(index, direction);
+  };
+
+  // スワイプ操作のハンドラー
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    const swipeDistance = touchStartX.current - touchEndX.current;
+    const minSwipeDistance = 50; // 最小スワイプ距離
+
+    if (Math.abs(swipeDistance) > minSwipeDistance) {
+      if (swipeDistance > 0) {
+        // 左にスワイプ → 次へ
+        handleNext();
+      } else {
+        // 右にスワイプ → 前へ
+        handlePrevious();
+      }
+    }
   };
 
   // ローディング中の表示
@@ -328,7 +357,12 @@ const MenuSection: React.FC = () => {
             </div>
 
             {/* Menu Card */}
-            <div className="w-full max-w-[280px] mx-8 overflow-hidden">
+            <div
+              className="w-full max-w-[280px] mx-8 overflow-hidden"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
               <div
                 onClick={() => router.push(`/menu/${currentItem.id}`)}
                 className={`bg-white shadow-lg hover:shadow-xl h-[360px] flex flex-col overflow-hidden cursor-pointer rounded-lg ${

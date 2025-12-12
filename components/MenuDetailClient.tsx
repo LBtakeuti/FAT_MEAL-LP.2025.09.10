@@ -63,11 +63,11 @@ export default function MenuDetailClient({ menuItem }: MenuDetailClientProps) {
         <Header />
       </div>
 
-      <main className="pt-14 sm:pt-0">
+      <main className="pt-20 sm:pt-0">
         {/* Mobile Layout */}
         <div className="sm:hidden">
           {/* Back Button */}
-          <div className="px-4 pt-4 pb-2">
+          <div className="px-4 pt-2 pb-2">
             <button
               onClick={handleBack}
               className="inline-flex items-center text-gray-600 hover:text-orange-600 transition-colors"
