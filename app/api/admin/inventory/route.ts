@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     // フロントエンドに合わせた形式に変換
-    const inventory = (data || []).map(item => ({
+    const inventory = (data || []).map((item: any) => ({
       id: item.id,
       name: item.name,
       images: [item.main_image, ...(item.sub_images || [])].filter(Boolean),
