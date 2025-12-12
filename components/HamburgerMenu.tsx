@@ -108,11 +108,10 @@ const HamburgerMenu: React.FC = () => {
         )}
       </button>
 
-      {/* 背景オーバーレイ */}
+      {/* 透明な背景オーバーレイ（タップ検知用） */}
       {isOpen && (
         <div
           className="fixed inset-0 z-40 sm:hidden"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)' }}
           onClick={() => setIsOpen(false)}
           onTouchStart={() => setIsOpen(false)}
           aria-hidden="true"
