@@ -39,8 +39,8 @@ export async function POST(request: NextRequest) {
 
     // 既に処理済みかチェック
     const supabase = createServerClient();
-    const { data: existingOrder } = await supabase
-      .from('orders')
+    const { data: existingOrder } = await (supabase
+      .from('orders') as any)
       .select('id')
       .eq('stripe_session_id', sessionId)
       .single();
@@ -103,8 +103,8 @@ export async function POST(request: NextRequest) {
     const totalQuantity = lineItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
 
     // データベースに注文を保存
-    const { error: dbError } = await supabase
-      .from('orders')
+    const { error: dbError } = await (supabase
+      .from('orders') as any)
       .insert({
         stripe_session_id: sessionId,
         stripe_payment_intent_id: session.payment_intent as string || null,
@@ -171,8 +171,8 @@ async function reduceInventory(items: Stripe.LineItem[], supabase: ReturnType<ty
   if (totalMealsToReduce === 0) return;
 
   try {
-    const { data: menuItems, error: fetchError } = await supabase
-      .from('menu_items')
+    const { data: menuItems, error: fetchError } = await (supabase
+      .from('menu_items') as any)
       .select('id, name, stock')
       .eq('is_active', true)
       .gt('stock', 0);
@@ -181,10 +181,10 @@ async function reduceInventory(items: Stripe.LineItem[], supabase: ReturnType<ty
 
     const reductionPerItem = Math.ceil(totalMealsToReduce / menuItems.length);
 
-    for (const menuItem of menuItems) {
+    for (const menuItem of menuItems as any[]) {
       const newStock = Math.max(0, menuItem.stock - reductionPerItem);
-      await supabase
-        .from('menu_items')
+      await (supabase
+        .from('menu_items') as any)
         .update({ stock: newStock, updated_at: new Date().toISOString() })
         .eq('id', menuItem.id);
     }
