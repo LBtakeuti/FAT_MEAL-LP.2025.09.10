@@ -126,7 +126,7 @@ export default function LegalPage() {
               <h2 className="text-sm sm:text-base font-semibold text-gray-700 mb-2">
                 10. 販売価格
               </h2>
-              <p className="text-gray-900">coming soon....</p>
+              <p className="text-gray-900">メニュー記載の通り</p>
             </div>
 
             {/* 商品代金以外の必要料金 */}
