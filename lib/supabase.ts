@@ -121,9 +121,9 @@ export interface ContactDB {
 
 // ストレージバケット名
 export const STORAGE_BUCKETS = {
-  MENU_IMAGES: 'menu-images',
-  NEWS_IMAGES: 'news-images',
-  OTHER_IMAGES: 'other-images'
+  MENU_IMAGES: 'images',
+  NEWS_IMAGES: 'images',
+  OTHER_IMAGES: 'images'
 } as const;
 
 // ストレージヘルパー関数
