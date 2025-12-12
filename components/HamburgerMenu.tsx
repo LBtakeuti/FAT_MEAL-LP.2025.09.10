@@ -113,13 +113,14 @@ const HamburgerMenu: React.FC = () => {
         <div
           className="fixed inset-0 bg-black/50 z-40 sm:hidden"
           onClick={() => setIsOpen(false)}
+          onTouchEnd={() => setIsOpen(false)}
           aria-hidden="true"
         />
       )}
 
       {/* ドロワーメニュー */}
       <div
-        className={`fixed inset-y-0 right-0 w-[88vw] max-w-[360px] bg-white shadow-xl z-40 transform transition-transform duration-300 sm:hidden ${
+        className={`fixed inset-y-0 right-0 w-[88vw] max-w-[360px] bg-white shadow-xl z-50 transform transition-transform duration-300 sm:hidden ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
         role="dialog"
