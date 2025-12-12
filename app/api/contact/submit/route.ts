@@ -19,8 +19,8 @@ export async function POST(req: NextRequest) {
     // 1. Supabaseにお問い合わせを保存
     const supabase = createServerClient();
 
-    const { data: contactData, error: dbError } = await supabase
-      .from('contacts')
+    const { data: contactData, error: dbError } = await (supabase
+      .from('contacts') as any)
       .insert({
         name: name,
         email: body.email || '',
