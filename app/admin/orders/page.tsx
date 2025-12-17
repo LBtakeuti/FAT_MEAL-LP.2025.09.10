@@ -29,6 +29,8 @@ export default function AdminOrdersPage() {
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'>('all');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchOrders();
@@ -74,6 +76,28 @@ export default function AdminOrdersPage() {
 
   const handleExportCSV = () => {
     window.location.href = '/api/admin/orders/export-csv';
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    setDeletingId(orderId);
+    try {
+      const response = await fetch(`/api/admin/orders?id=${orderId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setOrders(orders.filter(order => order.id !== orderId));
+        setDeleteConfirmId(null);
+        setExpandedOrderId(null);
+      } else {
+        alert('注文の削除に失敗しました');
+      }
+    } catch (error) {
+      console.error('Failed to delete order:', error);
+      alert('注文の削除に失敗しました');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const getStatusBadgeClass = (status: Order['status']) => {
@@ -215,12 +239,15 @@ export default function AdminOrdersPage() {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   注文日時
                 </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  操作
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
                     注文がありません
                   </td>
                 </tr>
@@ -275,11 +302,37 @@ export default function AdminOrdersPage() {
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                         {new Date(order.created_at).toLocaleString('ja-JP')}
                       </td>
+                      <td className="px-4 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        {deleteConfirmId === order.id ? (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleDeleteOrder(order.id)}
+                              disabled={deletingId === order.id}
+                              className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 disabled:opacity-50"
+                            >
+                              {deletingId === order.id ? '削除中' : '確定'}
+                            </button>
+                            <button
+                              onClick={() => setDeleteConfirmId(null)}
+                              className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300"
+                            >
+                              取消
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setDeleteConfirmId(order.id)}
+                            className="px-3 py-1 bg-red-100 text-red-700 text-xs rounded hover:bg-red-200"
+                          >
+                            削除
+                          </button>
+                        )}
+                      </td>
                     </tr>
                     {/* 詳細表示行 */}
                     {expandedOrderId === order.id && (
                       <tr className="bg-gray-50">
-                        <td colSpan={7} className="px-6 py-4">
+                        <td colSpan={8} className="px-6 py-4">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* お客様情報 */}
                             <div className="bg-white rounded-lg p-4 shadow-sm">
@@ -328,6 +381,34 @@ export default function AdminOrdersPage() {
                                 </div>
                               </dl>
                             </div>
+                          </div>
+                          {/* 削除ボタン */}
+                          <div className="mt-4 pt-4 border-t border-gray-200 flex justify-end">
+                            {deleteConfirmId === order.id ? (
+                              <div className="flex items-center gap-3">
+                                <span className="text-sm text-red-600">本当に削除しますか？</span>
+                                <button
+                                  onClick={() => handleDeleteOrder(order.id)}
+                                  disabled={deletingId === order.id}
+                                  className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 disabled:opacity-50"
+                                >
+                                  {deletingId === order.id ? '削除中...' : '削除する'}
+                                </button>
+                                <button
+                                  onClick={() => setDeleteConfirmId(null)}
+                                  className="px-4 py-2 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300"
+                                >
+                                  キャンセル
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setDeleteConfirmId(order.id)}
+                                className="px-4 py-2 bg-red-100 text-red-700 text-sm rounded-lg hover:bg-red-200"
+                              >
+                                この注文を削除
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
