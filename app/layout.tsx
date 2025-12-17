@@ -7,8 +7,8 @@ export const metadata: Metadata = {
   description: "ふとるめしは、努力する人を応援し続けます。平均Cal900オーバー、タンパク質70gオーバー。脅威の弁当をご覧あれ。",
   metadataBase: new URL('https://www.futorumeshi.com'),
   icons: {
-    icon: '/logo-favicon.png',
-    apple: '/logo-favicon.png',
+    icon: '/new-fabicon.png',
+    apple: '/new-fabicon.png',
   },
   openGraph: {
     title: "ふとるめし - 高カロリー・高タンパクの冷凍弁当",
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     siteName: 'ふとるめし',
     images: [
       {
-        url: '/logo-favicon.png',
+        url: '/new-fabicon.png',
         width: 1200,
         height: 630,
         alt: 'ふとるめし - 高カロリー・高タンパクの冷凍弁当',
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "ふとるめし - 高カロリー・高タンパクの冷凍弁当",
     description: "ふとるめしは、努力する人を応援し続けます。平均Cal900オーバー、タンパク質70gオーバー。脅威の弁当をご覧あれ。",
-    images: ['/logo-favicon.png'],
+    images: ['/new-fabicon.png'],
   },
 };
 
