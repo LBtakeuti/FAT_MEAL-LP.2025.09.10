@@ -58,17 +58,44 @@ export default function NewMenuPage() {
     }
   };
 
+  // Google Driveリンクを表示可能な形式に変換
+  const convertGoogleDriveUrl = (url: string): string => {
+    // https://drive.google.com/file/d/FILE_ID/view 形式
+    const fileIdMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (fileIdMatch) {
+      return `https://drive.google.com/uc?export=view&id=${fileIdMatch[1]}`;
+    }
+    // https://drive.google.com/open?id=FILE_ID 形式
+    const openIdMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (openIdMatch && url.includes('drive.google.com')) {
+      return `https://drive.google.com/uc?export=view&id=${openIdMatch[1]}`;
+    }
+    return url;
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
+    let processedValue = value;
+
+    // 画像URLの場合はGoogle Driveリンクを変換
+    if (name === 'main_image' && value.includes('drive.google.com')) {
+      processedValue = convertGoogleDriveUrl(value);
+    }
+
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : processedValue
     }));
   };
 
   const handleSubImageChange = (index: number, value: string) => {
+    // Google Driveリンクを変換
+    const processedValue = value.includes('drive.google.com')
+      ? convertGoogleDriveUrl(value)
+      : value;
+
     const newSubImages = [...formData.sub_images];
-    newSubImages[index] = value;
+    newSubImages[index] = processedValue;
     setFormData(prev => ({ ...prev, sub_images: newSubImages }));
   };
 
