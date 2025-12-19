@@ -63,12 +63,12 @@ export default function NewMenuPage() {
     // https://drive.google.com/file/d/FILE_ID/view 形式
     const fileIdMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
     if (fileIdMatch) {
-      return `https://drive.google.com/uc?export=view&id=${fileIdMatch[1]}`;
+      return `https://lh3.googleusercontent.com/d/${fileIdMatch[1]}`;
     }
     // https://drive.google.com/open?id=FILE_ID 形式
     const openIdMatch = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
     if (openIdMatch && url.includes('drive.google.com')) {
-      return `https://drive.google.com/uc?export=view&id=${openIdMatch[1]}`;
+      return `https://lh3.googleusercontent.com/d/${openIdMatch[1]}`;
     }
     return url;
   };
