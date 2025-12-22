@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import type { MenuItemDB, NewsItemDB, ContactDB, MenuItemCreate, MenuItemUpdate } from '@/types';
 
 // 環境変数の型定義
 type SupabaseEnv = {
@@ -77,47 +78,8 @@ const supabase = typeof window !== 'undefined'
 
 export default supabase;
 
-// データベーステーブルの型定義
-export interface MenuItemDB {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  calories: number;
-  protein: number;
-  fat: number;
-  carbs: number;
-  images: string[];
-  features: string[];
-  ingredients: string[];
-  allergens: string[];
-  stock: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface NewsItemDB {
-  id: string;
-  title: string;
-  content: string;
-  date: string;
-  category: string | null;
-  image: string | null;
-  excerpt: string | null;
-  summary: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface ContactDB {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  message: string;
-  created_at: string;
-  status: 'pending' | 'responded' | 'closed';
-}
+// 型定義は @/types から再エクスポート
+export type { MenuItemDB, NewsItemDB, ContactDB, MenuItemCreate, MenuItemUpdate } from '@/types';
 
 // ストレージバケット名
 export const STORAGE_BUCKETS = {

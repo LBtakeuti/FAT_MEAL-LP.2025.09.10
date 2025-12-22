@@ -1,64 +1,60 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
-import { verifyAuth } from '@/lib/auth';
+import {
+  withAuth,
+  withErrorHandler,
+  jsonSuccess,
+  jsonNotFound,
+  jsonBadRequest,
+  handleSupabaseError,
+  validateBody,
+} from '@/lib/api-helpers';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params;
+// GET: ニュース詳細取得（認証不要）
+export const GET = withErrorHandler(
+  async (
+    _request: NextRequest,
+    context?: { params: Promise<Record<string, string>> }
+  ) => {
+    const { id } = await context!.params;
     const supabase = createServerClient();
-    
+
     const { data, error } = await supabase
       .from('news')
       .select('*')
       .eq('id', id)
       .single();
-    
-    if (error || !data) {
-      return NextResponse.json(
-        { message: 'ニュースが見つかりません' },
-        { status: 404 }
-      );
-    }
-    
-    return NextResponse.json(data);
-  } catch (error: any) {
-    console.error('Failed to fetch news:', error);
-    return NextResponse.json(
-      { message: 'ニュースの取得に失敗しました', error: error.message },
-      { status: 500 }
-    );
-  }
-}
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    // 認証チェック
-    const authResult = await verifyAuth(request);
-    if (!authResult.authenticated) {
-      return NextResponse.json(
-        { message: '認証が必要です' },
-        { status: 401 }
-      );
+    if (error || !data) {
+      return jsonNotFound('ニュースが見つかりません');
     }
-    
-    const { id } = await params;
+
+    return jsonSuccess(data);
+  }
+);
+
+// PUT: ニュース更新（認証必要）
+export const PUT = withAuth(
+  async (
+    request: NextRequest,
+    _auth,
+    context?: { params: Promise<Record<string, string>> }
+  ) => {
+    const { id } = await context!.params;
     const body = await request.json();
-    const supabase = createServerClient();
-    
+
     // バリデーション
-    if (!body.title || !body.content) {
-      return NextResponse.json(
-        { message: 'タイトルと本文は必須です' },
-        { status: 400 }
-      );
+    const validation = validateBody(body, {
+      title: { required: true, type: 'string' },
+      content: { required: true, type: 'string' },
+    });
+
+    if (!validation.valid) {
+      return jsonBadRequest(validation.errors.join(', '));
     }
-    
+
+    const supabase = createServerClient();
+
     const updateData = {
       title: body.title,
       content: body.content,
@@ -69,66 +65,37 @@ export async function PUT(
       summary: body.summary || null,
       updated_at: new Date().toISOString(),
     };
-    
-    const { data, error } = await (supabase
-      .from('news') as any)
+
+    const { data, error } = await (supabase.from('news') as any)
       .update(updateData)
       .eq('id', id)
       .select()
       .single();
-    
-    if (error || !data) {
-      return NextResponse.json(
-        { message: 'ニュースの更新に失敗しました', error: error?.message },
-        { status: 404 }
-      );
-    }
-    
-    return NextResponse.json(data);
-  } catch (error: any) {
-    console.error('Failed to update news:', error);
-    return NextResponse.json(
-      { message: 'ニュースの更新に失敗しました', error: error.message },
-      { status: 500 }
-    );
-  }
-}
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    // 認証チェック
-    const authResult = await verifyAuth(request);
-    if (!authResult.authenticated) {
-      return NextResponse.json(
-        { message: '認証が必要です' },
-        { status: 401 }
-      );
+    if (error || !data) {
+      return handleSupabaseError(error || { message: 'Not found' }, 'ニュース更新');
     }
-    
-    const { id } = await params;
-    const supabase = createServerClient();
-    
-    const { error } = await supabase
-      .from('news')
-      .delete()
-      .eq('id', id);
-    
-    if (error) {
-      return NextResponse.json(
-        { message: 'ニュースの削除に失敗しました', error: error.message },
-        { status: 500 }
-      );
-    }
-    
-    return NextResponse.json({ message: '削除しました' });
-  } catch (error: any) {
-    console.error('Failed to delete news:', error);
-    return NextResponse.json(
-      { message: 'ニュースの削除に失敗しました', error: error.message },
-      { status: 500 }
-    );
+
+    return jsonSuccess(data);
   }
-}
+);
+
+// DELETE: ニュース削除（認証必要）
+export const DELETE = withAuth(
+  async (
+    _request: NextRequest,
+    _auth,
+    context?: { params: Promise<Record<string, string>> }
+  ) => {
+    const { id } = await context!.params;
+    const supabase = createServerClient();
+
+    const { error } = await supabase.from('news').delete().eq('id', id);
+
+    if (error) {
+      return handleSupabaseError(error, 'ニュース削除');
+    }
+
+    return jsonSuccess({ message: '削除しました' });
+  }
+);

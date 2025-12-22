@@ -1,64 +1,63 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
-import { verifyAuth } from '@/lib/auth';
+import {
+  withAuth,
+  withErrorHandler,
+  jsonSuccess,
+  jsonNotFound,
+  jsonBadRequest,
+  handleSupabaseError,
+  validateBody,
+} from '@/lib/api-helpers';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params;
+// GET: メニュー詳細取得（認証不要）
+export const GET = withErrorHandler(
+  async (
+    _request: NextRequest,
+    context?: { params: Promise<Record<string, string>> }
+  ) => {
+    const { id } = await context!.params;
     const supabase = createServerClient();
-    
+
     const { data, error } = await supabase
       .from('menu_items')
       .select('*')
       .eq('id', id)
       .single();
-    
-    if (error || !data) {
-      return NextResponse.json(
-        { message: 'メニューが見つかりません' },
-        { status: 404 }
-      );
-    }
-    
-    return NextResponse.json(data);
-  } catch (error: any) {
-    console.error('Failed to fetch menu item:', error);
-    return NextResponse.json(
-      { message: 'メニューの取得に失敗しました', error: error.message },
-      { status: 500 }
-    );
-  }
-}
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    // 認証チェック
-    const authResult = await verifyAuth(request);
-    if (!authResult.authenticated) {
-      return NextResponse.json(
-        { message: '認証が必要です' },
-        { status: 401 }
-      );
+    if (error || !data) {
+      return jsonNotFound('メニューが見つかりません');
     }
-    
-    const { id } = await params;
+
+    return jsonSuccess(data);
+  }
+);
+
+// PUT: メニュー更新（認証必要）
+export const PUT = withAuth(
+  async (
+    request: NextRequest,
+    _auth,
+    context?: { params: Promise<Record<string, string>> }
+  ) => {
+    const { id } = await context!.params;
     const body = await request.json();
-    const supabase = createServerClient();
-    
+
     // バリデーション
-    if (!body.name || !body.calories || body.protein === undefined || body.fat === undefined || body.carbs === undefined) {
-      return NextResponse.json(
-        { message: '必須項目が不足しています' },
-        { status: 400 }
-      );
+    const validation = validateBody(body, {
+      name: { required: true, type: 'string' },
+      calories: { required: true },
+      protein: { required: true },
+      fat: { required: true },
+      carbs: { required: true },
+    });
+
+    if (!validation.valid) {
+      return jsonBadRequest(validation.errors.join(', '));
     }
-    
+
+    const supabase = createServerClient();
+
     const updateData = {
       name: body.name,
       description: body.description || null,
@@ -75,66 +74,37 @@ export async function PUT(
       display_order: body.display_order || 0,
       updated_at: new Date().toISOString(),
     };
-    
-    const { data, error } = await (supabase
-      .from('menu_items') as any)
+
+    const { data, error } = await (supabase.from('menu_items') as any)
       .update(updateData)
       .eq('id', id)
       .select()
       .single();
-    
-    if (error || !data) {
-      return NextResponse.json(
-        { message: 'メニューの更新に失敗しました', error: error?.message },
-        { status: 404 }
-      );
-    }
-    
-    return NextResponse.json(data);
-  } catch (error: any) {
-    console.error('Failed to update menu item:', error);
-    return NextResponse.json(
-      { message: 'メニューの更新に失敗しました', error: error.message },
-      { status: 500 }
-    );
-  }
-}
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    // 認証チェック
-    const authResult = await verifyAuth(request);
-    if (!authResult.authenticated) {
-      return NextResponse.json(
-        { message: '認証が必要です' },
-        { status: 401 }
-      );
+    if (error || !data) {
+      return handleSupabaseError(error || { message: 'Not found' }, 'メニュー更新');
     }
-    
-    const { id } = await params;
-    const supabase = createServerClient();
-    
-    const { error } = await supabase
-      .from('menu_items')
-      .delete()
-      .eq('id', id);
-    
-    if (error) {
-      return NextResponse.json(
-        { message: 'メニューの削除に失敗しました', error: error.message },
-        { status: 500 }
-      );
-    }
-    
-    return NextResponse.json({ message: '削除しました' });
-  } catch (error: any) {
-    console.error('Failed to delete menu item:', error);
-    return NextResponse.json(
-      { message: 'メニューの削除に失敗しました', error: error.message },
-      { status: 500 }
-    );
+
+    return jsonSuccess(data);
   }
-}
+);
+
+// DELETE: メニュー削除（認証必要）
+export const DELETE = withAuth(
+  async (
+    _request: NextRequest,
+    _auth,
+    context?: { params: Promise<Record<string, string>> }
+  ) => {
+    const { id } = await context!.params;
+    const supabase = createServerClient();
+
+    const { error } = await supabase.from('menu_items').delete().eq('id', id);
+
+    if (error) {
+      return handleSupabaseError(error, 'メニュー削除');
+    }
+
+    return jsonSuccess({ message: '削除しました' });
+  }
+);

@@ -6,7 +6,8 @@
       "mcp__supabase__list_tables",
       "Bash(rm:*)",
       "Bash(npm run build:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(wc:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

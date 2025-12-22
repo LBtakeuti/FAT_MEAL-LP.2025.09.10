@@ -1,104 +1,64 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
-import { verifyAuth } from '@/lib/auth';
+import {
+  withAuth,
+  jsonSuccess,
+  jsonBadRequest,
+  handleSupabaseError,
+} from '@/lib/api-helpers';
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    // 認証チェック
-    const authResult = await verifyAuth(request);
-    if (!authResult.authenticated) {
-      return NextResponse.json(
-        { message: '認証が必要です' },
-        { status: 401 }
-      );
-    }
-    
-    const { id } = await params;
+const VALID_STATUSES = ['pending', 'responded', 'closed'] as const;
+
+// PATCH: お問い合わせステータス更新（認証必要）
+export const PATCH = withAuth(
+  async (
+    request: NextRequest,
+    _auth,
+    context?: { params: Promise<Record<string, string>> }
+  ) => {
+    const { id } = await context!.params;
     const body = await request.json();
-    const supabase = createServerClient();
-    
+
     // ステータスのバリデーション
-    if (body.status && !['pending', 'responded', 'closed'].includes(body.status)) {
-      return NextResponse.json(
-        { message: 'ステータスが無効です' },
-        { status: 400 }
-      );
+    if (body.status && !VALID_STATUSES.includes(body.status)) {
+      return jsonBadRequest('ステータスが無効です');
     }
-    
-    const { data, error } = await (supabase
-      .from('contacts') as any)
+
+    const supabase = createServerClient();
+
+    const { data, error } = await (supabase.from('contacts') as any)
       .update({ status: body.status })
       .eq('id', id)
       .select()
       .single();
-    
+
     if (error || !data) {
-      return NextResponse.json(
-        { message: 'ステータスの更新に失敗しました', error: error?.message },
-        { status: 404 }
+      return handleSupabaseError(
+        error || { message: 'Not found' },
+        'ステータス更新'
       );
     }
-    
-    return NextResponse.json(data);
-  } catch (error: any) {
-    console.error('Failed to update contact status:', error);
-    return NextResponse.json(
-      { message: 'ステータスの更新に失敗しました', error: error.message },
-      { status: 500 }
-    );
-  }
-}
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    // 認証チェック
-    const authResult = await verifyAuth(request);
-    if (!authResult.authenticated) {
-      return NextResponse.json(
-        { message: '認証が必要です' },
-        { status: 401 }
-      );
-    }
-    
-    const { id } = await params;
+    return jsonSuccess(data);
+  }
+);
+
+// DELETE: お問い合わせ削除（認証必要）
+export const DELETE = withAuth(
+  async (
+    _request: NextRequest,
+    _auth,
+    context?: { params: Promise<Record<string, string>> }
+  ) => {
+    const { id } = await context!.params;
     const supabase = createServerClient();
-    
-    const { error } = await supabase
-      .from('contacts')
-      .delete()
-      .eq('id', id);
-    
+
+    const { error } = await supabase.from('contacts').delete().eq('id', id);
+
     if (error) {
-      return NextResponse.json(
-        { message: 'お問い合わせの削除に失敗しました', error: error.message },
-        { status: 500 }
-      );
+      return handleSupabaseError(error, 'お問い合わせ削除');
     }
-    
-    return NextResponse.json({ message: '削除しました' });
-  } catch (error: any) {
-    console.error('Failed to delete contact:', error);
-    return NextResponse.json(
-      { message: 'お問い合わせの削除に失敗しました', error: error.message },
-      { status: 500 }
-    );
+
+    return jsonSuccess({ message: '削除しました' });
   }
-}
-
-
-
-
-
-
-
-
-
-
-
-
+);
