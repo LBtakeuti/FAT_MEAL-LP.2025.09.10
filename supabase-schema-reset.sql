@@ -282,3 +282,7 @@ INSERT INTO public.news (title, content, date, category) VALUES
 
 
 
+
+
+
+

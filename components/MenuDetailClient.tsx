@@ -27,6 +27,9 @@ interface MenuDetailClientProps {
   menuItem: MenuItem;
 }
 
+// Google Drive画像かどうかを判定
+const isGoogleDriveImage = (url: string) => url.includes('googleusercontent.com');
+
 export default function MenuDetailClient({ menuItem }: MenuDetailClientProps) {
   const router = useRouter();
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -80,13 +83,14 @@ export default function MenuDetailClient({ menuItem }: MenuDetailClientProps) {
           </div>
 
           {/* Product Image */}
-          <div className="relative w-full h-[300px]">
+          <div className="relative w-full h-[300px] bg-gray-100">
             <Image
               src={displayImages[selectedImageIndex]}
               alt={menuItem.name}
               fill
-              className="object-cover"
+              className="object-contain"
               priority
+              unoptimized={isGoogleDriveImage(displayImages[selectedImageIndex])}
             />
           </div>
 
@@ -109,6 +113,7 @@ export default function MenuDetailClient({ menuItem }: MenuDetailClientProps) {
                       alt={`${menuItem.name} ${index + 1}`}
                       fill
                       className="object-cover"
+                      unoptimized={isGoogleDriveImage(img)}
                     />
                   </button>
                 ))}
@@ -196,6 +201,16 @@ export default function MenuDetailClient({ menuItem }: MenuDetailClientProps) {
                 )}
               </div>
             </div>
+
+            {/* Purchase Button */}
+            <div className="mt-6">
+              <button
+                onClick={() => router.push('/purchase')}
+                className="w-full h-14 bg-orange-500 text-white rounded-xl font-bold text-lg transition-all duration-300 shadow-md hover:bg-orange-600 hover:shadow-lg"
+              >
+                購入する
+              </button>
+            </div>
           </div>
         </div>
 
@@ -218,13 +233,14 @@ export default function MenuDetailClient({ menuItem }: MenuDetailClientProps) {
             <div className="flex gap-8 lg:gap-12">
               {/* Left: Image */}
               <div className="flex-1">
-                <div className="relative w-full h-[500px] lg:h-[600px] rounded-lg overflow-hidden">
+                <div className="relative w-full h-[500px] lg:h-[600px] rounded-lg overflow-hidden bg-gray-100">
                   <Image
                     src={displayImages[selectedImageIndex]}
                     alt={menuItem.name}
                     fill
-                    className="object-cover"
+                    className="object-contain"
                     priority
+                    unoptimized={isGoogleDriveImage(displayImages[selectedImageIndex])}
                   />
                 </div>
                 {/* Thumbnails */}
@@ -245,6 +261,7 @@ export default function MenuDetailClient({ menuItem }: MenuDetailClientProps) {
                           alt={`${menuItem.name} ${index + 1}`}
                           fill
                           className="object-cover"
+                          unoptimized={isGoogleDriveImage(img)}
                         />
                       </button>
                     ))}
@@ -292,6 +309,16 @@ export default function MenuDetailClient({ menuItem }: MenuDetailClientProps) {
                   <p className="text-xs text-gray-600">
                     ※アレルギー情報は目安です。詳細はお問い合わせください。
                   </p>
+                </div>
+
+                {/* Purchase Button */}
+                <div className="mt-8">
+                  <button
+                    onClick={() => router.push('/purchase')}
+                    className="w-full h-14 bg-orange-500 text-white rounded-xl font-bold text-lg transition-all duration-300 shadow-md hover:bg-orange-600 hover:shadow-lg"
+                  >
+                    購入する
+                  </button>
                 </div>
               </div>
             </div>

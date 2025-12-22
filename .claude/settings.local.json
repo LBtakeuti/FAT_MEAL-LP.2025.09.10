@@ -2,11 +2,17 @@
   "permissions": {
     "allow": [
       "mcp__stripe__create_payment_link",
-      "mcp__supabase__execute_sql"
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__list_tables",
+      "Bash(rm:*)",
+      "Bash(npm run build:*)",
+      "Bash(curl:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
-    "serena"
+    "serena",
+    "supabase",
+    "stripe"
   ]
 }
