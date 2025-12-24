@@ -30,15 +30,22 @@ export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
   const cronSecret = process.env.CRON_SECRET;
   
+  console.log('[Cron Job] Starting daily order report...');
+  console.log('[Cron Job] Authorization header present:', !!authHeader);
+  console.log('[Cron Job] CRON_SECRET set:', !!cronSecret);
+  
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    console.error('[Cron Job] Unauthorized access attempt');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
     const resendApiKey = process.env.RESEND_API_KEY;
     if (!resendApiKey) {
+      console.error('[Cron Job] RESEND_API_KEY is not set');
       throw new Error('RESEND_API_KEY is not set');
     }
+    console.log('[Cron Job] RESEND_API_KEY is set:', resendApiKey.substring(0, 10) + '...');
 
     const resend = new Resend(resendApiKey);
     const supabase = createServerClient();
@@ -50,6 +57,8 @@ export async function GET(request: NextRequest) {
     const tomorrow = new Date(today);
     tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
 
+    console.log('[Cron Job] Fetching orders from:', today.toISOString(), 'to:', tomorrow.toISOString());
+
     // 今日の注文を取得（JST 18時まで = UTC 9時まで）
     const { data: orders, error } = await (supabase
       .from('orders') as any)
@@ -59,16 +68,20 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: true }) as { data: Order[] | null; error: any };
 
     if (error) {
-      console.error('Failed to fetch orders:', error);
+      console.error('[Cron Job] Failed to fetch orders:', error);
       throw error;
     }
 
     const orderCount = orders?.length || 0;
+    console.log('[Cron Job] Found orders:', orderCount);
+    
     const vendorEmail = process.env.VENDOR_EMAIL;
     
     if (!vendorEmail) {
+      console.error('[Cron Job] VENDOR_EMAIL is not set');
       throw new Error('VENDOR_EMAIL is not set');
     }
+    console.log('[Cron Job] Sending email to:', vendorEmail);
 
     const dateStr = formatDate(today);
 
@@ -112,10 +125,11 @@ export async function GET(request: NextRequest) {
       });
 
       if (emailError) {
-        console.error('Failed to send no-orders email:', emailError);
+        console.error('[Cron Job] Failed to send no-orders email:', JSON.stringify(emailError, null, 2));
         throw emailError;
       }
 
+      console.log('[Cron Job] No-orders email sent successfully to:', vendorEmail);
       return NextResponse.json({ 
         success: true, 
         message: 'No orders email sent',
@@ -213,10 +227,13 @@ export async function GET(request: NextRequest) {
     });
 
     if (emailError) {
-      console.error('Failed to send order report email:', emailError);
+      console.error('[Cron Job] Failed to send order report email:', JSON.stringify(emailError, null, 2));
       throw emailError;
     }
 
+    console.log('[Cron Job] Order report email sent successfully to:', vendorEmail);
+    console.log('[Cron Job] Order count:', orderCount, 'Total amount:', totalAmount);
+    
     return NextResponse.json({ 
       success: true, 
       message: 'Order report email sent',
@@ -226,7 +243,8 @@ export async function GET(request: NextRequest) {
       date: dateStr
     });
   } catch (error) {
-    console.error('Daily order report error:', error);
+    console.error('[Cron Job] Daily order report error:', error);
+    console.error('[Cron Job] Error details:', error instanceof Error ? error.stack : String(error));
     return NextResponse.json(
       { 
         error: 'Failed to send daily order report', 
