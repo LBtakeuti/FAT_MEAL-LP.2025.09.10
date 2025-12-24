@@ -9,6 +9,12 @@
       "maxDuration": 60
     }
   },
+  "crons": [
+    {
+      "path": "/api/cron/daily-order-report",
+      "schedule": "0 9 * * *"
+    }
+  ],
   "env": {
     "NODE_ENV": "production"
   },
