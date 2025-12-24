@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
       for (const email of emailsToSend) {
         try {
           const { error: emailError } = await resend.emails.send({
-            from: 'ふとるめし <noreply@resend.dev>',
+            from: fromEmail,
             to: email,
             subject,
             html,
