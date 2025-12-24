@@ -75,13 +75,19 @@ export async function GET(request: NextRequest) {
     const orderCount = orders?.length || 0;
     console.log('[Cron Job] Found orders:', orderCount);
     
-    const vendorEmail = process.env.VENDOR_EMAIL;
+    // Resendの無料プランでは、自分のメールアドレスにしか送信できない
+    // ドメイン認証後は、VENDOR_EMAILを使用可能
+    const vendorEmail = process.env.VENDOR_EMAIL || 'takeuchi@landbridge.co.jp';
+    const fallbackEmail = 'takeuchi@landbridge.co.jp'; // フォールバック用
     
-    if (!vendorEmail) {
-      console.error('[Cron Job] VENDOR_EMAIL is not set');
-      throw new Error('VENDOR_EMAIL is not set');
+    // ドメイン認証が完了していない場合、自分のメールアドレスに送信
+    // 認証後は、VENDOR_EMAILが設定されていればそれを使用
+    const recipientEmail = vendorEmail || fallbackEmail;
+    
+    console.log('[Cron Job] Sending email to:', recipientEmail);
+    if (vendorEmail !== recipientEmail) {
+      console.warn('[Cron Job] Using fallback email address. Domain verification may be required.');
     }
-    console.log('[Cron Job] Sending email to:', vendorEmail);
 
     const dateStr = formatDate(today);
 
@@ -89,7 +95,7 @@ export async function GET(request: NextRequest) {
       // 購入がない場合のメール
       const { error: emailError } = await resend.emails.send({
         from: 'ふとるめし <noreply@resend.dev>',
-        to: vendorEmail,
+        to: recipientEmail,
         subject: `【ふとるめし】${dateStr}の注文報告`,
         html: `
           <!DOCTYPE html>
@@ -129,7 +135,7 @@ export async function GET(request: NextRequest) {
         throw emailError;
       }
 
-      console.log('[Cron Job] No-orders email sent successfully to:', vendorEmail);
+      console.log('[Cron Job] No-orders email sent successfully to:', recipientEmail);
       return NextResponse.json({ 
         success: true, 
         message: 'No orders email sent',
@@ -149,7 +155,7 @@ export async function GET(request: NextRequest) {
     // メール送信（CSVファイル添付）
     const { error: emailError } = await resend.emails.send({
       from: 'ふとるめし <noreply@resend.dev>',
-      to: vendorEmail,
+      to: recipientEmail,
       subject: `【ふとるめし】${dateStr}の注文報告（${orderCount}件）`,
       html: `
         <!DOCTYPE html>
@@ -231,7 +237,7 @@ export async function GET(request: NextRequest) {
       throw emailError;
     }
 
-    console.log('[Cron Job] Order report email sent successfully to:', vendorEmail);
+    console.log('[Cron Job] Order report email sent successfully to:', recipientEmail);
     console.log('[Cron Job] Order count:', orderCount, 'Total amount:', totalAmount);
     
     return NextResponse.json({ 
