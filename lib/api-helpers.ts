@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuth, AuthResult } from './auth';
-import type { ApiSuccessResponse, ApiErrorResponse } from '@/types';
+import type { ApiErrorResponse } from '@/types';
 
 // ============================================
 // レスポンスヘルパー
@@ -70,26 +70,33 @@ export function jsonNotFound(message: string = 'リソースが見つかりま�
 // 認証ラッパー
 // ============================================
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type RouteContext = { params: Promise<Record<string, string>> } | undefined;
+// 静的ルート用（contextなし）
+type StaticRouteHandler = (request: NextRequest) => Promise<NextResponse>;
 
-type RouteHandler = (
+type StaticAuthenticatedHandler = (
   request: NextRequest,
-  context?: RouteContext
+  auth: AuthResult
 ) => Promise<NextResponse>;
 
-type AuthenticatedHandler = (
+// 動的ルート用（context必須）
+type DynamicRouteContext = { params: Promise<Record<string, string>> };
+
+type DynamicRouteHandler = (
   request: NextRequest,
-  auth: AuthResult,
-  context?: RouteContext
+  context: DynamicRouteContext
+) => Promise<NextResponse>;
+
+type DynamicAuthenticatedHandler = (
+  request: NextRequest,
+  context: DynamicRouteContext,
+  auth: AuthResult
 ) => Promise<NextResponse>;
 
 /**
- * 認証が必要なルートをラップ
- * 認証チェックとエラーハンドリングを自動化
+ * 認証が必要な静的ルートをラップ
  */
-export function withAuth(handler: AuthenticatedHandler): RouteHandler {
-  return async (request: NextRequest, context?: RouteContext) => {
+export function withAuth(handler: StaticAuthenticatedHandler): StaticRouteHandler {
+  return async (request: NextRequest) => {
     try {
       const authResult = await verifyAuth(request);
 
@@ -97,7 +104,7 @@ export function withAuth(handler: AuthenticatedHandler): RouteHandler {
         return jsonUnauthorized();
       }
 
-      return await handler(request, authResult, context);
+      return await handler(request, authResult);
     } catch (error) {
       console.error('API Error:', error);
       return jsonError('サーバーエラーが発生しました', 500, error);
@@ -106,10 +113,48 @@ export function withAuth(handler: AuthenticatedHandler): RouteHandler {
 }
 
 /**
- * 認証不要のルートをラップ（エラーハンドリングのみ）
+ * 認証が必要な動的ルートをラップ（[id]などのパラメータあり）
  */
-export function withErrorHandler(handler: RouteHandler): RouteHandler {
-  return async (request: NextRequest, context?: RouteContext) => {
+export function withAuthDynamic(
+  handler: DynamicAuthenticatedHandler
+): DynamicRouteHandler {
+  return async (request: NextRequest, context: DynamicRouteContext) => {
+    try {
+      const authResult = await verifyAuth(request);
+
+      if (!authResult.authenticated) {
+        return jsonUnauthorized();
+      }
+
+      return await handler(request, context, authResult);
+    } catch (error) {
+      console.error('API Error:', error);
+      return jsonError('サーバーエラーが発生しました', 500, error);
+    }
+  };
+}
+
+/**
+ * 認証不要の静的ルートをラップ（エラーハンドリングのみ）
+ */
+export function withErrorHandler(handler: StaticRouteHandler): StaticRouteHandler {
+  return async (request: NextRequest) => {
+    try {
+      return await handler(request);
+    } catch (error) {
+      console.error('API Error:', error);
+      return jsonError('サーバーエラーが発生しました', 500, error);
+    }
+  };
+}
+
+/**
+ * 認証不要の動的ルートをラップ（エラーハンドリングのみ）
+ */
+export function withErrorHandlerDynamic(
+  handler: DynamicRouteHandler
+): DynamicRouteHandler {
+  return async (request: NextRequest, context: DynamicRouteContext) => {
     try {
       return await handler(request, context);
     } catch (error) {

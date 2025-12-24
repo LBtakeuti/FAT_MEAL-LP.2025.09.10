@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 import {
-  withAuth,
+  withAuthDynamic,
   jsonSuccess,
   jsonBadRequest,
   handleSupabaseError,
@@ -10,55 +10,43 @@ import {
 const VALID_STATUSES = ['pending', 'responded', 'closed'] as const;
 
 // PATCH: お問い合わせステータス更新（認証必要）
-export const PATCH = withAuth(
-  async (
-    request: NextRequest,
-    _auth,
-    context?: { params: Promise<Record<string, string>> }
-  ) => {
-    const { id } = await context!.params;
-    const body = await request.json();
+export const PATCH = withAuthDynamic(async (request: NextRequest, context) => {
+  const { id } = await context.params;
+  const body = await request.json();
 
-    // ステータスのバリデーション
-    if (body.status && !VALID_STATUSES.includes(body.status)) {
-      return jsonBadRequest('ステータスが無効です');
-    }
-
-    const supabase = createServerClient();
-
-    const { data, error } = await (supabase.from('contacts') as any)
-      .update({ status: body.status })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error || !data) {
-      return handleSupabaseError(
-        error || { message: 'Not found' },
-        'ステータス更新'
-      );
-    }
-
-    return jsonSuccess(data);
+  // ステータスのバリデーション
+  if (body.status && !VALID_STATUSES.includes(body.status)) {
+    return jsonBadRequest('ステータスが無効です');
   }
-);
+
+  const supabase = createServerClient();
+
+  const { data, error } = await (supabase.from('contacts') as any)
+    .update({ status: body.status })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error || !data) {
+    return handleSupabaseError(
+      error || { message: 'Not found' },
+      'ステータス更新'
+    );
+  }
+
+  return jsonSuccess(data);
+});
 
 // DELETE: お問い合わせ削除（認証必要）
-export const DELETE = withAuth(
-  async (
-    _request: NextRequest,
-    _auth,
-    context?: { params: Promise<Record<string, string>> }
-  ) => {
-    const { id } = await context!.params;
-    const supabase = createServerClient();
+export const DELETE = withAuthDynamic(async (_request: NextRequest, context) => {
+  const { id } = await context.params;
+  const supabase = createServerClient();
 
-    const { error } = await supabase.from('contacts').delete().eq('id', id);
+  const { error } = await supabase.from('contacts').delete().eq('id', id);
 
-    if (error) {
-      return handleSupabaseError(error, 'お問い合わせ削除');
-    }
-
-    return jsonSuccess({ message: '削除しました' });
+  if (error) {
+    return handleSupabaseError(error, 'お問い合わせ削除');
   }
-);
+
+  return jsonSuccess({ message: '削除しました' });
+});

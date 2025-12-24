@@ -125,9 +125,8 @@ export function clearAuthCookie(res: NextResponse): void {
 
 /**
  * Supabaseからサインアウト
- * @param token アクセストークン
  */
-export async function signOut(token?: string): Promise<void> {
+export async function signOut(): Promise<void> {
   try {
     const supabase = createServerClient();
     await supabase.auth.signOut();

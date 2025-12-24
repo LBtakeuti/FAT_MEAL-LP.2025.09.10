@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import type { MenuItemDB, NewsItemDB, ContactDB, MenuItemCreate, MenuItemUpdate } from '@/types';
+import type { MenuItemDB, NewsItemDB, ContactDB } from '@/types';
 
 // 環境変数の型定義
 type SupabaseEnv = {
@@ -79,7 +79,7 @@ const supabase = typeof window !== 'undefined'
 export default supabase;
 
 // 型定義は @/types から再エクスポート
-export type { MenuItemDB, NewsItemDB, ContactDB, MenuItemCreate, MenuItemUpdate } from '@/types';
+export type { MenuItemDB, NewsItemDB, ContactDB } from '@/types';
 
 // ストレージバケット名
 export const STORAGE_BUCKETS = {
@@ -103,7 +103,7 @@ export async function uploadImage(
   const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
   const filePath = folder ? `${folder}/${fileName}` : fileName;
 
-  const { data, error } = await supabase.storage
+  const { error } = await supabase.storage
     .from(STORAGE_BUCKETS[bucket])
     .upload(filePath, file, {
       cacheControl: '3600',

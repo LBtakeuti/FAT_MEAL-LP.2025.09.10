@@ -1,13 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { clearAuthCookie, signOut, getAuthToken } from '@/lib/auth';
+import { NextResponse } from 'next/server';
+import { clearAuthCookie, signOut } from '@/lib/auth';
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     // Supabaseからサインアウト
-    const token = getAuthToken(request);
-    if (token) {
-      await signOut(token);
-    }
+    await signOut();
 
     const response = NextResponse.json(
       { message: 'ログアウトしました' },

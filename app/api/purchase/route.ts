@@ -12,6 +12,12 @@ interface PurchaseItem {
   quantity: number;
 }
 
+interface MenuItemStock {
+  id: string;
+  name: string;
+  stock: number;
+}
+
 // POST: 購入処理
 export const POST = withErrorHandler(async (request: NextRequest) => {
   const { items } = await request.json();
@@ -37,7 +43,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       .from('menu_items')
       .select('id, name, stock')
       .eq('id', id)
-      .single();
+      .single() as { data: MenuItemStock | null; error: unknown };
 
     if (fetchError || !menuItem) {
       errors.push(`商品ID ${id} が見つかりません`);
