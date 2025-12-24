@@ -104,10 +104,15 @@ export async function GET(request: NextRequest) {
         failed: [] as Array<{ email: string; error: string }>,
       };
 
+      // fromEmailを確実に使用（クロージャで参照）
+      const emailFrom = fromEmail;
+      console.log('[Cron Job] sendEmailToRecipients - Using from email:', emailFrom);
+
       for (const email of emailsToSend) {
         try {
+          console.log(`[Cron Job] Attempting to send email from ${emailFrom} to ${email}`);
           const { error: emailError } = await resend.emails.send({
-            from: fromEmail,
+            from: emailFrom,
             to: email,
             subject,
             html,
