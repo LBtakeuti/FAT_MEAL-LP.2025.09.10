@@ -75,29 +75,61 @@ export async function GET(request: NextRequest) {
     const orderCount = orders?.length || 0;
     console.log('[Cron Job] Found orders:', orderCount);
     
-    // Resendの無料プランでは、自分のメールアドレスにしか送信できない
-    // ドメイン認証後は、VENDOR_EMAILを使用可能
-    const vendorEmail = process.env.VENDOR_EMAIL || 'takeuchi@landbridge.co.jp';
+    // 送信先メールアドレスの取得（カンマ区切りで複数指定可能）
+    // 例: VENDOR_EMAIL=sales@landbridge.co.jp,info@landbridge.co.jp,takeuchi@landbridge.co.jp
+    const vendorEmailsEnv = process.env.VENDOR_EMAIL || '';
     const fallbackEmail = 'takeuchi@landbridge.co.jp'; // フォールバック用
     
-    // ドメイン認証が完了していない場合、自分のメールアドレスに送信
-    // 認証後は、VENDOR_EMAILが設定されていればそれを使用
-    const recipientEmail = vendorEmail || fallbackEmail;
+    // カンマ区切りで分割し、空白を削除
+    const recipientEmails = vendorEmailsEnv
+      .split(',')
+      .map(email => email.trim())
+      .filter(email => email.length > 0);
     
-    console.log('[Cron Job] Sending email to:', recipientEmail);
-    if (vendorEmail !== recipientEmail) {
-      console.warn('[Cron Job] Using fallback email address. Domain verification may be required.');
-    }
+    // 送信先が設定されていない場合はフォールバックを使用
+    const emailsToSend = recipientEmails.length > 0 ? recipientEmails : [fallbackEmail];
+    
+    console.log('[Cron Job] Sending email to:', emailsToSend.join(', '));
 
     const dateStr = formatDate(today);
 
+    // メール送信関数（複数の送信先に対応）
+    const sendEmailToRecipients = async (subject: string, html: string, attachments?: Array<{ filename: string; content: string }>) => {
+      const results = {
+        success: [] as string[],
+        failed: [] as Array<{ email: string; error: string }>,
+      };
+
+      for (const email of emailsToSend) {
+        try {
+          const { error: emailError } = await resend.emails.send({
+            from: 'ふとるめし <noreply@resend.dev>',
+            to: email,
+            subject,
+            html,
+            ...(attachments && { attachments }),
+          });
+
+          if (emailError) {
+            console.error(`[Cron Job] Failed to send email to ${email}:`, JSON.stringify(emailError, null, 2));
+            results.failed.push({ email, error: emailError.message || String(emailError) });
+          } else {
+            console.log(`[Cron Job] Email sent successfully to: ${email}`);
+            results.success.push(email);
+          }
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          console.error(`[Cron Job] Error sending email to ${email}:`, errorMessage);
+          results.failed.push({ email, error: errorMessage });
+        }
+      }
+
+      return results;
+    };
+
     if (orderCount === 0) {
       // 購入がない場合のメール
-      const { error: emailError } = await resend.emails.send({
-        from: 'ふとるめし <noreply@resend.dev>',
-        to: recipientEmail,
-        subject: `【ふとるめし】${dateStr}の注文報告`,
-        html: `
+      const noOrdersHtml = `
           <!DOCTYPE html>
           <html>
           <head>
@@ -127,20 +159,27 @@ export async function GET(request: NextRequest) {
             </div>
           </body>
           </html>
-        `,
-      });
+        `;
 
-      if (emailError) {
-        console.error('[Cron Job] Failed to send no-orders email:', JSON.stringify(emailError, null, 2));
-        throw emailError;
+      const emailResults = await sendEmailToRecipients(
+        `【ふとるめし】${dateStr}の注文報告`,
+        noOrdersHtml
+      );
+
+      // すべての送信先に失敗した場合のみエラー
+      if (emailResults.success.length === 0) {
+        throw new Error(`Failed to send email to all recipients: ${emailResults.failed.map(f => `${f.email} (${f.error})`).join(', ')}`);
       }
 
-      console.log('[Cron Job] No-orders email sent successfully to:', recipientEmail);
       return NextResponse.json({ 
         success: true, 
         message: 'No orders email sent',
         orderCount: 0,
-        date: dateStr
+        date: dateStr,
+        emailResults: {
+          sentTo: emailResults.success,
+          failed: emailResults.failed
+        }
       });
     }
 
@@ -153,11 +192,7 @@ export async function GET(request: NextRequest) {
     const totalQuantity = orders?.reduce((sum, order) => sum + (order.quantity || 0), 0) || 0;
 
     // メール送信（CSVファイル添付）
-    const { error: emailError } = await resend.emails.send({
-      from: 'ふとるめし <noreply@resend.dev>',
-      to: recipientEmail,
-      subject: `【ふとるめし】${dateStr}の注文報告（${orderCount}件）`,
-      html: `
+    const orderReportHtml = `
         <!DOCTYPE html>
         <html>
         <head>
@@ -222,23 +257,30 @@ export async function GET(request: NextRequest) {
             </div>
           </div>
         </body>
-        </html>
-      `,
-      attachments: [
+          </html>
+      `;
+
+    const emailResults = await sendEmailToRecipients(
+      `【ふとるめし】${dateStr}の注文報告（${orderCount}件）`,
+      orderReportHtml,
+      [
         {
           filename: `orders_${formatDateForFilename(today)}.csv`,
           content: csvBuffer.toString('base64'),
         },
-      ],
-    });
+      ]
+    );
 
-    if (emailError) {
-      console.error('[Cron Job] Failed to send order report email:', JSON.stringify(emailError, null, 2));
-      throw emailError;
+    // すべての送信先に失敗した場合のみエラー
+    if (emailResults.success.length === 0) {
+      throw new Error(`Failed to send email to all recipients: ${emailResults.failed.map(f => `${f.email} (${f.error})`).join(', ')}`);
     }
 
-    console.log('[Cron Job] Order report email sent successfully to:', recipientEmail);
     console.log('[Cron Job] Order count:', orderCount, 'Total amount:', totalAmount);
+    console.log('[Cron Job] Email sent successfully to:', emailResults.success.join(', '));
+    if (emailResults.failed.length > 0) {
+      console.warn('[Cron Job] Failed to send to:', emailResults.failed.map(f => f.email).join(', '));
+    }
     
     return NextResponse.json({ 
       success: true, 
@@ -246,7 +288,11 @@ export async function GET(request: NextRequest) {
       orderCount,
       totalAmount,
       totalQuantity,
-      date: dateStr
+      date: dateStr,
+      emailResults: {
+        sentTo: emailResults.success,
+        failed: emailResults.failed
+      }
     });
   } catch (error) {
     console.error('[Cron Job] Daily order report error:', error);
