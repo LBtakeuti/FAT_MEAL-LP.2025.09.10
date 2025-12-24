@@ -90,6 +90,10 @@ export async function GET(request: NextRequest) {
     const emailsToSend = recipientEmails.length > 0 ? recipientEmails : [fallbackEmail];
     
     console.log('[Cron Job] Sending email to:', emailsToSend.join(', '));
+    
+    // 認証済みドメインを使用（環境変数で設定可能、デフォルトは認証済みドメイン）
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'ふとるめし <noreply@futorumeshi.com>';
+    console.log('[Cron Job] Using from email:', fromEmail);
 
     const dateStr = formatDate(today);
 
