@@ -1,11 +1,38 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { createBrowserClient } from '@/lib/supabase';
 
 const MobileHeader: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const supabase = createBrowserClient();
+    
+    // 現在のセッションを取得
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // 認証状態の変更を監視
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    const supabase = createBrowserClient();
+    await supabase.auth.signOut();
+    closeMenu();
+    window.location.href = '/';
+  };
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -154,6 +181,47 @@ const MobileHeader: React.FC = () => {
               >
                 お問い合わせ
               </button>
+
+              {/* ログイン/マイページボタン */}
+              {!loading && (
+                <>
+                  {user ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          window.location.href = '/mypage';
+                          closeMenu();
+                        }}
+                        className="block w-full text-left px-6 py-4 text-orange-600 hover:bg-orange-50 active:bg-orange-100 transition-colors font-medium text-lg"
+                        style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
+                      >
+                        マイページ
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="block w-full text-left px-6 py-4 text-orange-600 hover:bg-orange-50 active:bg-orange-100 transition-colors font-medium text-lg"
+                        style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
+                      >
+                        ログアウト
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        window.location.href = '/login';
+                        closeMenu();
+                      }}
+                      className="block w-full text-left px-6 py-4 text-orange-600 hover:bg-orange-50 active:bg-orange-100 transition-colors font-medium text-lg"
+                      style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
+                    >
+                      ログイン
+                    </button>
+                  )}
+                </>
+              )}
             </div>
 
             {/* LINE Button */}
