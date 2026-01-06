@@ -7,34 +7,34 @@ const CTASection: React.FC = () => {
   const router = useRouter();
   const sets = [
     {
-      id: 'plan-3',
-      meals: 3,
-      title: 'ふとるめし3個セット',
-      price: 3600,
-      pricePerMeal: 1200,
-      description: '初めての方におすすめ',
-      subtitle: '3種類×1個ずつ',
-      comingSoon: false,
-    },
-    {
       id: 'plan-6',
       meals: 6,
       title: 'ふとるめし6個セット',
-      price: 7200,
-      pricePerMeal: 1200,
-      description: '1週間しっかり続けたい方に',
-      subtitle: '3種類×2個ずつ',
+      price: 3600,
+      pricePerMeal: 600,
+      description: '初めての方におすすめ',
+      subtitle: '6種類×1個ずつ',
       comingSoon: false,
     },
     {
-      id: 'plan-9',
-      meals: 9,
-      title: 'ふとるめし9個セット',
-      price: 10800,
-      pricePerMeal: 1200,
+      id: 'plan-12',
+      meals: 12,
+      title: 'ふとるめし12個セット',
+      price: 6700,
+      pricePerMeal: 558,
+      description: '1週間しっかり続けたい方に',
+      subtitle: '6種類×2個ずつ',
+      comingSoon: false,
+    },
+    {
+      id: 'plan-18',
+      meals: 18,
+      title: 'ふとるめし18個セット',
+      price: 9800,
+      pricePerMeal: 544,
       description: '本格的に体作りを始める方に',
-      subtitle: '3種類×3個ずつ',
-      comingSoon: true,
+      subtitle: '6種類×3個ずつ',
+      comingSoon: false,
     },
   ];
 
@@ -117,9 +117,6 @@ const CTASection: React.FC = () => {
                 <div className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">
                   {set.title}
                 </div>
-                <p className="text-xs sm:text-sm md:text-base text-gray-600 mb-2 whitespace-nowrap">
-                  {set.description}
-                </p>
                 <p className="text-xs text-gray-500">
                   {set.subtitle}
                 </p>
