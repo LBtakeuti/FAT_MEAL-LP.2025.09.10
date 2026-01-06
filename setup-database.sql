@@ -189,3 +189,5 @@ INSERT INTO public.news (title, content, date, category, excerpt) VALUES
 -- ==========================================
 -- セットアップ完了
 -- ==========================================
+
+

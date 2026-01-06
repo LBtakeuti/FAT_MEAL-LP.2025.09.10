@@ -266,3 +266,5 @@ CREATE TRIGGER update_menu_items_updated_at
 - データ整合性: ✅ 制約設定済み
 
 🎉 **データベースは本番環境で使用できる状態です！**
+
+
