@@ -5,6 +5,37 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { createBrowserClient } from '@/lib/supabase';
 import Link from 'next/link';
 
+// Supabaseのエラーメッセージを日本語に変換
+const translateErrorMessage = (message: string): string => {
+  const errorMap: { [key: string]: string } = {
+    'Invalid login credentials': 'メールアドレスまたはパスワードが正しくありません',
+    'Email not confirmed': 'メールアドレスが確認されていません。確認メールをご確認ください',
+    'User already registered': 'このメールアドレスは既に登録されています',
+    'Password should be at least 6 characters': 'パスワードは6文字以上で入力してください',
+    'Unable to validate email address: invalid format': 'メールアドレスの形式が正しくありません',
+    'Signup requires a valid password': '有効なパスワードを入力してください',
+    'Email rate limit exceeded': 'メール送信の制限に達しました。しばらく時間をおいてからお試しください',
+    'For security purposes, you can only request this once every 60 seconds': 'セキュリティのため、60秒に1回のみリクエストできます',
+    'New password should be different from the old password': '新しいパスワードは以前のパスワードと異なるものにしてください',
+    'Auth session missing!': 'セッションが見つかりません。再度ログインしてください',
+  };
+
+  // 完全一致をチェック
+  if (errorMap[message]) {
+    return errorMap[message];
+  }
+
+  // 部分一致をチェック
+  for (const [key, value] of Object.entries(errorMap)) {
+    if (message.toLowerCase().includes(key.toLowerCase())) {
+      return value;
+    }
+  }
+
+  // マッチしない場合は汎用メッセージ
+  return 'エラーが発生しました。もう一度お試しください';
+};
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -19,13 +50,39 @@ function LoginForm() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
-  // URLパラメータからエラーを取得
+  // URLパラメータからエラーを取得、またはハッシュからトークンを処理
   useEffect(() => {
-    const errorParam = searchParams.get('error');
-    if (errorParam === 'auth_failed') {
-      setError('認証に失敗しました。もう一度お試しください。');
-    }
-  }, [searchParams]);
+    const handleAuth = async () => {
+      // ハッシュフラグメントにトークンがあるか確認
+      if (window.location.hash) {
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+
+        if (accessToken) {
+          const supabase = createBrowserClient();
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken || '',
+          });
+
+          if (!error) {
+            router.push('/');
+            router.refresh();
+            return;
+          }
+        }
+      }
+
+      // エラーパラメータを確認
+      const errorParam = searchParams.get('error');
+      if (errorParam === 'auth_failed') {
+        setError('認証に失敗しました。もう一度お試しください。');
+      }
+    };
+
+    handleAuth();
+  }, [searchParams, router]);
 
   // Googleでログイン
   const handleGoogleLogin = async () => {
@@ -38,7 +95,7 @@ function LoginForm() {
       const { error: googleError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=/mypage`,
+          redirectTo: `${window.location.origin}/login`,
         },
       });
 
@@ -46,7 +103,7 @@ function LoginForm() {
         throw googleError;
       }
     } catch (err: any) {
-      setError(err.message || 'Googleログインに失敗しました');
+      setError(translateErrorMessage(err.message || 'Googleログインに失敗しました'));
       setGoogleLoading(false);
     }
   };
@@ -73,7 +130,7 @@ function LoginForm() {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback?next=/mypage`,
+            emailRedirectTo: `${window.location.origin}/auth/callback?next=/`,
           },
         });
 
@@ -96,11 +153,11 @@ function LoginForm() {
         }
 
         // ログイン成功
-        router.push('/mypage');
+        router.push('/');
         router.refresh();
       }
     } catch (err: any) {
-      setError(err.message || 'エラーが発生しました');
+      setError(translateErrorMessage(err.message || 'エラーが発生しました'));
     } finally {
       setLoading(false);
     }

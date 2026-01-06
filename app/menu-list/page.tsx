@@ -89,29 +89,32 @@ export default function MenuListPage() {
           {/* Grid Layout */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {menuItems.map((item) => (
-              <Link
+              <div
                 key={item.id}
-                href={`/menu/${item.id}`}
-                className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer flex flex-col"
+                className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col"
               >
-                {/* Image */}
-                <div className="relative w-full h-[200px] sm:h-[220px]">
-                  <Image
-                    src={item.image}
-                    alt={item.name}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                  />
-                </div>
-                
+                {/* Image - クリックで詳細へ */}
+                <Link href={`/menu/${item.id}`} className="block">
+                  <div className="relative w-full h-[200px] sm:h-[220px]">
+                    <Image
+                      src={item.image}
+                      alt={item.name}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    />
+                  </div>
+                </Link>
+
                 {/* Content */}
                 <div className="p-4 sm:p-5 flex flex-col flex-grow">
-                  {/* Menu Name */}
-                  <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2 line-clamp-2">
-                    {item.name}
-                  </h3>
-                  
+                  {/* Menu Name - クリックで詳細へ */}
+                  <Link href={`/menu/${item.id}`}>
+                    <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2 line-clamp-2 hover:text-orange-600 transition-colors">
+                      {item.name}
+                    </h3>
+                  </Link>
+
                   {/* Calories */}
                   <div className="mb-2">
                     <span className="text-xl sm:text-2xl font-bold text-orange-600">
@@ -119,14 +122,14 @@ export default function MenuListPage() {
                     </span>
                     <span className="text-sm text-gray-600 ml-1">kcal</span>
                   </div>
-                  
+
                   {/* Description */}
                   <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-2 flex-grow">
                     {item.description}
                   </p>
-                  
+
                   {/* Nutrition Info */}
-                  <div className="space-y-1 text-xs sm:text-sm">
+                  <div className="space-y-1 text-xs sm:text-sm mb-4">
                     <div className="flex justify-between">
                       <span className="text-gray-500">タンパク質</span>
                       <span className="font-semibold text-gray-900">{item.protein}g</span>
@@ -140,8 +143,16 @@ export default function MenuListPage() {
                       <span className="font-semibold text-gray-900">{item.carbs}g</span>
                     </div>
                   </div>
+
+                  {/* 購入ボタン */}
+                  <Link
+                    href="/purchase"
+                    className="w-full bg-[#FF6B35] text-white text-center py-2.5 rounded-lg hover:bg-[#E55220] transition-colors font-medium text-sm sm:text-base"
+                  >
+                    購入する
+                  </Link>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         </div>

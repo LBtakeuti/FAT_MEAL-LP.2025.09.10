@@ -315,8 +315,10 @@ async function sendOrderConfirmationEmail(params: OrderEmailParams) {
 </html>
   `;
 
+  const fromEmail = process.env.FROM_EMAIL || 'ふとるめし <noreply@futorumeshi.com>';
+
   const { error } = await resend.emails.send({
-    from: 'ふとるめし <noreply@resend.dev>',
+    from: fromEmail,
     to: email,
     subject: '【ふとるめし】ご注文ありがとうございます',
     html: emailHtml,

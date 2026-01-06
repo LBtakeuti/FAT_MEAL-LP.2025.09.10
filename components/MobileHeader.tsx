@@ -4,35 +4,30 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { createBrowserClient } from '@/lib/supabase';
+import LogoutModal from './LogoutModal';
 
 const MobileHeader: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [logoutLoading, setLogoutLoading] = useState(false);
 
   useEffect(() => {
-    const supabase = createBrowserClient();
-    
-    // 現在のセッションを取得
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    const checkAuth = async () => {
+      const supabase = createBrowserClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsLoggedIn(!!session);
+    };
+    checkAuth();
 
-    // 認証状態の変更を監視
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    // リアルタイムで認証状態を監視
+    const supabase = createBrowserClient();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsLoggedIn(!!session);
     });
 
     return () => subscription.unsubscribe();
   }, []);
-
-  const handleLogout = async () => {
-    const supabase = createBrowserClient();
-    await supabase.auth.signOut();
-    closeMenu();
-    window.location.href = '/';
-  };
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -42,14 +37,27 @@ const MobileHeader: React.FC = () => {
     setIsMenuOpen(false);
   };
 
+  const handleLogout = async () => {
+    setLogoutLoading(true);
+    const supabase = createBrowserClient();
+    await supabase.auth.signOut();
+    closeMenu();
+    window.location.href = '/';
+  };
+
+  const openLogoutModal = () => {
+    closeMenu();
+    setShowLogoutModal(true);
+  };
+
   return (
     <>
       {/* Header - 常に表示 */}
       <header className="fixed top-0 left-0 right-0 bg-white shadow-md sm:hidden z-[10001]">
         <div className="flex items-center justify-between h-20 px-4">
-          <Link 
-            href="/" 
-            className="ml-4"
+          <Link
+            href="/"
+            className="ml-2"
             onClick={() => {
               if (isMenuOpen) {
                 closeMenu();
@@ -61,38 +69,55 @@ const MobileHeader: React.FC = () => {
               alt="ふとるめし"
               width={240}
               height={80}
-              className="h-14 w-auto"
+              className="h-12 w-auto"
               priority
             />
           </Link>
-          
-          {/* Hamburger Menu Button - ×に変わるアニメーション */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              toggleMenu();
-            }}
-            className="h-12 w-12 flex flex-col justify-center items-center bg-transparent border-none cursor-pointer"
-            style={{
-              WebkitTapHighlightColor: 'transparent',
-              touchAction: 'manipulation'
-            }}
-            aria-label={isMenuOpen ? 'メニューを閉じる' : 'メニューを開く'}
-          >
-            <div className="relative w-6 h-5">
-              <span className={`absolute left-0 w-full h-0.5 bg-[#374151] transition-all duration-300 ease-in-out ${
-                isMenuOpen ? 'top-2 rotate-45' : 'top-0'
-              }`} />
-              <span className={`absolute left-0 top-2 w-full h-0.5 bg-[#374151] transition-all duration-300 ease-in-out ${
-                isMenuOpen ? 'opacity-0' : 'opacity-100'
-              }`} />
-              <span className={`absolute left-0 w-full h-0.5 bg-[#374151] transition-all duration-300 ease-in-out ${
-                isMenuOpen ? 'top-2 -rotate-45' : 'top-4'
-              }`} />
-            </div>
-          </button>
+
+          <div className="flex items-center gap-3">
+            {/* マイページボタン - ログイン状態で色が変わる */}
+            <Link
+              href="/mypage"
+              className={`flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 ${
+                isLoggedIn
+                  ? 'bg-[#FF6B35] text-white hover:bg-[#E55220]'
+                  : 'text-[#374151] border border-[#374151] hover:text-[#FF6B35] hover:border-[#FF6B35]'
+              }`}
+              aria-label="マイページ"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </Link>
+
+            {/* Hamburger Menu Button - ×に変わるアニメーション */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleMenu();
+              }}
+              className="h-12 w-12 flex flex-col justify-center items-center bg-transparent border-none cursor-pointer"
+              style={{
+                WebkitTapHighlightColor: 'transparent',
+                touchAction: 'manipulation'
+              }}
+              aria-label={isMenuOpen ? 'メニューを閉じる' : 'メニューを開く'}
+            >
+              <div className="relative w-6 h-5">
+                <span className={`absolute left-0 w-full h-0.5 bg-[#374151] transition-all duration-300 ease-in-out ${
+                  isMenuOpen ? 'top-2 rotate-45' : 'top-0'
+                }`} />
+                <span className={`absolute left-0 top-2 w-full h-0.5 bg-[#374151] transition-all duration-300 ease-in-out ${
+                  isMenuOpen ? 'opacity-0' : 'opacity-100'
+                }`} />
+                <span className={`absolute left-0 w-full h-0.5 bg-[#374151] transition-all duration-300 ease-in-out ${
+                  isMenuOpen ? 'top-2 -rotate-45' : 'top-4'
+                }`} />
+              </div>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -146,22 +171,7 @@ const MobileHeader: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  if (window.location.pathname === '/') {
-                    // トップページの場合はスムーズスクロール
-                    setTimeout(() => {
-                      const element = document.querySelector('#news');
-                      if (element) {
-                        const offsetTop = element.getBoundingClientRect().top + window.pageYOffset - 80;
-                        window.scrollTo({
-                          top: offsetTop,
-                          behavior: 'smooth'
-                        });
-                      }
-                    }, 100);
-                  } else {
-                    // トップページ以外にいる場合は、トップページに遷移
-                    window.location.href = '/#news';
-                  }
+                  window.location.href = '/news';
                   closeMenu();
                 }}
                 className="block w-full text-left px-6 py-4 text-orange-600 hover:bg-orange-50 active:bg-orange-100 transition-colors font-medium text-lg"
@@ -182,46 +192,18 @@ const MobileHeader: React.FC = () => {
                 お問い合わせ
               </button>
 
-              {/* ログイン/マイページボタン */}
-              {!loading && (
-                <>
-                  {user ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          window.location.href = '/mypage';
-                          closeMenu();
-                        }}
-                        className="block w-full text-left px-6 py-4 text-orange-600 hover:bg-orange-50 active:bg-orange-100 transition-colors font-medium text-lg"
-                        style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
-                      >
-                        マイページ
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleLogout}
-                        className="block w-full text-left px-6 py-4 text-orange-600 hover:bg-orange-50 active:bg-orange-100 transition-colors font-medium text-lg"
-                        style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
-                      >
-                        ログアウト
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        window.location.href = '/login';
-                        closeMenu();
-                      }}
-                      className="block w-full text-left px-6 py-4 text-orange-600 hover:bg-orange-50 active:bg-orange-100 transition-colors font-medium text-lg"
-                      style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
-                    >
-                      ログイン
-                    </button>
-                  )}
-                </>
-              )}
+              {/* マイページ（メニュー内にも表示） */}
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.href = '/mypage';
+                  closeMenu();
+                }}
+                className="block w-full text-left px-6 py-4 text-orange-600 hover:bg-orange-50 active:bg-orange-100 transition-colors font-medium text-lg"
+                style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
+              >
+                マイページ
+              </button>
             </div>
 
             {/* LINE Button */}
@@ -245,8 +227,36 @@ const MobileHeader: React.FC = () => {
                 LINEで友だち追加
               </a>
             </div>
+
+            {/* ログアウトボタン - ログイン時のみ表示 */}
+            {isLoggedIn && (
+              <div className="px-6 py-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={openLogoutModal}
+                  className="flex items-center justify-center gap-2 w-full text-gray-500 py-3 rounded-lg border border-gray-300 hover:text-red-600 hover:border-red-300 hover:bg-red-50 transition-colors font-medium"
+                  style={{
+                    WebkitTapHighlightColor: 'transparent',
+                    touchAction: 'manipulation'
+                  }}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  ログアウト
+                </button>
+              </div>
+            )}
           </nav>
       </div>
+
+      {/* ログアウトモーダル */}
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={handleLogout}
+        loading={logoutLoading}
+      />
     </>
   );
 };

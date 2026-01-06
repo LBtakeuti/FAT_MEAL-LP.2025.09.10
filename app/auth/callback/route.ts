@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
-  const next = requestUrl.searchParams.get('next') || '/mypage';
+  const next = requestUrl.searchParams.get('next') || '/';
 
   if (code) {
     const supabase = createServerClient();
@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // エラー時はログインページへリダイレクト
-  return NextResponse.redirect(new URL('/login?error=auth_failed', requestUrl.origin));
+  // codeがない場合はクライアントサイドで処理するページにリダイレクト
+  // (トークンがハッシュフラグメントにある場合)
+  return NextResponse.redirect(new URL('/auth/callback/client', requestUrl.origin));
 }

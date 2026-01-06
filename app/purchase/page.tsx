@@ -5,6 +5,23 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import MobileHeader from '@/components/MobileHeader';
 import Footer from '@/components/Footer';
+import { createBrowserClient } from '@/lib/supabase';
+
+// ユーザープロフィール型
+interface UserProfile {
+  id: string;
+  email: string;
+  last_name?: string;
+  first_name?: string;
+  last_name_kana?: string;
+  first_name_kana?: string;
+  phone?: string;
+  postal_code?: string;
+  prefecture?: string;
+  city?: string;
+  address_detail?: string;
+  building?: string;
+}
 
 interface PlanOption {
   id: string;
@@ -19,34 +36,34 @@ interface PlanOption {
 
 const planOptions: PlanOption[] = [
   {
-    id: 'plan-3',
-    quantity: 3,
-    label: 'ふとるめし3個セット',
-    price: 3600,
-    description: '3種類×1個ずつ',
-    perMeal: 1200,
-    stripeLink: 'https://buy.stripe.com/4gMfZi5JJ4RjdzI3Pm6Zy08',
-    comingSoon: false,
-  },
-  {
     id: 'plan-6',
     quantity: 6,
     label: 'ふとるめし6個セット',
-    price: 7200,
-    description: '3種類×2個ずつ',
-    perMeal: 1200,
-    stripeLink: 'https://buy.stripe.com/dRmfZi5JJgA1gLUgC86Zy09',
+    price: 3600,
+    description: '6種類×1個ずつ',
+    perMeal: 600,
+    stripeLink: 'https://buy.stripe.com/3cI4gA2xxdnP7bkgC86Zy0b',
     comingSoon: false,
   },
   {
-    id: 'plan-9',
-    quantity: 9,
-    label: 'ふとるめし9個セット',
-    price: 10800,
-    description: '3種類×3個ずつ',
-    perMeal: 1200,
-    stripeLink: 'https://buy.stripe.com/9B628s7RRfvXbrA3Pm6Zy0a',
-    comingSoon: true,
+    id: 'plan-12',
+    quantity: 12,
+    label: 'ふとるめし12個セット',
+    price: 6700,
+    description: '6種類×2個ずつ',
+    perMeal: 558,
+    stripeLink: 'https://buy.stripe.com/6oU3cwdcbgA1dzIadK6Zy0c',
+    comingSoon: false,
+  },
+  {
+    id: 'plan-18',
+    quantity: 18,
+    label: 'ふとるめし18個セット',
+    price: 9800,
+    description: '6種類×3個ずつ',
+    perMeal: 544,
+    stripeLink: 'https://buy.stripe.com/bJeaEY6NNabD7bk4Tq6Zy0d',
+    comingSoon: false,
   }
 ];
 
@@ -75,14 +92,14 @@ interface InventoryStatus {
   available: boolean;
   minStock: number;
   sets: {
-    'plan-3': boolean;
     'plan-6': boolean;
-    'plan-9': boolean;
+    'plan-12': boolean;
+    'plan-18': boolean;
   };
   maxQuantity: {
-    'plan-3': number;
     'plan-6': number;
-    'plan-9': number;
+    'plan-12': number;
+    'plan-18': number;
   };
 }
 
@@ -92,9 +109,9 @@ const PurchasePage: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<'plan' | 'info' | 'confirm'>('plan');
   // カート形式で複数セットを管理
   const [cart, setCart] = useState<CartItem[]>([
-    { planId: 'plan-3', quantity: 0 },
     { planId: 'plan-6', quantity: 0 },
-    { planId: 'plan-9', quantity: 0 },
+    { planId: 'plan-12', quantity: 0 },
+    { planId: 'plan-18', quantity: 0 },
   ]);
   // 在庫状況
   const [inventory, setInventory] = useState<InventoryStatus | null>(null);
@@ -114,6 +131,11 @@ const PurchasePage: React.FC = () => {
   });
   const [errors, setErrors] = useState<Partial<CustomerInfo>>({});
 
+  // ログインユーザーとプロフィールの状態
+  const [user, setUser] = useState<any>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+
   // 送料とクーポン
   const shippingFee = 990;
   const [couponCode, setCouponCode] = useState('');
@@ -127,6 +149,29 @@ const PurchasePage: React.FC = () => {
     'START1000': 1000,   // ふとるめしスタート記念割引
     'FUTORUMESHI1000': 1000,
   };
+
+  // ログインユーザーとプロフィールを取得
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      const supabase = createBrowserClient();
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (session?.user) {
+        setUser(session.user);
+        try {
+          const res = await fetch(`/api/users/profile?userId=${session.user.id}`);
+          if (res.ok) {
+            const data = await res.json();
+            setUserProfile(data);
+          }
+        } catch (error) {
+          console.error('Failed to load profile:', error);
+        }
+      }
+      setProfileLoading(false);
+    };
+    loadUserProfile();
+  }, []);
 
   // 在庫状況を取得
   useEffect(() => {
@@ -195,6 +240,35 @@ const PurchasePage: React.FC = () => {
     setCouponCode('');
     setCouponError('');
   };
+
+  // 登録済みプロフィール情報を入力フォームに反映
+  const fillWithProfile = () => {
+    if (!userProfile) return;
+
+    setCustomerInfo({
+      lastName: userProfile.last_name || '',
+      firstName: userProfile.first_name || '',
+      lastNameKana: userProfile.last_name_kana || '',
+      firstNameKana: userProfile.first_name_kana || '',
+      email: userProfile.email || user?.email || '',
+      phone: userProfile.phone || '',
+      postalCode: userProfile.postal_code || '',
+      prefecture: userProfile.prefecture || '',
+      city: userProfile.city || '',
+      address: userProfile.address_detail || '',
+      building: userProfile.building || '',
+    });
+    // エラーをクリア
+    setErrors({});
+  };
+
+  // プロフィールにデータがあるかチェック
+  const hasProfileData = userProfile && (
+    userProfile.last_name ||
+    userProfile.first_name ||
+    userProfile.postal_code ||
+    userProfile.prefecture
+  );
 
   // カートの数量を更新
   const updateCartQuantity = (planId: string, newQuantity: number) => {
@@ -320,26 +394,58 @@ const PurchasePage: React.FC = () => {
     window.scrollTo(0, 0);
   };
 
-  const handleProceedToPayment = () => {
-    if (!isCartEmpty) {
-      // お客様情報をローカルストレージに保存（決済完了後に使用）
-      localStorage.setItem('customerInfo', JSON.stringify(customerInfo));
-      localStorage.setItem('cart', JSON.stringify(cart));
-      localStorage.setItem('subtotal', String(subtotal));
-      localStorage.setItem('shippingFee', String(shippingFee));
-      localStorage.setItem('discount', String(discount));
-      localStorage.setItem('totalAmount', String(totalAmount));
-      if (appliedCoupon) {
-        localStorage.setItem('appliedCoupon', JSON.stringify(appliedCoupon));
-      }
-      // TODO: Stripe Checkoutセッションを作成して決済ページへ遷移
-      // 現時点では最初のカートアイテムのStripeリンクへ遷移
-      const firstItem = cart.find(item => item.quantity > 0);
-      if (firstItem) {
-        const plan = planOptions.find(p => p.id === firstItem.planId);
-        if (plan) {
-          window.location.href = plan.stripeLink;
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+
+  const handleProceedToPayment = async () => {
+    if (!isCartEmpty && !checkoutLoading) {
+      setCheckoutLoading(true);
+      try {
+        // お客様情報をローカルストレージに保存（決済完了後に使用）
+        localStorage.setItem('customerInfo', JSON.stringify(customerInfo));
+        localStorage.setItem('cart', JSON.stringify(cart));
+        localStorage.setItem('subtotal', String(subtotal));
+        localStorage.setItem('shippingFee', String(shippingFee));
+        localStorage.setItem('discount', String(discount));
+        localStorage.setItem('totalAmount', String(totalAmount));
+        if (appliedCoupon) {
+          localStorage.setItem('appliedCoupon', JSON.stringify(appliedCoupon));
         }
+
+        // Stripe Checkout Sessionを作成
+        const response = await fetch('/api/checkout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            cart: cart.filter(item => item.quantity > 0),
+            customerInfo: {
+              lastName: customerInfo.lastName,
+              firstName: customerInfo.firstName,
+              email: customerInfo.email,
+              phone: customerInfo.phone,
+              postalCode: customerInfo.postalCode,
+              prefecture: customerInfo.prefecture,
+              city: customerInfo.city,
+              address: customerInfo.address,
+              building: customerInfo.building,
+            },
+            couponCode: appliedCoupon?.code,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || '決済の準備に失敗しました');
+        }
+
+        // Stripe Checkoutページへリダイレクト
+        window.location.href = data.url;
+      } catch (error: any) {
+        console.error('Checkout error:', error);
+        alert(error.message || '決済の準備に失敗しました。もう一度お試しください。');
+        setCheckoutLoading(false);
       }
     }
   };
@@ -570,6 +676,32 @@ const PurchasePage: React.FC = () => {
               <p className="text-sm text-gray-500">合計 {totalMeals}食</p>
             </div>
             <p className="text-xl text-orange-600">¥{subtotal.toLocaleString()}</p>
+          </div>
+        </div>
+      )}
+
+      {/* 登録情報を使用ボタン */}
+      {user && hasProfileData && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <div>
+                <p className="font-medium text-blue-900">会員登録済みです</p>
+                <p className="text-sm text-blue-700">登録済みの住所情報を使用できます</p>
+              </div>
+            </div>
+            <button
+              onClick={fillWithProfile}
+              className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              登録情報を使用
+            </button>
           </div>
         </div>
       )}
@@ -947,9 +1079,21 @@ const PurchasePage: React.FC = () => {
         </button>
         <button
           onClick={handleProceedToPayment}
-          className="flex-1 bg-orange-500 text-white py-4 rounded-lg font-semibold hover:bg-orange-600 transition-colors"
+          disabled={checkoutLoading}
+          className={`flex-1 py-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 ${
+            checkoutLoading
+              ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+              : 'bg-orange-500 text-white hover:bg-orange-600'
+          }`}
         >
-          お支払いへ進む
+          {checkoutLoading ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              処理中...
+            </>
+          ) : (
+            'お支払いへ進む'
+          )}
         </button>
       </div>
 

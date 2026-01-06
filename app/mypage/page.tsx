@@ -5,6 +5,10 @@ import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@/lib/supabase';
 import Link from 'next/link';
 import Image from 'next/image';
+import Header from '@/components/Header';
+import MobileHeader from '@/components/MobileHeader';
+import Footer from '@/components/Footer';
+import LogoutModal from '@/components/LogoutModal';
 
 interface UserProfile {
   id: string;
@@ -30,6 +34,21 @@ interface CartItem {
   image?: string;
 }
 
+interface Order {
+  id: string;
+  order_number: number;
+  customer_name: string;
+  customer_email: string;
+  phone?: string;
+  address?: string;
+  menu_set: string;
+  quantity: number;
+  amount: number;
+  status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+  notes?: string;
+  created_at: string;
+}
+
 const prefectures = [
   '北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県',
   '茨城県', '栃木県', '群馬県', '埼玉県', '千葉県', '東京都', '神奈川県',
@@ -45,24 +64,29 @@ export default function MyPage() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'profile' | 'cart'>('profile');
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'profile' | 'cart' | 'orders'>('profile');
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [logoutLoading, setLogoutLoading] = useState(false);
 
   useEffect(() => {
     const supabase = createBrowserClient();
-    
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         router.push('/login');
         return;
       }
       setUser(session.user);
-      loadProfile(session.user.id);
+      loadProfile(session.user.id, session.user.email || '');
       loadCart(session.user.id);
+      loadOrders(session.user.email || '');
     });
   }, [router]);
 
-  const loadProfile = async (userId: string) => {
+  const loadProfile = async (userId: string, email: string) => {
     try {
       const res = await fetch(`/api/users/profile?userId=${userId}`);
       if (res.ok) {
@@ -70,13 +94,13 @@ export default function MyPage() {
         setProfile(data);
       } else if (res.status === 404) {
         // プロフィールが存在しない場合は新規作成
-        const res = await fetch('/api/users/profile', {
+        const createRes = await fetch('/api/users/profile', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, email: user?.email }),
+          body: JSON.stringify({ userId, email }),
         });
-        if (res.ok) {
-          const data = await res.json();
+        if (createRes.ok) {
+          const data = await createRes.json();
           setProfile(data);
         }
       }
@@ -96,6 +120,21 @@ export default function MyPage() {
       }
     } catch (error) {
       console.error('Failed to load cart:', error);
+    }
+  };
+
+  const loadOrders = async (email: string) => {
+    setOrdersLoading(true);
+    try {
+      const res = await fetch(`/api/users/orders?email=${encodeURIComponent(email)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setOrders(data.orders || []);
+      }
+    } catch (error) {
+      console.error('Failed to load orders:', error);
+    } finally {
+      setOrdersLoading(false);
     }
   };
 
@@ -158,6 +197,13 @@ export default function MyPage() {
     }
   };
 
+  const handleLogout = async () => {
+    setLogoutLoading(true);
+    const supabase = createBrowserClient();
+    await supabase.auth.signOut();
+    window.location.href = '/';
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -172,58 +218,111 @@ export default function MyPage() {
   const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">マイページ</h1>
-          <p className="text-gray-600 mt-2">会員情報とカートを管理できます</p>
-        </div>
-
-        {/* タブ */}
-        <div className="flex space-x-4 mb-6 border-b border-gray-200">
-          <button
-            onClick={() => setActiveTab('profile')}
-            className={`px-6 py-3 font-medium transition-colors ${
-              activeTab === 'profile'
-                ? 'text-orange-600 border-b-2 border-orange-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            会員情報
-          </button>
-          <button
-            onClick={() => setActiveTab('cart')}
-            className={`px-6 py-3 font-medium transition-colors relative ${
-              activeTab === 'cart'
-                ? 'text-orange-600 border-b-2 border-orange-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            カート
-            {cartItems.length > 0 && (
-              <span className="ml-2 bg-orange-600 text-white text-xs px-2 py-0.5 rounded-full">
-                {cartItems.length}
-              </span>
-            )}
-          </button>
-        </div>
-
-        {/* 会員情報タブ */}
-        {activeTab === 'profile' && (
-          <ProfileForm profile={profile} onUpdate={updateProfile} />
-        )}
-
-        {/* カートタブ */}
-        {activeTab === 'cart' && (
-          <CartView
-            items={cartItems}
-            totalAmount={totalAmount}
-            onUpdate={updateCartItem}
-            onDelete={deleteCartItem}
-          />
-        )}
+    <>
+      {/* Header */}
+      <div className="sm:hidden">
+        <MobileHeader />
       </div>
-    </div>
+      <div className="hidden sm:block">
+        <Header />
+      </div>
+
+      <main className="min-h-screen bg-gray-100 pt-24 sm:pt-8 py-8">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-gray-900">マイページ</h1>
+            <p className="text-gray-600 mt-2">会員情報とカートを管理できます</p>
+          </div>
+
+          {/* タブ */}
+          <div className="flex space-x-1 sm:space-x-4 mb-6 border-b border-gray-200 overflow-x-auto">
+            <button
+              onClick={() => setActiveTab('profile')}
+              className={`px-4 sm:px-6 py-3 font-medium transition-colors whitespace-nowrap ${
+                activeTab === 'profile'
+                  ? 'text-orange-600 border-b-2 border-orange-600'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              会員情報
+            </button>
+            <button
+              onClick={() => setActiveTab('orders')}
+              className={`px-4 sm:px-6 py-3 font-medium transition-colors whitespace-nowrap relative ${
+                activeTab === 'orders'
+                  ? 'text-orange-600 border-b-2 border-orange-600'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              購入履歴
+              {orders.length > 0 && (
+                <span className="ml-2 bg-gray-500 text-white text-xs px-2 py-0.5 rounded-full">
+                  {orders.length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('cart')}
+              className={`px-4 sm:px-6 py-3 font-medium transition-colors whitespace-nowrap relative ${
+                activeTab === 'cart'
+                  ? 'text-orange-600 border-b-2 border-orange-600'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              カート
+              {cartItems.length > 0 && (
+                <span className="ml-2 bg-orange-600 text-white text-xs px-2 py-0.5 rounded-full">
+                  {cartItems.length}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* 会員情報タブ */}
+          {activeTab === 'profile' && (
+            <ProfileForm profile={profile} onUpdate={updateProfile} />
+          )}
+
+          {/* 購入履歴タブ */}
+          {activeTab === 'orders' && (
+            <OrderHistory orders={orders} loading={ordersLoading} />
+          )}
+
+          {/* カートタブ */}
+          {activeTab === 'cart' && (
+            <CartView
+              items={cartItems}
+              totalAmount={totalAmount}
+              onUpdate={updateCartItem}
+              onDelete={deleteCartItem}
+            />
+          )}
+
+          {/* ログアウトボタン - ページ下部 */}
+          <div className="mt-12 pt-8 border-t border-gray-200">
+            <button
+              onClick={() => setShowLogoutModal(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-gray-300 hover:border-red-300"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              ログアウト
+            </button>
+          </div>
+        </div>
+      </main>
+
+      <Footer />
+
+      {/* ログアウトモーダル */}
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={handleLogout}
+        loading={logoutLoading}
+      />
+    </>
   );
 }
 
@@ -449,6 +548,127 @@ function ProfileForm({
   );
 }
 
+// 購入履歴表示コンポーネント
+function OrderHistory({
+  orders,
+  loading,
+}: {
+  orders: Order[];
+  loading: boolean;
+}) {
+  const getStatusLabel = (status: Order['status']) => {
+    const labels = {
+      pending: '確認中',
+      confirmed: '確定',
+      shipped: '発送済み',
+      delivered: '配達完了',
+      cancelled: 'キャンセル',
+    };
+    return labels[status] || status;
+  };
+
+  const getStatusColor = (status: Order['status']) => {
+    const colors = {
+      pending: 'bg-yellow-100 text-yellow-800',
+      confirmed: 'bg-blue-100 text-blue-800',
+      shipped: 'bg-purple-100 text-purple-800',
+      delivered: 'bg-green-100 text-green-800',
+      cancelled: 'bg-red-100 text-red-800',
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ja-JP', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-6 text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">読み込み中...</p>
+      </div>
+    );
+  }
+
+  if (orders.length === 0) {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-6 text-center">
+        <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+        <p className="text-gray-600 mb-4">まだ購入履歴がありません</p>
+        <Link
+          href="/purchase"
+          className="inline-block bg-orange-600 text-white px-6 py-2 rounded-md hover:bg-orange-700"
+        >
+          商品を購入する
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-xl font-bold mb-6">購入履歴</h2>
+        <div className="space-y-4">
+          {orders.map((order) => (
+            <div
+              key={order.id}
+              className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-500">注文番号</span>
+                  <span className="font-mono font-medium">#{order.order_number}</span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+                    {getStatusLabel(order.status)}
+                  </span>
+                </div>
+                <span className="text-sm text-gray-500">{formatDate(order.created_at)}</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500">商品</p>
+                  <p className="font-medium">{order.menu_set}</p>
+                  <p className="text-sm text-gray-600">数量: {order.quantity}</p>
+                </div>
+                <div className="sm:text-right">
+                  <p className="text-sm text-gray-500">お支払い金額</p>
+                  <p className="text-xl font-bold text-orange-600">¥{order.amount.toLocaleString()}</p>
+                </div>
+              </div>
+
+              {order.address && (
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <p className="text-sm text-gray-500">配送先</p>
+                  <p className="text-sm text-gray-700">{order.address}</p>
+                </div>
+              )}
+
+              {order.notes && (
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500">備考</p>
+                  <p className="text-sm text-gray-700">{order.notes}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // カート表示コンポーネント
 function CartView({
   items,
@@ -545,4 +765,3 @@ function CartView({
     </div>
   );
 }
-
