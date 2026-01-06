@@ -10,6 +10,64 @@ function getStripeClient() {
   return new Stripe(process.env.STRIPE_SECRET_KEY);
 }
 
+// セット商品とStripe Price IDの対応（本番環境）
+const SET_PRICES = {
+  'plan-6': {
+    priceId: 'price_1SmAA1Kvr8fxkHMdPNXFisV5',
+    requiredStock: 2,  // 6個セット: 各弁当2個必要
+  },
+  'plan-12': {
+    priceId: 'price_1SmAA4Kvr8fxkHMdkNorkE7f',
+    requiredStock: 4,  // 12個セット: 各弁当4個必要
+  },
+  'plan-18': {
+    priceId: 'price_1SmAA6Kvr8fxkHMdcojdzZxX',
+    requiredStock: 6,  // 18個セット: 各弁当6個必要
+  },
+};
+
+// Stripeの在庫状態を同期
+async function syncStripeInventory(supabase: any, stripe: Stripe) {
+  try {
+    // 全ての有効なメニューアイテムの在庫を取得
+    const { data: menuItems, error } = await supabase
+      .from('menu_items')
+      .select('stock')
+      .eq('is_active', true);
+
+    if (error || !menuItems || menuItems.length === 0) {
+      console.error('Failed to fetch menu items for inventory sync:', error);
+      return;
+    }
+
+    // 最小在庫を計算
+    const minStock = Math.min(...menuItems.map((item: any) => item.stock));
+    console.log(`Minimum stock across all items: ${minStock}`);
+
+    // 各セットのStripe価格状態を更新
+    for (const [planId, config] of Object.entries(SET_PRICES)) {
+      const shouldBeActive = minStock >= config.requiredStock;
+
+      try {
+        // 現在の価格状態を取得
+        const price = await stripe.prices.retrieve(config.priceId);
+
+        if (price.active !== shouldBeActive) {
+          // 価格の状態を更新
+          await stripe.prices.update(config.priceId, {
+            active: shouldBeActive,
+          });
+          console.log(`Updated Stripe price ${config.priceId} (${planId}): active=${shouldBeActive}`);
+        }
+      } catch (stripeError) {
+        console.error(`Failed to update Stripe price ${config.priceId}:`, stripeError);
+      }
+    }
+  } catch (error) {
+    console.error('Error syncing Stripe inventory:', error);
+  }
+}
+
 // セット商品から弁当数を計算
 function calculateMealsFromDescription(description: string): number {
   // "ふとるめし3個セット" → 3, "ふとるめし6個セット" → 6, etc.
@@ -171,9 +229,16 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe:
   // 在庫を減らす
   await reduceInventory(lineItems.data);
 
+  // Stripeの在庫状態を同期
+  const supabase = getSupabaseClient();
+  if (supabase) {
+    await syncStripeInventory(supabase, stripe);
+    console.log('Stripe inventory synced');
+  }
+
   console.log('Order confirmation email sent to:', customerEmail);
   console.log('Slack notification sent');
-  console.log('Inventory reduced');
+  console.log('Inventory reduced and synced with Stripe');
 }
 
 // 在庫を減らす関数
