@@ -230,9 +230,9 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe:
   await reduceInventory(lineItems.data);
 
   // Stripeの在庫状態を同期
-  const supabase = getSupabaseClient();
-  if (supabase) {
-    await syncStripeInventory(supabase, stripe);
+  const supabaseForSync = getSupabaseClient();
+  if (supabaseForSync) {
+    await syncStripeInventory(supabaseForSync, stripe);
     console.log('Stripe inventory synced');
   }
 
