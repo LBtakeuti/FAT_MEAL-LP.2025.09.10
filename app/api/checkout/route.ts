@@ -3,11 +3,11 @@ import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-// プランIDとStripe価格IDのマッピング
+// プランIDとStripe価格IDのマッピング（本番環境）
 const PRICE_MAP: { [key: string]: string } = {
-  'plan-6': 'price_1SmQAIKvr8fxkHMdWMMmQzii',   // ふとるめし6個セット ¥3,600
-  'plan-12': 'price_1SmQAKKvr8fxkHMd20D9vp41', // ふとるめし12個セット ¥6,700
-  'plan-18': 'price_1SmQALKvr8fxkHMdxPbWOCG9', // ふとるめし18個セット ¥9,800
+  'plan-6': 'price_1SmAA1Kvr8fxkHMdPNXFisV5',   // ふとるめし6個セット ¥3,600
+  'plan-12': 'price_1SmAA4Kvr8fxkHMdkNorkE7f', // ふとるめし12個セット ¥6,700
+  'plan-18': 'price_1SmAA6Kvr8fxkHMdcojdzZxX', // ふとるめし18個セット ¥9,800
 };
 
 interface CartItem {
