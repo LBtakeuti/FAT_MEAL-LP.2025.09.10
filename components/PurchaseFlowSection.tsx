@@ -97,7 +97,7 @@ const PurchaseFlowSection: React.FC = () => {
         {/* CTA */}
         <div className="mt-12 sm:mt-16 text-center">
           <a
-            href="#menu"
+            href="/purchase"
             className="inline-block bg-orange-500 text-white px-10 sm:px-12 py-4 sm:py-5 rounded-xl font-bold text-lg sm:text-xl hover:bg-orange-600 transition-all shadow-xl hover:shadow-2xl transform hover:scale-105"
           >
             今すぐ注文する

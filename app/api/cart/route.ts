@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     const cartError = cartResult.error;
 
     if (cartError && cartError.code === 'PGRST116') {
-      // カートが存在しない場合は作成
+      // カートが存在しない場合は作成を試みる
       const { data: newCart, error: createError } = await (supabase
         .from('carts') as any)
         .insert({ user_id: userId })
@@ -35,9 +35,20 @@ export async function GET(request: NextRequest) {
         .single();
 
       if (createError) {
-        throw createError;
+        // 重複エラー（23505）の場合は、既存のカートを取得
+        if (createError.code === '23505') {
+          const { data: existingCart } = await supabase
+            .from('carts')
+            .select('id')
+            .eq('user_id', userId)
+            .single();
+          cart = existingCart as { id: string } | null;
+        } else {
+          throw createError;
+        }
+      } else {
+        cart = newCart;
       }
-      cart = newCart;
     } else if (cartError) {
       throw cartError;
     }
@@ -46,7 +57,7 @@ export async function GET(request: NextRequest) {
       throw new Error('カートの作成に失敗しました');
     }
 
-    // カートアイテムを取得
+    // カートアイテムを取得（imagesカラムが存在しない場合を考慮）
     const { data: cartItems, error: itemsError } = await supabase
       .from('cart_items')
       .select(`
@@ -56,8 +67,7 @@ export async function GET(request: NextRequest) {
         menu_items (
           id,
           name,
-          price,
-          images
+          price
         )
       `)
       .eq('cart_id', cart.id);
@@ -73,7 +83,7 @@ export async function GET(request: NextRequest) {
       quantity: item.quantity,
       menu_item_name: item.menu_items?.name || '',
       price: item.menu_items?.price || 0,
-      image: item.menu_items?.images?.[0] || null,
+      image: null, // imagesカラムがない場合のため
     }));
 
     return NextResponse.json({
@@ -122,9 +132,20 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (createError) {
-        throw createError;
+        // 重複エラー（23505）の場合は、既存のカートを取得
+        if (createError.code === '23505') {
+          const { data: existingCart } = await supabase
+            .from('carts')
+            .select('id')
+            .eq('user_id', userId)
+            .single();
+          cart = existingCart as { id: string } | null;
+        } else {
+          throw createError;
+        }
+      } else {
+        cart = newCart;
       }
-      cart = newCart;
     } else if (cartError) {
       throw cartError;
     }

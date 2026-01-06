@@ -50,3 +50,5 @@ export const DELETE = withAuthDynamic(async (_request: NextRequest, context) => 
 
   return jsonSuccess({ message: '削除しました' });
 });
+
+

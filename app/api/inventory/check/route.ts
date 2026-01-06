@@ -24,21 +24,21 @@ export async function GET(request: NextRequest) {
     const minStock = stocks.length > 0 ? Math.min(...stocks) : 0;
 
     // 販売可能なセット数を計算
-    // 3個セット = 各弁当1個ずつ必要
-    // 6個セット = 各弁当2個ずつ必要
-    // 9個セット = 各弁当3個ずつ必要
+    // 6個セット = 各弁当1個ずつ必要
+    // 12個セット = 各弁当2個ずつ必要
+    // 18個セット = 各弁当3個ずつ必要
     const availability = {
       available: minStock > 0,
       minStock,
       sets: {
-        'plan-3': minStock >= 1,
-        'plan-6': minStock >= 2,
-        'plan-9': minStock >= 3,
+        'plan-6': minStock >= 1,
+        'plan-12': minStock >= 2,
+        'plan-18': minStock >= 3,
       },
       maxQuantity: {
-        'plan-3': Math.floor(minStock / 1),
-        'plan-6': Math.floor(minStock / 2),
-        'plan-9': Math.floor(minStock / 3),
+        'plan-6': Math.floor(minStock / 1),
+        'plan-12': Math.floor(minStock / 2),
+        'plan-18': Math.floor(minStock / 3),
       },
       items: (data || []).map((item: any) => ({
         id: item.id,
