@@ -3,12 +3,23 @@ import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-// プランIDとStripe価格IDのマッピング（本番環境）
-const PRICE_MAP: { [key: string]: string } = {
-  'plan-6': 'price_1SmAA1Kvr8fxkHMdPNXFisV5',   // ふとるめし6個セット ¥3,600
-  'plan-12': 'price_1SmAA4Kvr8fxkHMdkNorkE7f', // ふとるめし12個セット ¥6,700
-  'plan-18': 'price_1SmAA6Kvr8fxkHMdcojdzZxX', // ふとるめし18個セット ¥9,800
-};
+// 本番環境とテスト環境でPrice IDを切り替え
+const isLiveMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_');
+
+// プランIDとStripe価格IDのマッピング
+const PRICE_MAP: { [key: string]: string } = isLiveMode
+  ? {
+      // 本番用Price ID
+      'plan-6': 'price_1SmAA1Kvr8fxkHMdPNXFisV5',   // ふとるめし6個セット ¥3,600
+      'plan-12': 'price_1SmAA4Kvr8fxkHMdkNorkE7f', // ふとるめし12個セット ¥6,700
+      'plan-18': 'price_1SmAA6Kvr8fxkHMdcojdzZxX', // ふとるめし18個セット ¥9,800
+    }
+  : {
+      // テスト用Price ID
+      'plan-6': 'price_1SmmbAKvr8fxkHMdntqV1f27',   // ふとるめし6個セット ¥3,600
+      'plan-12': 'price_1SmmbOKvr8fxkHMdXXyEgWuU', // ふとるめし12個セット ¥6,700
+      'plan-18': 'price_1SmmbUKvr8fxkHMdicURugka', // ふとるめし18個セット ¥9,800
+    };
 
 interface CartItem {
   planId: string;
