@@ -191,7 +191,7 @@ const MenuSection: React.FC = () => {
           {showDesktopCarousel ? (
             <div className="relative">
               {/* Swiperカルーセル */}
-              <div className="mx-14 lg:mx-16 overflow-hidden px-4 py-4">
+              <div className="mx-14 lg:mx-16" style={{ overflowX: 'clip', overflowY: 'visible', padding: '8px 0' }}>
                 <Swiper
                   modules={[Navigation, Pagination]}
                   spaceBetween={24}
@@ -290,14 +290,18 @@ const MenuSection: React.FC = () => {
       {/* カスタムSwiperスタイル */}
       <style jsx global>{`
         .menu-swiper {
-          padding: 4px;
+          padding: 8px 0;
           height: auto !important;
+          overflow: visible !important;
         }
         .menu-swiper .swiper-wrapper {
           height: auto !important;
         }
         .menu-swiper .swiper-slide {
           height: auto !important;
+        }
+        .menu-swiper .swiper-slide > div {
+          margin: 0 4px;
         }
         .swiper-pagination-bullet-custom {
           width: 10px;
