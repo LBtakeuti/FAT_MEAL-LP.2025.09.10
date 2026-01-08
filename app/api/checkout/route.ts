@@ -6,20 +6,21 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 // 本番環境とテスト環境でPrice IDを切り替え
 const isLiveMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_');
 
-// プランIDとStripe価格IDのマッピング
-const PRICE_MAP: { [key: string]: string } = isLiveMode
-  ? {
-      // 本番用Price ID
-      'plan-6': 'price_1SnDfZKvr8fxkHMdHryjs8HC',   // ふとるめし6個セット ¥4,200
-      'plan-12': 'price_1SnDfbKvr8fxkHMdiih419EB', // ふとるめし12個セット ¥8,400
-      'plan-18': 'price_1SnDfdKvr8fxkHMdPFzng1Sh', // ふとるめし18個セット ¥12,600
-    }
-  : {
-      // テスト用Price ID
-      'plan-6': 'price_1SnDEbKvr8fxkHMd0ADcP4OY',   // ふとるめし6個セット ¥4,200
-      'plan-12': 'price_1SnDEoKvr8fxkHMdpY39WeeO', // ふとるめし12個セット ¥8,400
-      'plan-18': 'price_1SnDEqKvr8fxkHMdXZsYQQC2', // ふとるめし18個セット ¥12,600
+// プランIDとStripe価格IDのマッピング（環境変数から取得）
+function getPriceMap(): { [key: string]: string } {
+  if (isLiveMode) {
+    return {
+      'plan-6': process.env.STRIPE_PRICE_6SET_LIVE || '',
+      'plan-12': process.env.STRIPE_PRICE_12SET_LIVE || '',
+      'plan-18': process.env.STRIPE_PRICE_18SET_LIVE || '',
     };
+  }
+  return {
+    'plan-6': process.env.STRIPE_PRICE_6SET_TEST || '',
+    'plan-12': process.env.STRIPE_PRICE_12SET_TEST || '',
+    'plan-18': process.env.STRIPE_PRICE_18SET_TEST || '',
+  };
+}
 
 interface CartItem {
   planId: string;
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     for (const item of cart) {
       if (item.quantity > 0) {
-        const priceId = PRICE_MAP[item.planId];
+        const priceId = getPriceMap()[item.planId];
         if (!priceId) {
           return NextResponse.json(
             { error: `無効なプランID: ${item.planId}` },

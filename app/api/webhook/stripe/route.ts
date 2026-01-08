@@ -10,21 +10,42 @@ function getStripeClient() {
   return new Stripe(process.env.STRIPE_SECRET_KEY);
 }
 
-// セット商品とStripe Price IDの対応（本番環境）
-const SET_PRICES = {
-  'plan-6': {
-    priceId: 'price_1SnDfZKvr8fxkHMdHryjs8HC',
-    requiredStock: 2,  // 6個セット: 各弁当2個必要
-  },
-  'plan-12': {
-    priceId: 'price_1SnDfbKvr8fxkHMdiih419EB',
-    requiredStock: 4,  // 12個セット: 各弁当4個必要
-  },
-  'plan-18': {
-    priceId: 'price_1SnDfdKvr8fxkHMdPFzng1Sh',
-    requiredStock: 6,  // 18個セット: 各弁当6個必要
-  },
-};
+// セット商品とStripe Price IDの対応（環境変数から取得）
+function getSetPrices() {
+  const isLiveMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_');
+
+  if (isLiveMode) {
+    return {
+      'plan-6': {
+        priceId: process.env.STRIPE_PRICE_6SET_LIVE || '',
+        requiredStock: 2,  // 6個セット: 各弁当2個必要
+      },
+      'plan-12': {
+        priceId: process.env.STRIPE_PRICE_12SET_LIVE || '',
+        requiredStock: 4,  // 12個セット: 各弁当4個必要
+      },
+      'plan-18': {
+        priceId: process.env.STRIPE_PRICE_18SET_LIVE || '',
+        requiredStock: 6,  // 18個セット: 各弁当6個必要
+      },
+    };
+  }
+
+  return {
+    'plan-6': {
+      priceId: process.env.STRIPE_PRICE_6SET_TEST || '',
+      requiredStock: 2,
+    },
+    'plan-12': {
+      priceId: process.env.STRIPE_PRICE_12SET_TEST || '',
+      requiredStock: 4,
+    },
+    'plan-18': {
+      priceId: process.env.STRIPE_PRICE_18SET_TEST || '',
+      requiredStock: 6,
+    },
+  };
+}
 
 // Stripeの在庫状態を同期
 async function syncStripeInventory(supabase: any, stripe: Stripe) {
@@ -45,7 +66,7 @@ async function syncStripeInventory(supabase: any, stripe: Stripe) {
     console.log(`Minimum stock across all items: ${minStock}`);
 
     // 各セットのStripe価格状態を更新
-    for (const [planId, config] of Object.entries(SET_PRICES)) {
+    for (const [planId, config] of Object.entries(getSetPrices())) {
       const shouldBeActive = minStock >= config.requiredStock;
 
       try {
