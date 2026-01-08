@@ -60,7 +60,7 @@ const MenuSection: React.FC = () => {
   return (
     <section
       id="menu"
-      className="relative overflow-hidden bg-white flex flex-col sm:block py-4 sm:py-8"
+      className="relative bg-white flex flex-col sm:block py-4 sm:py-8"
     >
       <div className="flex-1 flex flex-col sm:block max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto w-full pb-20 sm:pb-0">
         {/* タイトル */}
@@ -189,9 +189,9 @@ const MenuSection: React.FC = () => {
         {/* Desktop: Swiperカルーセル or グリッド */}
         <div className="hidden sm:block">
           {showDesktopCarousel ? (
-            <div className="relative">
+            <div className="relative px-16 lg:px-20">
               {/* Swiperカルーセル */}
-              <div className="mx-14 lg:mx-16" style={{ overflowX: 'clip', overflowY: 'visible', padding: '8px 0' }}>
+              <div className="py-4">
                 <Swiper
                   modules={[Navigation, Pagination]}
                   spaceBetween={24}
@@ -231,8 +231,8 @@ const MenuSection: React.FC = () => {
               <button
                 type="button"
                 onClick={() => swiperRef.current?.slidePrev()}
-                className="absolute left-0 z-30 w-12 h-12 flex items-center justify-center bg-white rounded-full shadow-lg hover:bg-orange-50"
-                style={{ top: '171px' }}
+                className="absolute left-2 z-30 w-12 h-12 flex items-center justify-center bg-white rounded-full shadow-lg hover:bg-orange-50"
+                style={{ top: '50%', transform: 'translateY(-50%)' }}
                 aria-label="前のメニュー"
               >
                 <svg
@@ -254,8 +254,8 @@ const MenuSection: React.FC = () => {
               <button
                 type="button"
                 onClick={() => swiperRef.current?.slideNext()}
-                className="absolute right-0 z-30 w-12 h-12 flex items-center justify-center bg-white rounded-full shadow-lg hover:bg-orange-50"
-                style={{ top: '171px' }}
+                className="absolute right-2 z-30 w-12 h-12 flex items-center justify-center bg-white rounded-full shadow-lg hover:bg-orange-50"
+                style={{ top: '50%', transform: 'translateY(-50%)' }}
                 aria-label="次のメニュー"
               >
                 <svg
@@ -290,18 +290,14 @@ const MenuSection: React.FC = () => {
       {/* カスタムSwiperスタイル */}
       <style jsx global>{`
         .menu-swiper {
-          padding: 8px 0;
-          height: auto !important;
           overflow: visible !important;
+          height: auto !important;
         }
         .menu-swiper .swiper-wrapper {
           height: auto !important;
         }
         .menu-swiper .swiper-slide {
           height: auto !important;
-        }
-        .menu-swiper .swiper-slide > div {
-          margin: 0 4px;
         }
         .swiper-pagination-bullet-custom {
           width: 10px;
