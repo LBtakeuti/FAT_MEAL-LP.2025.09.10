@@ -39,9 +39,9 @@ const planOptions: PlanOption[] = [
     id: 'plan-6',
     quantity: 6,
     label: 'ふとるめし6個セット',
-    price: 3600,
+    price: 4200,
     description: '6種類×1個ずつ',
-    perMeal: 600,
+    perMeal: 700,
     stripeLink: 'https://buy.stripe.com/3cI4gA2xxdnP7bkgC86Zy0b',
     comingSoon: false,
   },
@@ -49,9 +49,9 @@ const planOptions: PlanOption[] = [
     id: 'plan-12',
     quantity: 12,
     label: 'ふとるめし12個セット',
-    price: 6700,
+    price: 8400,
     description: '6種類×2個ずつ',
-    perMeal: 558,
+    perMeal: 700,
     stripeLink: 'https://buy.stripe.com/6oU3cwdcbgA1dzIadK6Zy0c',
     comingSoon: false,
   },
@@ -59,9 +59,9 @@ const planOptions: PlanOption[] = [
     id: 'plan-18',
     quantity: 18,
     label: 'ふとるめし18個セット',
-    price: 9800,
+    price: 12600,
     description: '6種類×3個ずつ',
-    perMeal: 544,
+    perMeal: 700,
     stripeLink: 'https://buy.stripe.com/bJeaEY6NNabD7bk4Tq6Zy0d',
     comingSoon: false,
   }
@@ -306,15 +306,14 @@ const PurchasePage: React.FC = () => {
 
     setIsSearchingAddress(true);
     try {
-      const response = await fetch(`https://zipcloud.ibsnet.co.jp/api/search?zipcode=${cleanPostalCode}`);
+      const response = await fetch(`/api/address?postalCode=${cleanPostalCode}`);
       const data = await response.json();
 
-      if (data.results && data.results.length > 0) {
-        const result = data.results[0];
+      if (response.ok && data.prefecture) {
         setCustomerInfo(prev => ({
           ...prev,
-          prefecture: result.address1,
-          city: result.address2 + result.address3,
+          prefecture: data.prefecture,
+          city: data.city,
         }));
         // エラーをクリア
         setErrors(prev => ({ ...prev, prefecture: '', city: '' }));

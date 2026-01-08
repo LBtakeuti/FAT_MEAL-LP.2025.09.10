@@ -13,15 +13,15 @@ function getStripeClient() {
 // セット商品とStripe Price IDの対応（本番環境）
 const SET_PRICES = {
   'plan-6': {
-    priceId: 'price_1SmAA1Kvr8fxkHMdPNXFisV5',
+    priceId: 'price_1SnDfZKvr8fxkHMdHryjs8HC',
     requiredStock: 2,  // 6個セット: 各弁当2個必要
   },
   'plan-12': {
-    priceId: 'price_1SmAA4Kvr8fxkHMdkNorkE7f',
+    priceId: 'price_1SnDfbKvr8fxkHMdiih419EB',
     requiredStock: 4,  // 12個セット: 各弁当4個必要
   },
   'plan-18': {
-    priceId: 'price_1SmAA6Kvr8fxkHMdcojdzZxX',
+    priceId: 'price_1SnDfdKvr8fxkHMdPFzng1Sh',
     requiredStock: 6,  // 18個セット: 各弁当6個必要
   },
 };

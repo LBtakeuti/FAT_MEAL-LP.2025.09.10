@@ -78,8 +78,8 @@ const NewsSection: React.FC = () => {
 
   if (loading) {
     return (
-      <section id="news" className="relative overflow-hidden bg-[#fff7ed] pt-6 sm:pt-12 pb-20 sm:pb-12 flex flex-col">
-        <div className="relative max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col">
+      <section id="news" className="relative overflow-hidden bg-white pt-6 sm:pt-12 pb-20 sm:pb-12 flex flex-col">
+        <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col">
           <div className="text-center mb-6 sm:mb-8">
             <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900">
               お知らせ
@@ -93,8 +93,8 @@ const NewsSection: React.FC = () => {
 
   if (newsItems.length === 0) {
     return (
-      <section id="news" className="relative overflow-hidden bg-[#fff7ed] pt-6 sm:pt-12 pb-20 sm:pb-12 flex flex-col">
-        <div className="relative max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col">
+      <section id="news" className="relative overflow-hidden bg-white pt-6 sm:pt-12 pb-20 sm:pb-12 flex flex-col">
+        <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col">
           <div className="text-center mb-6 sm:mb-8">
             <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900">
               お知らせ
@@ -107,24 +107,9 @@ const NewsSection: React.FC = () => {
   }
 
   return (
-    <section id="news" className="relative overflow-hidden bg-[#fff7ed] pt-6 sm:pt-12 pb-20 sm:pb-12 flex flex-col">
-      {/* 上部の波形 */}
-      <div className="absolute top-0 left-0 w-full overflow-hidden leading-none" style={{ transform: 'translateY(-1px)' }}>
-        <svg
-          className="relative block w-full h-16 sm:h-24"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 1200 120"
-          preserveAspectRatio="none"
-        >
-          <path
-            d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"
-            className="fill-orange-50"
-          ></path>
-        </svg>
-      </div>
-
-      <div 
-        className="relative max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col cursor-pointer"
+    <section id="news" className="relative overflow-hidden bg-white pt-6 sm:pt-12 pb-20 sm:pb-12 flex flex-col">
+      <div
+        className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col cursor-pointer"
         onClick={scrollToNewsSection}
       >
         {/* Title */}

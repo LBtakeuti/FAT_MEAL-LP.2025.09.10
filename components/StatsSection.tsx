@@ -140,39 +140,8 @@ const StatsSection: React.FC = () => {
     }
   }, [isDetailOpen, isFutorumeshiDetailOpen]);
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-orange-50 to-white py-12 sm:py-20">
-      {/* 上部の波形 */}
-      <div className="absolute top-0 left-0 w-full overflow-hidden leading-none" style={{ transform: 'translateY(-1px)' }}>
-        <svg
-          className="relative block w-full h-16 sm:h-24"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 1200 120"
-          preserveAspectRatio="none"
-        >
-          <path
-            d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"
-            className="fill-orange-50"
-          ></path>
-        </svg>
-      </div>
-
-      {/* 下部の波形 */}
-      <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none" style={{ transform: 'translateY(1px)' }}>
-        <svg
-          className="relative block w-full h-16 sm:h-24"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 1200 120"
-          preserveAspectRatio="none"
-          style={{ transform: 'scaleY(-1)' }}
-        >
-          <path
-            d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"
-            className="fill-white"
-          ></path>
-        </svg>
-      </div>
-
-      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="relative overflow-hidden bg-white py-12 sm:py-20">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* セクションタイトル */}
         <div className="text-center mb-10 sm:mb-16 relative">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 relative z-10">
@@ -236,7 +205,7 @@ const StatsSection: React.FC = () => {
                 <div className="flex justify-between items-start py-3 px-4">
                   <span className="font-bold text-gray-900 font-antique text-sm">1ヶ月の費用</span>
                   <div className="text-right">
-                    <span className="text-gray-900 font-bold">28,900円（24食+電気代）</span>
+                    <span className="text-gray-900 font-bold">13,500円（24食+電気代）</span>
                     <button
                       ref={futorumeshiButtonRef}
                       onClick={handleFutorumeshiDetailClick}
@@ -289,7 +258,7 @@ const StatsSection: React.FC = () => {
                       </div>
                     </td>
                     <td className="py-4 px-6 text-gray-900 font-bold bg-orange-50">
-                      <span>28,900円（24食+電気代）</span>
+                      <span>13,500円（24食+電気代）</span>
                       <button
                         ref={futorumeshiButtonRefDesktop}
                         onClick={handleFutorumeshiDetailClick}
@@ -350,10 +319,10 @@ const StatsSection: React.FC = () => {
               }}
             >
               <div className="absolute -top-2 left-4 w-4 h-4 bg-gray-900 transform rotate-45"></div>
-              <p className="font-bold mb-3 text-white">ふとるめし 28,900円の内訳</p>
+              <p className="font-bold mb-3 text-white">ふとるめし 13,500円の内訳</p>
               <ul className="space-y-2 text-sm text-gray-200">
-                <li>• 24食セット: 28,800円</li>
-                <li>• 1食あたり: 約1,200円</li>
+                <li>• 24食セット: 13,400円</li>
+                <li>• 1食あたり: 約558円</li>
                 <li>• 電子レンジ電気代: 約100円/月</li>
               </ul>
               <p className="mt-3 text-sm text-gray-300">

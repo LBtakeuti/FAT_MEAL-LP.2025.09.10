@@ -1,13 +1,23 @@
 'use client';
 
-import React from 'react';
+import React, { useRef } from 'react';
 import Link from 'next/link';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination } from 'swiper/modules';
+import type { Swiper as SwiperType } from 'swiper';
 import { useMenuItems, useCarousel, useIntersectionObserver } from '@/hooks';
 import { MenuCard } from './menu/MenuCard';
 
+// Swiper styles
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
+
 const MenuSection: React.FC = () => {
-  const { menuItems, isLoading } = useMenuItems({ limit: 3 });
+  // すべてのメニューを取得（limitを大きくして対応）
+  const { menuItems, isLoading } = useMenuItems({ limit: 20 });
   const [titleRef, isTitleVisible] = useIntersectionObserver<HTMLDivElement>();
+  const swiperRef = useRef<SwiperType | null>(null);
 
   const {
     currentIndex,
@@ -27,7 +37,7 @@ const MenuSection: React.FC = () => {
   // ローディング中の表示
   if (isLoading) {
     return (
-      <section className="h-[100dvh] sm:h-auto bg-[#fff7ed] flex items-center justify-center">
+      <section className="h-[100dvh] sm:h-auto bg-white flex items-center justify-center">
         <div className="text-gray-500">読み込み中...</div>
       </section>
     );
@@ -36,7 +46,7 @@ const MenuSection: React.FC = () => {
   // データがない場合の表示
   if (menuItems.length === 0) {
     return (
-      <section className="h-[100dvh] sm:h-auto bg-[#fff7ed] flex items-center justify-center">
+      <section className="h-[100dvh] sm:h-auto bg-white flex items-center justify-center">
         <div className="text-gray-500">メニュー情報を取得できませんでした</div>
       </section>
     );
@@ -44,30 +54,15 @@ const MenuSection: React.FC = () => {
 
   const currentItem = menuItems[currentIndex];
 
+  // PC版で4つ以上のメニューがある場合のみカルーセルを表示
+  const showDesktopCarousel = menuItems.length > 3;
+
   return (
     <section
       id="menu"
-      className="relative overflow-hidden bg-[#fff7ed] flex flex-col sm:block py-4 sm:py-8"
+      className="relative overflow-hidden bg-white flex flex-col sm:block py-4 sm:py-8"
     >
-      {/* 上部の波形 */}
-      <div
-        className="absolute top-0 left-0 w-full overflow-hidden leading-none z-10"
-        style={{ transform: 'translateY(-1px)' }}
-      >
-        <svg
-          className="relative block w-full h-16 sm:h-24"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 1200 120"
-          preserveAspectRatio="none"
-        >
-          <path
-            d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"
-            className="fill-white"
-          />
-        </svg>
-      </div>
-
-      <div className="relative z-20 flex-1 flex flex-col sm:block max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto w-full pb-20 sm:pb-0">
+      <div className="flex-1 flex flex-col sm:block max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto w-full pb-20 sm:pb-0">
         {/* タイトル */}
         <div ref={titleRef} className="mb-3 sm:mb-8 -mt-2 sm:-mt-1">
           <div className="mb-2">
@@ -191,13 +186,136 @@ const MenuSection: React.FC = () => {
           </div>
         </div>
 
-        {/* Desktop: グリッド */}
-        <div className="hidden sm:grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {menuItems.map((item) => (
-            <MenuCard key={item.id} item={item} variant="desktop" />
-          ))}
+        {/* Desktop: Swiperカルーセル or グリッド */}
+        <div className="hidden sm:block">
+          {showDesktopCarousel ? (
+            <div className="relative">
+              {/* Swiperカルーセル */}
+              <div className="mx-12 lg:mx-14 overflow-hidden">
+                <Swiper
+                  modules={[Navigation, Pagination]}
+                  spaceBetween={24}
+                  slidesPerView={1}
+                  slidesPerGroup={1}
+                  loop={menuItems.length > 3}
+                  onSwiper={(swiper) => {
+                    swiperRef.current = swiper;
+                  }}
+                  pagination={{
+                    clickable: true,
+                    el: '.swiper-pagination-custom',
+                    bulletClass: 'swiper-pagination-bullet-custom',
+                    bulletActiveClass: 'swiper-pagination-bullet-active-custom',
+                  }}
+                  breakpoints={{
+                    640: {
+                      slidesPerView: 2,
+                      slidesPerGroup: 1,
+                    },
+                    1024: {
+                      slidesPerView: 3,
+                      slidesPerGroup: 1,
+                    },
+                  }}
+                  className="menu-swiper"
+                >
+                  {menuItems.map((item) => (
+                    <SwiperSlide key={item.id}>
+                      <MenuCard item={item} variant="desktop" />
+                    </SwiperSlide>
+                  ))}
+                </Swiper>
+              </div>
+
+              {/* 左矢印ボタン - Swiperの外に配置して安定させる */}
+              <button
+                type="button"
+                onClick={() => swiperRef.current?.slidePrev()}
+                className="absolute left-0 z-30 w-12 h-12 flex items-center justify-center bg-white rounded-full shadow-lg hover:bg-orange-50"
+                style={{ top: '171px' }}
+                aria-label="前のメニュー"
+              >
+                <svg
+                  className="w-6 h-6 text-orange-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+
+              {/* 右矢印ボタン - Swiperの外に配置して安定させる */}
+              <button
+                type="button"
+                onClick={() => swiperRef.current?.slideNext()}
+                className="absolute right-0 z-30 w-12 h-12 flex items-center justify-center bg-white rounded-full shadow-lg hover:bg-orange-50"
+                style={{ top: '171px' }}
+                aria-label="次のメニュー"
+              >
+                <svg
+                  className="w-6 h-6 text-orange-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+
+              {/* カスタムページネーション */}
+              <div className="swiper-pagination-custom flex justify-center gap-2 mt-4" />
+            </div>
+          ) : (
+            // 3つ以下の場合は通常のグリッド表示
+            <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {menuItems.map((item) => (
+                <MenuCard key={item.id} item={item} variant="desktop" />
+              ))}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* カスタムSwiperスタイル */}
+      <style jsx global>{`
+        .menu-swiper {
+          padding-bottom: 8px;
+          overflow: visible !important;
+          height: auto !important;
+        }
+        .menu-swiper .swiper-wrapper {
+          height: auto !important;
+        }
+        .menu-swiper .swiper-slide {
+          height: auto !important;
+          overflow: visible !important;
+        }
+        .swiper-pagination-bullet-custom {
+          width: 10px;
+          height: 10px;
+          background-color: #d1d5db;
+          border-radius: 9999px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          display: inline-block;
+          margin: 0 4px;
+        }
+        .swiper-pagination-bullet-active-custom {
+          width: 28px;
+          background-color: #ea580c;
+        }
+      `}</style>
     </section>
   );
 };

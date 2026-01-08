@@ -32,8 +32,8 @@ const ProblemsSection: React.FC = () => {
   }, [images]);
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-white to-orange-50 pt-4 sm:pt-6 pb-12 sm:pb-20">
-      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="relative overflow-hidden bg-white pt-4 sm:pt-6 pb-12 sm:pb-20">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* セクション見出し */}
         <div className="text-center mb-6 sm:mb-8">
           <h2 className="text-base sm:text-lg md:text-xl lg:text-3xl xl:text-4xl font-bold text-gray-900 leading-relaxed font-antique">

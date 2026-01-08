@@ -10,15 +10,15 @@ const isLiveMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_');
 const PRICE_MAP: { [key: string]: string } = isLiveMode
   ? {
       // 本番用Price ID
-      'plan-6': 'price_1SmAA1Kvr8fxkHMdPNXFisV5',   // ふとるめし6個セット ¥3,600
-      'plan-12': 'price_1SmAA4Kvr8fxkHMdkNorkE7f', // ふとるめし12個セット ¥6,700
-      'plan-18': 'price_1SmAA6Kvr8fxkHMdcojdzZxX', // ふとるめし18個セット ¥9,800
+      'plan-6': 'price_1SnDfZKvr8fxkHMdHryjs8HC',   // ふとるめし6個セット ¥4,200
+      'plan-12': 'price_1SnDfbKvr8fxkHMdiih419EB', // ふとるめし12個セット ¥8,400
+      'plan-18': 'price_1SnDfdKvr8fxkHMdPFzng1Sh', // ふとるめし18個セット ¥12,600
     }
   : {
       // テスト用Price ID
-      'plan-6': 'price_1SmmbAKvr8fxkHMdntqV1f27',   // ふとるめし6個セット ¥3,600
-      'plan-12': 'price_1SmmbOKvr8fxkHMdXXyEgWuU', // ふとるめし12個セット ¥6,700
-      'plan-18': 'price_1SmmbUKvr8fxkHMdicURugka', // ふとるめし18個セット ¥9,800
+      'plan-6': 'price_1SnDEbKvr8fxkHMd0ADcP4OY',   // ふとるめし6個セット ¥4,200
+      'plan-12': 'price_1SnDEoKvr8fxkHMdpY39WeeO', // ふとるめし12個セット ¥8,400
+      'plan-18': 'price_1SnDEqKvr8fxkHMdXZsYQQC2', // ふとるめし18個セット ¥12,600
     };
 
 interface CartItem {
