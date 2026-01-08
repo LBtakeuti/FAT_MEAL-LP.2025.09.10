@@ -60,7 +60,7 @@ const MenuSection: React.FC = () => {
   return (
     <section
       id="menu"
-      className="relative bg-white flex flex-col sm:block py-4 sm:py-8"
+      className="relative overflow-hidden bg-white flex flex-col sm:block py-4 sm:py-8"
     >
       <div className="flex-1 flex flex-col sm:block max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto w-full pb-20 sm:pb-0">
         {/* タイトル */}
@@ -189,10 +189,11 @@ const MenuSection: React.FC = () => {
         {/* Desktop: Swiperカルーセル or グリッド */}
         <div className="hidden sm:block">
           {showDesktopCarousel ? (
-            <div className="relative px-16 lg:px-20">
-              {/* Swiperカルーセル */}
-              <div className="py-4">
-                <Swiper
+            <div className="relative">
+              {/* Swiperカルーセル - overflow-hiddenで3枚のみ表示、内側にパディングでシャドウ用スペース確保 */}
+              <div className="mx-14 lg:mx-16 overflow-hidden">
+                <div className="p-4">
+                  <Swiper
                   modules={[Navigation, Pagination]}
                   spaceBetween={24}
                   slidesPerView={1}
@@ -224,15 +225,15 @@ const MenuSection: React.FC = () => {
                       <MenuCard item={item} variant="desktop" />
                     </SwiperSlide>
                   ))}
-                </Swiper>
+                  </Swiper>
+                </div>
               </div>
 
-              {/* 左矢印ボタン - Swiperの外に配置して安定させる */}
+              {/* 左矢印ボタン */}
               <button
                 type="button"
                 onClick={() => swiperRef.current?.slidePrev()}
-                className="absolute left-2 z-30 w-12 h-12 flex items-center justify-center bg-white rounded-full shadow-lg hover:bg-orange-50"
-                style={{ top: '50%', transform: 'translateY(-50%)' }}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-30 w-12 h-12 flex items-center justify-center bg-white rounded-full shadow-lg hover:bg-orange-50"
                 aria-label="前のメニュー"
               >
                 <svg
@@ -250,12 +251,11 @@ const MenuSection: React.FC = () => {
                 </svg>
               </button>
 
-              {/* 右矢印ボタン - Swiperの外に配置して安定させる */}
+              {/* 右矢印ボタン */}
               <button
                 type="button"
                 onClick={() => swiperRef.current?.slideNext()}
-                className="absolute right-2 z-30 w-12 h-12 flex items-center justify-center bg-white rounded-full shadow-lg hover:bg-orange-50"
-                style={{ top: '50%', transform: 'translateY(-50%)' }}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-30 w-12 h-12 flex items-center justify-center bg-white rounded-full shadow-lg hover:bg-orange-50"
                 aria-label="次のメニュー"
               >
                 <svg
@@ -290,7 +290,6 @@ const MenuSection: React.FC = () => {
       {/* カスタムSwiperスタイル */}
       <style jsx global>{`
         .menu-swiper {
-          overflow: visible !important;
           height: auto !important;
         }
         .menu-swiper .swiper-wrapper {
