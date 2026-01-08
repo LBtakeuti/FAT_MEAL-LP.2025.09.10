@@ -191,7 +191,7 @@ const MenuSection: React.FC = () => {
           {showDesktopCarousel ? (
             <div className="relative">
               {/* Swiperカルーセル */}
-              <div className="mx-14 lg:mx-16 overflow-hidden px-2 py-3">
+              <div className="mx-14 lg:mx-16 overflow-hidden px-4 py-4">
                 <Swiper
                   modules={[Navigation, Pagination]}
                   spaceBetween={24}
