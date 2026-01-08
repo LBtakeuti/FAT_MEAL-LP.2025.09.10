@@ -46,16 +46,12 @@ export async function GET() {
       'フリガナ',
       'メールアドレス',
       '電話番号',
-      '郵便番号',
-      '都道府県',
-      '市区町村',
-      '番地',
-      '建物名',
+      '住所',
       '注文内容',
       '数量',
       '金額',
       'ステータス',
-      '注文日時'
+      '注文日時（日本時間）'
     ];
 
     // CSVデータ行
@@ -65,33 +61,32 @@ export async function GET() {
       order.customer_name_kana || '',
       order.customer_email || order.email || '',
       order.phone || '',
-      order.postal_code || '',
-      order.prefecture || '',
-      order.city || '',
-      order.address_detail || '',
-      order.building || '',
-      order.menu_set,
+      order.address || '',
+      formatMenuSet(order.menu_set),
       order.quantity,
       order.amount || 0,
-      order.status,
-      new Date(order.created_at).toLocaleString('ja-JP')
+      translateStatus(order.status),
+      formatDateTimeJST(order.created_at)
     ]) || [];
 
-    // CSV形式に変換
+    // CSV形式に変換（エスケープ処理付き）
     const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      headers.map(escapeCSV).join(','),
+      ...rows.map(row => row.map(cell => escapeCSV(String(cell))).join(','))
     ].join('\n');
 
     // BOM付きUTF-8でエンコード（Excelで正しく開けるようにするため）
     const bom = '\uFEFF';
     const csvWithBom = bom + csvContent;
 
+    // JSTで日付フォーマット
+    const jstDate = getJSTDateString();
+
     // レスポンスヘッダーを設定してCSVファイルとしてダウンロード
     return new NextResponse(csvWithBom, {
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename="orders_${new Date().toISOString().split('T')[0]}.csv"`
+        'Content-Disposition': `attachment; filename="orders_${jstDate}.csv"`
       }
     });
   } catch (error) {
@@ -101,4 +96,57 @@ export async function GET() {
       { status: 500 }
     );
   }
+}
+
+// メニューセットを見やすくフォーマット（カンマ区切り → 改行区切り）
+function formatMenuSet(menuSet: string): string {
+  if (!menuSet) return '';
+  return menuSet.split(',').map(item => item.trim()).join('\n');
+}
+
+// 日時をJSTでフォーマット
+function formatDateTimeJST(dateString: string): string {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const jstOffset = 9 * 60 * 60 * 1000;
+  const jstDate = new Date(date.getTime() + jstOffset);
+
+  const year = jstDate.getUTCFullYear();
+  const month = String(jstDate.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(jstDate.getUTCDate()).padStart(2, '0');
+  const hours = String(jstDate.getUTCHours()).padStart(2, '0');
+  const minutes = String(jstDate.getUTCMinutes()).padStart(2, '0');
+  const seconds = String(jstDate.getUTCSeconds()).padStart(2, '0');
+
+  return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+}
+
+// ステータスを日本語に翻訳
+function translateStatus(status: string): string {
+  const statusMap: { [key: string]: string } = {
+    'pending': '保留中',
+    'confirmed': '確認済み',
+    'shipped': '発送済み',
+    'delivered': '配達完了',
+    'cancelled': 'キャンセル'
+  };
+  return statusMap[status] || status;
+}
+
+// CSVエスケープ処理
+function escapeCSV(value: string): string {
+  if (!value) return '""';
+  // カンマ、ダブルクォート、改行を含む場合はダブルクォートで囲む
+  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return `"${value}"`;
+}
+
+// JSTの日付文字列を取得
+function getJSTDateString(): string {
+  const now = new Date();
+  const jstOffset = 9 * 60 * 60 * 1000;
+  const jstDate = new Date(now.getTime() + jstOffset);
+  return `${jstDate.getUTCFullYear()}-${String(jstDate.getUTCMonth() + 1).padStart(2, '0')}-${String(jstDate.getUTCDate()).padStart(2, '0')}`;
 }

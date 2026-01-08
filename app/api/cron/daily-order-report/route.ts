@@ -50,21 +50,31 @@ export async function GET(request: NextRequest) {
     const resend = new Resend(resendApiKey);
     const supabase = createServerClient();
 
-    // 今日の日付を取得（JST 18時 = UTC 9時）
-    // Vercel CronはUTCで実行されるため、JST 18時 = UTC 9時に設定
+    // 今日の日付を取得（JST 0:00〜23:59:59）
+    // JST = UTC+9 なので、JST 0:00 = UTC 前日15:00、JST 23:59:59 = UTC 当日14:59:59
     const now = new Date();
-    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 9, 0, 0, 0));
-    const tomorrow = new Date(today);
-    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+    const jstOffset = 9 * 60 * 60 * 1000; // 9時間（ミリ秒）
 
-    console.log('[Cron Job] Fetching orders from:', today.toISOString(), 'to:', tomorrow.toISOString());
+    // 現在時刻をJSTに変換して日付を取得
+    const jstNow = new Date(now.getTime() + jstOffset);
+    const jstYear = jstNow.getUTCFullYear();
+    const jstMonth = jstNow.getUTCMonth();
+    const jstDate = jstNow.getUTCDate();
 
-    // 今日の注文を取得（JST 18時まで = UTC 9時まで）
+    // JST今日の0:00:00をUTCに変換（JST 0:00 = UTC -9時間 = 前日15:00）
+    const todayStartUTC = new Date(Date.UTC(jstYear, jstMonth, jstDate) - jstOffset);
+    // JST明日の0:00:00をUTCに変換
+    const tomorrowStartUTC = new Date(Date.UTC(jstYear, jstMonth, jstDate + 1) - jstOffset);
+
+    console.log('[Cron Job] JST Date:', `${jstYear}-${jstMonth + 1}-${jstDate}`);
+    console.log('[Cron Job] Fetching orders from:', todayStartUTC.toISOString(), 'to:', tomorrowStartUTC.toISOString());
+
+    // 今日の注文を取得（JST 0:00〜23:59:59）
     const { data: orders, error } = await (supabase
       .from('orders') as any)
       .select('*')
-      .gte('created_at', today.toISOString())
-      .lt('created_at', tomorrow.toISOString())
+      .gte('created_at', todayStartUTC.toISOString())
+      .lt('created_at', tomorrowStartUTC.toISOString())
       .order('created_at', { ascending: true }) as { data: Order[] | null; error: any };
 
     if (error) {
@@ -95,7 +105,8 @@ export async function GET(request: NextRequest) {
     const fromEmail = process.env.RESEND_FROM_EMAIL || 'ふとるめし <noreply@futorumeshi.com>';
     console.log('[Cron Job] Using from email:', fromEmail);
 
-    const dateStr = formatDate(today);
+    // JSTの日付文字列を生成
+    const dateStr = `${jstYear}年${jstMonth + 1}月${jstDate}日`;
 
     // メール送信関数（複数の送信先に対応）
     const sendEmailToRecipients = async (subject: string, html: string, attachments?: Array<{ filename: string; content: string }>) => {
@@ -274,7 +285,7 @@ export async function GET(request: NextRequest) {
       orderReportHtml,
       [
         {
-          filename: `orders_${formatDateForFilename(today)}.csv`,
+          filename: `orders_${jstYear}${String(jstMonth + 1).padStart(2, '0')}${String(jstDate).padStart(2, '0')}.csv`,
           content: csvBuffer.toString('base64'),
         },
       ]
@@ -324,16 +335,12 @@ function generateCSV(orders: Order[]): string {
     'フリガナ',
     'メールアドレス',
     '電話番号',
-    '郵便番号',
-    '都道府県',
-    '市区町村',
-    '番地',
-    '建物名',
+    '住所',
     '注文内容',
     '数量',
     '金額',
     'ステータス',
-    '注文日時'
+    '注文日時（日本時間）'
   ];
 
   // CSVデータ行
@@ -342,16 +349,12 @@ function generateCSV(orders: Order[]): string {
     order.customer_name_kana || '',
     order.customer_email || '',
     order.phone || '',
-    order.postal_code || '',
-    order.prefecture || '',
-    order.city || '',
-    order.address_detail || '',
-    order.building || '',
-    order.menu_set || '',
+    order.address || '',
+    formatMenuSet(order.menu_set || ''),
     order.quantity || 0,
     order.amount || 0,
-    order.status || 'pending',
-    new Date(order.created_at).toLocaleString('ja-JP')
+    translateStatus(order.status || 'pending'),
+    formatDateTimeJST(order.created_at)
   ]);
 
   // CSV形式に変換（BOM付きUTF-8でエンコード）
@@ -386,21 +389,39 @@ function escapeHtml(text: string): string {
   return text.replace(/[&<>"']/g, (m) => map[m]);
 }
 
-// 日付フォーマット関数
-function formatDate(date: Date): string {
-  // UTC 9時 = JST 18時として表示
-  const jstDate = new Date(date.getTime() + (9 * 60 * 60 * 1000));
-  return jstDate.toLocaleDateString('ja-JP', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+// メニューセットを見やすくフォーマット（カンマ区切り → 改行区切り）
+function formatMenuSet(menuSet: string): string {
+  if (!menuSet) return '';
+  // カンマで分割して改行で結合（CSV内で見やすくする）
+  return menuSet.split(',').map(item => item.trim()).join('\n');
 }
 
-function formatDateForFilename(date: Date): string {
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(date.getUTCDate()).padStart(2, '0');
-  return `${year}${month}${day}`;
+// 日時をJSTでフォーマット
+function formatDateTimeJST(dateString: string): string {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const jstOffset = 9 * 60 * 60 * 1000; // 9時間（ミリ秒）
+  const jstDate = new Date(date.getTime() + jstOffset);
+
+  const year = jstDate.getUTCFullYear();
+  const month = String(jstDate.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(jstDate.getUTCDate()).padStart(2, '0');
+  const hours = String(jstDate.getUTCHours()).padStart(2, '0');
+  const minutes = String(jstDate.getUTCMinutes()).padStart(2, '0');
+  const seconds = String(jstDate.getUTCSeconds()).padStart(2, '0');
+
+  return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+}
+
+// ステータスを日本語に翻訳
+function translateStatus(status: string): string {
+  const statusMap: { [key: string]: string } = {
+    'pending': '保留中',
+    'confirmed': '確認済み',
+    'shipped': '発送済み',
+    'delivered': '配達完了',
+    'cancelled': 'キャンセル'
+  };
+  return statusMap[status] || status;
 }
 
