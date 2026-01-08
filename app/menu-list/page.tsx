@@ -1,47 +1,17 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { menuItems as staticMenuItems } from '@/data/menuData';
 import MobileHeader from '@/components/MobileHeader';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useRouter } from 'next/navigation';
+import { useMenuItems } from '@/hooks/useMenuItems';
 
 export default function MenuListPage() {
   const router = useRouter();
-  const [menuItems, setMenuItems] = useState(staticMenuItems);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    fetchMenuItems();
-    
-    // 30秒ごとに更新
-    const interval = setInterval(() => {
-      fetchMenuItems();
-    }, 30000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchMenuItems = async () => {
-    try {
-      const response = await fetch('/api/menu', {
-        cache: 'no-store'
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (data && data.length > 0) {
-          setMenuItems(data);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to fetch menu items:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { menuItems, isLoading } = useMenuItems({ limit: 0, autoRefresh: true, refreshInterval: 30000 });
   
   if (isLoading) {
     return (
