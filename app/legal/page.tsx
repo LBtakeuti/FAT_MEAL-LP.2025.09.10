@@ -126,7 +126,11 @@ export default function LegalPage() {
               <h2 className="text-sm sm:text-base font-semibold text-gray-700 mb-2">
                 10. 販売価格
               </h2>
-              <p className="text-gray-900">coming soon....</p>
+              <ul className="text-gray-900 text-sm sm:text-base space-y-1">
+                <li>・ふとるめし6個セット：¥4,200（税込）</li>
+                <li>・ふとるめし12個セット：¥8,400（税込）</li>
+                <li>・ふとるめし18個セット：¥12,600（税込）</li>
+              </ul>
             </div>
 
             {/* 商品代金以外の必要料金 */}

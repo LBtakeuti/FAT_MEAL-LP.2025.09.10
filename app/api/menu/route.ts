@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // 公開APIなのでanon keyを使用
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

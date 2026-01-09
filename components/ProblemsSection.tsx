@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 
 const ProblemsSection: React.FC = () => {
-  const images = [
+  const images = useMemo(() => [
     '/problems-worry.jpeg',
     '/problems-skinny.jpeg',
-  ];
+  ], []);
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [aspectRatio, setAspectRatio] = useState<number | null>(null);

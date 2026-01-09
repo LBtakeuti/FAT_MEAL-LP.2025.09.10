@@ -117,23 +117,6 @@ export default function AdminOrdersPage() {
     }
   };
 
-  const getStatusLabel = (status: Order['status']) => {
-    switch (status) {
-      case 'pending':
-        return '注文受付';
-      case 'confirmed':
-        return '注文確定';
-      case 'shipped':
-        return '発送済';
-      case 'delivered':
-        return '配達完了';
-      case 'cancelled':
-        return 'キャンセル';
-      default:
-        return status;
-    }
-  };
-
   const filteredOrders = filter === 'all'
     ? orders
     : orders.filter(order => order.status === filter);

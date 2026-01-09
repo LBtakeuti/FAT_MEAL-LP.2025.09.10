@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 
 const CTASection: React.FC = () => {
@@ -38,8 +38,6 @@ const CTASection: React.FC = () => {
     },
   ];
 
-  const [selectedPlan, setSelectedPlan] = useState<string>(sets[0].id);
-
   const handlePurchase = (planId: string) => {
     router.push(`/purchase?plan=${planId}`);
   };
@@ -61,7 +59,6 @@ const CTASection: React.FC = () => {
               key={set.id}
               onClick={() => {
                 if (!set.comingSoon) {
-                  setSelectedPlan(set.id);
                   handlePurchase(set.id);
                 }
               }}
@@ -106,7 +103,6 @@ const CTASection: React.FC = () => {
                 onClick={(e) => {
                   e.stopPropagation();
                   if (!set.comingSoon) {
-                    setSelectedPlan(set.id);
                     handlePurchase(set.id);
                   }
                 }}

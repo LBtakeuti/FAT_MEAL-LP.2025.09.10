@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function NewMenuPage() {
   const router = useRouter();
@@ -305,10 +306,13 @@ export default function NewMenuPage() {
                       <div className="text-gray-600">アップロード中...</div>
                     ) : formData.main_image ? (
                       <div className="relative">
-                        <img
+                        <Image
                           src={formData.main_image}
                           alt="プレビュー"
+                          width={400}
+                          height={256}
                           className="max-w-full max-h-64 mx-auto object-contain border border-gray-300 rounded"
+                          unoptimized
                         />
                         <button
                           type="button"
@@ -370,10 +374,13 @@ export default function NewMenuPage() {
                           <div className="text-gray-600 text-sm">アップロード中...</div>
                         ) : img ? (
                           <div className="relative">
-                            <img
+                            <Image
                               src={img}
                               alt={`サブ画像${index + 1} プレビュー`}
+                              width={300}
+                              height={192}
                               className="max-w-full max-h-48 mx-auto object-contain border border-gray-300 rounded"
+                              unoptimized
                             />
                             <button
                               type="button"

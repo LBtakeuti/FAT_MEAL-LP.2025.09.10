@@ -1,10 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const [credentials, setCredentials] = useState({
     email: '',
     password: ''
@@ -36,7 +34,7 @@ export default function AdminLoginPage() {
       } else {
         setError(data.message || 'ログインに失敗しました');
       }
-    } catch (err) {
+    } catch {
       setError('ネットワークエラーが発生しました');
     } finally {
       setIsLoading(false);

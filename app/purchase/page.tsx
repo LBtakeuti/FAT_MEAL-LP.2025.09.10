@@ -115,7 +115,7 @@ const PurchasePage: React.FC = () => {
   ]);
   // 在庫状況
   const [inventory, setInventory] = useState<InventoryStatus | null>(null);
-  const [inventoryLoading, setInventoryLoading] = useState(true);
+  const [, setInventoryLoading] = useState(true);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
     lastName: '',
     firstName: '',
@@ -134,7 +134,7 @@ const PurchasePage: React.FC = () => {
   // ログインユーザーとプロフィールの状態
   const [user, setUser] = useState<any>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [profileLoading, setProfileLoading] = useState(true);
+  const [, setProfileLoading] = useState(true);
 
   // 送料とクーポン
   const shippingFee = 990;
@@ -394,6 +394,7 @@ const PurchasePage: React.FC = () => {
   };
 
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const handleProceedToPayment = async () => {
     if (!isCartEmpty && !checkoutLoading) {
@@ -1068,6 +1069,29 @@ const PurchasePage: React.FC = () => {
         </dl>
       </div>
 
+      {/* 特商法同意チェックボックス */}
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={agreedToTerms}
+            onChange={(e) => setAgreedToTerms(e.target.checked)}
+            className="mt-1 w-5 h-5 text-orange-600 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
+          />
+          <span className="text-sm text-gray-700">
+            <a
+              href="/legal"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-orange-600 underline hover:text-orange-700"
+            >
+              特定商取引法に基づく表記
+            </a>
+            に同意する
+          </span>
+        </label>
+      </div>
+
       {/* ボタン */}
       <div className="flex gap-4">
         <button
@@ -1078,9 +1102,9 @@ const PurchasePage: React.FC = () => {
         </button>
         <button
           onClick={handleProceedToPayment}
-          disabled={checkoutLoading}
+          disabled={checkoutLoading || !agreedToTerms}
           className={`flex-1 py-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 ${
-            checkoutLoading
+            checkoutLoading || !agreedToTerms
               ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
               : 'bg-orange-500 text-white hover:bg-orange-600'
           }`}

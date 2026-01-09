@@ -165,8 +165,8 @@ export async function POST(request: NextRequest) {
 
 async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe: Stripe) {
   const customerEmail = session.customer_details?.email;
-  const customerName = session.customer_details?.name;
-  const customerPhone = session.customer_details?.phone;
+  const customerName = session.customer_details?.name || session.metadata?.customer_name;
+  const customerPhone = session.customer_details?.phone || session.metadata?.phone;
   const customerAddress = session.customer_details?.address;
   const amountTotal = session.amount_total;
 
@@ -183,16 +183,21 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe:
     .map(item => `${item.description} × ${item.quantity}`)
     .join(', ');
 
-  // 住所を文字列に変換
-  const addressString = customerAddress
-    ? [
-        customerAddress.postal_code,
-        customerAddress.state,
-        customerAddress.city,
-        customerAddress.line1,
-        customerAddress.line2
-      ].filter(Boolean).join(' ')
-    : '';
+  // 住所を文字列に変換（metadataをフォールバックとして使用）
+  let addressString = '';
+  if (session.metadata?.address) {
+    // checkoutで保存したmetadataの住所を優先使用
+    addressString = session.metadata.address;
+  } else if (customerAddress) {
+    // Stripeのcustomer_detailsから取得
+    addressString = [
+      customerAddress.postal_code,
+      customerAddress.state,
+      customerAddress.city,
+      customerAddress.line1,
+      customerAddress.line2
+    ].filter(Boolean).join(' ');
+  }
 
   // 数量を計算（全商品の合計数量）
   const totalQuantity = lineItems.data.reduce((sum, item) => sum + (item.quantity || 1), 0);
@@ -346,10 +351,14 @@ async function sendOrderConfirmationEmail(params: OrderEmailParams) {
     .map(item => `・${item.description} × ${item.quantity}`)
     .join('\n');
 
-  const formattedAmount = new Intl.NumberFormat('ja-JP', {
+  // 送料は¥990固定
+  const shippingFee = 990;
+  const subtotal = amount - shippingFee;
+
+  const formatCurrency = (value: number) => new Intl.NumberFormat('ja-JP', {
     style: 'currency',
     currency: 'JPY',
-  }).format(amount);
+  }).format(value);
 
   const emailHtml = `
 <!DOCTYPE html>
@@ -357,44 +366,35 @@ async function sendOrderConfirmationEmail(params: OrderEmailParams) {
 <head>
   <meta charset="utf-8">
   <style>
-    body { font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; }
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.8; color: #333; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, #f97316, #ea580c); padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-    .header h1 { color: white; margin: 0; font-size: 24px; }
-    .content { background: #fff; padding: 30px; border: 1px solid #e5e5e5; }
+    .content { background: #fff; padding: 30px; }
     .order-details { background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; }
-    .total { font-size: 24px; color: #f97316; font-weight: bold; }
-    .footer { background: #f3f4f6; padding: 20px; text-align: center; border-radius: 0 0 10px 10px; font-size: 12px; color: #6b7280; }
-    .button { display: inline-block; background: #f97316; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+    .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e5e5; }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="header">
-      <h1>ご注文ありがとうございます</h1>
-    </div>
     <div class="content">
       <p>${name} 様</p>
       <p>この度は「ふとるめし」をご注文いただき、誠にありがとうございます。</p>
-      <p>ご注文内容を確認させていただきました。商品の発送準備ができ次第、改めてご連絡いたします。</p>
+      <p>ご注文内容を確認させていただきました。</p>
 
       <div class="order-details">
-        <h3 style="margin-top: 0;">ご注文内容</h3>
-        <p><strong>注文番号:</strong> ${orderId.slice(-8).toUpperCase()}</p>
+        <p style="margin-top: 0;"><strong>注文内容</strong></p>
         <pre style="font-family: inherit; white-space: pre-wrap;">${itemsList}</pre>
         <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 15px 0;">
-        <p style="margin-bottom: 0;"><strong>合計金額:</strong> <span class="total">${formattedAmount}</span></p>
+        <p><strong>小計:</strong> ${formatCurrency(subtotal)}</p>
+        <p><strong>送料:</strong> ${formatCurrency(shippingFee)}</p>
+        <p><strong>合計金額:</strong> ${formatCurrency(amount)}</p>
       </div>
 
-      <p>ご不明な点がございましたら、お気軽にお問い合わせください。</p>
+      <p>ご不明な点がございましたらご連絡ください。</p>
 
-      <p style="margin-top: 30px;">
-        今後とも「ふとるめし」をよろしくお願いいたします。
-      </p>
-    </div>
-    <div class="footer">
-      <p>ふとるめし - 太りたいあなたのための高カロリー弁当</p>
-      <p>© 2025 ふとるめし All Rights Reserved.</p>
+      <div class="footer">
+        <p style="margin: 0;">LandBridge株式会社</p>
+        <p style="margin: 5px 0;"><a href="mailto:info@landbridge.co.jp">info@landbridge.co.jp</a></p>
+      </div>
     </div>
   </div>
 </body>

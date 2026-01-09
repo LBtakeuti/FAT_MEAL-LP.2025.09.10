@@ -7,7 +7,12 @@
       "Bash(rm:*)",
       "Bash(npm run build:*)",
       "Bash(curl:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "Bash(npm run dev:*)",
+      "mcp__stripe__list_payment_intents",
+      "mcp__serena__search_for_pattern"
     ]
   },
   "enableAllProjectMcpServers": true,

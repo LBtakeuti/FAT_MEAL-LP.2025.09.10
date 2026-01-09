@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
             { promotion_code: promotionCodes.data[0].id },
           ];
         }
-      } catch (promoError) {
+      } catch {
         console.log('Promotion code not found in Stripe, skipping discount');
       }
     }

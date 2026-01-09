@@ -52,7 +52,7 @@ const HeroSection: React.FC = () => {
         {/* 固定テキスト画像（PC用） - 左下に配置 */}
         <div className="absolute bottom-0 left-0 z-20 p-4 sm:p-6 lg:p-8">
           <Image
-            src="/hero-title-text.png"
+            src="/hero-copy.svg"
             alt=""
             width={500}
             height={250}
@@ -84,7 +84,7 @@ const HeroSection: React.FC = () => {
         {/* 固定テキスト画像（SP用） - 左下に配置 */}
         <div className="absolute bottom-0 left-0 z-20 p-3">
           <Image
-            src="/hero-title-text.png"
+            src="/hero-copy.svg"
             alt=""
             width={220}
             height={110}

@@ -4,6 +4,8 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createBrowserClient } from '@/lib/supabase';
 import Link from 'next/link';
+import Header from '@/components/Header';
+import MobileHeader from '@/components/MobileHeader';
 
 // Supabaseのエラーメッセージを日本語に変換
 const translateErrorMessage = (message: string): string => {
@@ -371,10 +373,14 @@ function LoginPageLoading() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center py-12 px-4">
-      <Suspense fallback={<LoginPageLoading />}>
-        <LoginForm />
-      </Suspense>
-    </div>
+    <>
+      <Header />
+      <MobileHeader />
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center py-12 px-4 pt-24 sm:pt-12">
+        <Suspense fallback={<LoginPageLoading />}>
+          <LoginForm />
+        </Suspense>
+      </div>
+    </>
   );
 }

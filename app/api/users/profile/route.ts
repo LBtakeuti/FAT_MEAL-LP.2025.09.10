@@ -1,30 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 
-// 認証チェックヘルパー関数
-async function verifyUser(request: NextRequest, userId: string): Promise<boolean> {
-  try {
-    // Authorizationヘッダーからトークンを取得
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return false;
-    }
-
-    const token = authHeader.substring(7);
-    const supabase = createServerClient();
-    
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    
-    if (error || !user || user.id !== userId) {
-      return false;
-    }
-    
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 // GET: ユーザープロフィールを取得
 export async function GET(request: NextRequest) {
   try {

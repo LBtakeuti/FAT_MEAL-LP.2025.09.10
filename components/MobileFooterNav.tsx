@@ -20,10 +20,6 @@ const MobileFooterNav: React.FC<MobileFooterNavProps> = ({ isVisible = false }) 
     router.push('/purchase');
   };
 
-  const handleCallClick = () => {
-    window.location.href = 'tel:0120-XXX-XXX';
-  };
-
   const handleChatClick = () => {
     // Navigate to contact form page
     router.push('/contact');

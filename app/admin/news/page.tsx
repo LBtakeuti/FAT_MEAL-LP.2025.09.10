@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 interface NewsItem {
   id: string;
@@ -18,7 +17,6 @@ interface NewsItem {
 }
 
 export default function AdminNewsPage() {
-  const router = useRouter();
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
 

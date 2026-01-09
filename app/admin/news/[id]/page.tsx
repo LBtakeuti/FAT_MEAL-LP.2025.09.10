@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect, useCallback, use } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function EditNewsPage({ params: promiseParams }: { params: Promise<{ id: string }> }) {
@@ -18,11 +18,7 @@ export default function EditNewsPage({ params: promiseParams }: { params: Promis
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    fetchNewsItem();
-  }, [params.id]);
-
-  const fetchNewsItem = async () => {
+  const fetchNewsItem = useCallback(async () => {
     try {
       const response = await fetch(`/api/admin/news/${params.id}`);
       if (response.ok) {
@@ -46,7 +42,11 @@ export default function EditNewsPage({ params: promiseParams }: { params: Promis
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id, router]);
+
+  useEffect(() => {
+    fetchNewsItem();
+  }, [fetchNewsItem]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -23,7 +23,6 @@ import LineFloatingButton from '@/components/LineFloatingButton';
 export default function Home() {
   const [isSwipeMode, setIsSwipeMode] = useState(false);
   const [showFooterNav, setShowFooterNav] = useState(false);
-  const [swiperInstance, setSwiperInstance] = useState<SwiperType | null>(null);
 
   useEffect(() => {
     // スワイプモードを無効化し、常に通常スクロールモードを使用
@@ -48,7 +47,6 @@ export default function Home() {
             modules={[Mousewheel]}
             className="mySwiper"
             onInit={(swiper: SwiperType) => {
-              setSwiperInstance(swiper);
               // Store swiper instance globally for footer nav
               (window as any).swiper = swiper;
             }}

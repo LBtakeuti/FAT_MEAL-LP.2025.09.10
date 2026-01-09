@@ -11,6 +11,17 @@ interface MenuCardProps {
   className?: string;
 }
 
+// 画像がない場合のフォールバック表示
+function ImagePlaceholder({ name }: { name: string }) {
+  return (
+    <div className="absolute inset-0 bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
+      <span className="text-orange-600 text-4xl font-bold opacity-30">
+        {name.charAt(0)}
+      </span>
+    </div>
+  );
+}
+
 export function MenuCard({
   item,
   variant = 'desktop',
@@ -30,15 +41,19 @@ export function MenuCard({
         className={`bg-white shadow-lg hover:shadow-xl h-[360px] flex flex-col overflow-hidden cursor-pointer rounded-lg ${className}`}
       >
         <div className="relative h-[220px] flex-shrink-0">
-          <Image
-            src={item.image}
-            alt={item.name}
-            fill
-            className="object-cover"
-            sizes="(max-width: 640px) 100vw, 280px"
-            priority={priority}
-            loading={priority ? 'eager' : 'lazy'}
-          />
+          {item.image ? (
+            <Image
+              src={item.image}
+              alt={item.name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 640px) 100vw, 280px"
+              priority={priority}
+              loading={priority ? 'eager' : 'lazy'}
+            />
+          ) : (
+            <ImagePlaceholder name={item.name} />
+          )}
         </div>
         <div className="p-3 flex flex-col">
           <h3 className="text-base font-bold text-gray-900 mb-2 truncate">
@@ -77,13 +92,17 @@ export function MenuCard({
       style={{ overflow: 'hidden' }}
     >
       <div className="relative w-full h-[160px] flex-shrink-0">
-        <Image
-          src={item.image}
-          alt={item.name}
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 50vw, 33vw"
-        />
+        {item.image ? (
+          <Image
+            src={item.image}
+            alt={item.name}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 50vw, 33vw"
+          />
+        ) : (
+          <ImagePlaceholder name={item.name} />
+        )}
       </div>
       <div className="p-4 flex flex-col flex-grow">
         {/* タイトルは2行まで、それ以上は省略 */}

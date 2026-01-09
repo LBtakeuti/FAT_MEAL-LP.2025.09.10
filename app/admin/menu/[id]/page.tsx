@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect, useCallback, use } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 interface MenuItem {
   id: string;
@@ -47,11 +48,7 @@ export default function EditMenuPage({ params: promiseParams }: { params: Promis
   const [uploadingMain, setUploadingMain] = useState(false);
   const [uploadingSub, setUploadingSub] = useState<number | null>(null);
 
-  useEffect(() => {
-    fetchMenuItem();
-  }, [params.id]);
-
-  const fetchMenuItem = async () => {
+  const fetchMenuItem = useCallback(async () => {
     try {
       const response = await fetch(`/api/admin/menu/${params.id}`);
       if (response.ok) {
@@ -86,7 +83,11 @@ export default function EditMenuPage({ params: promiseParams }: { params: Promis
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id, router]);
+
+  useEffect(() => {
+    fetchMenuItem();
+  }, [fetchMenuItem]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -373,10 +374,13 @@ export default function EditMenuPage({ params: promiseParams }: { params: Promis
                       <div className="text-gray-600">アップロード中...</div>
                     ) : formData.main_image ? (
                       <div className="relative">
-                        <img
+                        <Image
                           src={formData.main_image}
                           alt="プレビュー"
+                          width={400}
+                          height={256}
                           className="max-w-full max-h-64 mx-auto object-contain border border-gray-300 rounded"
+                          unoptimized
                         />
                         <button
                           type="button"
@@ -438,10 +442,13 @@ export default function EditMenuPage({ params: promiseParams }: { params: Promis
                           <div className="text-gray-600 text-sm">アップロード中...</div>
                         ) : img ? (
                           <div className="relative">
-                            <img
+                            <Image
                               src={img}
                               alt={`サブ画像${index + 1} プレビュー`}
+                              width={300}
+                              height={192}
                               className="max-w-full max-h-48 mx-auto object-contain border border-gray-300 rounded"
+                              unoptimized
                             />
                             <button
                               type="button"

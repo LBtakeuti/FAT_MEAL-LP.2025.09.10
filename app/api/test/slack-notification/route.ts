@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 // テスト用Slack通知API（本番では無効化してください）
-export async function POST(request: NextRequest) {
+export async function POST() {
   // 開発環境のみ有効
   if (process.env.NODE_ENV === 'production') {
     return NextResponse.json({ error: 'This endpoint is disabled in production' }, { status: 403 });

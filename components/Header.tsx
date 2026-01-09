@@ -29,8 +29,8 @@ const Header: React.FC = () => {
     <header className="relative bg-white shadow-md hidden sm:block">
       <div className="max-w-7xl mx-auto px-4 py-4">
         <div className="flex flex-col items-center">
-          {/* ロゴ中央配置 */}
-          <div className="mb-4">
+          {/* ロゴ中央配置 - コンテナ固定でレイアウトシフト防止 */}
+          <div className="mb-4 h-24 flex items-center justify-center">
             <Link href="/">
               <Image
                 src="/logo-header.png"
@@ -39,6 +39,7 @@ const Header: React.FC = () => {
                 height={180}
                 className="h-24 w-auto"
                 priority
+                loading="eager"
               />
             </Link>
           </div>
