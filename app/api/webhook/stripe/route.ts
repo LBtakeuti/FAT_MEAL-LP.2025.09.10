@@ -416,7 +416,7 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
     }
 
     // subscription_deliveriesテーブルに初回配送予定を作成
-    const deliveries = deliverySchedules.map((schedule, index) => ({
+    const deliveries = deliverySchedules.map((schedule) => ({
       subscription_id: dbSubscription.id,
       scheduled_date: schedule.scheduled_date.toISOString().split('T')[0],
       menu_set: menuSet,
@@ -700,7 +700,7 @@ interface OrderEmailParams {
 }
 
 async function sendOrderConfirmationEmail(params: OrderEmailParams) {
-  const { email, name, orderId, amount, items } = params;
+  const { email, name, amount, items } = params;
 
   const resend = await getResendClient();
   if (!resend) {

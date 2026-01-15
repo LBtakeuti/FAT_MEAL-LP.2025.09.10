@@ -180,7 +180,7 @@ export function getPlanName(planId: string): string {
 /**
  * プランIDからメニューセット名を取得
  */
-export function getMenuSetName(planId: string): string {
+export function getMenuSetName(_planId: string): string {
   // すべてのプランで12食セットを配送
   return 'ふとるめし12食セット';
 }

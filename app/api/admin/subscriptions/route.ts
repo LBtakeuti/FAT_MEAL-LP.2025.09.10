@@ -33,7 +33,7 @@ interface Subscription {
   canceled_at: string | null;
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const supabase = createServerClient();
     

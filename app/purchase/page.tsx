@@ -171,7 +171,7 @@ function isBusinessDay(date: Date): boolean {
 
 // 営業日を追加
 function addBusinessDays(startDate: Date, businessDays: number): Date {
-  let currentDate = new Date(startDate);
+  const currentDate = new Date(startDate);
   let addedDays = 0;
 
   while (addedDays < businessDays) {
@@ -203,7 +203,7 @@ const PurchasePage: React.FC = () => {
     { planId: 'subscription-monthly-48', quantity: 0 },
   ]);
   // 在庫状況
-  const [inventory, setInventory] = useState<InventoryStatus | null>(null);
+  const [, setInventory] = useState<InventoryStatus | null>(null);
   const [, setInventoryLoading] = useState(true);
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
     lastName: '',
@@ -381,7 +381,8 @@ const PurchasePage: React.FC = () => {
     userProfile.prefecture
   );
 
-  // カートの数量を更新
+  // カートの数量を更新（将来の拡張用）
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const updateCartQuantity = (planId: string, newQuantity: number) => {
     setCart(prev => prev.map(item =>
       item.planId === planId ? { ...item, quantity: Math.max(0, newQuantity) } : item
