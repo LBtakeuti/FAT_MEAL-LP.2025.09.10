@@ -94,10 +94,12 @@ function LoginForm() {
     const supabase = createBrowserClient();
 
     try {
+      // 本番環境では環境変数のSITE_URLを使用、なければ現在のoriginを使用
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
       const { error: googleError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/login`,
+          redirectTo: `${siteUrl}/login`,
         },
       });
 

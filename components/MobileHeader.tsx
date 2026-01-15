@@ -72,6 +72,7 @@ const MobileHeader: React.FC = () => {
               className="h-14 w-auto"
               priority
               loading="eager"
+              unoptimized
             />
           </Link>
 

@@ -40,6 +40,7 @@ const Header: React.FC = () => {
                 className="h-24 w-auto"
                 priority
                 loading="eager"
+                unoptimized
               />
             </Link>
           </div>
