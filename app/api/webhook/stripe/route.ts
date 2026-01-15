@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
       // サブスクリプションの請求成功時（毎月の自動課金成功時）
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object as Stripe.Invoice;
-        if (invoice.subscription && invoice.billing_reason !== 'subscription_create') {
+        if ((invoice as any).subscription && invoice.billing_reason !== 'subscription_create') {
           await handleMonthlySubscriptionPayment(invoice, stripe);
         }
         break;
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
       // サブスクリプションの請求失敗時
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice;
-        if (invoice.subscription) {
+        if ((invoice as any).subscription) {
           await handlePaymentFailed(invoice);
         }
         break;
@@ -326,9 +326,9 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
     });
 
     let checkoutSession: Stripe.Checkout.Session | null = null;
-    if (invoices.data.length > 0 && invoices.data[0].payment_intent) {
+    if (invoices.data.length > 0 && (invoices.data[0] as any).payment_intent) {
       const sessions = await stripe.checkout.sessions.list({
-        payment_intent: invoices.data[0].payment_intent as string,
+        payment_intent: (invoices.data[0] as any).payment_intent as string,
         limit: 1,
       });
       checkoutSession = sessions.data[0] || null;
@@ -357,7 +357,7 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
     // 配送スケジュールを計算
     const startDate = preferredDeliveryDateStr 
       ? new Date(preferredDeliveryDateStr)
-      : new Date(subscription.current_period_start * 1000 + 7 * 24 * 60 * 60 * 1000); // 1週間後
+      : new Date((subscription as any).current_period_start * 1000 + 7 * 24 * 60 * 60 * 1000); // 1週間後
 
     const deliverySchedules = calculateInitialDeliverySchedule(planId, startDate);
 
@@ -374,8 +374,8 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
     }
 
     // subscriptionsテーブルに作成
-    const { data: dbSubscription, error: subError } = await supabase
-      .from('subscriptions')
+    const { data: dbSubscription, error: subError } = await (supabase
+      .from('subscriptions') as any)
       .insert({
         user_id: userId,
         stripe_subscription_id: subscription.id,
@@ -403,8 +403,8 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
         },
         status: 'active',
         payment_status: 'active',
-        current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
+        current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
         started_at: new Date(subscription.created * 1000).toISOString(),
       })
       .select()
@@ -417,7 +417,7 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
 
     // subscription_deliveriesテーブルに初回配送予定を作成
     const deliveries = deliverySchedules.map((schedule) => ({
-      subscription_id: dbSubscription.id,
+      subscription_id: (dbSubscription as any).id,
       scheduled_date: schedule.scheduled_date.toISOString().split('T')[0],
       menu_set: menuSet,
       meals_per_delivery: schedule.meals_per_delivery,
@@ -425,21 +425,21 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
       status: 'pending',
     }));
 
-    const { error: deliveryError } = await supabase
-      .from('subscription_deliveries')
+    const { error: deliveryError } = await (supabase
+      .from('subscription_deliveries') as any)
       .insert(deliveries);
 
     if (deliveryError) {
       console.error('Failed to create delivery schedules:', deliveryError);
     }
 
-    console.log(`Subscription created: ${dbSubscription.id} with ${deliveries.length} initial deliveries`);
+    console.log(`Subscription created: ${(dbSubscription as any).id} with ${deliveries.length} initial deliveries`);
 
     // 購入完了メール送信
     await sendSubscriptionPurchaseConfirmationEmail({
       email: customerEmail,
       name: customerName,
-      subscriptionId: dbSubscription.id,
+      subscriptionId: (dbSubscription as any).id,
       planName: planName,
       monthlyAmount: planConfig.monthly_total,
       deliverySchedules: deliverySchedules,
@@ -467,7 +467,7 @@ async function handleMonthlySubscriptionPayment(invoice: Stripe.Invoice, stripe:
     return;
   }
 
-  const stripeSubscriptionId = invoice.subscription as string;
+  const stripeSubscriptionId = (invoice as any).subscription as string;
   if (!stripeSubscriptionId) {
     console.error('No subscription ID in invoice');
     return;
@@ -484,8 +484,8 @@ async function handleMonthlySubscriptionPayment(invoice: Stripe.Invoice, stripe:
     }
 
     // DBのサブスクリプションを取得
-    const { data: dbSubscription, error: fetchError } = await supabase
-      .from('subscriptions')
+    const { data: dbSubscription, error: fetchError } = await (supabase
+      .from('subscriptions') as any)
       .select('*')
       .eq('stripe_subscription_id', stripeSubscriptionId)
       .single();
@@ -496,13 +496,13 @@ async function handleMonthlySubscriptionPayment(invoice: Stripe.Invoice, stripe:
     }
 
     // 月次配送スケジュールを計算
-    const billingDate = new Date(subscription.current_period_start * 1000);
+    const billingDate = new Date((subscription as any).current_period_start * 1000);
     const deliverySchedules = calculateMonthlyDeliverySchedule(planId, billingDate);
     const menuSet = getMenuSetName(planId);
 
     // 新しい配送予定を作成
     const deliveries = deliverySchedules.map(schedule => ({
-      subscription_id: dbSubscription.id,
+      subscription_id: (dbSubscription as any).id,
       scheduled_date: schedule.scheduled_date.toISOString().split('T')[0],
       menu_set: menuSet,
       meals_per_delivery: schedule.meals_per_delivery,
@@ -511,8 +511,8 @@ async function handleMonthlySubscriptionPayment(invoice: Stripe.Invoice, stripe:
       stripe_invoice_id: invoice.id,
     }));
 
-    const { error: deliveryError } = await supabase
-      .from('subscription_deliveries')
+    const { error: deliveryError } = await (supabase
+      .from('subscription_deliveries') as any)
       .insert(deliveries);
 
     if (deliveryError) {
@@ -520,22 +520,22 @@ async function handleMonthlySubscriptionPayment(invoice: Stripe.Invoice, stripe:
     }
 
     // サブスクリプションの期間を更新
-    const { error: updateError } = await supabase
-      .from('subscriptions')
+    const { error: updateError } = await (supabase
+      .from('subscriptions') as any)
       .update({
-        current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
+        current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
         next_delivery_date: deliverySchedules[0]?.scheduled_date.toISOString().split('T')[0] || null,
         payment_status: 'active',
         updated_at: new Date().toISOString(),
       })
-      .eq('id', dbSubscription.id);
+      .eq('id', (dbSubscription as any).id);
 
     if (updateError) {
       console.error('Failed to update subscription period:', updateError);
     }
 
-    console.log(`Monthly payment processed for subscription: ${dbSubscription.id}`);
+    console.log(`Monthly payment processed for subscription: ${(dbSubscription as any).id}`);
 
   } catch (error) {
     console.error('Error handling monthly subscription payment:', error);
@@ -568,13 +568,13 @@ async function updateSubscriptionFromStripe(subscription: Stripe.Subscription) {
       status = 'paused';
     }
 
-    const { error: updateError } = await supabase
-      .from('subscriptions')
+    const { error: updateError } = await (supabase
+      .from('subscriptions') as any)
       .update({
         status: status,
         payment_status: paymentStatus,
-        current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
+        current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
         canceled_at: subscription.canceled_at 
           ? new Date(subscription.canceled_at * 1000).toISOString() 
           : null,
@@ -601,13 +601,13 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
     return;
   }
 
-  const stripeSubscriptionId = invoice.subscription as string;
+  const stripeSubscriptionId = (invoice as any).subscription as string;
   if (!stripeSubscriptionId) return;
 
   try {
     // サブスクリプションのステータスを更新
-    const { data: dbSubscription, error: fetchError } = await supabase
-      .from('subscriptions')
+    const { data: dbSubscription, error: fetchError } = await (supabase
+      .from('subscriptions') as any)
       .select('*')
       .eq('stripe_subscription_id', stripeSubscriptionId)
       .single();
@@ -617,26 +617,26 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
       return;
     }
 
-    await supabase
-      .from('subscriptions')
+    await (supabase
+      .from('subscriptions') as any)
       .update({
         payment_status: 'past_due',
         status: 'past_due',
         updated_at: new Date().toISOString(),
       })
-      .eq('id', dbSubscription.id);
+      .eq('id', (dbSubscription as any).id);
 
     // 支払い失敗通知メール送信
-    const shippingAddress = dbSubscription.shipping_address as any;
+    const shippingAddress = (dbSubscription as any).shipping_address as any;
     if (shippingAddress?.email) {
       await sendPaymentFailedEmail({
         email: shippingAddress.email,
         name: shippingAddress.name || 'お客様',
-        planName: dbSubscription.plan_name,
+        planName: (dbSubscription as any).plan_name,
       });
     }
 
-    console.log(`Payment failed for subscription: ${dbSubscription.id}`);
+    console.log(`Payment failed for subscription: ${(dbSubscription as any).id}`);
 
   } catch (error) {
     console.error('Error handling payment failure:', error);
@@ -653,8 +653,8 @@ async function cancelSubscription(subscription: Stripe.Subscription) {
 
   try {
     // サブスクリプションを解約済みに更新
-    const { error: updateError } = await supabase
-      .from('subscriptions')
+    const { error: updateError } = await (supabase
+      .from('subscriptions') as any)
       .update({
         status: 'canceled',
         payment_status: 'canceled',
@@ -669,17 +669,17 @@ async function cancelSubscription(subscription: Stripe.Subscription) {
     }
 
     // pending状態の配送をキャンセル
-    const { data: dbSubscription } = await supabase
-      .from('subscriptions')
+    const { data: dbSubscription } = await (supabase
+      .from('subscriptions') as any)
       .select('id')
       .eq('stripe_subscription_id', subscription.id)
       .single();
 
     if (dbSubscription) {
-      await supabase
-        .from('subscription_deliveries')
+      await (supabase
+        .from('subscription_deliveries') as any)
         .update({ status: 'cancelled' })
-        .eq('subscription_id', dbSubscription.id)
+        .eq('subscription_id', (dbSubscription as any).id)
         .eq('status', 'pending');
     }
 

@@ -217,8 +217,8 @@ async function createOrderFromDelivery(
   ].filter(Boolean).join(' ');
 
   // ordersテーブルに注文を作成
-  const { data: order, error } = await supabase
-    .from('orders')
+  const { data: order, error } = await (supabase
+    .from('orders') as any)
     .insert({
       customer_name: shippingAddress.name || 'お客様',
       customer_email: shippingAddress.email || '',
@@ -251,8 +251,8 @@ async function reduceInventoryForDelivery(
 ) {
   try {
     // 全てのメニューアイテムの在庫を取得
-    const { data: menuItems, error } = await supabase
-      .from('menu_items')
+    const { data: menuItems, error } = await (supabase
+      .from('menu_items') as any)
       .select('id, stock')
       .eq('is_active', true);
 
@@ -264,11 +264,11 @@ async function reduceInventoryForDelivery(
     // 各メニューアイテムの在庫を1つ減らす（簡易版）
     // 実際の実装では、配送内容に応じて適切な数量を減らす
     for (const item of menuItems) {
-      const newStock = Math.max(0, (item.stock || 0) - 1);
-      await supabase
-        .from('menu_items')
+      const newStock = Math.max(0, ((item as any).stock || 0) - 1);
+      await (supabase
+        .from('menu_items') as any)
         .update({ stock: newStock })
-        .eq('id', item.id);
+        .eq('id', (item as any).id);
     }
   } catch (error) {
     console.error('[Subscription Delivery Cron] Error reducing inventory:', error);
@@ -295,16 +295,16 @@ async function completeSubscription(
     console.log(`[Subscription Delivery Cron] Subscription ${subscriptionId} completed`);
 
     // 契約終了メール送信
-    const { data: subscription } = await supabase
-      .from('subscriptions')
+    const { data: subscription } = await (supabase
+      .from('subscriptions') as any)
       .select('shipping_address')
       .eq('id', subscriptionId)
       .single();
 
-    if (subscription && subscription.shipping_address?.email) {
+    if (subscription && (subscription as any).shipping_address?.email) {
       await sendSubscriptionCompletionEmail({
-        email: subscription.shipping_address.email,
-        name: subscription.shipping_address.name || 'お客様',
+        email: (subscription as any).shipping_address.email,
+        name: (subscription as any).shipping_address.name || 'お客様',
       });
     }
   } catch (error) {

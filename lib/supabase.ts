@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/supabase';
 import type { MenuItemDB, NewsItemDB, ContactDB } from '@/types';
 
 // 環境変数の型定義
@@ -25,8 +26,8 @@ function validateEnv(): SupabaseEnv {
 }
 
 // シングルトンインスタンス
-let browserClientInstance: ReturnType<typeof createClient> | null = null;
-let serverClientInstance: ReturnType<typeof createClient> | null = null;
+let browserClientInstance: ReturnType<typeof createClient<Database>> | null = null;
+let serverClientInstance: ReturnType<typeof createClient<Database>> | null = null;
 
 // クライアント側用のSupabaseクライアント（シングルトン）
 export function createBrowserClient() {
@@ -36,7 +37,7 @@ export function createBrowserClient() {
 
   const { url, anonKey } = validateEnv();
   
-  browserClientInstance = createClient(url, anonKey, {
+  browserClientInstance = createClient<Database>(url, anonKey, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
@@ -61,7 +62,7 @@ export function createServerClient() {
     );
   }
   
-  serverClientInstance = createClient(url, serviceRoleKey, {
+  serverClientInstance = createClient<Database>(url, serviceRoleKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false
@@ -180,7 +181,7 @@ export const db = {
       if (isServer) {
         // サーバーサイドではservice role keyがあればそれを使用、なければanon keyで
         const { url, anonKey, serviceRoleKey } = validateEnv();
-        client = createClient(url, serviceRoleKey || anonKey, {
+        client = createClient<Database>(url, serviceRoleKey || anonKey, {
           auth: {
             persistSession: false,
             autoRefreshToken: false

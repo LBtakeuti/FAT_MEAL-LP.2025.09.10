@@ -15,8 +15,8 @@ export async function GET(request: NextRequest) {
     }
 
     // userIdで検索、なければemailで検索
-    let query = supabase
-      .from('subscriptions')
+    let query = (supabase
+      .from('subscriptions') as any)
       .select('*')
       .order('started_at', { ascending: false });
 
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     }
 
     // フォーマットして返す
-    const formattedSubscriptions = subscriptions?.map(sub => ({
+    const formattedSubscriptions = subscriptions?.map((sub: any) => ({
       id: sub.id,
       plan_name: sub.plan_name,
       plan_id: sub.plan_id,
