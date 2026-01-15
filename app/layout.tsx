@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-
+import Header from '@/components/Header';
+import MobileHeader from '@/components/MobileHeader';
 
 export const metadata: Metadata = {
   title: "ふとるめし - 高カロリー・高タンパクの冷凍弁当",
@@ -42,6 +43,13 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body className="font-sans antialiased bg-[#fff7ed] min-h-screen">
+        {/* ヘッダーをlayoutに配置してページ遷移時のレイアウトシフトを防止 */}
+        <div className="sm:hidden">
+          <MobileHeader />
+        </div>
+        <div className="hidden sm:block">
+          <Header />
+        </div>
         {children}
       </body>
     </html>

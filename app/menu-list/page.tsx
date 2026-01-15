@@ -1,8 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import MobileHeader from '@/components/MobileHeader';
-import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useRouter } from 'next/navigation';
 import { useMenuItems } from '@/hooks/useMenuItems';
@@ -37,14 +35,6 @@ export default function MenuListPage() {
   return (
     <>
       <div className="min-h-screen bg-white flex flex-col">
-        {/* Headers */}
-        <div className="sm:hidden">
-          <MobileHeader />
-        </div>
-        <div className="hidden sm:block">
-          <Header />
-        </div>
-
         <main className="flex-1 pt-20 sm:pt-20 pb-12 sm:pb-20">
           <div className="max-w-6xl px-4 sm:px-6 lg:px-8 mx-auto w-full">
             {/* Back button */}

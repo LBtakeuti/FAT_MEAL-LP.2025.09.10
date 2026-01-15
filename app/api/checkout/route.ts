@@ -3,71 +3,24 @@ import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-// 本番環境とテスト環境でPrice IDを切り替え
-const isLiveMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_');
-
-// お試しプランのStripe Price IDを取得
-function getTrialPriceId(): string {
-  return isLiveMode
-    ? process.env.STRIPE_PRICE_TRIAL_6SET_LIVE || ''
-    : process.env.STRIPE_PRICE_TRIAL_6SET_TEST || '';
-}
-
-// お試しプランの送料価格IDを取得
-function getTrialShippingPriceId(): string {
-  return isLiveMode
-    ? process.env.STRIPE_SHIPPING_PRICE_TRIAL_LIVE || ''
-    : process.env.STRIPE_SHIPPING_PRICE_TRIAL_TEST || '';
-}
-
 // サブスクリプションプランのStripe Price IDを取得
 function getSubscriptionPriceId(planId: string): string {
-  const priceMap: { [key: string]: { test: string; live: string } } = {
-    'subscription-monthly-12': {
-      test: process.env.STRIPE_SUBSCRIPTION_PRICE_12_MONTHLY_TEST || '',
-      live: process.env.STRIPE_SUBSCRIPTION_PRICE_12_MONTHLY_LIVE || '',
-    },
-    'subscription-monthly-24': {
-      test: process.env.STRIPE_SUBSCRIPTION_PRICE_24_MONTHLY_TEST || '',
-      live: process.env.STRIPE_SUBSCRIPTION_PRICE_24_MONTHLY_LIVE || '',
-    },
-    'subscription-monthly-48': {
-      test: process.env.STRIPE_SUBSCRIPTION_PRICE_48_MONTHLY_TEST || '',
-      live: process.env.STRIPE_SUBSCRIPTION_PRICE_48_MONTHLY_LIVE || '',
-    },
+  const priceMap: { [key: string]: string } = {
+    'subscription-monthly-12': process.env.STRIPE_SUBSCRIPTION_PRICE_12_MONTHLY || '',
+    'subscription-monthly-24': process.env.STRIPE_SUBSCRIPTION_PRICE_24_MONTHLY || '',
+    'subscription-monthly-48': process.env.STRIPE_SUBSCRIPTION_PRICE_48_MONTHLY || '',
   };
-
-  const prices = priceMap[planId];
-  if (!prices) {
-    return '';
-  }
-
-  return isLiveMode ? prices.live : prices.test;
+  return priceMap[planId] || '';
 }
 
 // サブスクリプションプランの送料価格IDを取得（Recurring Price）
 function getSubscriptionShippingPriceId(planId: string): string {
-  const shippingMap: { [key: string]: { test: string; live: string } } = {
-    'subscription-monthly-12': {
-      test: process.env.STRIPE_SHIPPING_PRICE_12_TEST || '',
-      live: process.env.STRIPE_SHIPPING_PRICE_12_LIVE || '',
-    },
-    'subscription-monthly-24': {
-      test: process.env.STRIPE_SHIPPING_PRICE_24_TEST || '',
-      live: process.env.STRIPE_SHIPPING_PRICE_24_LIVE || '',
-    },
-    'subscription-monthly-48': {
-      test: process.env.STRIPE_SHIPPING_PRICE_48_TEST || '',
-      live: process.env.STRIPE_SHIPPING_PRICE_48_LIVE || '',
-    },
+  const shippingMap: { [key: string]: string } = {
+    'subscription-monthly-12': process.env.STRIPE_SHIPPING_PRICE_12 || '',
+    'subscription-monthly-24': process.env.STRIPE_SHIPPING_PRICE_24 || '',
+    'subscription-monthly-48': process.env.STRIPE_SHIPPING_PRICE_48 || '',
   };
-
-  const shipping = shippingMap[planId];
-  if (!shipping) {
-    return '';
-  }
-
-  return isLiveMode ? shipping.live : shipping.test;
+  return shippingMap[planId] || '';
 }
 
 interface CartItem {
@@ -210,17 +163,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const priceId = getTrialPriceId();
+    const priceId = process.env.STRIPE_PRICE_TRIAL_6SET || '';
     if (!priceId) {
       console.error('Trial price ID not configured');
       return NextResponse.json(
-        { error: 'Price ID not configured. Please set the environment variable STRIPE_PRICE_TRIAL_6SET_TEST or STRIPE_PRICE_TRIAL_6SET_LIVE.' },
+        { error: 'Price ID not configured. Please set the environment variable STRIPE_PRICE_TRIAL_6SET.' },
         { status: 400 }
       );
     }
 
     // 送料価格IDを取得
-    const shippingPriceId = getTrialShippingPriceId();
+    const shippingPriceId = process.env.STRIPE_SHIPPING_PRICE_TRIAL || '';
 
     // line_itemsを構築（商品 + 送料）
     const trialLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [

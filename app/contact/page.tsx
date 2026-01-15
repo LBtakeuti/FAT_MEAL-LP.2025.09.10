@@ -2,8 +2,6 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Header from '@/components/Header';
-import MobileHeader from '@/components/MobileHeader';
 import Footer from '@/components/Footer';
 
 // 件名の選択肢

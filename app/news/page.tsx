@@ -3,8 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import MobileHeader from '@/components/MobileHeader';
-import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 interface NewsItem {
@@ -45,12 +43,6 @@ export default function NewsListPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Mobile Header */}
-      <MobileHeader />
-
-      {/* Desktop Header */}
-      <Header />
-
       <main className="pt-20 sm:pt-20 pb-20">
         <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto">
 

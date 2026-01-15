@@ -305,49 +305,45 @@ async function reduceInventory(items: Stripe.LineItem[]) {
 
 // サブスクリプション作成処理（Stripe customer.subscription.created）
 async function createSubscriptionFromStripe(subscription: Stripe.Subscription, stripe: Stripe) {
+  console.log(`[Webhook] createSubscriptionFromStripe called for subscription: ${subscription.id}`);
+  
   const supabase = getSupabaseClient();
   if (!supabase) {
-    console.error('Supabase client not available');
-    return;
-  }
-
-  const planId = subscription.metadata?.plan_id || '';
-  
-  if (!planId || !isValidPlanId(planId)) {
-    console.error(`Invalid plan ID: ${planId}`);
-    return;
+    console.error('[Webhook] Supabase client not available');
+    throw new Error('Supabase client not available');
   }
 
   try {
-    // Checkout Sessionのメタデータを取得
-    const invoices = await stripe.invoices.list({
+    // まずCheckout Sessionを取得してメタデータを取得
+    console.log(`[Webhook] Fetching checkout session for subscription: ${subscription.id}`);
+    const sessions = await stripe.checkout.sessions.list({
       subscription: subscription.id,
       limit: 1,
     });
+    const checkoutSession = sessions.data[0] || null;
+    console.log(`[Webhook] Checkout session found: ${checkoutSession?.id || 'none'}`);
 
-    let checkoutSession: Stripe.Checkout.Session | null = null;
-    if (invoices.data.length > 0 && (invoices.data[0] as any).payment_intent) {
-      const sessions = await stripe.checkout.sessions.list({
-        payment_intent: (invoices.data[0] as any).payment_intent as string,
-        limit: 1,
-      });
-      checkoutSession = sessions.data[0] || null;
-    }
-
-    // Checkout Sessionがない場合はサブスクリプションから直接取得を試みる
-    if (!checkoutSession) {
-      const sessions = await stripe.checkout.sessions.list({
-        subscription: subscription.id,
-        limit: 1,
-      });
-      checkoutSession = sessions.data[0] || null;
+    // plan_idをサブスクリプションメタデータまたはCheckout Sessionメタデータから取得
+    const planId = subscription.metadata?.plan_id || 
+                   checkoutSession?.metadata?.plan_id || '';
+    
+    console.log(`[Webhook] Plan ID: ${planId}`);
+    
+    if (!planId || !isValidPlanId(planId)) {
+      console.error(`[Webhook] Invalid plan ID: ${planId}`);
+      console.error(`[Webhook] subscription.metadata: ${JSON.stringify(subscription.metadata)}`);
+      console.error(`[Webhook] checkoutSession.metadata: ${JSON.stringify(checkoutSession?.metadata)}`);
+      throw new Error(`Invalid plan ID: ${planId}`);
     }
 
     const customerEmail = checkoutSession?.customer_details?.email || 
+                          checkoutSession?.customer_email ||
                           checkoutSession?.metadata?.email || '';
     const customerName = checkoutSession?.metadata?.customer_name || 'お客様';
     const preferredDeliveryDateStr = checkoutSession?.metadata?.preferred_delivery_date || 
                                      subscription.metadata?.preferred_delivery_date || '';
+    
+    console.log(`[Webhook] Customer: ${customerEmail}, ${customerName}`);
 
     // プラン設定を取得
     const planConfig = getPlanConfig(planId);
@@ -368,11 +364,14 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
         const { data: users } = await supabase.auth.admin.listUsers();
         const user = users?.users?.find(u => u.email === customerEmail);
         userId = user?.id || null;
-      } catch {
+        console.log(`[Webhook] User ID found: ${userId || 'none'}`);
+      } catch (userError) {
+        console.log(`[Webhook] Could not find user by email: ${customerEmail}`, userError);
         // ユーザーが見つからない場合はnullのまま
       }
     }
 
+    console.log(`[Webhook] Creating subscription in database...`);
     // subscriptionsテーブルに作成
     const { data: dbSubscription, error: subError } = await (supabase
       .from('subscriptions') as any)
@@ -411,9 +410,11 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
       .single();
 
     if (subError || !dbSubscription) {
-      console.error('Failed to create subscription:', subError);
+      console.error('[Webhook] Failed to create subscription:', subError);
       throw new Error(`Failed to create subscription: ${subError?.message}`);
     }
+    
+    console.log(`[Webhook] Subscription created in DB: ${(dbSubscription as any).id}`);
 
     // subscription_deliveriesテーブルに初回配送予定を作成
     const deliveries = deliverySchedules.map((schedule) => ({

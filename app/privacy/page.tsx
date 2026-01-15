@@ -2,21 +2,11 @@
 
 import React from 'react';
 import Link from 'next/link';
-import MobileHeader from '@/components/MobileHeader';
-import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-white">
-      {/* Headers */}
-      <div className="sm:hidden">
-        <MobileHeader />
-      </div>
-      <div className="hidden sm:block">
-        <Header />
-      </div>
-
       <main className="pt-20 sm:pt-24 pb-20">
         <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1000px] lg:px-8 mx-auto">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 text-center mb-8">

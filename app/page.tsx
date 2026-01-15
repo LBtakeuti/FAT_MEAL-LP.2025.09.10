@@ -6,8 +6,6 @@ import { Swiper as SwiperType } from 'swiper';
 import { Mousewheel } from 'swiper/modules';
 import 'swiper/css';
 
-import Header from '@/components/Header';
-import MobileHeader from '@/components/MobileHeader';
 import MobileFooterNav from '@/components/MobileFooterNav';
 import HeroSection from '@/components/HeroSection';
 import ProblemsSection from '@/components/ProblemsSection';
@@ -31,13 +29,6 @@ export default function Home() {
   }, []);
   return (
     <>
-      {/* モバイルではMobileHeader、デスクトップではHeader */}
-      <div className="sm:hidden">
-        <MobileHeader />
-      </div>
-      <div className="hidden sm:block">
-        <Header />
-      </div>
       {isSwipeMode ? (
         <>
           <main className="swipe-container">
