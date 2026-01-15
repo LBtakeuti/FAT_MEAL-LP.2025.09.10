@@ -129,8 +129,8 @@ export async function GET(request: NextRequest) {
           updateData.next_delivery_number = null; // 最終回完了
         }
         
-        await supabase
-          .from('subscriptions')
+        await (supabase
+          .from('subscriptions') as any)
           .update(updateData)
           .eq('id', subscription.id);
 
@@ -282,8 +282,8 @@ async function completeSubscription(
 ) {
   try {
     // サブスクリプションを完了状態に更新
-    await supabase
-      .from('subscriptions')
+    await (supabase
+      .from('subscriptions') as any)
       .update({
         status: 'completed',
         completed_at: new Date().toISOString(),
