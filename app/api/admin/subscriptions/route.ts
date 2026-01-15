@@ -33,6 +33,7 @@ interface Subscription {
   canceled_at: string | null;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function GET(_request: NextRequest) {
   try {
     const supabase = createServerClient();

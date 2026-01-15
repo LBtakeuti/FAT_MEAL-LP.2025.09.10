@@ -3,8 +3,6 @@
 import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import Header from '@/components/Header';
-import MobileHeader from '@/components/MobileHeader';
 import Footer from '@/components/Footer';
 
 function PurchaseCompleteContent() {

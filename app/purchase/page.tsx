@@ -901,8 +901,9 @@ const PurchasePage: React.FC = () => {
     </div>
   );
 
-  // 配送希望日選択UI
-  const renderDeliveryDateSelection = () => {
+  // 配送希望日選択UI - 一時的に非表示のためコメントアウト
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _renderDeliveryDateSelection = () => {
     if (purchaseType !== 'subscription-monthly') {
       return null;
     }
