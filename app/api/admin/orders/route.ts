@@ -41,7 +41,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const validStatuses = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
+    const validStatuses = ['order_received', 'notified', 'shipped'];
     if (!validStatuses.includes(status)) {
       return NextResponse.json(
         { error: 'Invalid status' },

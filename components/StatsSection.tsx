@@ -205,7 +205,7 @@ const StatsSection: React.FC = () => {
                 <div className="flex justify-between items-start py-3 px-4">
                   <span className="font-bold text-gray-900 font-antique text-sm">1ヶ月の費用</span>
                   <div className="text-right">
-                    <span className="text-gray-900 font-bold">13,500円（24食+電気代）</span>
+                    <span className="text-gray-900 font-bold">15,600円（24食+電気代）</span>
                     <button
                       ref={futorumeshiButtonRef}
                       onClick={handleFutorumeshiDetailClick}
@@ -258,7 +258,7 @@ const StatsSection: React.FC = () => {
                       </div>
                     </td>
                     <td className="py-4 px-6 text-gray-900 font-bold bg-orange-50">
-                      <span>13,500円（24食+電気代）</span>
+                      <span>15,600円（24食+電気代）</span>
                       <button
                         ref={futorumeshiButtonRefDesktop}
                         onClick={handleFutorumeshiDetailClick}
@@ -319,7 +319,7 @@ const StatsSection: React.FC = () => {
               }}
             >
               <div className="absolute -top-2 left-4 w-4 h-4 bg-gray-900 transform rotate-45"></div>
-              <p className="font-bold mb-3 text-white">ふとるめし 13,500円の内訳</p>
+              <p className="font-bold mb-3 text-white">ふとるめし 15,600円の内訳</p>
               <ul className="space-y-2 text-sm text-gray-200">
                 <li>• 24食セット: 13,400円</li>
                 <li>• 1食あたり: 約558円</li>

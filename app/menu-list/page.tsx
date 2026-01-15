@@ -1,17 +1,27 @@
 'use client';
 
-import React from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
+import React, { useState } from 'react';
 import MobileHeader from '@/components/MobileHeader';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useRouter } from 'next/navigation';
 import { useMenuItems } from '@/hooks/useMenuItems';
+import { MenuCard } from '@/components/menu/MenuCard';
+import { MenuDetailModal } from '@/components/menu/MenuDetailModal';
+import type { MenuItem } from '@/types';
 
 export default function MenuListPage() {
   const router = useRouter();
   const { menuItems, isLoading } = useMenuItems({ limit: 0, autoRefresh: true, refreshInterval: 30000 });
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+
+  const handleSelectItem = (item: MenuItem) => {
+    setSelectedItem(item);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+  };
   
   if (isLoading) {
     return (
@@ -25,111 +35,63 @@ export default function MenuListPage() {
   }
   
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      {/* Headers */}
-      <div className="sm:hidden">
-        <MobileHeader />
-      </div>
-      <div className="hidden sm:block">
-        <Header />
-      </div>
-
-      <main className="flex-1 pt-20 sm:pt-20 pb-12 sm:pb-20">
-        <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto w-full">
-          {/* Back button */}
-          <div className="pt-2 pb-2 mb-4 sm:mb-8 sm:pt-0 sm:pb-0">
-            <button
-              onClick={() => router.push('/')}
-              className="inline-flex items-center text-gray-600 hover:text-orange-600 transition-colors"
-            >
-              <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              <span className="text-sm font-medium">戻る</span>
-            </button>
-          </div>
-          
-          {/* Page Title */}
-          <div className="mb-6 sm:mb-12">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
-              メニュー一覧
-            </h1>
-          </div>
-
-          {/* Grid Layout */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            {menuItems.map((item) => (
-              <div
-                key={item.id}
-                className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col"
-              >
-                {/* Image - クリックで詳細へ */}
-                <Link href={`/menu/${item.id}`} className="block">
-                  <div className="relative w-full h-[200px] sm:h-[220px]">
-                    <Image
-                      src={item.image}
-                      alt={item.name}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                    />
-                  </div>
-                </Link>
-
-                {/* Content */}
-                <div className="p-4 sm:p-5 flex flex-col flex-grow">
-                  {/* Menu Name - クリックで詳細へ */}
-                  <Link href={`/menu/${item.id}`}>
-                    <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2 line-clamp-2 hover:text-orange-600 transition-colors">
-                      {item.name}
-                    </h3>
-                  </Link>
-
-                  {/* Calories */}
-                  <div className="mb-2">
-                    <span className="text-xl sm:text-2xl font-bold text-orange-600">
-                      {item.calories}
-                    </span>
-                    <span className="text-sm text-gray-600 ml-1">kcal</span>
-                  </div>
-
-                  {/* Description */}
-                  <p className="text-xs sm:text-sm text-gray-600 mb-3 line-clamp-2 flex-grow">
-                    {item.description}
-                  </p>
-
-                  {/* Nutrition Info */}
-                  <div className="space-y-1 text-xs sm:text-sm mb-4">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">タンパク質</span>
-                      <span className="font-semibold text-gray-900">{item.protein}g</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">脂質</span>
-                      <span className="font-semibold text-gray-900">{item.fat}g</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">炭水化物</span>
-                      <span className="font-semibold text-gray-900">{item.carbs}g</span>
-                    </div>
-                  </div>
-
-                  {/* 購入ボタン */}
-                  <Link
-                    href="/purchase"
-                    className="w-full bg-[#FF6B35] text-white text-center py-2.5 rounded-lg hover:bg-[#E55220] transition-colors font-medium text-sm sm:text-base"
-                  >
-                    購入する
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
+    <>
+      <div className="min-h-screen bg-white flex flex-col">
+        {/* Headers */}
+        <div className="sm:hidden">
+          <MobileHeader />
         </div>
-      </main>
+        <div className="hidden sm:block">
+          <Header />
+        </div>
 
-      {/* Footer */}
-      <Footer />
-    </div>
+        <main className="flex-1 pt-20 sm:pt-20 pb-12 sm:pb-20">
+          <div className="max-w-6xl px-4 sm:px-6 lg:px-8 mx-auto w-full">
+            {/* Back button */}
+            <div className="pt-2 pb-2 mb-4 sm:mb-8 sm:pt-0 sm:pb-0">
+              <button
+                onClick={() => router.push('/')}
+                className="inline-flex items-center text-gray-600 hover:text-orange-600 transition-colors"
+              >
+                <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                <span className="text-sm font-medium">戻る</span>
+              </button>
+            </div>
+            
+            {/* Page Title */}
+            <div className="mb-6 sm:mb-10">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 font-antique">
+                メニュー一覧
+              </h1>
+            </div>
+
+            {/* Grid Layout - MenuCardを使用 */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+              {menuItems.map((item) => (
+                <MenuCard
+                  key={item.id}
+                  item={item}
+                  onSelect={handleSelectItem}
+                />
+              ))}
+            </div>
+          </div>
+        </main>
+
+        {/* Footer */}
+        <Footer />
+      </div>
+
+      {/* メニュー詳細モーダル */}
+      {selectedItem && (
+        <MenuDetailModal
+          item={selectedItem}
+          isOpen={!!selectedItem}
+          onClose={handleCloseModal}
+        />
+      )}
+    </>
   );
 }

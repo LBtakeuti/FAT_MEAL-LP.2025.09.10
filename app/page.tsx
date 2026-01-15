@@ -14,8 +14,9 @@ import ProblemsSection from '@/components/ProblemsSection';
 import AboutSection from '@/components/AboutSection';
 import StatsSection from '@/components/StatsSection';
 import PurchaseFlowSection from '@/components/PurchaseFlowSection';
+import TrialSection from '@/components/TrialSection';
+import SubscriptionSection from '@/components/SubscriptionSection';
 import MenuSection from '@/components/MenuSection';
-import CTASection from '@/components/CTASection';
 import NewsSection from '@/components/NewsSection';
 import Footer from '@/components/Footer';
 import LineFloatingButton from '@/components/LineFloatingButton';
@@ -69,7 +70,10 @@ export default function Home() {
               <MenuSection />
             </SwiperSlide>
             <SwiperSlide>
-              <CTASection />
+              <SubscriptionSection />
+            </SwiperSlide>
+            <SwiperSlide>
+              <TrialSection />
             </SwiperSlide>
             <SwiperSlide>
               <StatsSection />
@@ -96,7 +100,8 @@ export default function Home() {
           <ProblemsSection />
           <AboutSection />
           <MenuSection />
-          <CTASection />
+          <SubscriptionSection />
+          <TrialSection />
           <StatsSection />
           <PurchaseFlowSection />
           <NewsSection />

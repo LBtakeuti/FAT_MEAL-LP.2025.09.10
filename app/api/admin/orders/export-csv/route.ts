@@ -124,10 +124,13 @@ function formatDateTimeJST(dateString: string): string {
 // ステータスを日本語に翻訳
 function translateStatus(status: string): string {
   const statusMap: { [key: string]: string } = {
-    'pending': '保留中',
-    'confirmed': '確認済み',
+    'order_received': '注文受付',
+    'notified': '連絡済み',
     'shipped': '発送済み',
-    'delivered': '配達完了',
+    // 旧ステータス（互換性のため）
+    'pending': '注文受付',
+    'confirmed': '連絡済み',
+    'delivered': '発送済み',
     'cancelled': 'キャンセル'
   };
   return statusMap[status] || status;

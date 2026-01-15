@@ -1,12 +1,23 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useMenuItems } from '@/hooks';
 import { MenuCard } from './menu/MenuCard';
+import { MenuDetailModal } from './menu/MenuDetailModal';
+import type { MenuItem } from '@/types';
 
 const MenuSection: React.FC = () => {
-  const { menuItems, isLoading } = useMenuItems({ limit: 3 });
+  const { menuItems, isLoading } = useMenuItems({ limit: 6 });
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+
+  const handleSelectItem = (item: MenuItem) => {
+    setSelectedItem(item);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+  };
 
   // ローディング中
   if (isLoading) {
@@ -14,10 +25,9 @@ const MenuSection: React.FC = () => {
       <section id="menu" className="bg-white py-8 sm:py-12">
         <div className="max-w-6xl mx-auto px-4">
           <div className="mb-6">
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 font-antique">
               <span className="text-orange-600">メニュー</span>
             </h2>
-            <div className="mt-2 h-0.5 bg-gray-200 w-full" />
           </div>
           <div className="flex items-center justify-center h-48">
             <div className="text-gray-500">読み込み中...</div>
@@ -33,10 +43,9 @@ const MenuSection: React.FC = () => {
       <section id="menu" className="bg-white py-8 sm:py-12">
         <div className="max-w-6xl mx-auto px-4">
           <div className="mb-6">
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 font-antique">
               <span className="text-orange-600">メニュー</span>
             </h2>
-            <div className="mt-2 h-0.5 bg-gray-200 w-full" />
           </div>
           <div className="flex items-center justify-center h-48">
             <div className="text-gray-500">メニュー情報を取得できませんでした</div>
@@ -47,47 +56,57 @@ const MenuSection: React.FC = () => {
   }
 
   return (
-    <section id="menu" className="bg-white py-8 sm:py-12">
-      <div className="max-w-6xl mx-auto px-4">
-        {/* タイトル */}
-        <div className="mb-6">
-          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
-            <span className="text-orange-600">メニュー</span>
-          </h2>
-          <div className="mt-2 h-0.5 bg-orange-500 w-full" />
-        </div>
+    <>
+      <section id="menu" className="bg-white py-8 sm:py-12">
+        <div className="max-w-6xl mx-auto px-4">
+          {/* タイトル */}
+          <div className="mb-6">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 font-antique">
+              <span className="text-orange-600">メニュー</span>
+            </h2>
+          </div>
 
-        {/* メニューカード - 3枚グリッド */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {menuItems.slice(0, 3).map((item) => (
-            <MenuCard key={item.id} item={item} variant="desktop" />
-          ))}
-        </div>
+          {/* メニューカード - 6枚グリッド */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+            {menuItems.slice(0, 6).map((item) => (
+              <MenuCard key={item.id} item={item} onSelect={handleSelectItem} />
+            ))}
+          </div>
 
-        {/* もっと見るリンク */}
-        <div className="mt-6 text-center">
-          <Link
-            href="/menu-list"
-            className="inline-flex items-center text-orange-600 hover:text-orange-700 font-medium transition-colors"
-          >
-            もっと見る
-            <svg
-              className="w-4 h-4 ml-1"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          {/* もっと見るリンク */}
+          <div className="mt-6 text-center">
+            <Link
+              href="/menu-list"
+              className="inline-flex items-center text-orange-600 hover:text-orange-700 font-medium transition-colors text-sm"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
-            </svg>
-          </Link>
+              もっと見る
+              <svg
+                className="w-4 h-4 ml-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </Link>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      {/* メニュー詳細モーダル */}
+      {selectedItem && (
+        <MenuDetailModal
+          item={selectedItem}
+          isOpen={!!selectedItem}
+          onClose={handleCloseModal}
+        />
+      )}
+    </>
   );
 };
 

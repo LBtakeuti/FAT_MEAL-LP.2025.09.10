@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import MobileHeader from '@/components/MobileHeader';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -16,6 +17,7 @@ interface NewsItem {
 }
 
 export default function NewsListPage() {
+  const router = useRouter();
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -55,7 +57,7 @@ export default function NewsListPage() {
           {/* Breadcrumb Navigation */}
           <div className="mb-6 mt-4 sm:mt-0">
             <button
-              onClick={() => window.history.back()}
+              onClick={() => router.push('/')}
               className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
             >
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

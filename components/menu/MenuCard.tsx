@@ -1,21 +1,20 @@
 'use client';
 
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import type { MenuItem } from '@/types';
 
 interface MenuCardProps {
   item: MenuItem;
-  variant?: 'mobile' | 'desktop';
   priority?: boolean;
   className?: string;
+  onSelect?: (item: MenuItem) => void;
 }
 
 // 画像がない場合のフォールバック表示
 function ImagePlaceholder({ name }: { name: string }) {
   return (
-    <div className="absolute inset-0 bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center">
-      <span className="text-orange-600 text-4xl font-bold opacity-30">
+    <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+      <span className="text-gray-400 text-4xl font-bold opacity-30">
         {name.charAt(0)}
       </span>
     </div>
@@ -24,116 +23,47 @@ function ImagePlaceholder({ name }: { name: string }) {
 
 export function MenuCard({
   item,
-  variant = 'desktop',
   priority = false,
   className = '',
+  onSelect,
 }: MenuCardProps) {
-  const router = useRouter();
-
   const handleClick = () => {
-    router.push(`/menu/${item.id}`);
+    if (onSelect) {
+      onSelect(item);
+    }
   };
 
-  if (variant === 'mobile') {
-    return (
-      <div
-        onClick={handleClick}
-        className={`bg-white shadow-lg hover:shadow-xl h-[360px] flex flex-col overflow-hidden cursor-pointer rounded-lg ${className}`}
-      >
-        <div className="relative h-[220px] flex-shrink-0">
-          {item.image ? (
-            <Image
-              src={item.image}
-              alt={item.name}
-              fill
-              className="object-cover"
-              sizes="(max-width: 640px) 100vw, 280px"
-              priority={priority}
-              loading={priority ? 'eager' : 'lazy'}
-            />
-          ) : (
-            <ImagePlaceholder name={item.name} />
-          )}
-        </div>
-        <div className="p-3 flex flex-col">
-          <h3 className="text-base font-bold text-gray-900 mb-2 truncate">
-            {item.name}
-          </h3>
-          <div className="mb-2">
-            <span className="text-xl font-bold text-orange-600">
-              {item.calories}
-            </span>
-            <span className="text-xs text-gray-600 ml-1">kcal</span>
-          </div>
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-600">タンパク質</span>
-              <span className="font-semibold text-gray-900">{item.protein}g</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-600">脂質</span>
-              <span className="font-semibold text-gray-900">{item.fat}g</span>
-            </div>
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-600">炭水化物</span>
-              <span className="font-semibold text-gray-900">{item.carbs}g</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Desktop variant - 固定高さ390pxで統一（角丸が見えるように余裕を持たせる）
   return (
     <div
       onClick={handleClick}
-      className={`bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer flex flex-col h-[390px] ${className}`}
-      style={{ overflow: 'hidden' }}
+      className={`group cursor-pointer ${className}`}
     >
-      <div className="relative w-full h-[160px] flex-shrink-0">
+      {/* 画像 - 4:3比率 */}
+      <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
         {item.image ? (
           <Image
             src={item.image}
             alt={item.name}
             fill
-            className="object-cover"
-            sizes="(max-width: 768px) 50vw, 33vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
+            priority={priority}
+            loading={priority ? 'eager' : 'lazy'}
           />
         ) : (
           <ImagePlaceholder name={item.name} />
         )}
-      </div>
-      <div className="p-4 flex flex-col flex-grow">
-        {/* タイトルは2行まで、それ以上は省略 */}
-        <h3 className="text-base font-bold text-gray-900 mb-2 line-clamp-2 min-h-[40px]">{item.name}</h3>
-        <div className="mb-2">
-          <span className="text-2xl font-bold text-orange-600">
-            {item.calories}
-          </span>
-          <span className="text-xs text-gray-600 ml-1">kcal</span>
-        </div>
-        {/* 栄養情報を横並びでコンパクトに */}
-        <div className="grid grid-cols-3 gap-2 text-xs mb-3">
-          <div className="text-center">
-            <div className="text-gray-500">タンパク質</div>
-            <div className="font-semibold text-gray-900">{item.protein}g</div>
-          </div>
-          <div className="text-center">
-            <div className="text-gray-500">脂質</div>
-            <div className="font-semibold text-gray-900">{item.fat}g</div>
-          </div>
-          <div className="text-center">
-            <div className="text-gray-500">炭水化物</div>
-            <div className="font-semibold text-gray-900">{item.carbs}g</div>
-          </div>
-        </div>
-        <div className="flex items-center justify-center mt-auto">
-          <span className="bg-orange-600 text-white px-5 py-1.5 rounded-lg hover:bg-orange-700 transition-colors text-sm">
-            詳細を見る
-          </span>
+        {/* ホバー時の拡大アイコン */}
+        <div className="absolute bottom-2 right-2 w-6 h-6 bg-white/80 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+          <svg className="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+          </svg>
         </div>
       </div>
+      {/* タイトル */}
+      <h3 className="mt-2 text-sm font-medium text-gray-900 text-center line-clamp-2">
+        {item.name}
+      </h3>
     </div>
   );
 }

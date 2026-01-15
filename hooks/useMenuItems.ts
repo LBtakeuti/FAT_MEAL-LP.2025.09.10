@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { MenuItem } from '@/types';
 
 interface UseMenuItemsOptions {
@@ -15,10 +15,14 @@ export function useMenuItems(options: UseMenuItemsOptions = {}) {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isInitialLoad = useRef(true);
 
-  const fetchMenuItems = useCallback(async () => {
+  const fetchMenuItems = useCallback(async (showLoading = true) => {
     try {
-      setIsLoading(true);
+      // 初回読み込み時のみローディング表示
+      if (showLoading) {
+        setIsLoading(true);
+      }
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
 
@@ -53,15 +57,20 @@ export function useMenuItems(options: UseMenuItemsOptions = {}) {
         setError('メニューの取得に失敗しました');
       }
     } finally {
-      setIsLoading(false);
+      if (showLoading) {
+        setIsLoading(false);
+      }
     }
   }, [limit]);
 
   useEffect(() => {
-    fetchMenuItems();
+    // 初回読み込み
+    fetchMenuItems(true);
+    isInitialLoad.current = false;
 
     if (autoRefresh) {
-      const interval = setInterval(fetchMenuItems, refreshInterval);
+      // 自動更新時はローディング表示しない
+      const interval = setInterval(() => fetchMenuItems(false), refreshInterval);
       return () => clearInterval(interval);
     }
   }, [fetchMenuItems, autoRefresh, refreshInterval]);
@@ -70,6 +79,6 @@ export function useMenuItems(options: UseMenuItemsOptions = {}) {
     menuItems,
     isLoading,
     error,
-    refetch: fetchMenuItems,
+    refetch: () => fetchMenuItems(true),
   };
 }

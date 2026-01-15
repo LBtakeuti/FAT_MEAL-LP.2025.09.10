@@ -19,14 +19,14 @@ interface Order {
   quantity: number;
   email?: string; // 後方互換性のため
   amount: number;
-  status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+  status: 'order_received' | 'notified' | 'shipped' | 'pending' | 'confirmed' | 'delivered' | 'cancelled';
   created_at: string;
 }
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'>('all');
+  const [filter, setFilter] = useState<'all' | 'order_received' | 'notified' | 'shipped'>('all');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -102,13 +102,14 @@ export default function AdminOrdersPage() {
 
   const getStatusBadgeClass = (status: Order['status']) => {
     switch (status) {
-      case 'pending':
+      case 'order_received':
+      case 'pending': // 後方互換性
         return 'bg-yellow-100 text-yellow-800';
-      case 'confirmed':
+      case 'notified':
+      case 'confirmed': // 後方互換性
         return 'bg-blue-100 text-blue-800';
       case 'shipped':
-        return 'bg-purple-100 text-purple-800';
-      case 'delivered':
+      case 'delivered': // 後方互換性
         return 'bg-green-100 text-green-800';
       case 'cancelled':
         return 'bg-red-100 text-red-800';
@@ -119,7 +120,19 @@ export default function AdminOrdersPage() {
 
   const filteredOrders = filter === 'all'
     ? orders
-    : orders.filter(order => order.status === filter);
+    : orders.filter(order => {
+        // 後方互換性：旧ステータスも新ステータスと一緒にフィルタリング
+        if (filter === 'order_received') {
+          return order.status === 'order_received' || order.status === 'pending';
+        }
+        if (filter === 'notified') {
+          return order.status === 'notified' || order.status === 'confirmed';
+        }
+        if (filter === 'shipped') {
+          return order.status === 'shipped' || order.status === 'delivered';
+        }
+        return order.status === filter;
+      });
 
   if (loading) {
     return (
@@ -155,24 +168,24 @@ export default function AdminOrdersPage() {
           すべて ({orders.length})
         </button>
         <button
-          onClick={() => setFilter('pending')}
+          onClick={() => setFilter('order_received')}
           className={`px-4 py-2 rounded-lg ${
-            filter === 'pending'
+            filter === 'order_received'
               ? 'bg-blue-600 text-white'
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
           }`}
         >
-          注文受付 ({orders.filter(o => o.status === 'pending').length})
+          注文受付 ({orders.filter(o => o.status === 'order_received' || o.status === 'pending').length})
         </button>
         <button
-          onClick={() => setFilter('confirmed')}
+          onClick={() => setFilter('notified')}
           className={`px-4 py-2 rounded-lg ${
-            filter === 'confirmed'
+            filter === 'notified'
               ? 'bg-blue-600 text-white'
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
           }`}
         >
-          注文確定 ({orders.filter(o => o.status === 'confirmed').length})
+          連絡済み ({orders.filter(o => o.status === 'notified' || o.status === 'confirmed').length})
         </button>
         <button
           onClick={() => setFilter('shipped')}
@@ -182,17 +195,7 @@ export default function AdminOrdersPage() {
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
           }`}
         >
-          発送済 ({orders.filter(o => o.status === 'shipped').length})
-        </button>
-        <button
-          onClick={() => setFilter('delivered')}
-          className={`px-4 py-2 rounded-lg ${
-            filter === 'delivered'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-          }`}
-        >
-          配達完了 ({orders.filter(o => o.status === 'delivered').length})
+          発送済み ({orders.filter(o => o.status === 'shipped' || o.status === 'delivered').length})
         </button>
       </div>
 
@@ -275,11 +278,9 @@ export default function AdminOrdersPage() {
                           disabled={updatingId === order.id}
                           className={`text-sm rounded-lg border-gray-300 focus:ring-orange-500 focus:border-orange-500 ${getStatusBadgeClass(order.status)} ${updatingId === order.id ? 'opacity-50' : ''}`}
                         >
-                          <option value="pending">注文受付</option>
-                          <option value="confirmed">注文確定</option>
-                          <option value="shipped">発送済</option>
-                          <option value="delivered">配達完了</option>
-                          <option value="cancelled">キャンセル</option>
+                          <option value="order_received">注文受付</option>
+                          <option value="notified">連絡済み</option>
+                          <option value="shipped">発送済み</option>
                         </select>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">

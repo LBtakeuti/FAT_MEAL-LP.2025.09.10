@@ -28,43 +28,75 @@ interface PlanOption {
   quantity: number;
   label: string;
   price: number;
+  shippingFee: number;
+  totalPrice: number;
   description: string;
   perMeal: number;
-  stripeLink: string;
+  isTrial: boolean;
+  isSubscription: boolean;
+  deliveriesPerMonth?: number;
   comingSoon: boolean;
 }
 
+// 新しいプラン構成
 const planOptions: PlanOption[] = [
+  // お試しプラン（一回購入）
   {
-    id: 'plan-6',
+    id: 'trial-6',
     quantity: 6,
-    label: 'ふとるめし6個セット',
+    label: 'ふとるめし6食セット（お試しプラン）',
     price: 4200,
+    shippingFee: 1500,
+    totalPrice: 5700,
     description: '6種類×1個ずつ',
-    perMeal: 700,
-    stripeLink: 'https://buy.stripe.com/3cI4gA2xxdnP7bkgC86Zy0b',
+    perMeal: 950,
+    isTrial: true,
+    isSubscription: false,
     comingSoon: false,
   },
+  // サブスクリプションプラン
   {
-    id: 'plan-12',
+    id: 'subscription-monthly-12',
     quantity: 12,
-    label: 'ふとるめし12個セット',
-    price: 8400,
-    description: '6種類×2個ずつ',
-    perMeal: 700,
-    stripeLink: 'https://buy.stripe.com/6oU3cwdcbgA1dzIadK6Zy0c',
+    label: 'ふとるめし12食 月額プラン',
+    price: 8280,
+    shippingFee: 1500,
+    totalPrice: 9780,
+    description: '月1回配送（12食セット）',
+    perMeal: 815,
+    isTrial: false,
+    isSubscription: true,
+    deliveriesPerMonth: 1,
     comingSoon: false,
   },
   {
-    id: 'plan-18',
-    quantity: 18,
-    label: 'ふとるめし18個セット',
-    price: 12600,
-    description: '6種類×3個ずつ',
-    perMeal: 700,
-    stripeLink: 'https://buy.stripe.com/bJeaEY6NNabD7bk4Tq6Zy0d',
+    id: 'subscription-monthly-24',
+    quantity: 24,
+    label: 'ふとるめし24食 月額プラン',
+    price: 15600,
+    shippingFee: 3000,
+    totalPrice: 18600,
+    description: '月2回配送（各12食セット）',
+    perMeal: 775,
+    isTrial: false,
+    isSubscription: true,
+    deliveriesPerMonth: 2,
     comingSoon: false,
-  }
+  },
+  {
+    id: 'subscription-monthly-48',
+    quantity: 48,
+    label: 'ふとるめし48食 月額プラン',
+    price: 28800,
+    shippingFee: 6000,
+    totalPrice: 34800,
+    description: '月4回配送（各12食セット）',
+    perMeal: 725,
+    isTrial: false,
+    isSubscription: true,
+    deliveriesPerMonth: 4,
+    comingSoon: false,
+  },
 ];
 
 interface CustomerInfo {
@@ -79,6 +111,7 @@ interface CustomerInfo {
   city: string;
   address: string;
   building: string;
+  preferredDeliveryDate?: string;
 }
 
 // カートアイテムの型
@@ -92,26 +125,82 @@ interface InventoryStatus {
   available: boolean;
   minStock: number;
   sets: {
-    'plan-6': boolean;
-    'plan-12': boolean;
-    'plan-18': boolean;
+    [key: string]: boolean;
   };
   maxQuantity: {
-    'plan-6': number;
-    'plan-12': number;
-    'plan-18': number;
+    [key: string]: number;
   };
+}
+
+// 日本の祝日（2024-2026年）
+const JAPANESE_HOLIDAYS: string[] = [
+  // 2024年
+  '2024-01-01', '2024-01-08', '2024-02-11', '2024-02-12', '2024-02-23',
+  '2024-03-20', '2024-04-29', '2024-05-03', '2024-05-04', '2024-05-05',
+  '2024-05-06', '2024-07-15', '2024-08-11', '2024-08-12', '2024-09-16',
+  '2024-09-22', '2024-09-23', '2024-10-14', '2024-11-03', '2024-11-04',
+  '2024-11-23', '2024-12-23',
+  // 2025年
+  '2025-01-01', '2025-01-13', '2025-02-11', '2025-02-23', '2025-02-24',
+  '2025-03-20', '2025-04-29', '2025-05-03', '2025-05-04', '2025-05-05',
+  '2025-05-06', '2025-07-21', '2025-08-11', '2025-09-15', '2025-09-23',
+  '2025-10-13', '2025-11-03', '2025-11-23', '2025-11-24',
+  // 2026年
+  '2026-01-01', '2026-01-12', '2026-02-11', '2026-02-23', '2026-03-20',
+  '2026-04-29', '2026-05-03', '2026-05-04', '2026-05-05', '2026-05-06',
+  '2026-07-20', '2026-08-11', '2026-09-21', '2026-09-22', '2026-09-23',
+  '2026-10-12', '2026-11-03', '2026-11-23',
+];
+
+// 祝日かどうかをチェック
+function isHoliday(date: Date): boolean {
+  const dateStr = date.toISOString().split('T')[0];
+  return JAPANESE_HOLIDAYS.includes(dateStr);
+}
+
+// 週末かどうかをチェック
+function isWeekend(date: Date): boolean {
+  const day = date.getDay();
+  return day === 0 || day === 6; // 日曜日または土曜日
+}
+
+// 営業日かどうかをチェック（土日祝日以外）
+function isBusinessDay(date: Date): boolean {
+  return !isWeekend(date) && !isHoliday(date);
+}
+
+// 営業日を追加
+function addBusinessDays(startDate: Date, businessDays: number): Date {
+  let currentDate = new Date(startDate);
+  let addedDays = 0;
+
+  while (addedDays < businessDays) {
+    currentDate.setDate(currentDate.getDate() + 1);
+    if (isBusinessDay(currentDate)) {
+      addedDays++;
+    }
+  }
+
+  return currentDate;
+}
+
+// 日付をフォーマット
+function formatDate(date: Date): string {
+  return date.toISOString().split('T')[0];
 }
 
 const PurchasePage: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState<'plan' | 'info' | 'confirm'>('plan');
+  // 購入タイプ（一回購入 or サブスクリプション）
+  const [purchaseType, setPurchaseType] = useState<'one-time' | 'subscription-monthly'>('one-time');
   // カート形式で複数セットを管理
   const [cart, setCart] = useState<CartItem[]>([
-    { planId: 'plan-6', quantity: 0 },
-    { planId: 'plan-12', quantity: 0 },
-    { planId: 'plan-18', quantity: 0 },
+    { planId: 'trial-6', quantity: 0 },
+    { planId: 'subscription-monthly-12', quantity: 0 },
+    { planId: 'subscription-monthly-24', quantity: 0 },
+    { planId: 'subscription-monthly-48', quantity: 0 },
   ]);
   // 在庫状況
   const [inventory, setInventory] = useState<InventoryStatus | null>(null);
@@ -128,6 +217,7 @@ const PurchasePage: React.FC = () => {
     city: '',
     address: '',
     building: '',
+    preferredDeliveryDate: '',
   });
   const [errors, setErrors] = useState<Partial<CustomerInfo>>({});
 
@@ -136,8 +226,7 @@ const PurchasePage: React.FC = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [, setProfileLoading] = useState(true);
 
-  // 送料とクーポン
-  const shippingFee = 990;
+  // クーポン
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null);
   const [couponError, setCouponError] = useState('');
@@ -146,7 +235,7 @@ const PurchasePage: React.FC = () => {
   const validCoupons: { [key: string]: number } = {
     'WELCOME1000': 1000,
     'FUTORU1000': 1000,
-    'START1000': 1000,   // ふとるめしスタート記念割引
+    'START1000': 1000,
     'FUTORUMESHI1000': 1000,
   };
 
@@ -193,34 +282,56 @@ const PurchasePage: React.FC = () => {
 
   useEffect(() => {
     const planParam = searchParams.get('plan');
+    const typeParam = searchParams.get('type');
+    
+    // ログイン後にサブスクリプション購入に戻ってきた場合
+    if (typeParam === 'subscription' && user) {
+      setPurchaseType('subscription-monthly');
+    }
+    
     if (planParam && planOptions.some(p => p.id === planParam)) {
       // URLパラメータで指定されたプランを1つカートに追加
-      setCart(prev => prev.map(item =>
-        item.planId === planParam ? { ...item, quantity: 1 } : item
-      ));
+      const plan = planOptions.find(p => p.id === planParam);
+      if (plan) {
+        if (plan.isSubscription) {
+          setPurchaseType('subscription-monthly');
+        } else {
+          setPurchaseType('one-time');
+        }
+        setCart(prev => prev.map(item =>
+          item.planId === planParam ? { ...item, quantity: 1 } : { ...item, quantity: 0 }
+        ));
+      }
     }
-  }, [searchParams]);
+  }, [searchParams, user]);
+
+  // カート内の選択されたプランを取得
+  const getSelectedPlan = (): PlanOption | null => {
+    const selectedItem = cart.find(item => item.quantity > 0);
+    if (!selectedItem) return null;
+    return planOptions.find(p => p.id === selectedItem.planId) || null;
+  };
 
   // カート内の合計金額を計算
-  const subtotal = cart.reduce((total, item) => {
-    const plan = planOptions.find(p => p.id === item.planId);
-    return total + (plan ? plan.price * item.quantity : 0);
-  }, 0);
+  const calculateTotal = (): { subtotal: number; shippingFee: number; totalAmount: number } => {
+    const selectedPlan = getSelectedPlan();
+    if (!selectedPlan) {
+      return { subtotal: 0, shippingFee: 0, totalAmount: 0 };
+    }
 
-  // カート内の合計食数を計算
-  const totalMeals = cart.reduce((total, item) => {
-    const plan = planOptions.find(p => p.id === item.planId);
-    return total + (plan ? plan.quantity * item.quantity : 0);
-  }, 0);
+    const subtotal = selectedPlan.price;
+    const shippingFee = selectedPlan.shippingFee;
+    const discount = appliedCoupon ? appliedCoupon.discount : 0;
+    const totalAmount = selectedPlan.totalPrice - discount;
+
+    return { subtotal, shippingFee, totalAmount: Math.max(0, totalAmount) };
+  };
+
+  const { subtotal, shippingFee, totalAmount } = calculateTotal();
+  const discount = appliedCoupon ? appliedCoupon.discount : 0;
 
   // カートが空かどうか
   const isCartEmpty = cart.every(item => item.quantity === 0);
-
-  // 割引額
-  const discount = appliedCoupon ? appliedCoupon.discount : 0;
-
-  // 合計金額（商品小計 + 送料 - 割引）
-  const totalAmount = subtotal + shippingFee - discount;
 
   // クーポン適用
   const applyCoupon = () => {
@@ -257,8 +368,8 @@ const PurchasePage: React.FC = () => {
       city: userProfile.city || '',
       address: userProfile.address_detail || '',
       building: userProfile.building || '',
+      preferredDeliveryDate: customerInfo.preferredDeliveryDate || '',
     });
-    // エラーをクリア
     setErrors({});
   };
 
@@ -299,7 +410,6 @@ const PurchasePage: React.FC = () => {
 
   // 郵便番号から住所を自動検索
   const searchAddressByPostalCode = async (postalCode: string) => {
-    // ハイフンを除去して7桁の数字のみにする
     const cleanPostalCode = postalCode.replace(/-/g, '');
 
     if (cleanPostalCode.length !== 7) return;
@@ -315,7 +425,6 @@ const PurchasePage: React.FC = () => {
           prefecture: data.prefecture,
           city: data.city,
         }));
-        // エラーをクリア
         setErrors(prev => ({ ...prev, prefecture: '', city: '' }));
       }
     } catch (error) {
@@ -332,10 +441,59 @@ const PurchasePage: React.FC = () => {
       setErrors(prev => ({ ...prev, postalCode: '' }));
     }
 
-    // 7桁入力されたら自動検索
     const cleanValue = value.replace(/-/g, '');
     if (cleanValue.length === 7) {
       searchAddressByPostalCode(value);
+    }
+  };
+
+  // 配送希望日の最小日付を取得（3営業日後）
+  const getMinDeliveryDate = (): string => {
+    const today = new Date();
+    const minDate = addBusinessDays(today, 3);
+    return formatDate(minDate);
+  };
+
+  // 配送希望日の最大日付を取得（60日後まで）
+  const getMaxDeliveryDate = (): string => {
+    const today = new Date();
+    const maxDate = new Date(today);
+    maxDate.setDate(maxDate.getDate() + 60);
+    return formatDate(maxDate);
+  };
+
+  // 配送日の検証
+  const validateDeliveryDate = (dateStr: string): string | null => {
+    if (!dateStr) return '配送希望日を選択してください';
+
+    const selectedDate = new Date(dateStr);
+    const minDate = new Date(getMinDeliveryDate());
+
+    if (selectedDate < minDate) {
+      return '注文日から3営業日後以降の日付を選択してください';
+    }
+
+    if (isWeekend(selectedDate)) {
+      return '土日は選択できません';
+    }
+
+    if (isHoliday(selectedDate)) {
+      return '祝日は選択できません';
+    }
+
+    return null;
+  };
+
+  // 配送希望日の変更ハンドラー
+  const handleDeliveryDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setCustomerInfo(prev => ({ ...prev, preferredDeliveryDate: value }));
+
+    const error = validateDeliveryDate(value);
+    if (error) {
+      setErrors(prev => ({ ...prev, preferredDeliveryDate: error }));
+    } else {
+      setErrors(prev => ({ ...prev, preferredDeliveryDate: '' }));
     }
   };
 
@@ -364,6 +522,14 @@ const PurchasePage: React.FC = () => {
     if (!customerInfo.prefecture) newErrors.prefecture = '都道府県を選択してください';
     if (!customerInfo.city.trim()) newErrors.city = '市区町村を入力してください';
     if (!customerInfo.address.trim()) newErrors.address = '番地を入力してください';
+
+    // サブスクリプションの場合は配送希望日が必須
+    if (purchaseType === 'subscription-monthly') {
+      const deliveryError = validateDeliveryDate(customerInfo.preferredDeliveryDate || '');
+      if (deliveryError) {
+        newErrors.preferredDeliveryDate = deliveryError;
+      }
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -400,7 +566,12 @@ const PurchasePage: React.FC = () => {
     if (!isCartEmpty && !checkoutLoading) {
       setCheckoutLoading(true);
       try {
-        // お客様情報をローカルストレージに保存（決済完了後に使用）
+        const selectedPlan = getSelectedPlan();
+        if (!selectedPlan) {
+          throw new Error('プランを選択してください');
+        }
+
+        // お客様情報をローカルストレージに保存
         localStorage.setItem('customerInfo', JSON.stringify(customerInfo));
         localStorage.setItem('cart', JSON.stringify(cart));
         localStorage.setItem('subtotal', String(subtotal));
@@ -418,6 +589,7 @@ const PurchasePage: React.FC = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
+            purchaseType: purchaseType,
             cart: cart.filter(item => item.quantity > 0),
             customerInfo: {
               lastName: customerInfo.lastName,
@@ -429,6 +601,7 @@ const PurchasePage: React.FC = () => {
               city: customerInfo.city,
               address: customerInfo.address,
               building: customerInfo.building,
+              preferredDeliveryDate: customerInfo.preferredDeliveryDate,
             },
             couponCode: appliedCoupon?.code,
           }),
@@ -440,7 +613,6 @@ const PurchasePage: React.FC = () => {
           throw new Error(data.error || '決済の準備に失敗しました');
         }
 
-        // Stripe Checkoutページへリダイレクト
         window.location.href = data.url;
       } catch (error: any) {
         console.error('Checkout error:', error);
@@ -457,7 +629,7 @@ const PurchasePage: React.FC = () => {
           1
         </div>
         <span className={`ml-2 text-sm font-medium ${currentStep === 'plan' ? 'text-orange-600' : 'text-gray-900'}`}>
-          セット選択
+          プラン選択
         </span>
       </div>
       <div className={`w-12 h-0.5 mx-2 ${currentStep !== 'plan' ? 'bg-orange-600' : 'bg-gray-300'}`} />
@@ -481,140 +653,219 @@ const PurchasePage: React.FC = () => {
     </div>
   );
 
-  // プランが在庫切れかどうかをチェック
-  const isPlanOutOfStock = (planId: string): boolean => {
-    if (!inventory) return false;
-    return !inventory.sets[planId as keyof typeof inventory.sets];
-  };
-
-  // プランの最大購入可能数を取得
-  const getMaxQuantity = (planId: string): number => {
-    if (!inventory) return 99;
-    return inventory.maxQuantity[planId as keyof typeof inventory.maxQuantity] || 0;
-  };
-
   const renderPlanSelection = () => (
     <div className="space-y-6">
-      {/* 在庫切れ警告 */}
-      {inventory && !inventory.available && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 text-red-700">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            <span className="font-medium">現在、在庫切れのため販売を停止しております。</span>
-          </div>
-          <p className="text-sm text-red-600 mt-1">再入荷までしばらくお待ちください。</p>
+      {/* 購入タイプ選択 */}
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">
+          購入タイプを選択してください
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <button
+            onClick={() => {
+              setPurchaseType('one-time');
+              setCart([
+                { planId: 'trial-6', quantity: 0 },
+                { planId: 'subscription-monthly-12', quantity: 0 },
+                { planId: 'subscription-monthly-24', quantity: 0 },
+                { planId: 'subscription-monthly-48', quantity: 0 },
+              ]);
+            }}
+            className={`p-6 rounded-lg border-2 transition-all text-left ${
+              purchaseType === 'one-time'
+                ? 'border-orange-500 bg-orange-50'
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                お試し
+              </span>
+              <span className="font-semibold text-lg">お試しプラン</span>
+            </div>
+            <div className="text-sm text-gray-600">
+              6食セットを1回だけ購入できます
+            </div>
+            <div className="mt-2 text-orange-600 font-medium">
+              ¥5,700（税込・送料込）
+            </div>
+          </button>
+          <button
+            onClick={() => {
+              // サブスクリプションはログイン必須
+              if (!user) {
+                // ログインページにリダイレクト（戻りURL付き）
+                router.push('/login?redirect=/purchase&type=subscription');
+                return;
+              }
+              setPurchaseType('subscription-monthly');
+              setCart([
+                { planId: 'trial-6', quantity: 0 },
+                { planId: 'subscription-monthly-12', quantity: 0 },
+                { planId: 'subscription-monthly-24', quantity: 0 },
+                { planId: 'subscription-monthly-48', quantity: 0 },
+              ]);
+            }}
+            className={`p-6 rounded-lg border-2 transition-all text-left ${
+              purchaseType === 'subscription-monthly'
+                ? 'border-orange-500 bg-orange-50'
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                定期
+              </span>
+              <span className="font-semibold text-lg">月額自動更新プラン</span>
+            </div>
+            <div className="text-sm text-gray-600">
+              毎月自動でお届け。いつでも解約可能です
+            </div>
+            <div className="mt-2 text-orange-600 font-medium">
+              月額 ¥9,780〜
+            </div>
+            {!user && (
+              <div className="mt-2 text-xs text-blue-600 flex items-center gap-1">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                ログインが必要です
+              </div>
+            )}
+          </button>
         </div>
-      )}
+      </div>
 
-      {/* セット選択（カート形式） */}
+      {/* プラン選択 */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <h2 className="text-xl font-bold text-gray-900 mb-2">
-          セットを選択してください
+          {purchaseType === 'subscription-monthly' ? '月額プランを選択してください' : 'お試しプランを選択してください'}
         </h2>
-        <p className="text-sm text-gray-500 mb-6">複数のセットを組み合わせて購入できます</p>
+        <p className="text-sm text-gray-500 mb-6">
+          {purchaseType === 'subscription-monthly' 
+            ? '月額プランは1つまで選択可能です。毎月自動で課金・配送されます。'
+            : 'お試しプランは1回のみの購入です。'}
+        </p>
         <div className="space-y-4">
-          {planOptions.map((plan) => {
-            const cartItem = cart.find(item => item.planId === plan.id);
-            const quantity = cartItem?.quantity || 0;
-            const outOfStock = isPlanOutOfStock(plan.id);
-            const maxQty = getMaxQuantity(plan.id);
-            return (
-              <div
-                key={plan.id}
-                className={`relative rounded-lg border-2 p-4 transition-all ${
-                  plan.comingSoon || outOfStock
-                    ? 'border-gray-200'
-                    : quantity > 0
+          {planOptions
+            .filter(plan => 
+              purchaseType === 'one-time' 
+                ? plan.isTrial 
+                : plan.isSubscription
+            )
+            .map((plan) => {
+              const cartItem = cart.find(item => item.planId === plan.id);
+              const quantity = cartItem?.quantity || 0;
+
+              return (
+                <div
+                  key={plan.id}
+                  className={`relative rounded-lg border-2 p-4 transition-all cursor-pointer ${
+                    quantity > 0
                       ? 'border-orange-500 bg-orange-50'
-                      : 'border-gray-200'
-                }`}
-              >
-                {/* Coming Soon オーバーレイ */}
-                {plan.comingSoon && (
-                  <div className="absolute inset-0 bg-gray-100/80 backdrop-blur-[2px] rounded-lg z-10 flex items-center justify-center">
-                    <div className="text-center">
-                      <span className="text-xl font-bold text-gray-500">Coming Soon</span>
-                      <p className="text-sm text-gray-400 mt-1">準備中</p>
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                  onClick={() => {
+                    // 他のプランを0にして、選択したプランを1にする（トグル動作）
+                    const isSelected = quantity > 0;
+                    setCart(prev => prev.map(item => 
+                      item.planId === plan.id 
+                        ? { ...item, quantity: isSelected ? 0 : 1 }
+                        : { ...item, quantity: 0 }
+                    ));
+                  }}
+                >
+                  {/* お試しプランバッジ */}
+                  {plan.isTrial && (
+                    <div className="absolute top-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                      お試しプラン
                     </div>
-                  </div>
-                )}
-
-                {/* 在庫切れオーバーレイ */}
-                {!plan.comingSoon && outOfStock && (
-                  <div className="absolute inset-0 bg-red-50/80 backdrop-blur-[2px] rounded-lg z-10 flex items-center justify-center">
-                    <div className="text-center">
-                      <span className="text-xl font-bold text-red-500">在庫切れ</span>
-                      <p className="text-sm text-red-400 mt-1">申し訳ございません</p>
+                  )}
+                  
+                  {/* サブスクリプションバッジ */}
+                  {plan.isSubscription && (
+                    <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                      月額プラン
                     </div>
-                  </div>
-                )}
+                  )}
 
-                <div className="flex items-center justify-between">
-                  {/* プラン情報 */}
-                  <div className="flex-1">
-                    <span className="text-lg font-semibold text-gray-900">
-                      {plan.label}
-                    </span>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {plan.description}
-                    </p>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="text-xl font-bold text-orange-600">
-                        ¥{plan.price.toLocaleString()}
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 pr-20">
+                      <span className="text-lg font-semibold text-gray-900">
+                        {plan.label}
                       </span>
-                      <span className="text-xs text-gray-500">
-                        （1食あたり ¥{plan.perMeal.toLocaleString()}）
-                      </span>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {plan.description}
+                      </p>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mt-2">
+                        {purchaseType === 'subscription-monthly' ? (
+                          <>
+                            <span className="text-xl font-bold text-orange-600">
+                              月額 ¥{plan.totalPrice.toLocaleString()}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              （商品¥{plan.price.toLocaleString()} + 送料¥{plan.shippingFee.toLocaleString()}）
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-xl font-bold text-orange-600">
+                              ¥{plan.totalPrice.toLocaleString()}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              （商品¥{plan.price.toLocaleString()} + 送料¥{plan.shippingFee.toLocaleString()}）
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        1食あたり ¥{plan.perMeal.toLocaleString()}
+                      </div>
+                    </div>
+
+                    {/* 選択状態表示 */}
+                    <div className="flex items-center">
+                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                        quantity > 0
+                          ? 'border-orange-600 bg-orange-600'
+                          : 'border-gray-300'
+                      }`}>
+                        {quantity > 0 && (
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  {/* 数量選択 */}
-                  <div className="flex items-center space-x-3 ml-4">
-                    <button
-                      onClick={() => updateCartQuantity(plan.id, quantity - 1)}
-                      disabled={quantity <= 0 || plan.comingSoon || outOfStock}
-                      className="w-10 h-10 rounded-full border-2 border-gray-300 flex items-center justify-center hover:border-orange-600 hover:text-orange-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                      </svg>
-                    </button>
-                    <span className="text-2xl font-bold text-gray-900 w-8 text-center">{quantity}</span>
-                    <button
-                      onClick={() => updateCartQuantity(plan.id, quantity + 1)}
-                      disabled={plan.comingSoon || outOfStock || quantity >= maxQty}
-                      className="w-10 h-10 rounded-full border-2 border-gray-300 flex items-center justify-center hover:border-orange-600 hover:text-orange-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                    </button>
-                  </div>
+                  {/* 小計表示 */}
+                  {quantity > 0 && (
+                    <div className="mt-3 pt-3 border-t border-orange-200 flex justify-between items-center">
+                      {purchaseType === 'subscription-monthly' ? (
+                        <>
+                          <span className="text-sm text-gray-600">
+                            {plan.quantity}食/月（{plan.deliveriesPerMonth}回配送）
+                          </span>
+                          <span className="text-lg font-semibold text-orange-600">
+                            月額 ¥{plan.totalPrice.toLocaleString()}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-sm text-gray-600">
+                            {plan.quantity}食（1回限り）
+                          </span>
+                          <span className="text-lg font-semibold text-orange-600">
+                            ¥{plan.totalPrice.toLocaleString()}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
-
-                {/* 残り在庫表示 */}
-                {!plan.comingSoon && !outOfStock && maxQty <= 10 && (
-                  <div className="mt-2 text-sm text-orange-600">
-                    残り {maxQty} セットのみ
-                  </div>
-                )}
-
-                {/* 小計表示 */}
-                {quantity > 0 && !plan.comingSoon && (
-                  <div className="mt-3 pt-3 border-t border-orange-200 flex justify-between items-center">
-                    <span className="text-sm text-gray-600">
-                      {plan.quantity * quantity}食
-                    </span>
-                    <span className="text-lg font-semibold text-orange-600">
-                      ¥{(plan.price * quantity).toLocaleString()}
-                    </span>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+              );
+            })}
         </div>
       </div>
 
@@ -624,23 +875,27 @@ const PurchasePage: React.FC = () => {
           <div className="flex justify-between items-center">
             <div>
               <p className="text-sm text-gray-500">ご注文内容</p>
-              {cart.filter(item => item.quantity > 0).map(item => {
-                const plan = planOptions.find(p => p.id === item.planId);
-                if (!plan) return null;
+              {(() => {
+                const selectedPlan = getSelectedPlan();
+                if (!selectedPlan) return null;
                 return (
-                  <p key={item.planId} className="text-gray-900">
-                    {plan.label} × {item.quantity}
+                  <p className="text-gray-900 font-medium">
+                    {selectedPlan.label}
                   </p>
                 );
-              })}
-              <p className="text-sm text-gray-500 mt-1">
-                合計 {totalMeals}食
-              </p>
+              })()}
             </div>
             <div className="text-right">
-              <p className="text-sm text-gray-500">合計金額</p>
-              <p className="text-3xl text-orange-600">¥{subtotal.toLocaleString()}</p>
-              <p className="text-xs text-gray-500">税込</p>
+              <p className="text-sm text-gray-500">
+                {purchaseType === 'subscription-monthly' ? '月額' : '合計金額'}
+              </p>
+              <p className="text-3xl text-orange-600">
+                ¥{(() => {
+                  const selectedPlan = getSelectedPlan();
+                  return selectedPlan ? selectedPlan.totalPrice.toLocaleString() : '0';
+                })()}
+              </p>
+              <p className="text-xs text-gray-500">税込・送料込</p>
             </div>
           </div>
         </div>
@@ -656,6 +911,67 @@ const PurchasePage: React.FC = () => {
     </div>
   );
 
+  // 配送希望日選択UI
+  const renderDeliveryDateSelection = () => {
+    if (purchaseType !== 'subscription-monthly') {
+      return null;
+    }
+
+    const minDate = getMinDeliveryDate();
+    const maxDate = getMaxDeliveryDate();
+
+    return (
+      <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+        <h3 className="text-lg font-bold text-gray-900 mb-4">
+          初回配送希望日を選択してください
+        </h3>
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            配送希望日 <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="date"
+            name="preferredDeliveryDate"
+            value={customerInfo.preferredDeliveryDate || ''}
+            onChange={handleDeliveryDateChange}
+            min={minDate}
+            max={maxDate}
+            className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none ${
+              errors.preferredDeliveryDate
+                ? 'border-red-500'
+                : 'border-gray-300 focus:border-orange-600'
+            }`}
+          />
+          {errors.preferredDeliveryDate && (
+            <p className="text-red-500 text-xs mt-1">{errors.preferredDeliveryDate}</p>
+          )}
+          <div className="text-xs text-gray-500 mt-2 space-y-1">
+            <p>• 注文日から3営業日後以降の日付を選択してください</p>
+            <p>• 土日祝日は選択できません</p>
+            <p>• 選択可能期間: {minDate} ～ {maxDate}</p>
+          </div>
+        </div>
+        {customerInfo.preferredDeliveryDate && !errors.preferredDeliveryDate && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-green-700">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="font-medium">
+                配送予定日: {new Date(customerInfo.preferredDeliveryDate).toLocaleDateString('ja-JP', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  weekday: 'long'
+                })}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderCustomerInfoForm = () => (
     <div className="space-y-6">
       {/* 選択中のプラン表示 */}
@@ -664,21 +980,29 @@ const PurchasePage: React.FC = () => {
           <div className="flex justify-between items-center">
             <div>
               <span className="text-sm text-gray-500">ご注文内容</span>
-              {cart.filter(item => item.quantity > 0).map(item => {
-                const plan = planOptions.find(p => p.id === item.planId);
-                if (!plan) return null;
+              {(() => {
+                const selectedPlan = getSelectedPlan();
+                if (!selectedPlan) return null;
                 return (
-                  <p key={item.planId} className="text-gray-900">
-                    {plan.label} × {item.quantity}
+                  <p className="text-gray-900 font-medium">
+                    {selectedPlan.label}
                   </p>
                 );
-              })}
-              <p className="text-sm text-gray-500">合計 {totalMeals}食</p>
+              })()}
             </div>
-            <p className="text-xl text-orange-600">¥{subtotal.toLocaleString()}</p>
+            <p className="text-xl text-orange-600">
+              {purchaseType === 'subscription-monthly' ? '月額 ' : ''}
+              ¥{(() => {
+                const selectedPlan = getSelectedPlan();
+                return selectedPlan ? selectedPlan.totalPrice.toLocaleString() : '0';
+              })()}
+            </p>
           </div>
         </div>
       )}
+
+      {/* 配送希望日選択（サブスクリプションのみ） */}
+      {renderDeliveryDateSelection()}
 
       {/* 登録情報を使用ボタン */}
       {user && hasProfileData && (
@@ -930,201 +1254,234 @@ const PurchasePage: React.FC = () => {
     </div>
   );
 
-  const renderConfirmation = () => (
-    <div className="space-y-6">
-      {/* 注文内容 */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">
-          ご注文内容
-        </h2>
-        {cart.filter(item => item.quantity > 0).map(item => {
-          const plan = planOptions.find(p => p.id === item.planId);
-          if (!plan) return null;
-          return (
-            <div key={item.planId} className="flex justify-between items-center py-3 border-b border-gray-200">
+  const renderConfirmation = () => {
+    const selectedPlan = getSelectedPlan();
+    
+    return (
+      <div className="space-y-6">
+        {/* 注文内容 */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-6">
+            ご注文内容
+          </h2>
+          {selectedPlan && (
+            <div className="flex justify-between items-center py-3 border-b border-gray-200">
               <div>
-                <p className="font-bold text-gray-900">{plan.label} × {item.quantity}</p>
-                <p className="text-sm text-gray-600">{plan.description}</p>
-                <p className="text-xs text-gray-500">{plan.quantity * item.quantity}食</p>
+                <p className="font-bold text-gray-900">{selectedPlan.label}</p>
+                <p className="text-sm text-gray-600">
+                  {selectedPlan.description}
+                </p>
+                {purchaseType === 'subscription-monthly' && (
+                  <p className="text-xs text-green-600 font-medium mt-1">
+                    月額自動更新プラン
+                  </p>
+                )}
               </div>
-              <p className="text-lg text-orange-600">¥{(plan.price * item.quantity).toLocaleString()}</p>
+              <p className="text-lg text-orange-600">
+                {purchaseType === 'subscription-monthly' ? '月額 ' : ''}
+                ¥{selectedPlan.totalPrice.toLocaleString()}
+              </p>
             </div>
-          );
-        })}
-
-        {/* 小計 */}
-        <div className="flex justify-between items-center py-3 border-b border-gray-200">
-          <p className="text-gray-600">商品小計（{totalMeals}食）</p>
-          <p className="text-gray-900">¥{subtotal.toLocaleString()}</p>
-        </div>
-
-        {/* 送料 */}
-        <div className="flex justify-between items-center py-3 border-b border-gray-200">
-          <p className="text-gray-600">送料</p>
-          <p className="text-gray-900">¥{shippingFee.toLocaleString()}</p>
-        </div>
-
-        {/* クーポン割引 */}
-        {appliedCoupon && (
-          <div className="flex justify-between items-center py-3 border-b border-gray-200">
-            <div className="flex items-center gap-2">
-              <p className="text-green-600">クーポン割引</p>
-              <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">{appliedCoupon.code}</span>
-            </div>
-            <p className="text-green-600">-¥{appliedCoupon.discount.toLocaleString()}</p>
-          </div>
-        )}
-
-        {/* 合計 */}
-        <div className="flex justify-between items-center py-4 mt-2">
-          <p className="font-bold text-gray-900 text-lg">合計（税込）</p>
-          <p className="text-2xl font-bold text-orange-600">¥{totalAmount.toLocaleString()}</p>
-        </div>
-      </div>
-
-      {/* クーポンコード入力 */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">
-          クーポンコード
-        </h2>
-        {appliedCoupon ? (
-          <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-4">
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span className="text-green-700 font-medium">{appliedCoupon.code}</span>
-              <span className="text-green-600">（¥{appliedCoupon.discount.toLocaleString()}割引）</span>
-            </div>
-            <button
-              onClick={removeCoupon}
-              className="text-gray-500 hover:text-red-500 transition-colors"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        ) : (
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={couponCode}
-              onChange={(e) => {
-                setCouponCode(e.target.value);
-                setCouponError('');
-              }}
-              placeholder="クーポンコードを入力"
-              className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-orange-600 focus:outline-none"
-            />
-            <button
-              onClick={applyCoupon}
-              disabled={!couponCode.trim()}
-              className="px-6 py-2 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-            >
-              適用
-            </button>
-          </div>
-        )}
-        {couponError && (
-          <p className="text-red-500 text-sm mt-2">{couponError}</p>
-        )}
-      </div>
-
-      {/* お客様情報確認 */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">
-          お客様情報
-        </h2>
-        <dl className="space-y-3">
-          <div className="flex">
-            <dt className="w-32 text-sm text-gray-600">お名前</dt>
-            <dd className="flex-1 text-gray-900">{customerInfo.lastName} {customerInfo.firstName}（{customerInfo.lastNameKana} {customerInfo.firstNameKana}）</dd>
-          </div>
-          <div className="flex">
-            <dt className="w-32 text-sm text-gray-600">メール</dt>
-            <dd className="flex-1 text-gray-900">{customerInfo.email}</dd>
-          </div>
-          <div className="flex">
-            <dt className="w-32 text-sm text-gray-600">電話番号</dt>
-            <dd className="flex-1 text-gray-900">{customerInfo.phone}</dd>
-          </div>
-        </dl>
-      </div>
-
-      {/* 配送先確認 */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">
-          配送先
-        </h2>
-        <dl className="space-y-3">
-          <div className="flex">
-            <dt className="w-32 text-sm text-gray-600">住所</dt>
-            <dd className="flex-1 text-gray-900">
-              〒{customerInfo.postalCode}<br />
-              {customerInfo.prefecture}{customerInfo.city}{customerInfo.address}
-              {customerInfo.building && <><br />{customerInfo.building}</>}
-            </dd>
-          </div>
-        </dl>
-      </div>
-
-      {/* 特商法同意チェックボックス */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <label className="flex items-start gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={agreedToTerms}
-            onChange={(e) => setAgreedToTerms(e.target.checked)}
-            className="mt-1 w-5 h-5 text-orange-600 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
-          />
-          <span className="text-sm text-gray-700">
-            <a
-              href="/legal"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-orange-600 underline hover:text-orange-700"
-            >
-              特定商取引法に基づく表記
-            </a>
-            に同意する
-          </span>
-        </label>
-      </div>
-
-      {/* ボタン */}
-      <div className="flex gap-4">
-        <button
-          onClick={handleBackToInfo}
-          className="flex-1 bg-gray-200 text-gray-700 py-4 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
-        >
-          戻る
-        </button>
-        <button
-          onClick={handleProceedToPayment}
-          disabled={checkoutLoading || !agreedToTerms}
-          className={`flex-1 py-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 ${
-            checkoutLoading || !agreedToTerms
-              ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-              : 'bg-orange-500 text-white hover:bg-orange-600'
-          }`}
-        >
-          {checkoutLoading ? (
-            <>
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              処理中...
-            </>
-          ) : (
-            'お支払いへ進む'
           )}
-        </button>
-      </div>
 
-      <p className="text-center text-sm text-gray-500">
-        「お支払いへ進む」をクリックすると、安全な決済ページへ移動します
-      </p>
-    </div>
-  );
+          {/* 商品代金 */}
+          <div className="flex justify-between items-center py-3 border-b border-gray-200">
+            <p className="text-gray-600">商品代金</p>
+            <p className="text-gray-900">¥{subtotal.toLocaleString()}</p>
+          </div>
+
+          {/* 送料 */}
+          <div className="flex justify-between items-center py-3 border-b border-gray-200">
+            <p className="text-gray-600">送料</p>
+            <p className="text-gray-900">¥{shippingFee.toLocaleString()}</p>
+          </div>
+
+          {/* クーポン割引 */}
+          {appliedCoupon && (
+            <div className="flex justify-between items-center py-3 border-b border-gray-200">
+              <div className="flex items-center gap-2">
+                <p className="text-green-600">クーポン割引</p>
+                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">{appliedCoupon.code}</span>
+              </div>
+              <p className="text-green-600">-¥{appliedCoupon.discount.toLocaleString()}</p>
+            </div>
+          )}
+
+          {/* 合計 */}
+          <div className="flex justify-between items-center py-4 mt-2">
+            <p className="font-bold text-gray-900 text-lg">
+              {purchaseType === 'subscription-monthly' ? '月額合計（税込）' : '合計（税込）'}
+            </p>
+            <p className="text-2xl font-bold text-orange-600">¥{totalAmount.toLocaleString()}</p>
+          </div>
+        </div>
+
+        {/* 配送希望日（サブスクリプションのみ） */}
+        {purchaseType === 'subscription-monthly' && customerInfo.preferredDeliveryDate && (
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">
+              初回配送希望日
+            </h2>
+            <div className="flex items-center gap-2 text-gray-900">
+              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span className="font-medium">
+                {new Date(customerInfo.preferredDeliveryDate).toLocaleDateString('ja-JP', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  weekday: 'long'
+                })}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* クーポンコード入力 */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">
+            クーポンコード
+          </h2>
+          {appliedCoupon ? (
+            <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-green-700 font-medium">{appliedCoupon.code}</span>
+                <span className="text-green-600">（¥{appliedCoupon.discount.toLocaleString()}割引）</span>
+              </div>
+              <button
+                onClick={removeCoupon}
+                className="text-gray-500 hover:text-red-500 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={couponCode}
+                onChange={(e) => {
+                  setCouponCode(e.target.value);
+                  setCouponError('');
+                }}
+                placeholder="クーポンコードを入力"
+                className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-orange-600 focus:outline-none"
+              />
+              <button
+                onClick={applyCoupon}
+                disabled={!couponCode.trim()}
+                className="px-6 py-2 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+              >
+                適用
+              </button>
+            </div>
+          )}
+          {couponError && (
+            <p className="text-red-500 text-sm mt-2">{couponError}</p>
+          )}
+        </div>
+
+        {/* お客様情報確認 */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-6">
+            お客様情報
+          </h2>
+          <dl className="space-y-3">
+            <div className="flex">
+              <dt className="w-32 text-sm text-gray-600">お名前</dt>
+              <dd className="flex-1 text-gray-900">{customerInfo.lastName} {customerInfo.firstName}（{customerInfo.lastNameKana} {customerInfo.firstNameKana}）</dd>
+            </div>
+            <div className="flex">
+              <dt className="w-32 text-sm text-gray-600">メール</dt>
+              <dd className="flex-1 text-gray-900">{customerInfo.email}</dd>
+            </div>
+            <div className="flex">
+              <dt className="w-32 text-sm text-gray-600">電話番号</dt>
+              <dd className="flex-1 text-gray-900">{customerInfo.phone}</dd>
+            </div>
+          </dl>
+        </div>
+
+        {/* 配送先確認 */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-6">
+            配送先
+          </h2>
+          <dl className="space-y-3">
+            <div className="flex">
+              <dt className="w-32 text-sm text-gray-600">住所</dt>
+              <dd className="flex-1 text-gray-900">
+                〒{customerInfo.postalCode}<br />
+                {customerInfo.prefecture}{customerInfo.city}{customerInfo.address}
+                {customerInfo.building && <><br />{customerInfo.building}</>}
+              </dd>
+            </div>
+          </dl>
+        </div>
+
+        {/* 特商法同意チェックボックス */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={agreedToTerms}
+              onChange={(e) => setAgreedToTerms(e.target.checked)}
+              className="mt-1 w-5 h-5 text-orange-600 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
+            />
+            <span className="text-sm text-gray-700">
+              <a
+                href="/legal"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-orange-600 underline hover:text-orange-700"
+              >
+                特定商取引法に基づく表記
+              </a>
+              に同意する
+            </span>
+          </label>
+        </div>
+
+        {/* ボタン */}
+        <div className="flex gap-4">
+          <button
+            onClick={handleBackToInfo}
+            className="flex-1 bg-gray-200 text-gray-700 py-4 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+          >
+            戻る
+          </button>
+          <button
+            onClick={handleProceedToPayment}
+            disabled={checkoutLoading || !agreedToTerms}
+            className={`flex-1 py-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 ${
+              checkoutLoading || !agreedToTerms
+                ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                : 'bg-orange-500 text-white hover:bg-orange-600'
+            }`}
+          >
+            {checkoutLoading ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                処理中...
+              </>
+            ) : (
+              'お支払いへ進む'
+            )}
+          </button>
+        </div>
+
+        <p className="text-center text-sm text-gray-500">
+          「お支払いへ進む」をクリックすると、安全な決済ページへ移動します
+        </p>
+      </div>
+    );
+  };
 
   return (
     <>

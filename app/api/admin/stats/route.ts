@@ -31,6 +31,42 @@ export async function GET() {
     // 非公開メニュー数
     const inactiveMenuItems = menuItems.filter((item: any) => !item.is_active).length;
 
+    // サブスクリプション統計を取得
+    let activeSubscriptions = 0;
+    let upcomingDeliveries = 0;
+
+    try {
+      // アクティブなサブスクリプション数
+      const { count: activeCount } = await (supabase
+        .from('subscriptions') as any)
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'active');
+      activeSubscriptions = activeCount || 0;
+
+      // 今週配送予定の件数
+      const now = new Date();
+      const jstOffset = 9 * 60 * 60 * 1000;
+      const jstNow = new Date(now.getTime() + jstOffset);
+      const today = new Date(jstNow.getUTCFullYear(), jstNow.getUTCMonth(), jstNow.getUTCDate());
+      const weekLater = new Date(today);
+      weekLater.setDate(today.getDate() + 7);
+
+      const todayStr = today.toISOString().split('T')[0];
+      const weekLaterStr = weekLater.toISOString().split('T')[0];
+
+      const { count: deliveriesCount } = await (supabase
+        .from('subscription_deliveries') as any)
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pending')
+        .gte('scheduled_date', todayStr)
+        .lt('scheduled_date', weekLaterStr);
+      upcomingDeliveries = deliveriesCount || 0;
+    } catch {
+      // subscriptionsテーブルがない場合は0
+      activeSubscriptions = 0;
+      upcomingDeliveries = 0;
+    }
+
     const stats = {
       totalMenuItems: menuItems.length,
       totalStock: 0,
@@ -38,7 +74,10 @@ export async function GET() {
       totalContacts: contacts.length,
       pendingContacts: pendingContacts.length,
       pendingOrders: pendingOrders.length,
-      lowStockItems: inactiveMenuItems
+      lowStockItems: inactiveMenuItems,
+      // サブスクリプション統計を追加
+      activeSubscriptions,
+      upcomingDeliveries,
     };
 
     return NextResponse.json(stats);

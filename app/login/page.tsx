@@ -154,8 +154,19 @@ function LoginForm() {
           throw signInError;
         }
 
-        // ログイン成功
-        router.push('/');
+        // ログイン成功 - リダイレクトパラメータがあればそこへ
+        const redirectUrl = searchParams.get('redirect');
+        const typeParam = searchParams.get('type');
+        
+        if (redirectUrl) {
+          // サブスクリプション購入からのリダイレクトの場合はtype=subscriptionも付与
+          const finalUrl = typeParam === 'subscription' 
+            ? `${redirectUrl}?type=subscription` 
+            : redirectUrl;
+          router.push(finalUrl);
+        } else {
+          router.push('/');
+        }
         router.refresh();
       }
     } catch (err: any) {

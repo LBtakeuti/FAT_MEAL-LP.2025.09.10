@@ -63,6 +63,7 @@ export default function NewsDetailPage() {
 
   if (error || !newsItem) {
     notFound();
+    return null; // TypeScript用（notFound()は例外をスローするため実行されない）
   }
 
   return <NewsDetailClient newsItem={newsItem} allNews={allNews} />;

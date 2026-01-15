@@ -10,7 +10,10 @@ export default function AdminDashboard() {
     totalContacts: 0,
     pendingContacts: 0,
     pendingOrders: 0,
-    lowStockItems: 0
+    lowStockItems: 0,
+    // サブスクリプション統計
+    activeSubscriptions: 0,
+    upcomingDeliveries: 0,
   });
 
   useEffect(() => {
@@ -59,6 +62,22 @@ export default function AdminDashboard() {
           </div>
           {stats.pendingOrders > 0 && (
             <div className="text-xs text-orange-600 mt-1">対応が必要です</div>
+          )}
+        </div>
+
+        {/* サブスクリプション統計 */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="text-gray-600 text-sm">アクティブなサブスク</div>
+          <div className="text-3xl font-bold mt-2 text-blue-600">{stats.activeSubscriptions}</div>
+        </div>
+        
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="text-gray-600 text-sm">今週配送予定</div>
+          <div className={`text-3xl font-bold mt-2 ${stats.upcomingDeliveries > 0 ? 'text-green-600' : 'text-gray-900'}`}>
+            {stats.upcomingDeliveries}
+          </div>
+          {stats.upcomingDeliveries > 0 && (
+            <div className="text-xs text-green-600 mt-1">件の配送が予定されています</div>
           )}
         </div>
       </div>

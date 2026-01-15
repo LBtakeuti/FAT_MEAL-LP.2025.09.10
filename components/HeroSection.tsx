@@ -52,18 +52,18 @@ const HeroSection: React.FC = () => {
         {/* 固定テキスト画像（PC用） - 左下に配置 */}
         <div className="absolute bottom-0 left-0 z-20 p-4 sm:p-6 lg:p-8">
           <Image
-            src="/hero-copy.svg"
+            src="/Hero-copy2.png"
             alt=""
             width={500}
-            height={250}
+            height={270}
             className="w-[500px] h-auto"
             style={{ objectFit: 'contain' }}
           />
         </div>
       </div>
 
-      {/* SP用お弁当画像 - 3:4（縦長）でフル表示 */}
-      <div className="sm:hidden relative w-full" style={{ aspectRatio: '3/4' }}>
+      {/* SP用お弁当画像 - 4:5（やや縦長）でフル表示 */}
+      <div className="sm:hidden relative w-full" style={{ aspectRatio: '4/5' }}>
         {spImages.map((src, index) => (
           <div
             key={src}
@@ -84,11 +84,11 @@ const HeroSection: React.FC = () => {
         {/* 固定テキスト画像（SP用） - 左下に配置 */}
         <div className="absolute bottom-0 left-0 z-20 p-3">
           <Image
-            src="/hero-copy.svg"
+            src="/Hero-copy2.png"
             alt=""
-            width={220}
-            height={110}
-            className="w-[220px] h-auto"
+            width={280}
+            height={150}
+            className="w-[70vw] max-w-[280px] h-auto"
             style={{ objectFit: 'contain' }}
           />
         </div>

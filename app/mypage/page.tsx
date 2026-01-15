@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@/lib/supabase';
 import Link from 'next/link';
-import Image from 'next/image';
 import Header from '@/components/Header';
 import MobileHeader from '@/components/MobileHeader';
 import Footer from '@/components/Footer';
@@ -25,15 +24,6 @@ interface UserProfile {
   building?: string;
 }
 
-interface CartItem {
-  id: string;
-  menu_item_id: string;
-  menu_item_name: string;
-  quantity: number;
-  price: number;
-  image?: string;
-}
-
 interface Order {
   id: string;
   order_number: number;
@@ -44,9 +34,29 @@ interface Order {
   menu_set: string;
   quantity: number;
   amount: number;
-  status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+  status: 'order_received' | 'notified' | 'shipped' | 'pending' | 'confirmed' | 'delivered' | 'cancelled';
   notes?: string;
   created_at: string;
+}
+
+interface Subscription {
+  id: string;
+  plan_name: string;
+  plan_id: string;
+  meals_per_delivery: number;
+  deliveries_per_month: number;
+  monthly_product_price: number;
+  monthly_shipping_fee: number;
+  monthly_total_amount: number;
+  next_delivery_date: string | null;
+  preferred_delivery_date: string | null;
+  status: 'active' | 'paused' | 'canceled' | 'past_due';
+  payment_status: string;
+  started_at: string;
+  canceled_at: string | null;
+  current_period_start: string;
+  current_period_end: string;
+  stripe_subscription_id: string;
 }
 
 const prefectures = [
@@ -63,11 +73,12 @@ export default function MyPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [ordersLoading, setOrdersLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'profile' | 'cart' | 'orders'>('profile');
+  const [subscriptionsLoading, setSubscriptionsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'subscriptions'>('profile');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
 
@@ -81,8 +92,8 @@ export default function MyPage() {
       }
       setUser(session.user);
       loadProfile(session.user.id, session.user.email || '');
-      loadCart(session.user.id);
       loadOrders(session.user.email || '');
+      loadSubscriptions(session.user.id, session.user.email || '');
     });
   }, [router]);
 
@@ -111,18 +122,6 @@ export default function MyPage() {
     }
   };
 
-  const loadCart = async (userId: string) => {
-    try {
-      const res = await fetch(`/api/cart?userId=${userId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setCartItems(data.items || []);
-      }
-    } catch (error) {
-      console.error('Failed to load cart:', error);
-    }
-  };
-
   const loadOrders = async (email: string) => {
     setOrdersLoading(true);
     try {
@@ -135,6 +134,21 @@ export default function MyPage() {
       console.error('Failed to load orders:', error);
     } finally {
       setOrdersLoading(false);
+    }
+  };
+
+  const loadSubscriptions = async (userId: string, email: string) => {
+    setSubscriptionsLoading(true);
+    try {
+      const res = await fetch(`/api/users/subscriptions?userId=${userId}&email=${encodeURIComponent(email)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSubscriptions(data.subscriptions || []);
+      }
+    } catch (error) {
+      console.error('Failed to load subscriptions:', error);
+    } finally {
+      setSubscriptionsLoading(false);
     }
   };
 
@@ -159,44 +173,6 @@ export default function MyPage() {
     }
   };
 
-  const updateCartItem = async (cartItemId: string, quantity: number) => {
-    try {
-      const res = await fetch('/api/cart', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, cartItemId, quantity }),
-      });
-      if (res.ok) {
-        loadCart(user.id);
-      } else {
-        alert('カートの更新に失敗しました');
-      }
-    } catch (error) {
-      console.error('Failed to update cart:', error);
-      alert('カートの更新に失敗しました');
-    }
-  };
-
-  const deleteCartItem = async (cartItemId: string) => {
-    if (!confirm('この商品をカートから削除しますか？')) return;
-
-    try {
-      const res = await fetch('/api/cart', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, cartItemId }),
-      });
-      if (res.ok) {
-        loadCart(user.id);
-      } else {
-        alert('カートからの削除に失敗しました');
-      }
-    } catch (error) {
-      console.error('Failed to delete cart item:', error);
-      alert('カートからの削除に失敗しました');
-    }
-  };
-
   const handleLogout = async () => {
     setLogoutLoading(true);
     const supabase = createBrowserClient();
@@ -214,8 +190,6 @@ export default function MyPage() {
       </div>
     );
   }
-
-  const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   return (
     <>
@@ -262,17 +236,17 @@ export default function MyPage() {
               )}
             </button>
             <button
-              onClick={() => setActiveTab('cart')}
+              onClick={() => setActiveTab('subscriptions')}
               className={`px-4 sm:px-6 py-3 font-medium transition-colors whitespace-nowrap relative ${
-                activeTab === 'cart'
+                activeTab === 'subscriptions'
                   ? 'text-orange-600 border-b-2 border-orange-600'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
-              カート
-              {cartItems.length > 0 && (
-                <span className="ml-2 bg-orange-600 text-white text-xs px-2 py-0.5 rounded-full">
-                  {cartItems.length}
+              定期購入
+              {subscriptions.filter(s => s.status === 'active').length > 0 && (
+                <span className="ml-2 bg-green-600 text-white text-xs px-2 py-0.5 rounded-full">
+                  {subscriptions.filter(s => s.status === 'active').length}
                 </span>
               )}
             </button>
@@ -288,14 +262,108 @@ export default function MyPage() {
             <OrderHistory orders={orders} loading={ordersLoading} />
           )}
 
-          {/* カートタブ */}
-          {activeTab === 'cart' && (
-            <CartView
-              items={cartItems}
-              totalAmount={totalAmount}
-              onUpdate={updateCartItem}
-              onDelete={deleteCartItem}
-            />
+          {/* 定期購入タブ */}
+          {activeTab === 'subscriptions' && (
+            <div className="space-y-6">
+              {/* サブスクリプション一覧 */}
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">ご契約中の定期購入</h2>
+                
+                {subscriptionsLoading ? (
+                  <div className="text-center py-8 text-gray-500">読み込み中...</div>
+                ) : subscriptions.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 mb-4">現在ご契約中の定期購入はありません</p>
+                    <Link href="/purchase" className="text-orange-600 hover:underline">
+                      定期購入プランを見る →
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {subscriptions.map((sub) => (
+                      <div key={sub.id} className="border rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <h3 className="font-medium text-gray-900 text-lg">{sub.plan_name}</h3>
+                            <p className="text-sm text-gray-500 mt-1">
+                              {sub.meals_per_delivery}食/回 × 
+                              {sub.deliveries_per_month === 1 ? '月1回' : 
+                               sub.deliveries_per_month === 2 ? '月2回' : '月4回'}配送
+                            </p>
+                          </div>
+                          <span className={`px-3 py-1 text-sm font-medium rounded-full ${
+                            sub.status === 'active' 
+                              ? 'bg-green-100 text-green-800'
+                              : sub.status === 'canceled'
+                              ? 'bg-gray-100 text-gray-800'
+                              : sub.status === 'past_due'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {sub.status === 'active' ? '契約中' : 
+                             sub.status === 'canceled' ? '解約済み' : 
+                             sub.status === 'past_due' ? '支払い遅延' :
+                             sub.status === 'paused' ? '一時停止' : sub.status}
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-600 space-y-1 bg-gray-50 rounded-lg p-3">
+                          <div className="flex justify-between">
+                            <span>月額合計</span>
+                            <span className="font-medium">¥{sub.monthly_total_amount?.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-500">
+                            <span>（商品: ¥{sub.monthly_product_price?.toLocaleString()} + 送料: ¥{sub.monthly_shipping_fee?.toLocaleString()}）</span>
+                          </div>
+                          <div className="flex justify-between pt-2 border-t border-gray-200 mt-2">
+                            <span>契約開始日</span>
+                            <span>{new Date(sub.started_at).toLocaleDateString('ja-JP')}</span>
+                          </div>
+                          {sub.next_delivery_date && sub.status === 'active' && (
+                            <div className="flex justify-between">
+                              <span>次回配送予定</span>
+                              <span className="text-orange-600 font-medium">{new Date(sub.next_delivery_date).toLocaleDateString('ja-JP')}</span>
+                            </div>
+                          )}
+                          {sub.current_period_end && sub.status === 'active' && (
+                            <div className="flex justify-between">
+                              <span>次回更新日</span>
+                              <span>{new Date(sub.current_period_end).toLocaleDateString('ja-JP')}</span>
+                            </div>
+                          )}
+                          {sub.canceled_at && (
+                            <div className="flex justify-between text-red-600">
+                              <span>解約日</span>
+                              <span>{new Date(sub.canceled_at).toLocaleDateString('ja-JP')}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* 解約についての説明（小さく表示） */}
+              <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-600">
+                <h3 className="font-medium text-gray-700 mb-2 flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  解約について
+                </h3>
+                <p className="text-xs leading-relaxed text-gray-500">
+                  定期購入の解約をご希望の場合は、下記メールアドレスまでお問い合わせください。
+                  次回課金日の3営業日前までにお申し出いただければ、次回分より解約となります。
+                  なお、解約後も課金済みの期間分は通常通り配送されます。
+                </p>
+                <p className="mt-3 text-xs">
+                  <span className="font-medium text-gray-600">お問い合わせ先:</span>{' '}
+                  <a href="mailto:info@landbridge.co.jp" className="text-orange-600 hover:underline">
+                    info@landbridge.co.jp
+                  </a>
+                </p>
+              </div>
+            </div>
           )}
 
           {/* ログアウトボタン - ページ下部 */}
@@ -557,22 +625,31 @@ function OrderHistory({
   loading: boolean;
 }) {
   const getStatusLabel = (status: Order['status']) => {
-    const labels = {
-      pending: '確認中',
-      confirmed: '確定',
-      shipped: '発送済み',
-      delivered: '配達完了',
+    // 管理画面のステータスをマイページ表示用に変換
+    // order_received (注文受付) → 注文済み
+    // notified (連絡済み) → 発送中
+    // shipped (発送済み) → 配達完了
+    const labels: { [key: string]: string } = {
+      order_received: '注文済み',
+      pending: '注文済み',  // 互換性のため
+      notified: '発送中',
+      confirmed: '発送中',  // 互換性のため
+      shipped: '配達完了',
+      delivered: '配達完了',  // 互換性のため
       cancelled: 'キャンセル',
     };
     return labels[status] || status;
   };
 
   const getStatusColor = (status: Order['status']) => {
-    const colors = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      confirmed: 'bg-blue-100 text-blue-800',
-      shipped: 'bg-purple-100 text-purple-800',
-      delivered: 'bg-green-100 text-green-800',
+    // 管理画面のステータスをマイページ表示用に変換
+    const colors: { [key: string]: string } = {
+      order_received: 'bg-blue-100 text-blue-800',  // 注文済み
+      pending: 'bg-blue-100 text-blue-800',  // 互換性のため
+      notified: 'bg-yellow-100 text-yellow-800',  // 発送中
+      confirmed: 'bg-yellow-100 text-yellow-800',  // 互換性のため
+      shipped: 'bg-green-100 text-green-800',  // 配達完了
+      delivered: 'bg-green-100 text-green-800',  // 互換性のため
       cancelled: 'bg-red-100 text-red-800',
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
@@ -664,103 +741,6 @@ function OrderHistory({
             </div>
           ))}
         </div>
-      </div>
-    </div>
-  );
-}
-
-// カート表示コンポーネント
-function CartView({
-  items,
-  totalAmount,
-  onUpdate,
-  onDelete,
-}: {
-  items: CartItem[];
-  totalAmount: number;
-  onUpdate: (cartItemId: string, quantity: number) => void;
-  onDelete: (cartItemId: string) => void;
-}) {
-  if (items.length === 0) {
-    return (
-      <div className="bg-white rounded-lg shadow-md p-6 text-center">
-        <p className="text-gray-600 mb-4">カートは空です</p>
-        <Link
-          href="/menu-list"
-          className="inline-block bg-orange-600 text-white px-6 py-2 rounded-md hover:bg-orange-700"
-        >
-          メニューを見る
-        </Link>
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-xl font-bold mb-6">カート</h2>
-      <div className="space-y-4">
-        {items.map((item) => (
-          <div
-            key={item.id}
-            className="flex items-center space-x-4 border-b border-gray-200 pb-4"
-          >
-            {item.image && (
-              <div className="w-20 h-20 relative flex-shrink-0">
-                <Image
-                  src={item.image}
-                  alt={item.menu_item_name}
-                  fill
-                  className="object-cover rounded-md"
-                />
-              </div>
-            )}
-            <div className="flex-1">
-              <h3 className="font-medium text-gray-900">{item.menu_item_name}</h3>
-              <p className="text-gray-600">¥{item.price.toLocaleString()}</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => onUpdate(item.id, Math.max(1, item.quantity - 1))}
-                className="w-8 h-8 border border-gray-300 rounded-md hover:bg-gray-50 flex items-center justify-center"
-              >
-                -
-              </button>
-              <span className="w-12 text-center">{item.quantity}</span>
-              <button
-                onClick={() => onUpdate(item.id, item.quantity + 1)}
-                className="w-8 h-8 border border-gray-300 rounded-md hover:bg-gray-50 flex items-center justify-center"
-              >
-                +
-              </button>
-            </div>
-            <div className="text-right">
-              <p className="font-medium">
-                ¥{(item.price * item.quantity).toLocaleString()}
-              </p>
-              <button
-                onClick={() => onDelete(item.id)}
-                className="text-red-600 text-sm hover:underline mt-1"
-              >
-                削除
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-6 pt-6 border-t border-gray-200">
-        <div className="flex justify-between items-center mb-4">
-          <span className="text-lg font-medium">合計金額</span>
-          <span className="text-2xl font-bold text-orange-600">
-            ¥{totalAmount.toLocaleString()}
-          </span>
-        </div>
-        <Link
-          href="/purchase"
-          className="block w-full bg-orange-600 text-white text-center py-3 rounded-md hover:bg-orange-700 font-medium"
-        >
-          購入手続きへ進む
-        </Link>
       </div>
     </div>
   );

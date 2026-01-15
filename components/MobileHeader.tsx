@@ -57,7 +57,7 @@ const MobileHeader: React.FC = () => {
         <div className="flex items-center justify-between h-20 px-4">
           <Link
             href="/"
-            className="ml-2 h-12 w-[144px] flex items-center"
+            className="h-14 flex items-center"
             onClick={() => {
               if (isMenuOpen) {
                 closeMenu();
@@ -67,9 +67,9 @@ const MobileHeader: React.FC = () => {
             <Image
               src="/logo-header.png"
               alt="ふとるめし"
-              width={144}
-              height={48}
-              className="h-12 w-[144px]"
+              width={540}
+              height={180}
+              className="h-14 w-auto"
               priority
               loading="eager"
             />

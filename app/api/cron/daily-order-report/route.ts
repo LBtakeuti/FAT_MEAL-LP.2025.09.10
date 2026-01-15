@@ -252,10 +252,6 @@ export async function GET(request: NextRequest) {
                   <span class="summary-label">合計数量:</span>
                   <span class="summary-value">${totalQuantity}個</span>
                 </div>
-                <div class="summary-item">
-                  <span class="summary-label">合計金額:</span>
-                  <span class="summary-value">¥${totalAmount.toLocaleString()}</span>
-                </div>
               </div>
 
               <div class="order-list">
@@ -265,7 +261,7 @@ export async function GET(request: NextRequest) {
                     <p><strong>注文番号:</strong> ${order.order_number || order.id.slice(0, 8)}</p>
                     <p><strong>お客様名:</strong> ${escapeHtml(order.customer_name || '')}</p>
                     <p><strong>メニュー:</strong> ${escapeHtml(order.menu_set || '')}</p>
-                    <p><strong>数量:</strong> ${order.quantity || 0}個 | <strong>金額:</strong> ¥${(order.amount || 0).toLocaleString()}</p>
+                    <p><strong>数量:</strong> ${order.quantity || 0}個</p>
                   </div>
                 `).join('')}
                 ${orderCount > 10 ? `<p style="color: #6b7280; font-size: 14px;">他 ${orderCount - 10}件の注文があります。詳細はCSVファイルをご確認ください。</p>` : ''}
@@ -301,9 +297,30 @@ export async function GET(request: NextRequest) {
     if (emailResults.failed.length > 0) {
       console.warn('[Cron Job] Failed to send to:', emailResults.failed.map(f => f.email).join(', '));
     }
-    
-    return NextResponse.json({ 
-      success: true, 
+
+    // レポート送信成功後、注文ステータスを「連絡済み」に更新
+    // order_received（注文受付）またはpending（旧ステータス）の注文のみ更新
+    if (orders && orders.length > 0) {
+      const orderIds = orders
+        .filter(order => order.status === 'order_received' || order.status === 'pending')
+        .map(order => order.id);
+
+      if (orderIds.length > 0) {
+        const { error: updateError } = await (supabase
+          .from('orders') as any)
+          .update({ status: 'notified', updated_at: new Date().toISOString() })
+          .in('id', orderIds);
+
+        if (updateError) {
+          console.error('[Cron Job] Failed to update order status:', updateError);
+        } else {
+          console.log(`[Cron Job] Updated ${orderIds.length} orders to 'notified' status`);
+        }
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
       message: 'Order report email sent',
       orderCount,
       totalAmount,
@@ -416,10 +433,13 @@ function formatDateTimeJST(dateString: string): string {
 // ステータスを日本語に翻訳
 function translateStatus(status: string): string {
   const statusMap: { [key: string]: string } = {
-    'pending': '保留中',
-    'confirmed': '確認済み',
+    'order_received': '注文受付',
+    'notified': '連絡済み',
     'shipped': '発送済み',
-    'delivered': '配達完了',
+    // 旧ステータス（互換性のため）
+    'pending': '注文受付',
+    'confirmed': '連絡済み',
+    'delivered': '発送済み',
     'cancelled': 'キャンセル'
   };
   return statusMap[status] || status;

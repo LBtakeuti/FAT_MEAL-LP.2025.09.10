@@ -13,6 +13,10 @@
     {
       "path": "/api/cron/daily-order-report",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/subscription-delivery",
+      "schedule": "0 9 * * *"
     }
   ],
   "env": {
