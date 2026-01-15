@@ -193,8 +193,10 @@ const PurchasePage: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState<'plan' | 'info' | 'confirm'>('plan');
-  // 購入タイプ（一回購入 or サブスクリプション）
-  const [purchaseType, setPurchaseType] = useState<'one-time' | 'subscription-monthly'>('one-time');
+  // 購入タイプ（一回購入 or サブスクリプション）- デフォルトはサブスクリプション
+  const [purchaseType, setPurchaseType] = useState<'one-time' | 'subscription-monthly'>('subscription-monthly');
+  // お試しプランモード（URLパラメータでplan=trial-6が指定された場合のみtrue）
+  const [isTrialMode, setIsTrialMode] = useState<boolean>(false);
   // カート形式で複数セットを管理
   const [cart, setCart] = useState<CartItem[]>([
     { planId: 'trial-6', quantity: 0 },
@@ -287,21 +289,30 @@ const PurchasePage: React.FC = () => {
     // ログイン後にサブスクリプション購入に戻ってきた場合
     if (typeParam === 'subscription' && user) {
       setPurchaseType('subscription-monthly');
+      setIsTrialMode(false);
     }
     
-    if (planParam && planOptions.some(p => p.id === planParam)) {
-      // URLパラメータで指定されたプランを1つカートに追加
+    // お試しプラン（trial-6）が指定された場合のみお試しモードに
+    if (planParam === 'trial-6') {
+      setIsTrialMode(true);
+      setPurchaseType('one-time');
+      setCart(prev => prev.map(item =>
+        item.planId === 'trial-6' ? { ...item, quantity: 1 } : { ...item, quantity: 0 }
+      ));
+    } else if (planParam && planOptions.some(p => p.id === planParam)) {
+      // その他のプラン（サブスクリプション）が指定された場合
       const plan = planOptions.find(p => p.id === planParam);
-      if (plan) {
-        if (plan.isSubscription) {
-          setPurchaseType('subscription-monthly');
-        } else {
-          setPurchaseType('one-time');
-        }
+      if (plan && plan.isSubscription) {
+        setIsTrialMode(false);
+        setPurchaseType('subscription-monthly');
         setCart(prev => prev.map(item =>
           item.planId === planParam ? { ...item, quantity: 1 } : { ...item, quantity: 0 }
         ));
       }
+    } else {
+      // パラメータなしの場合はサブスクリプションモード
+      setIsTrialMode(false);
+      setPurchaseType('subscription-monthly');
     }
   }, [searchParams, user]);
 
@@ -524,13 +535,13 @@ const PurchasePage: React.FC = () => {
     if (!customerInfo.city.trim()) newErrors.city = '市区町村を入力してください';
     if (!customerInfo.address.trim()) newErrors.address = '番地を入力してください';
 
-    // サブスクリプションの場合は配送希望日が必須
-    if (purchaseType === 'subscription-monthly') {
-      const deliveryError = validateDeliveryDate(customerInfo.preferredDeliveryDate || '');
-      if (deliveryError) {
-        newErrors.preferredDeliveryDate = deliveryError;
-      }
-    }
+    // サブスクリプションの場合の配送希望日チェック - 一時的に無効化
+    // if (purchaseType === 'subscription-monthly') {
+    //   const deliveryError = validateDeliveryDate(customerInfo.preferredDeliveryDate || '');
+    //   if (deliveryError) {
+    //     newErrors.preferredDeliveryDate = deliveryError;
+    //   }
+    // }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -538,6 +549,11 @@ const PurchasePage: React.FC = () => {
 
   const handleProceedToInfo = () => {
     if (!isCartEmpty) {
+      // サブスクリプションモードでログインしていない場合はログインを促す
+      if (!isTrialMode && !user) {
+        router.push('/login?redirect=/purchase&type=subscription');
+        return;
+      }
       setCurrentStep('info');
       window.scrollTo(0, 0);
     }
@@ -656,101 +672,67 @@ const PurchasePage: React.FC = () => {
 
   const renderPlanSelection = () => (
     <div className="space-y-6">
-      {/* 購入タイプ選択 */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">
-          購入タイプを選択してください
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <button
-            onClick={() => {
-              setPurchaseType('one-time');
-              setCart([
-                { planId: 'trial-6', quantity: 0 },
-                { planId: 'subscription-monthly-12', quantity: 0 },
-                { planId: 'subscription-monthly-24', quantity: 0 },
-                { planId: 'subscription-monthly-48', quantity: 0 },
-              ]);
-            }}
-            className={`p-6 rounded-lg border-2 transition-all text-left ${
-              purchaseType === 'one-time'
-                ? 'border-orange-500 bg-orange-50'
-                : 'border-gray-200 hover:border-gray-300'
-            }`}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                お試し
-              </span>
-              <span className="font-semibold text-lg">お試しプラン</span>
-            </div>
-            <div className="text-sm text-gray-600">
-              6食セットを1回だけ購入できます
-            </div>
-            <div className="mt-2 text-orange-600 font-medium">
-              ¥5,700（税込・送料込）
-            </div>
-          </button>
-          <button
-            onClick={() => {
-              // サブスクリプションはログイン必須
-              if (!user) {
-                // ログインページにリダイレクト（戻りURL付き）
-                router.push('/login?redirect=/purchase&type=subscription');
-                return;
-              }
-              setPurchaseType('subscription-monthly');
-              setCart([
-                { planId: 'trial-6', quantity: 0 },
-                { planId: 'subscription-monthly-12', quantity: 0 },
-                { planId: 'subscription-monthly-24', quantity: 0 },
-                { planId: 'subscription-monthly-48', quantity: 0 },
-              ]);
-            }}
-            className={`p-6 rounded-lg border-2 transition-all text-left ${
-              purchaseType === 'subscription-monthly'
-                ? 'border-orange-500 bg-orange-50'
-                : 'border-gray-200 hover:border-gray-300'
-            }`}
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                定期
-              </span>
-              <span className="font-semibold text-lg">月額自動更新プラン</span>
-            </div>
-            <div className="text-sm text-gray-600">
-              毎月自動でお届け。いつでも解約可能です
-            </div>
-            <div className="mt-2 text-orange-600 font-medium">
-              月額 ¥9,780〜
-            </div>
-            {!user && (
-              <div className="mt-2 text-xs text-blue-600 flex items-center gap-1">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-                ログインが必要です
-              </div>
-            )}
-          </button>
+      {/* お試しモードの場合のみ表示するお試しプラン情報 */}
+      {isTrialMode && (
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-orange-200 p-6">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs px-3 py-1 rounded-md font-medium shadow-sm">
+              初回限定
+            </span>
+            <h2 className="text-xl font-bold text-gray-900">お試しプラン</h2>
+          </div>
+          <p className="text-sm text-gray-600 mb-2">
+            6種類×1個ずつのセットを1回だけ購入できます。定期契約なしでお気軽にお試しいただけます。
+          </p>
+          <div className="text-lg font-bold text-orange-600">
+            ¥5,700（税込・送料込）
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* サブスクリプションモードの場合のヘッダー */}
+      {!isTrialMode && (
+        <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-xl border border-orange-200 p-6">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="bg-gradient-to-r from-orange-600 to-red-500 text-white text-xs px-3 py-1 rounded-md font-medium shadow-sm">
+              お得な定期
+            </span>
+            <h2 className="text-xl font-bold text-gray-900">ふとるめし定期便</h2>
+          </div>
+          <p className="text-sm text-gray-600">
+            毎月自動でお届け。お得な定期プランをお選びください。
+          </p>
+          {!user && (
+            <div className="mt-3 flex items-center gap-2 text-sm text-blue-600">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              <span>月額プランのご購入にはログインが必要です</span>
+              <button
+                onClick={() => router.push('/login?redirect=/purchase&type=subscription')}
+                className="ml-2 underline hover:text-blue-700"
+              >
+                ログインする
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* プラン選択 */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <h2 className="text-xl font-bold text-gray-900 mb-2">
-          {purchaseType === 'subscription-monthly' ? '月額プランを選択してください' : 'お試しプランを選択してください'}
+          {isTrialMode ? 'お試しプランを選択してください' : '月額プランを選択してください'}
         </h2>
         <p className="text-sm text-gray-500 mb-6">
-          {purchaseType === 'subscription-monthly' 
-            ? '月額プランは1つまで選択可能です。毎月自動で課金・配送されます。'
-            : 'お試しプランは1回のみの購入です。'}
+          {isTrialMode 
+            ? 'お試しプランは1回のみの購入です。'
+            : '月額プランは1つまで選択可能です。毎月自動で課金・配送されます。'}
         </p>
         <div className="space-y-4">
           {planOptions
             .filter(plan => 
-              purchaseType === 'one-time' 
+              isTrialMode 
                 ? plan.isTrial 
                 : plan.isSubscription
             )
@@ -778,15 +760,15 @@ const PurchasePage: React.FC = () => {
                 >
                   {/* お試しプランバッジ */}
                   {plan.isTrial && (
-                    <div className="absolute top-2 right-2 bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                      お試しプラン
+                    <div className="absolute top-2 right-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs px-3 py-1 rounded-md font-medium shadow-sm">
+                      初回限定
                     </div>
                   )}
                   
                   {/* サブスクリプションバッジ */}
                   {plan.isSubscription && (
-                    <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                      月額プラン
+                    <div className="absolute top-2 right-2 bg-gradient-to-r from-orange-600 to-red-500 text-white text-xs px-3 py-1 rounded-md font-medium shadow-sm">
+                      お得な定期
                     </div>
                   )}
 
@@ -905,9 +887,18 @@ const PurchasePage: React.FC = () => {
       <button
         onClick={handleProceedToInfo}
         disabled={isCartEmpty}
-        className="w-full bg-orange-500 text-white py-4 rounded-lg font-semibold hover:bg-orange-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+        className="w-full bg-orange-500 text-white py-4 rounded-lg font-semibold hover:bg-orange-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
-        お客様情報の入力へ進む
+        {!isTrialMode && !user ? (
+          <>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+            </svg>
+            ログインして進む
+          </>
+        ) : (
+          'お客様情報の入力へ進む'
+        )}
       </button>
     </div>
   );
@@ -1002,8 +993,8 @@ const PurchasePage: React.FC = () => {
         </div>
       )}
 
-      {/* 配送希望日選択（サブスクリプションのみ） */}
-      {renderDeliveryDateSelection()}
+      {/* 配送希望日選択（サブスクリプションのみ）- 一時的に非表示 */}
+      {/* {renderDeliveryDateSelection()} */}
 
       {/* 登録情報を使用ボタン */}
       {user && hasProfileData && (
@@ -1317,8 +1308,8 @@ const PurchasePage: React.FC = () => {
           </div>
         </div>
 
-        {/* 配送希望日（サブスクリプションのみ） */}
-        {purchaseType === 'subscription-monthly' && customerInfo.preferredDeliveryDate && (
+        {/* 配送希望日（サブスクリプションのみ）- 一時的に非表示 */}
+        {/* {purchaseType === 'subscription-monthly' && customerInfo.preferredDeliveryDate && (
           <div className="bg-white rounded-xl shadow-sm p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-4">
               初回配送希望日
@@ -1337,7 +1328,7 @@ const PurchasePage: React.FC = () => {
               </span>
             </div>
           </div>
-        )}
+        )} */}
 
         {/* クーポンコード入力 */}
         <div className="bg-white rounded-xl shadow-sm p-6">

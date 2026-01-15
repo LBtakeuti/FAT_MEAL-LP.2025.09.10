@@ -352,14 +352,19 @@ export default function MyPage() {
                   解約について
                 </h3>
                 <p className="text-xs leading-relaxed text-gray-500">
-                  定期購入の解約をご希望の場合は、下記メールアドレスまでお問い合わせください。
+                  定期購入の解約をご希望の場合は、お問い合わせフォームよりご連絡ください。
                   次回課金日の3営業日前までにお申し出いただければ、次回分より解約となります。
                   なお、解約後も課金済みの期間分は通常通り配送されます。
                 </p>
-                <p className="mt-3 text-xs">
-                  <span className="font-medium text-gray-600">お問い合わせ先:</span>{' '}
-                  <a href="mailto:info@landbridge.co.jp" className="text-orange-600 hover:underline">
-                    info@landbridge.co.jp
+                <p className="mt-3">
+                  <a 
+                    href="/contact?subject=cancellation" 
+                    className="inline-flex items-center gap-1 text-orange-600 hover:text-orange-700 hover:underline text-xs font-medium"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    お問い合わせ
                   </a>
                 </p>
               </div>

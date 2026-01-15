@@ -861,23 +861,10 @@ async function sendSubscriptionPurchaseConfirmationEmail(params: {
     return;
   }
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('ja-JP', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric',
-      weekday: 'short'
-    });
-  };
-
   const formatCurrency = (value: number) => new Intl.NumberFormat('ja-JP', {
     style: 'currency',
     currency: 'JPY',
   }).format(value);
-
-  const deliveryScheduleHtml = params.deliverySchedules
-    .map(schedule => `<p>${schedule.delivery_number}回目：${formatDate(schedule.scheduled_date)}（${schedule.meals_per_delivery}食）</p>`)
-    .join('');
 
   const emailHtml = `
 <!DOCTYPE html>
@@ -901,8 +888,8 @@ async function sendSubscriptionPurchaseConfirmationEmail(params: {
         <p style="margin-top: 0;"><strong>${params.planName}</strong></p>
         <p>月額料金: ${formatCurrency(params.monthlyAmount)}</p>
         <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 15px 0;">
-        <p><strong>今月の配送予定</strong></p>
-        ${deliveryScheduleHtml}
+        <p><strong>配送について</strong></p>
+        <p>2月10日から順次配送いたしますので、もうしばらくお待ちください。</p>
       </div>
 
       <p>毎月自動で課金・配送されます。解約をご希望の場合はマイページからお申し出ください。</p>

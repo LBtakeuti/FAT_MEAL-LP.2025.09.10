@@ -1,15 +1,27 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import MobileHeader from '@/components/MobileHeader';
 import Footer from '@/components/Footer';
 
-const ContactPage: React.FC = () => {
+// 件名の選択肢
+const SUBJECT_OPTIONS = [
+  { value: '', label: '選択してください' },
+  { value: 'cancellation', label: '定期便の解約について' },
+  { value: 'delivery', label: '配送について' },
+  { value: 'payment', label: 'お支払いについて' },
+  { value: 'product', label: '商品について' },
+  { value: 'account', label: '会員登録・ログインについて' },
+  { value: 'other', label: 'その他' },
+];
+
+const ContactPageContent: React.FC = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [formData, setFormData] = useState({
-    title: '',
+    subject: '',
     lastName: '',
     firstName: '',
     lastNameKana: '',
@@ -19,6 +31,14 @@ const ContactPage: React.FC = () => {
     message: '',
     privacyPolicy: false
   });
+
+  // URLパラメータから件名を設定
+  useEffect(() => {
+    const subjectParam = searchParams.get('subject');
+    if (subjectParam && SUBJECT_OPTIONS.some(opt => opt.value === subjectParam)) {
+      setFormData(prev => ({ ...prev, subject: subjectParam }));
+    }
+  }, [searchParams]);
 
   const [errors, setErrors] = useState<{[key: string]: string}>({});
 
@@ -47,7 +67,7 @@ const ContactPage: React.FC = () => {
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {};
 
-    // Title is optional
+    if (!formData.subject) newErrors.subject = '件名を選択してください';
     if (!formData.lastName) newErrors.lastName = '必須項目です';
     if (!formData.firstName) newErrors.firstName = '必須項目です';
     if (!formData.lastNameKana) newErrors.lastNameKana = '必須項目です';
@@ -69,11 +89,17 @@ const ContactPage: React.FC = () => {
     e.preventDefault();
     if (!validateForm()) return;
 
+    // 件名のラベルを取得
+    const subjectLabel = SUBJECT_OPTIONS.find(opt => opt.value === formData.subject)?.label || formData.subject;
+
     try {
       const res = await fetch('/api/contact/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          title: subjectLabel, // APIには title として送信（互換性のため）
+        }),
       });
 
       if (!res.ok) {
@@ -121,18 +147,23 @@ const ContactPage: React.FC = () => {
               {/* 件名 */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  件名(タイトル)
+                  件名 <span className="text-red-500 text-xs">必須</span>
                 </label>
-                <input
-                  type="text"
-                  name="title"
-                  value={formData.title}
+                <select
+                  name="subject"
+                  value={formData.subject}
                   onChange={handleInputChange}
                   className={`w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.title ? 'border-red-500' : 'border-gray-300'
+                    errors.subject ? 'border-red-500' : 'border-gray-300'
                   }`}
-                />
-                {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
+                >
+                  {SUBJECT_OPTIONS.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                {errors.subject && <p className="text-red-500 text-xs mt-1">{errors.subject}</p>}
               </div>
 
               {/* お名前 */}
@@ -291,6 +322,14 @@ const ContactPage: React.FC = () => {
       {/* Footer */}
       <Footer />
     </>
+  );
+};
+
+const ContactPage: React.FC = () => {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">読み込み中...</div>}>
+      <ContactPageContent />
+    </Suspense>
   );
 };
 

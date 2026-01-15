@@ -14,25 +14,91 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // userIdで検索、なければemailで検索
-    let query = (supabase
+    console.log(`[Subscriptions API] Searching for userId: ${userId}, email: ${email}`);
+
+    // デバッグ: 全サブスクリプションを取得して確認
+    const { data: allSubs, error: allError } = await (supabase
       .from('subscriptions') as any)
-      .select('*')
-      .order('started_at', { ascending: false });
+      .select('id, user_id, status, plan_name, shipping_address, started_at')
+      .order('started_at', { ascending: false })
+      .limit(10);
+    
+    if (!allError && allSubs) {
+      console.log(`[Subscriptions API] All recent subscriptions in DB (${allSubs.length}):`, 
+        allSubs.map((s: any) => ({
+          id: s.id,
+          user_id: s.user_id,
+          email: s.shipping_address?.email,
+          status: s.status,
+          plan_name: s.plan_name,
+          started_at: s.started_at
+        }))
+      );
+    }
 
+    let subscriptions: any[] = [];
+
+    // まずuserIdで検索
     if (userId) {
-      query = query.eq('user_id', userId);
-    } else if (email) {
-      // emailはshipping_addressのJSONB内にある
-      query = query.filter('shipping_address->>email', 'eq', email);
+      const { data: userIdResults, error: userIdError } = await (supabase
+        .from('subscriptions') as any)
+        .select('*')
+        .eq('user_id', userId)
+        .order('started_at', { ascending: false });
+
+      if (userIdError) {
+        console.error('Failed to fetch subscriptions by userId:', userIdError);
+      } else {
+        console.log(`[Subscriptions API] Found ${userIdResults?.length || 0} subscriptions by userId`);
+        if (userIdResults && userIdResults.length > 0) {
+          subscriptions = userIdResults;
+        }
+      }
     }
 
-    const { data: subscriptions, error } = await query;
+    // userIdで見つからなかった場合、emailでも検索
+    if (subscriptions.length === 0 && email) {
+      const { data: emailResults, error: emailError } = await (supabase
+        .from('subscriptions') as any)
+        .select('*')
+        .filter('shipping_address->>email', 'eq', email)
+        .order('started_at', { ascending: false });
 
-    if (error) {
-      console.error('Failed to fetch subscriptions:', error);
-      throw error;
+      if (emailError) {
+        console.error('Failed to fetch subscriptions by email:', emailError);
+      } else {
+        console.log(`[Subscriptions API] Found ${emailResults?.length || 0} subscriptions by email`);
+        if (emailResults) {
+          subscriptions = emailResults;
+        }
+      }
     }
+
+    // userIdで検索しても見つからない場合、user_idがnullのレコードをemailで追加検索
+    if (userId && email && subscriptions.length === 0) {
+      const { data: nullUserIdResults, error: nullError } = await (supabase
+        .from('subscriptions') as any)
+        .select('*')
+        .is('user_id', null)
+        .filter('shipping_address->>email', 'eq', email)
+        .order('started_at', { ascending: false });
+
+      if (!nullError && nullUserIdResults) {
+        console.log(`[Subscriptions API] Found ${nullUserIdResults?.length || 0} subscriptions with null user_id`);
+        subscriptions = nullUserIdResults;
+
+        // user_idがnullのレコードを更新
+        for (const sub of nullUserIdResults) {
+          console.log(`[Subscriptions API] Updating user_id for subscription ${sub.id}`);
+          await (supabase
+            .from('subscriptions') as any)
+            .update({ user_id: userId })
+            .eq('id', sub.id);
+        }
+      }
+    }
+
+    console.log(`[Subscriptions API] Final result: ${subscriptions.length} subscriptions found`);
 
     // フォーマットして返す
     const formattedSubscriptions = subscriptions?.map((sub: any) => ({
