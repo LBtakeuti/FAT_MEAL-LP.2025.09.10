@@ -104,8 +104,8 @@ export async function GET(request: NextRequest) {
         const order = await createOrderFromDelivery(delivery, subscription, supabase);
         
         // 配送予定を更新
-        await supabase
-          .from('subscription_deliveries')
+        await (supabase
+          .from('subscription_deliveries') as any)
           .update({
             status: 'shipped',
             delivered_date: todayStr,
