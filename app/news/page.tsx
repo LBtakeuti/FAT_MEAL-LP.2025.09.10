@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import Footer from '@/components/Footer';
 
 interface NewsItem {
   id: string;
@@ -137,9 +136,6 @@ export default function NewsListPage() {
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      <Footer />
     </div>
   );
 }

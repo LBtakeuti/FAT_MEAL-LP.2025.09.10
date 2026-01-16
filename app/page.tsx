@@ -16,7 +16,6 @@ import TrialSection from '@/components/TrialSection';
 import SubscriptionSection from '@/components/SubscriptionSection';
 import MenuSection from '@/components/MenuSection';
 import NewsSection from '@/components/NewsSection';
-import Footer from '@/components/Footer';
 import LineFloatingButton from '@/components/LineFloatingButton';
 
 export default function Home() {
@@ -75,11 +74,6 @@ export default function Home() {
             <SwiperSlide>
               <NewsSection />
             </SwiperSlide>
-            <SwiperSlide>
-              <div className="min-h-screen bg-gray-900 pb-20 flex flex-col">
-                <Footer />
-              </div>
-            </SwiperSlide>
             </Swiper>
           </main>
           <MobileFooterNav isVisible={showFooterNav} />
@@ -96,7 +90,6 @@ export default function Home() {
           <StatsSection />
           <PurchaseFlowSection />
           <NewsSection />
-          <Footer />
           {/* モバイルではフッターナビゲーションを表示 */}
           <div className="sm:hidden">
             <MobileFooterNav isVisible={true} />

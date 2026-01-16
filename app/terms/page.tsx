@@ -2,7 +2,6 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Footer from '@/components/Footer';
 
 export default function TermsPage() {
   return (
@@ -189,8 +188,6 @@ export default function TermsPage() {
           </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

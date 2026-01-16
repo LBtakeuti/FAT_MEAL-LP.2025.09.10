@@ -3,7 +3,6 @@
 import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import Footer from '@/components/Footer';
 
 function PurchaseCompleteContent() {
   const searchParams = useSearchParams();
@@ -136,8 +135,6 @@ export default function PurchaseCompletePage() {
       }>
         <PurchaseCompleteContent />
       </Suspense>
-
-      <Footer />
     </>
   );
 }

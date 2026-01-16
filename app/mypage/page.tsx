@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@/lib/supabase';
 import Link from 'next/link';
-import Footer from '@/components/Footer';
 import LogoutModal from '@/components/LogoutModal';
 
 interface UserProfile {
@@ -375,8 +374,6 @@ export default function MyPage() {
           </div>
         </div>
       </main>
-
-      <Footer />
 
       {/* ログアウトモーダル */}
       <LogoutModal

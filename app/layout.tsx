@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import Header from '@/components/Header';
 import MobileHeader from '@/components/MobileHeader';
+import Footer from '@/components/Footer';
 
 export const metadata: Metadata = {
   title: "ふとるめし - 高カロリー・高タンパクの冷凍弁当",
@@ -35,6 +37,18 @@ export const metadata: Metadata = {
   },
 };
 
+// ローディングフォールバックコンポーネント
+function PageLoadingFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p className="text-gray-500">読み込み中...</p>
+      </div>
+    </div>
+  );
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -42,15 +56,24 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
-      <body className="font-sans antialiased bg-[#fff7ed] min-h-screen">
-        {/* ヘッダーをlayoutに配置してページ遷移時のレイアウトシフトを防止 */}
+      <body className="font-sans antialiased bg-[#fff7ed] min-h-screen flex flex-col">
+        {/* ヘッダー - 常に固定表示 */}
         <div className="sm:hidden">
           <MobileHeader />
         </div>
         <div className="hidden sm:block">
           <Header />
         </div>
-        {children}
+
+        {/* メインコンテンツ - ページ遷移時にここだけローディング */}
+        <main className="flex-grow">
+          <Suspense fallback={<PageLoadingFallback />}>
+            {children}
+          </Suspense>
+        </main>
+
+        {/* フッター - 常に固定表示 */}
+        <Footer />
       </body>
     </html>
   );

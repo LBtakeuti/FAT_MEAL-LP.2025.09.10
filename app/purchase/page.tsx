@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Footer from '@/components/Footer';
 import { createBrowserClient } from '@/lib/supabase';
 
 // ユーザープロフィール型
@@ -1505,8 +1504,6 @@ const PurchasePage: React.FC = () => {
           {currentStep === 'confirm' && renderConfirmation()}
         </div>
       </main>
-
-      <Footer />
     </>
   );
 };

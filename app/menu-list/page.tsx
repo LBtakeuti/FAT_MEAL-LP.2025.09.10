@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import Footer from '@/components/Footer';
 import { useRouter } from 'next/navigation';
 import { useMenuItems } from '@/hooks/useMenuItems';
 import { MenuCard } from '@/components/menu/MenuCard';
@@ -70,8 +69,6 @@ export default function MenuListPage() {
           </div>
         </main>
 
-        {/* Footer */}
-        <Footer />
       </div>
 
       {/* メニュー詳細モーダル */}

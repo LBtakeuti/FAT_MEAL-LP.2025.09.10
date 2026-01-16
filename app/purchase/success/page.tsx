@@ -3,7 +3,6 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import Footer from '@/components/Footer';
 
 interface OrderInfo {
   customerName: string;
@@ -89,14 +88,12 @@ const PurchaseSuccessContent: React.FC = () => {
             </div>
           </div>
         </main>
-        <Footer />
       </>
     );
   }
 
   return (
-    <>
-      <main className="min-h-screen bg-gray-50 pt-16 sm:pt-20">
+    <main className="min-h-screen bg-gray-50 pt-16 sm:pt-20">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
             {error ? (
@@ -194,9 +191,6 @@ const PurchaseSuccessContent: React.FC = () => {
           </div>
         </div>
       </main>
-
-      <Footer />
-    </>
   );
 };
 

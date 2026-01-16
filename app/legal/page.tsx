@@ -2,7 +2,6 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Footer from '@/components/Footer';
 
 export default function LegalPage() {
   return (
@@ -147,8 +146,6 @@ export default function LegalPage() {
           </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }

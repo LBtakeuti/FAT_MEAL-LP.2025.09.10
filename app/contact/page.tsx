@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Footer from '@/components/Footer';
 
 // 件名の選択肢
 const SUBJECT_OPTIONS = [
@@ -308,9 +307,6 @@ const ContactPageContent: React.FC = () => {
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      <Footer />
     </>
   );
 };

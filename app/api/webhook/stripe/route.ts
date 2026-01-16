@@ -163,16 +163,23 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe:
   // 注文詳細を取得
   const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
 
-  // 注文内容を文字列に変換
-  const menuSet = lineItems.data
+  // 送料を除外した商品のみをフィルタリング
+  const productItems = lineItems.data.filter(item => {
+    const description = item.description?.toLowerCase() || '';
+    // 送料アイテムを除外（「送料」「shipping」を含むものを除外）
+    return !description.includes('送料') && !description.includes('shipping');
+  });
+
+  // 注文内容を文字列に変換（商品のみ）
+  const menuSet = productItems
     .map(item => `${item.description} × ${item.quantity}`)
     .join(', ');
 
   // 住所を取得
   const addressString = session.metadata?.address || '';
 
-  // 数量を計算
-  const totalQuantity = lineItems.data.reduce((sum, item) => sum + (item.quantity || 1), 0);
+  // 数量を計算（商品のみ、送料は除外）
+  const totalQuantity = productItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
 
   // ユーザーIDを取得（emailから）
   let userId: string | null = null;
@@ -217,26 +224,26 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe:
     }
   }
 
-  // メール送信
+  // メール送信（商品のみ表示）
   await sendOrderConfirmationEmail({
     email: customerEmail,
     name: customerName || 'お客様',
     orderId: session.id,
     amount: amountTotal || 0,
-    items: lineItems.data,
+    items: productItems,
   });
 
-  // Slack通知
+  // Slack通知（商品のみ表示）
   await sendSlackNotification({
     customerName: customerName || 'お客様',
     customerEmail: customerEmail,
     orderId: session.id,
     amount: amountTotal || 0,
-    items: lineItems.data,
+    items: productItems,
   });
 
-  // 在庫を減らす
-  await reduceInventory(lineItems.data);
+  // 在庫を減らす（商品のみ対象）
+  await reduceInventory(productItems);
 
   console.log('One-time order processed successfully');
 }
