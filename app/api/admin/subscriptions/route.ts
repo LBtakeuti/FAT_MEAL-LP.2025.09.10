@@ -37,11 +37,20 @@ interface Subscription {
 export async function GET(_request: NextRequest) {
   try {
     const supabase = createServerClient();
-    
+
+    // サブスクリプションと配送情報を取得
     const { data: subscriptions, error } = await supabase
       .from('subscriptions')
-      .select('*')
-      .order('started_at', { ascending: false }) as { data: Subscription[] | null; error: any };
+      .select(`
+        *,
+        subscription_deliveries (
+          id,
+          status,
+          scheduled_date,
+          menu_set
+        )
+      `)
+      .order('started_at', { ascending: false }) as { data: (Subscription & { subscription_deliveries: any[] })[] | null; error: any };
 
     if (error) {
       console.error('Failed to fetch subscriptions:', error);
@@ -49,23 +58,43 @@ export async function GET(_request: NextRequest) {
     }
 
     // 配送先情報を整形
-    const formattedSubscriptions = subscriptions?.map(sub => ({
-      id: sub.id,
-      customer_name: sub.shipping_address?.name || 'お客様',
-      customer_email: sub.shipping_address?.email || '',
-      plan_name: sub.plan_name,
-      plan_id: sub.plan_id,
-      meals_per_delivery: sub.meals_per_delivery,
-      deliveries_per_month: sub.deliveries_per_month,
-      monthly_total_amount: sub.monthly_total_amount,
-      next_delivery_date: sub.next_delivery_date,
-      preferred_delivery_date: sub.preferred_delivery_date,
-      status: sub.status,
-      payment_status: sub.payment_status,
-      started_at: sub.started_at,
-      canceled_at: sub.canceled_at,
-      shipping_address: sub.shipping_address,
-    })) || [];
+    const formattedSubscriptions = subscriptions?.map(sub => {
+      const deliveries = sub.subscription_deliveries || [];
+      const totalDeliveries = deliveries.length;
+      const completedDeliveries = deliveries.filter((d: any) => d.status === 'shipped').length;
+      const pendingDeliveries = deliveries.filter((d: any) => d.status === 'pending');
+      const nextDelivery = pendingDeliveries.sort((a: any, b: any) =>
+        new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime()
+      )[0];
+
+      return {
+        id: sub.id,
+        customer_name: sub.shipping_address?.name || 'お客様',
+        customer_email: sub.shipping_address?.email || '',
+        plan_name: sub.plan_name,
+        plan_id: sub.plan_id,
+        meals_per_delivery: sub.meals_per_delivery,
+        deliveries_per_month: sub.deliveries_per_month,
+        monthly_total_amount: sub.monthly_total_amount,
+        next_delivery_date: sub.next_delivery_date,
+        preferred_delivery_date: sub.preferred_delivery_date,
+        status: sub.status,
+        payment_status: sub.payment_status,
+        started_at: sub.started_at,
+        canceled_at: sub.canceled_at,
+        shipping_address: sub.shipping_address,
+        // 配送進捗情報
+        delivery_progress: {
+          total: totalDeliveries,
+          completed: completedDeliveries,
+          pending: pendingDeliveries.length,
+          next_delivery: nextDelivery ? {
+            date: nextDelivery.scheduled_date,
+            menu_set: nextDelivery.menu_set,
+          } : null,
+        },
+      };
+    }) || [];
 
     return NextResponse.json(formattedSubscriptions);
   } catch (error) {

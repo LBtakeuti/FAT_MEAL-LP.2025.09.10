@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createServerClient } from '@/lib/supabase';
-import { 
-  calculateInitialDeliverySchedule, 
+import {
+  calculateInitialDeliverySchedule,
   calculateMonthlyDeliverySchedule,
-  getPlanConfig, 
-  getPlanName, 
-  getMenuSetName,
-  isValidPlanId 
+  getPlanConfig,
+  getPlanName,
+  getMenuSetNameWithDeliveryNumber,
+  isValidPlanId
 } from '@/lib/subscription-schedule';
 
 // 遅延初期化（ビルド時にエラーを防ぐ）
@@ -355,12 +355,11 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
     // プラン設定を取得
     const planConfig = getPlanConfig(planId);
     const planName = getPlanName(planId);
-    const menuSet = getMenuSetName(planId);
 
-    // 配送スケジュールを計算
+    // 配送スケジュールを計算（購入日=請求開始日を基準）
     const startDate = preferredDeliveryDateStr 
       ? new Date(preferredDeliveryDateStr)
-      : new Date((subscription as any).current_period_start * 1000 + 7 * 24 * 60 * 60 * 1000); // 1週間後
+      : new Date((subscription as any).current_period_start * 1000); // 購入日（請求開始日）
 
     const deliverySchedules = calculateInitialDeliverySchedule(planId, startDate);
 
@@ -427,10 +426,11 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
     const deliveries = deliverySchedules.map((schedule) => ({
       subscription_id: (dbSubscription as any).id,
       scheduled_date: schedule.scheduled_date.toISOString().split('T')[0],
-      menu_set: menuSet,
+      menu_set: getMenuSetNameWithDeliveryNumber(planId, schedule.delivery_number),
       meals_per_delivery: schedule.meals_per_delivery,
       quantity: 1,
       status: 'pending',
+      customer_email: customerEmail,
     }));
 
     const { error: deliveryError } = await (supabase
@@ -506,17 +506,18 @@ async function handleMonthlySubscriptionPayment(invoice: Stripe.Invoice, stripe:
     // 月次配送スケジュールを計算
     const billingDate = new Date((subscription as any).current_period_start * 1000);
     const deliverySchedules = calculateMonthlyDeliverySchedule(planId, billingDate);
-    const menuSet = getMenuSetName(planId);
+    const customerEmail = (dbSubscription as any).shipping_address?.email || '';
 
     // 新しい配送予定を作成
     const deliveries = deliverySchedules.map(schedule => ({
       subscription_id: (dbSubscription as any).id,
       scheduled_date: schedule.scheduled_date.toISOString().split('T')[0],
-      menu_set: menuSet,
+      menu_set: getMenuSetNameWithDeliveryNumber(planId, schedule.delivery_number),
       meals_per_delivery: schedule.meals_per_delivery,
       quantity: 1,
       status: 'pending',
       stripe_invoice_id: invoice.id,
+      customer_email: customerEmail,
     }));
 
     const { error: deliveryError } = await (supabase

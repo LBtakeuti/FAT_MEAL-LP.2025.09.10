@@ -2,6 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 
+interface DeliveryProgress {
+  total: number;
+  completed: number;
+  pending: number;
+  next_delivery: {
+    date: string;
+    menu_set: string;
+  } | null;
+}
+
 interface Subscription {
   id: string;
   customer_name: string;
@@ -27,6 +37,7 @@ interface Subscription {
     address_detail?: string;
     building?: string;
   };
+  delivery_progress?: DeliveryProgress;
 }
 
 export default function AdminSubscriptionsPage() {
@@ -205,6 +216,9 @@ export default function AdminSubscriptionsPage() {
                   月額
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  配送進捗
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   次回配送
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -218,7 +232,7 @@ export default function AdminSubscriptionsPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredSubscriptions.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
                     サブスクリプションがありません
                   </td>
                 </tr>
@@ -246,12 +260,37 @@ export default function AdminSubscriptionsPage() {
                       {formatCurrency(sub.monthly_total_amount || 0)}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <div>
-                        <div>{formatDate(sub.next_delivery_date)}</div>
-                        {sub.preferred_delivery_date && (
-                          <div className="text-xs text-blue-500">
-                            希望日: {formatDate(sub.preferred_delivery_date)}
+                      {sub.delivery_progress ? (
+                        <div>
+                          <div className="font-medium">
+                            {sub.delivery_progress.completed}/{sub.delivery_progress.total}回 完了
                           </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                            <div
+                              className="bg-green-500 h-2 rounded-full"
+                              style={{
+                                width: sub.delivery_progress.total > 0
+                                  ? `${(sub.delivery_progress.completed / sub.delivery_progress.total) * 100}%`
+                                  : '0%'
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <div>
+                        {sub.delivery_progress?.next_delivery ? (
+                          <>
+                            <div>{formatDate(sub.delivery_progress.next_delivery.date)}</div>
+                            <div className="text-xs text-gray-500">
+                              {sub.delivery_progress.next_delivery.menu_set}
+                            </div>
+                          </>
+                        ) : (
+                          <span className="text-gray-400">配送完了</span>
                         )}
                       </div>
                     </td>

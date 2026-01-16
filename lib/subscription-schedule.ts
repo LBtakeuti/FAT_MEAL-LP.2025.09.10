@@ -108,6 +108,10 @@ export function calculateInitialDeliverySchedule(
 
 /**
  * 月次配送スケジュールを計算（毎月の請求成功時）
+ * 請求日を基準に配送スケジュールを作成
+ * - 12食: 請求日当日
+ * - 24食: 請求日当日、+14日
+ * - 48食: 請求日当日、+7日、+14日、+21日
  */
 export function calculateMonthlyDeliverySchedule(
   planId: string,
@@ -122,17 +126,17 @@ export function calculateMonthlyDeliverySchedule(
   const schedules: DeliverySchedule[] = [];
   
   if (config.deliveries_per_month === 1) {
-    // 月1回配送: 請求日から1週間後
+    // 月1回配送: 請求日当日
     schedules.push({
       delivery_number: 1,
-      scheduled_date: addDays(billingDate, 7),
+      scheduled_date: billingDate,
       meals_per_delivery: 12,
     });
   } else if (config.deliveries_per_month === 2) {
-    // 月2回配送: 請求日から1週間後と2週間後
+    // 月2回配送: 請求日当日と2週間後
     schedules.push({
       delivery_number: 1,
-      scheduled_date: addDays(billingDate, 7),
+      scheduled_date: billingDate,
       meals_per_delivery: 12,
     });
     schedules.push({
@@ -141,11 +145,11 @@ export function calculateMonthlyDeliverySchedule(
       meals_per_delivery: 12,
     });
   } else if (config.deliveries_per_month === 4) {
-    // 月4回配送: 請求日から1週間ごと
+    // 月4回配送: 請求日当日から1週間ごと
     for (let i = 0; i < 4; i++) {
       schedules.push({
         delivery_number: i + 1,
-        scheduled_date: addDays(billingDate, 7 * (i + 1)),
+        scheduled_date: addDays(billingDate, 7 * i),
         meals_per_delivery: 12,
       });
     }
@@ -180,10 +184,22 @@ export function getPlanName(planId: string): string {
 /**
  * プランIDからメニューセット名を取得
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function getMenuSetName(_planId: string): string {
-  // すべてのプランで12食セットを配送
-  return 'ふとるめし12食セット';
+export function getMenuSetName(planId: string): string {
+  const menuSetNames: { [key: string]: string } = {
+    'subscription-monthly-12': 'ふとるめし12食セット',
+    'subscription-monthly-24': 'ふとるめし24食セット',
+    'subscription-monthly-48': 'ふとるめし48食セット',
+  };
+  return menuSetNames[planId] || 'ふとるめしセット';
+}
+
+/**
+ * プランIDと配送回数からメニューセット名（配送回数付き）を取得
+ * 例: 48食プラン 1回目 → 「ふとるめし48食セット 1回目」
+ */
+export function getMenuSetNameWithDeliveryNumber(planId: string, deliveryNumber: number): string {
+  const baseName = getMenuSetName(planId);
+  return `${baseName} ${deliveryNumber}回目`;
 }
 
 /**

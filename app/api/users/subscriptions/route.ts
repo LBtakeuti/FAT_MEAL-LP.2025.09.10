@@ -100,26 +100,53 @@ export async function GET(request: NextRequest) {
 
     console.log(`[Subscriptions API] Final result: ${subscriptions.length} subscriptions found`);
 
-    // フォーマットして返す
-    const formattedSubscriptions = subscriptions?.map((sub: any) => ({
-      id: sub.id,
-      plan_name: sub.plan_name,
-      plan_id: sub.plan_id,
-      meals_per_delivery: sub.meals_per_delivery,
-      deliveries_per_month: sub.deliveries_per_month,
-      monthly_product_price: sub.monthly_product_price,
-      monthly_shipping_fee: sub.monthly_shipping_fee,
-      monthly_total_amount: sub.monthly_total_amount,
-      next_delivery_date: sub.next_delivery_date,
-      preferred_delivery_date: sub.preferred_delivery_date,
-      status: sub.status,
-      payment_status: sub.payment_status,
-      started_at: sub.started_at,
-      canceled_at: sub.canceled_at,
-      current_period_start: sub.current_period_start,
-      current_period_end: sub.current_period_end,
-      stripe_subscription_id: sub.stripe_subscription_id,
-    })) || [];
+    // 各サブスクリプションの配送情報を取得
+    const formattedSubscriptions = await Promise.all(
+      (subscriptions || []).map(async (sub: any) => {
+        // 配送情報を取得
+        const { data: deliveries } = await (supabase
+          .from('subscription_deliveries') as any)
+          .select('id, status, scheduled_date, menu_set')
+          .eq('subscription_id', sub.id)
+          .order('scheduled_date', { ascending: true });
+
+        const totalDeliveries = deliveries?.length || 0;
+        const completedDeliveries = deliveries?.filter((d: any) => d.status === 'shipped').length || 0;
+        const pendingDeliveries = deliveries?.filter((d: any) => d.status === 'pending') || [];
+        const nextDelivery = pendingDeliveries[0] || null;
+
+        return {
+          id: sub.id,
+          plan_name: sub.plan_name,
+          plan_id: sub.plan_id,
+          meals_per_delivery: sub.meals_per_delivery,
+          deliveries_per_month: sub.deliveries_per_month,
+          monthly_product_price: sub.monthly_product_price,
+          monthly_shipping_fee: sub.monthly_shipping_fee,
+          monthly_total_amount: sub.monthly_total_amount,
+          next_delivery_date: sub.next_delivery_date,
+          preferred_delivery_date: sub.preferred_delivery_date,
+          status: sub.status,
+          payment_status: sub.payment_status,
+          started_at: sub.started_at,
+          canceled_at: sub.canceled_at,
+          current_period_start: sub.current_period_start,
+          current_period_end: sub.current_period_end,
+          stripe_subscription_id: sub.stripe_subscription_id,
+          // 配送進捗情報
+          delivery_progress: {
+            total: totalDeliveries,
+            completed: completedDeliveries,
+            pending: pendingDeliveries.length,
+            next_delivery: nextDelivery ? {
+              date: nextDelivery.scheduled_date,
+              menu_set: nextDelivery.menu_set,
+            } : null,
+            deliveries: deliveries || [],
+          },
+        };
+      })
+    );
 
     return NextResponse.json({ subscriptions: formattedSubscriptions });
   } catch (error) {

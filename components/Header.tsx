@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import HeaderLogo from './HeaderLogo';
 import HeaderNav from './HeaderNav';
 
