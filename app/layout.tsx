@@ -56,6 +56,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
+      <head>
+        {/* Google Drive画像のDNS事前解決と接続事前確立 */}
+        <link rel="dns-prefetch" href="https://lh3.googleusercontent.com" />
+        <link rel="preconnect" href="https://lh3.googleusercontent.com" crossOrigin="anonymous" />
+      </head>
       <body className="font-sans antialiased bg-[#fff7ed] min-h-screen flex flex-col">
         {/* ヘッダー - 常に固定表示 */}
         <div className="sm:hidden">

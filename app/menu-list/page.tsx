@@ -1,84 +1,56 @@
-'use client';
-
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useMenuItems } from '@/hooks/useMenuItems';
-import { MenuCard } from '@/components/menu/MenuCard';
-import { MenuDetailModal } from '@/components/menu/MenuDetailModal';
+import { getMenuItemsServer } from '@/lib/supabase';
+import MenuListContent from '@/components/MenuListContent';
 import type { MenuItem } from '@/types';
 
-export default function MenuListPage() {
-  const router = useRouter();
-  const { menuItems, isLoading } = useMenuItems({ limit: 0, autoRefresh: true, refreshInterval: 30000 });
-  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+export const revalidate = 60; // 60秒でキャッシュを再検証
 
-  const handleSelectItem = (item: MenuItem) => {
-    setSelectedItem(item);
-  };
-
-  const handleCloseModal = () => {
-    setSelectedItem(null);
-  };
-  
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">読み込み中...</p>
-        </div>
-      </div>
-    );
-  }
-  
+// 画像プリロード用コンポーネント
+function ImagePreloadLinks({ images }: { images: string[] }) {
   return (
     <>
-      <div className="min-h-screen bg-white flex flex-col">
-        <main className="flex-1 pt-20 sm:pt-20 pb-12 sm:pb-20">
-          <div className="max-w-6xl px-4 sm:px-6 lg:px-8 mx-auto w-full">
-            {/* Back button */}
-            <div className="pt-2 pb-2 mb-4 sm:mb-8 sm:pt-0 sm:pb-0">
-              <button
-                onClick={() => router.push('/')}
-                className="inline-flex items-center text-gray-600 hover:text-orange-600 transition-colors"
-              >
-                <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                <span className="text-sm font-medium">戻る</span>
-              </button>
-            </div>
-            
-            {/* Page Title */}
-            <div className="mb-6 sm:mb-10">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 font-antique">
-                メニュー一覧
-              </h1>
-            </div>
+      {images.map((src, index) => (
+        src && (
+          <link
+            key={index}
+            rel="preload"
+            as="image"
+            href={src}
+            fetchPriority={index < 5 ? 'high' : 'auto'}
+          />
+        )
+      ))}
+    </>
+  );
+}
 
-            {/* Grid Layout - MenuCardを使用 */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
-              {menuItems.map((item) => (
-                <MenuCard
-                  key={item.id}
-                  item={item}
-                  onSelect={handleSelectItem}
-                />
-              ))}
-            </div>
-          </div>
-        </main>
+export default async function MenuListPage() {
+  // サーバーサイドで全メニューデータを取得
+  const menuItemsDB = await getMenuItemsServer();
 
-      </div>
+  // DBの型をMenuItem型に変換
+  const menuItems: MenuItem[] = menuItemsDB.map((item) => ({
+    id: item.slug || item.id,
+    name: item.name,
+    description: item.description || '',
+    price: String(item.price || 0),
+    calories: String(item.calories || 0),
+    protein: String(item.protein || 0),
+    fat: String(item.fat || 0),
+    carbs: String(item.carbs || 0),
+    image: item.main_image || '',
+    features: [],
+    ingredients: item.ingredients || [],
+    allergens: item.allergens || [],
+  }));
 
-      {/* メニュー詳細モーダル */}
-      {selectedItem && (
-        <MenuDetailModal
-          item={selectedItem}
-          isOpen={!!selectedItem}
-          onClose={handleCloseModal}
-        />
-      )}
+  // 最初の10枚の画像URLを抽出（ファーストビュー分）
+  const imageUrls = menuItems.slice(0, 10).map(item => item.image).filter(Boolean);
+
+  return (
+    <>
+      {/* 画像のプリロードリンク */}
+      <ImagePreloadLinks images={imageUrls} />
+      <MenuListContent menuItems={menuItems} />
     </>
   );
 }

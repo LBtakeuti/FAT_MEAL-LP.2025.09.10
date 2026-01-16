@@ -1,0 +1,75 @@
+'use client';
+
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { MenuCard } from '@/components/menu/MenuCard';
+import { MenuDetailModal } from '@/components/menu/MenuDetailModal';
+import type { MenuItem } from '@/types';
+
+interface MenuListContentProps {
+  menuItems: MenuItem[];
+}
+
+export default function MenuListContent({ menuItems }: MenuListContentProps) {
+  const router = useRouter();
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+
+  const handleSelectItem = (item: MenuItem) => {
+    setSelectedItem(item);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedItem(null);
+  };
+
+  return (
+    <>
+      <div className="min-h-screen bg-white flex flex-col">
+        <main className="flex-1 pt-20 sm:pt-20 pb-12 sm:pb-20">
+          <div className="max-w-6xl px-4 sm:px-6 lg:px-8 mx-auto w-full">
+            {/* Back button */}
+            <div className="pt-2 pb-2 mb-4 sm:mb-8 sm:pt-0 sm:pb-0">
+              <button
+                onClick={() => router.push('/')}
+                className="inline-flex items-center text-gray-600 hover:text-orange-600 transition-colors"
+              >
+                <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                <span className="text-sm font-medium">戻る</span>
+              </button>
+            </div>
+
+            {/* Page Title */}
+            <div className="mb-6 sm:mb-10">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 font-antique">
+                メニュー一覧
+              </h1>
+            </div>
+
+            {/* Grid Layout - MenuCardを使用 */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-6">
+              {menuItems.map((item, index) => (
+                <MenuCard
+                  key={item.id}
+                  item={item}
+                  onSelect={handleSelectItem}
+                  priority={index < 10}
+                />
+              ))}
+            </div>
+          </div>
+        </main>
+      </div>
+
+      {/* メニュー詳細モーダル */}
+      {selectedItem && (
+        <MenuDetailModal
+          item={selectedItem}
+          isOpen={!!selectedItem}
+          onClose={handleCloseModal}
+        />
+      )}
+    </>
+  );
+}

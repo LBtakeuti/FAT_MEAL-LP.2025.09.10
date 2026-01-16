@@ -152,6 +152,38 @@ export async function deleteImage(
   return true;
 }
 
+// サーバーサイド用メニュー取得関数（SSR対応）
+export async function getMenuItemsServer(limit?: number): Promise<MenuItemDB[]> {
+  const { url, anonKey, serviceRoleKey } = validateEnv();
+
+  // サーバーサイドではシングルトンを使わず新しいクライアントを作成
+  const client = createClient<Database>(url, serviceRoleKey || anonKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false
+    }
+  });
+
+  let query = client
+    .from('menu_items')
+    .select('*')
+    .eq('is_active', true)
+    .order('display_order', { ascending: true });
+
+  if (limit && limit > 0) {
+    query = query.limit(limit);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('メニュー取得エラー（サーバーサイド）:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
 // データベースヘルパー関数
 export const db = {
   // メニューアイテム
