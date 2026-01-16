@@ -56,11 +56,11 @@ const planOptions: PlanOption[] = [
     id: 'subscription-monthly-12',
     quantity: 12,
     label: 'ふとるめし12食 月額プラン',
-    price: 7280,
+    price: 8280,
     shippingFee: 1500,
-    totalPrice: 7280,
+    totalPrice: 8280,
     description: '月1回配送（12食セット）',
-    perMeal: 607,
+    perMeal: 690,
     isTrial: false,
     isSubscription: true,
     deliveriesPerMonth: 1,
@@ -327,10 +327,10 @@ const PurchasePage: React.FC = () => {
       return { subtotal: 0, shippingFee: 0, totalAmount: 0 };
     }
 
-    const subtotal = selectedPlan.price;
+    const subtotal = selectedPlan.totalPrice;
     const shippingFee = selectedPlan.shippingFee;
     const discount = appliedCoupon ? appliedCoupon.discount : 0;
-    const totalAmount = selectedPlan.totalPrice - discount;
+    const totalAmount = subtotal + shippingFee - discount;
 
     return { subtotal, shippingFee, totalAmount: Math.max(0, totalAmount) };
   };
