@@ -49,6 +49,57 @@ const LineFloatingButton: React.FC = () => {
 
   return (
     <>
+      {/* モバイル用バナー - 画面中央下部 */}
+      <div
+        className={`fixed bottom-20 left-1/2 -translate-x-1/2 z-[9999] transition-opacity duration-500 sm:hidden ${
+          isVisible && !isNearFooter && !isBannerClosed ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        <div className="relative">
+          {/* 閉じるボタン */}
+          <button
+            type="button"
+            onClick={handleBannerClose}
+            onTouchEnd={handleBannerClose}
+            className="absolute -top-2 -right-2 bg-gray-600 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg z-20"
+            style={{
+              WebkitTapHighlightColor: 'transparent',
+              touchAction: 'manipulation'
+            }}
+            aria-label="閉じる"
+          >
+            <svg
+              className="w-3 h-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              strokeWidth={3}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+          <a
+            href="https://lin.ee/AqKWBrV"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block"
+          >
+            <Image
+              src="/banner-SP.png"
+              alt="24食・48食定期コースが今だけ1000円割引！ふとるめしをご賞味あれ！"
+              width={375}
+              height={56}
+              className="rounded-lg shadow-lg w-[92vw] max-w-[375px] h-auto"
+              priority
+            />
+          </a>
+        </div>
+      </div>
+
       {/* PC用バナー - 画面中央下部 */}
       <div
         className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] transition-opacity duration-500 hidden sm:block ${
@@ -102,7 +153,7 @@ const LineFloatingButton: React.FC = () => {
 
       {/* LINE追従ボタン */}
       <div
-        className={`fixed bottom-20 sm:bottom-20 right-4 sm:right-6 z-[10000] transition-opacity duration-500 ${
+        className={`fixed bottom-36 sm:bottom-20 right-4 sm:right-6 z-[10000] transition-opacity duration-500 ${
           isVisible && !isNearFooter && !isLineClosed ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
       >
