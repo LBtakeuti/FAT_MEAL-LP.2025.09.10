@@ -14,19 +14,37 @@ interface MenuDetailModalProps {
 export function MenuDetailModal({ item, isOpen, onClose }: MenuDetailModalProps) {
   const router = useRouter();
 
-  // ESCキーで閉じる
+  // ESCキーで閉じる & 背景スクロール防止
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
+
     if (isOpen) {
+      // 現在のスクロール位置を保存
+      const scrollY = window.scrollY;
+
       document.addEventListener('keydown', handleEsc);
+
+      // モバイルでの背景スクロール防止
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
       document.body.style.overflow = 'hidden';
+
+      return () => {
+        document.removeEventListener('keydown', handleEsc);
+
+        // スクロール位置を復元
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.overflow = '';
+        window.scrollTo(0, scrollY);
+      };
     }
-    return () => {
-      document.removeEventListener('keydown', handleEsc);
-      document.body.style.overflow = 'unset';
-    };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
@@ -50,7 +68,7 @@ export function MenuDetailModal({ item, isOpen, onClose }: MenuDetailModalProps)
       onClick={onClose}
     >
       {/* オーバーレイ */}
-      <div className="absolute inset-0 bg-black/60" />
+      <div className="absolute inset-0 bg-black/60 touch-none" />
 
       {/* モーダルコンテンツ */}
       <div
