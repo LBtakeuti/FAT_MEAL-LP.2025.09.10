@@ -1438,6 +1438,26 @@ const PurchasePage: React.FC = () => {
           </label>
         </div>
 
+        {/* サブスクリプション解約に関する注意書き */}
+        {purchaseType === 'subscription-monthly' && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
+            <div className="flex items-start gap-3">
+              <svg className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <div>
+                <h3 className="font-bold text-amber-800 mb-2">定期購入（サブスクリプション）に関するご注意</h3>
+                <ul className="text-sm text-amber-700 space-y-1.5">
+                  <li>・ご購入後、毎月自動的に決済が行われます</li>
+                  <li>・解約をご希望の場合は、次回決済日の3日前までにマイページから解約手続きを行ってください</li>
+                  <li>・お支払い済みの配送についてはキャンセルできかねます</li>
+                  <li>・ご不明点は<a href="/contact" target="_blank" rel="noopener noreferrer" className="text-amber-800 underline hover:text-amber-900">お問い合わせ</a>よりご連絡ください</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ボタン */}
         <div className="flex gap-4">
           <button
