@@ -46,7 +46,7 @@ export function MenuDetailModal({ item, isOpen, onClose }: MenuDetailModalProps)
 
   return (
     <div
-      className="fixed inset-0 z-[99999] flex items-start sm:items-center justify-center px-3 pt-24 pb-20 sm:p-4"
+      className="fixed inset-0 z-[99999] flex items-start sm:items-center justify-center px-3 pt-24 pb-20 sm:p-4 overflow-hidden"
       onClick={onClose}
     >
       {/* オーバーレイ */}
@@ -54,13 +54,13 @@ export function MenuDetailModal({ item, isOpen, onClose }: MenuDetailModalProps)
 
       {/* モーダルコンテンツ */}
       <div
-        className="relative bg-white rounded-xl w-full max-w-2xl max-h-[calc(100vh-12rem)] sm:max-h-[85vh] overflow-y-auto shadow-2xl"
+        className="relative bg-white rounded-xl w-full max-w-2xl max-h-[calc(100vh-12rem)] sm:max-h-[85vh] shadow-2xl flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* 閉じるボタン（常に表示） */}
+        {/* 閉じるボタン（固定） */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 z-10 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95"
+          className="absolute top-3 right-3 z-20 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95"
           aria-label="閉じる"
         >
           <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -68,80 +68,85 @@ export function MenuDetailModal({ item, isOpen, onClose }: MenuDetailModalProps)
           </svg>
         </button>
 
-        {/* 画像 */}
-        <div className="relative w-full aspect-[4/3] sm:aspect-[16/10]">
-          <Image
-            src={item.image || '/placeholder-menu.jpg'}
-            alt={item.name}
-            fill
-            className="object-cover rounded-t-xl"
-            sizes="(max-width: 768px) 100vw, 672px"
-            priority
-          />
-        </div>
-
-        {/* コンテンツ */}
-        <div className="p-5 sm:p-6">
-          {/* タイトル */}
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">
-            {item.name}
-          </h2>
-
-          {/* 説明 */}
-          {item.description && (
-            <p className="text-sm sm:text-base text-gray-600 mb-5 leading-relaxed">
-              {item.description}
-            </p>
-          )}
-
-          {/* 栄養情報 */}
-          <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-6">
-            {nutritionData.map((nutrition) => (
-              <div
-                key={nutrition.label}
-                className="text-center py-3 bg-gray-50 rounded-lg"
-              >
-                <div className="text-xs text-gray-500 mb-1">{nutrition.label}</div>
-                <div className="text-lg sm:text-xl font-bold text-gray-900">
-                  {nutrition.value}
-                </div>
-                <div className="text-xs text-gray-500">{nutrition.unit}</div>
-              </div>
-            ))}
+        {/* スクロール可能エリア */}
+        <div className="flex-1 overflow-y-auto">
+          {/* 画像 */}
+          <div className="relative w-full aspect-[4/3] sm:aspect-[16/10]">
+            <Image
+              src={item.image || '/placeholder-menu.jpg'}
+              alt={item.name}
+              fill
+              className="object-cover rounded-t-xl"
+              sizes="(max-width: 768px) 100vw, 672px"
+              priority
+            />
           </div>
 
-          {/* 原材料 */}
-          {item.ingredients && item.ingredients.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-sm font-bold text-gray-900 mb-2 border-b border-gray-200 pb-1">
-                原材料
-              </h3>
-              <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-                {item.ingredients.join('、')}
+          {/* コンテンツ */}
+          <div className="p-5 sm:p-6">
+            {/* タイトル */}
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">
+              {item.name}
+            </h2>
+
+            {/* 説明 */}
+            {item.description && (
+              <p className="text-sm sm:text-base text-gray-600 mb-5 leading-relaxed">
+                {item.description}
               </p>
-            </div>
-          )}
+            )}
 
-          {/* アレルゲン */}
-          {item.allergens && item.allergens.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-sm font-bold text-gray-900 mb-2 border-b border-gray-200 pb-1">
-                アレルギー情報
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {item.allergens.map((allergen) => (
-                  <span
-                    key={allergen}
-                    className="bg-red-100 text-red-700 text-xs px-2 py-1 rounded"
-                  >
-                    {allergen}
-                  </span>
-                ))}
+            {/* 栄養情報 */}
+            <div className="grid grid-cols-4 gap-2 sm:gap-4 mb-6">
+              {nutritionData.map((nutrition) => (
+                <div
+                  key={nutrition.label}
+                  className="text-center py-3 bg-gray-50 rounded-lg"
+                >
+                  <div className="text-xs text-gray-500 mb-1">{nutrition.label}</div>
+                  <div className="text-lg sm:text-xl font-bold text-gray-900">
+                    {nutrition.value}
+                  </div>
+                  <div className="text-xs text-gray-500">{nutrition.unit}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* 原材料 */}
+            {item.ingredients && item.ingredients.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-sm font-bold text-gray-900 mb-2 border-b border-gray-200 pb-1">
+                  原材料
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+                  {item.ingredients.join('、')}
+                </p>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* 購入ボタン */}
+            {/* アレルゲン */}
+            {item.allergens && item.allergens.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-sm font-bold text-gray-900 mb-2 border-b border-gray-200 pb-1">
+                  アレルギー情報
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {item.allergens.map((allergen) => (
+                    <span
+                      key={allergen}
+                      className="bg-red-100 text-red-700 text-xs px-2 py-1 rounded"
+                    >
+                      {allergen}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 購入ボタン（固定） */}
+        <div className="sticky bottom-0 p-4 bg-white border-t border-gray-100 rounded-b-xl">
           <button
             onClick={handlePurchase}
             className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 sm:py-4 rounded-lg transition-colors text-base sm:text-lg"
