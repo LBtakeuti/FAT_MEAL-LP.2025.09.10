@@ -64,7 +64,7 @@ export function MenuDetailModal({ item, isOpen, onClose }: MenuDetailModalProps)
 
   return (
     <div
-      className="fixed inset-0 z-[99999] flex items-center justify-center px-4 py-12 sm:p-6 overflow-hidden"
+      className="fixed inset-0 z-[99999] flex items-center justify-center px-4 py-16 sm:p-6 overflow-hidden"
       onClick={onClose}
     >
       {/* オーバーレイ */}
@@ -72,7 +72,7 @@ export function MenuDetailModal({ item, isOpen, onClose }: MenuDetailModalProps)
 
       {/* モーダルコンテンツ */}
       <div
-        className="relative bg-white rounded-xl w-full max-w-2xl max-h-[calc(100vh-6rem)] sm:max-h-[calc(100vh-3rem)] shadow-2xl flex flex-col overflow-hidden"
+        className="relative bg-white rounded-xl w-full max-w-2xl max-h-[calc(100vh-8rem)] sm:max-h-[calc(100vh-3rem)] shadow-2xl flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 閉じるボタン（固定） */}
