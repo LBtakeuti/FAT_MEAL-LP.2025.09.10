@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { createBrowserClient } from '@/lib/supabase';
@@ -8,22 +8,28 @@ import LogoutModal from './LogoutModal';
 
 const MobileHeader: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // null = 未確定、true/false = 確定済み
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
+  const initialCheckDone = useRef(false);
 
   useEffect(() => {
+    const supabase = createBrowserClient();
+    
     const checkAuth = async () => {
-      const supabase = createBrowserClient();
       const { data: { session } } = await supabase.auth.getSession();
       setIsLoggedIn(!!session);
+      initialCheckDone.current = true;
     };
     checkAuth();
 
     // リアルタイムで認証状態を監視
-    const supabase = createBrowserClient();
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsLoggedIn(!!session);
+      // 初回チェック完了後のみ更新（ページ遷移時のチラつき防止）
+      if (initialCheckDone.current) {
+        setIsLoggedIn(!!session);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -80,10 +86,12 @@ const MobileHeader: React.FC = () => {
             {/* マイページボタン - ログイン状態で色が変わる */}
             <Link
               href="/mypage"
-              className={`flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 ${
-                isLoggedIn
-                  ? 'bg-[#FF6B35] text-white hover:bg-[#E55220]'
-                  : 'text-[#374151] border border-[#374151] hover:text-[#FF6B35] hover:border-[#FF6B35]'
+              className={`flex items-center justify-center w-9 h-9 rounded-full ${
+                isLoggedIn === null
+                  ? 'text-[#374151] border border-[#374151]'
+                  : isLoggedIn
+                    ? 'bg-[#FF6B35] text-white hover:bg-[#E55220] transition-all duration-300'
+                    : 'text-[#374151] border border-[#374151] hover:text-[#FF6B35] hover:border-[#FF6B35] transition-all duration-300'
               }`}
               aria-label="マイページ"
             >

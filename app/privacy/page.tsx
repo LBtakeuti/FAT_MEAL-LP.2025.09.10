@@ -116,7 +116,7 @@ export default function PrivacyPage() {
               <div className="bg-gray-50 p-4 rounded-lg">
                 <p className="font-semibold text-gray-900 mb-2">LandBridge株式会社</p>
                 <p className="text-gray-700 text-sm">
-                  〒343-0856 埼玉県越谷市川柳町二丁目401<br />
+                  〒343-0845 埼玉県越谷市南越谷１丁目１５−１ 南越谷ラクーン 4F いいオフィス<br />
                   代表取締役: 三森一輝
                 </p>
               </div>

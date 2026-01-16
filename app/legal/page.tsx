@@ -29,7 +29,7 @@ export default function LegalPage() {
               </h2>
               <p className="text-gray-900">
                 事業所の住所（登記簿上の住所）<br />
-                〒343-0827 埼玉県越谷市川柳町2丁目401
+                埼玉県越谷市南越谷１丁目１５−１ 南越谷ラクーン 4F いいオフィス
               </p>
             </div>
 
@@ -116,11 +116,9 @@ export default function LegalPage() {
               <h2 className="text-sm sm:text-base font-semibold text-gray-700 mb-2">
                 10. 販売価格
               </h2>
-              <ul className="text-gray-900 text-sm sm:text-base space-y-1">
-                <li>・ふとるめし6個セット：¥4,200（税込）</li>
-                <li>・ふとるめし12個セット：¥8,400（税込）</li>
-                <li>・ふとるめし18個セット：¥12,600（税込）</li>
-              </ul>
+              <p className="text-gray-900 text-sm sm:text-base">
+                メニューの通り
+              </p>
             </div>
 
             {/* 商品代金以外の必要料金 */}

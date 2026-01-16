@@ -1,25 +1,31 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { createBrowserClient } from '@/lib/supabase';
 
 const Header: React.FC = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // null = 未確定、true/false = 確定済み
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const initialCheckDone = useRef(false);
 
   useEffect(() => {
+    const supabase = createBrowserClient();
+    
     const checkAuth = async () => {
-      const supabase = createBrowserClient();
       const { data: { session } } = await supabase.auth.getSession();
       setIsLoggedIn(!!session);
+      initialCheckDone.current = true;
     };
     checkAuth();
 
     // リアルタイムで認証状態を監視
-    const supabase = createBrowserClient();
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsLoggedIn(!!session);
+      // 初回チェック完了後のみ更新（ページ遷移時のチラつき防止）
+      if (initialCheckDone.current) {
+        setIsLoggedIn(!!session);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -58,10 +64,12 @@ const Header: React.FC = () => {
             {/* マイページボタン - 右端に絶対配置 */}
             <Link
               href="/mypage"
-              className={`absolute right-0 flex items-center gap-2 px-4 py-2 rounded transition-all duration-300 font-antique text-sm lg:text-base ${
-                isLoggedIn
-                  ? 'bg-[#FF6B35] text-white hover:bg-[#E55220]'
-                  : 'text-[#374151] hover:text-[#FF6B35] border border-[#374151] hover:border-[#FF6B35]'
+              className={`absolute right-0 flex items-center gap-2 px-4 py-2 rounded font-antique text-sm lg:text-base ${
+                isLoggedIn === null
+                  ? 'text-[#374151] border border-[#374151]'
+                  : isLoggedIn
+                    ? 'bg-[#FF6B35] text-white hover:bg-[#E55220] transition-all duration-300'
+                    : 'text-[#374151] hover:text-[#FF6B35] border border-[#374151] hover:border-[#FF6B35] transition-all duration-300'
               }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
