@@ -3,6 +3,8 @@
 import React from 'react';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
+import Header from '@/components/Header';
+import MobileHeader from '@/components/MobileHeader';
 
 export default function TermsPage() {
   return (

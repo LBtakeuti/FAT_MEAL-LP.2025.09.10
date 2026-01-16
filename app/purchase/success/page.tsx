@@ -4,6 +4,8 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
+import Header from '@/components/Header';
+import MobileHeader from '@/components/MobileHeader';
 
 interface OrderInfo {
   customerName: string;
