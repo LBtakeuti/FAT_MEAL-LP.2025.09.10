@@ -56,11 +56,11 @@ const planOptions: PlanOption[] = [
     id: 'subscription-monthly-12',
     quantity: 12,
     label: 'ふとるめし12食 月額プラン',
-    price: 8280,
+    price: 7280,
     shippingFee: 1500,
-    totalPrice: 9780,
+    totalPrice: 7280,
     description: '月1回配送（12食セット）',
-    perMeal: 815,
+    perMeal: 607,
     isTrial: false,
     isSubscription: true,
     deliveriesPerMonth: 1,
@@ -70,7 +70,7 @@ const planOptions: PlanOption[] = [
     id: 'subscription-monthly-24',
     quantity: 24,
     label: 'ふとるめし24食 月額プラン',
-    price: 11600,
+    price: 14600,
     shippingFee: 3000,
     totalPrice: 14600,
     description: '月2回配送（各12食セット）',
@@ -84,7 +84,7 @@ const planOptions: PlanOption[] = [
     id: 'subscription-monthly-48',
     quantity: 48,
     label: 'ふとるめし48食 月額プラン',
-    price: 21800,
+    price: 27800,
     shippingFee: 6000,
     totalPrice: 27800,
     description: '月4回配送（各12食セット）',
@@ -778,25 +778,12 @@ const PurchasePage: React.FC = () => {
                         {plan.description}
                       </p>
                       <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mt-2">
-                        {purchaseType === 'subscription-monthly' ? (
-                          <>
-                            <span className="text-xl font-bold text-orange-600">
-                              月額 ¥{plan.totalPrice.toLocaleString()}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              （商品¥{plan.price.toLocaleString()} + 送料¥{plan.shippingFee.toLocaleString()}）
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="text-xl font-bold text-orange-600">
-                              ¥{plan.totalPrice.toLocaleString()}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              （商品¥{plan.price.toLocaleString()} + 送料¥{plan.shippingFee.toLocaleString()}）
-                            </span>
-                          </>
-                        )}
+                        <span className="text-xl font-bold text-orange-600">
+                          ¥{plan.totalPrice.toLocaleString()}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          （¥{plan.totalPrice.toLocaleString()} + 送料¥{plan.shippingFee.toLocaleString()}）
+                        </span>
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
                         1食あたり ¥{plan.perMeal.toLocaleString()}
@@ -828,7 +815,7 @@ const PurchasePage: React.FC = () => {
                             {plan.quantity}食/月（{plan.deliveriesPerMonth}回配送）
                           </span>
                           <span className="text-lg font-semibold text-orange-600">
-                            月額 ¥{plan.totalPrice.toLocaleString()}
+                            ¥{(plan.totalPrice + plan.shippingFee).toLocaleString()}
                           </span>
                         </>
                       ) : (
@@ -867,7 +854,7 @@ const PurchasePage: React.FC = () => {
             </div>
             <div className="text-right">
               <p className="text-sm text-gray-500">
-                {purchaseType === 'subscription-monthly' ? '月額' : '合計金額'}
+                {purchaseType === 'subscription-monthly' ? '商品代金' : '合計金額'}
               </p>
               <p className="text-3xl text-orange-600">
                 ¥{(() => {
@@ -875,7 +862,9 @@ const PurchasePage: React.FC = () => {
                   return selectedPlan ? selectedPlan.totalPrice.toLocaleString() : '0';
                 })()}
               </p>
-              <p className="text-xs text-gray-500">税込・送料込</p>
+              <p className="text-xs text-gray-500">
+                {purchaseType === 'subscription-monthly' ? '税込・別途送料' : '税込・送料込'}
+              </p>
             </div>
           </div>
         </div>
@@ -981,11 +970,11 @@ const PurchasePage: React.FC = () => {
               })()}
             </div>
             <p className="text-xl text-orange-600">
-              {purchaseType === 'subscription-monthly' ? '月額 ' : ''}
               ¥{(() => {
                 const selectedPlan = getSelectedPlan();
                 return selectedPlan ? selectedPlan.totalPrice.toLocaleString() : '0';
               })()}
+              {purchaseType === 'subscription-monthly' && <span className="text-sm text-gray-500 ml-1">+送料</span>}
             </p>
           </div>
         </div>
@@ -1268,8 +1257,8 @@ const PurchasePage: React.FC = () => {
                 )}
               </div>
               <p className="text-lg text-orange-600">
-                {purchaseType === 'subscription-monthly' ? '月額 ' : ''}
                 ¥{selectedPlan.totalPrice.toLocaleString()}
+                {purchaseType === 'subscription-monthly' && <span className="text-sm text-gray-500 ml-1">+送料</span>}
               </p>
             </div>
           )}
@@ -1300,7 +1289,7 @@ const PurchasePage: React.FC = () => {
           {/* 合計 */}
           <div className="flex justify-between items-center py-4 mt-2">
             <p className="font-bold text-gray-900 text-lg">
-              {purchaseType === 'subscription-monthly' ? '月額合計（税込）' : '合計（税込）'}
+              合計（税込）
             </p>
             <p className="text-2xl font-bold text-orange-600">¥{totalAmount.toLocaleString()}</p>
           </div>
