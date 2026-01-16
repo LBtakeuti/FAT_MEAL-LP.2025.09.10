@@ -853,18 +853,18 @@ const PurchasePage: React.FC = () => {
               })()}
             </div>
             <div className="text-right">
-              <p className="text-sm text-gray-500">
-                {purchaseType === 'subscription-monthly' ? '商品代金' : '合計金額'}
-              </p>
+              <p className="text-sm text-gray-500">合計金額</p>
               <p className="text-3xl text-orange-600">
                 ¥{(() => {
                   const selectedPlan = getSelectedPlan();
-                  return selectedPlan ? selectedPlan.totalPrice.toLocaleString() : '0';
+                  if (!selectedPlan) return '0';
+                  const total = purchaseType === 'subscription-monthly'
+                    ? selectedPlan.totalPrice + selectedPlan.shippingFee
+                    : selectedPlan.totalPrice;
+                  return total.toLocaleString();
                 })()}
               </p>
-              <p className="text-xs text-gray-500">
-                {purchaseType === 'subscription-monthly' ? '税込・別途送料' : '税込・送料込'}
-              </p>
+              <p className="text-xs text-gray-500">税込・送料込</p>
             </div>
           </div>
         </div>
@@ -972,9 +972,12 @@ const PurchasePage: React.FC = () => {
             <p className="text-xl text-orange-600">
               ¥{(() => {
                 const selectedPlan = getSelectedPlan();
-                return selectedPlan ? selectedPlan.totalPrice.toLocaleString() : '0';
+                if (!selectedPlan) return '0';
+                const total = purchaseType === 'subscription-monthly'
+                  ? selectedPlan.totalPrice + selectedPlan.shippingFee
+                  : selectedPlan.totalPrice;
+                return total.toLocaleString();
               })()}
-              {purchaseType === 'subscription-monthly' && <span className="text-sm text-gray-500 ml-1">+送料</span>}
             </p>
           </div>
         </div>
@@ -1257,8 +1260,10 @@ const PurchasePage: React.FC = () => {
                 )}
               </div>
               <p className="text-lg text-orange-600">
-                ¥{selectedPlan.totalPrice.toLocaleString()}
-                {purchaseType === 'subscription-monthly' && <span className="text-sm text-gray-500 ml-1">+送料</span>}
+                ¥{(purchaseType === 'subscription-monthly'
+                  ? selectedPlan.totalPrice + selectedPlan.shippingFee
+                  : selectedPlan.totalPrice
+                ).toLocaleString()}
               </p>
             </div>
           )}
