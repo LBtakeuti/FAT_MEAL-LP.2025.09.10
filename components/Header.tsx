@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { createBrowserClient } from '@/lib/supabase';
 
@@ -38,15 +37,12 @@ const Header: React.FC = () => {
           {/* ロゴ中央配置 - コンテナ固定でレイアウトシフト防止 */}
           <div className="mb-4 h-24 flex items-center justify-center">
             <Link href="/">
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src="/logo-header.png"
                 alt="ふとるめし"
-                width={540}
-                height={180}
                 className="h-24 w-auto"
-                priority
-                loading="eager"
-                unoptimized
+                style={{ display: 'block' }}
               />
             </Link>
           </div>

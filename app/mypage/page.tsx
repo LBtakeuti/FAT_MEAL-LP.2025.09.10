@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@/lib/supabase';
 import Link from 'next/link';
-import Header from '@/components/Header';
-import MobileHeader from '@/components/MobileHeader';
 import Footer from '@/components/Footer';
 import LogoutModal from '@/components/LogoutModal';
 
@@ -193,14 +191,6 @@ export default function MyPage() {
 
   return (
     <>
-      {/* Header */}
-      <div className="sm:hidden">
-        <MobileHeader />
-      </div>
-      <div className="hidden sm:block">
-        <Header />
-      </div>
-
       <main className="min-h-screen bg-gray-100 pt-24 sm:pt-8 py-8">
         <div className="max-w-4xl mx-auto px-4">
           <div className="mb-6">

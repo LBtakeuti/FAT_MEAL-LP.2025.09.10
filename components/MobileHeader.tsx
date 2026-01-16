@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { createBrowserClient } from '@/lib/supabase';
 import LogoutModal from './LogoutModal';
 
@@ -70,15 +69,12 @@ const MobileHeader: React.FC = () => {
               }
             }}
           >
-            <Image
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src="/logo-header.png"
               alt="ふとるめし"
-              width={540}
-              height={180}
               className="h-14 w-auto"
-              priority
-              loading="eager"
-              unoptimized
+              style={{ display: 'block' }}
             />
           </Link>
 

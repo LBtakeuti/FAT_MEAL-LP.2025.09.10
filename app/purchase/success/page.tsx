@@ -4,8 +4,6 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
-import Header from '@/components/Header';
-import MobileHeader from '@/components/MobileHeader';
 
 interface OrderInfo {
   customerName: string;
@@ -83,12 +81,6 @@ const PurchaseSuccessContent: React.FC = () => {
   if (isProcessing) {
     return (
       <>
-        <div className="sm:hidden">
-          <MobileHeader />
-        </div>
-        <div className="hidden sm:block">
-          <Header />
-        </div>
         <main className="min-h-screen bg-gray-50 pt-16 sm:pt-20">
           <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
             <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
@@ -104,13 +96,6 @@ const PurchaseSuccessContent: React.FC = () => {
 
   return (
     <>
-      <div className="sm:hidden">
-        <MobileHeader />
-      </div>
-      <div className="hidden sm:block">
-        <Header />
-      </div>
-
       <main className="min-h-screen bg-gray-50 pt-16 sm:pt-20">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="bg-white rounded-2xl shadow-lg p-8 text-center">

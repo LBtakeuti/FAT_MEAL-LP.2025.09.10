@@ -3,8 +3,6 @@
 import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import Header from '@/components/Header';
-import MobileHeader from '@/components/MobileHeader';
 import Footer from '@/components/Footer';
 
 function PurchaseCompleteContent() {
@@ -123,13 +121,6 @@ function PurchaseCompleteContent() {
 export default function PurchaseCompletePage() {
   return (
     <>
-      <div className="sm:hidden">
-        <MobileHeader />
-      </div>
-      <div className="hidden sm:block">
-        <Header />
-      </div>
-
       <Suspense fallback={
         <main className="min-h-screen bg-gray-100 pt-24 sm:pt-8 py-8">
           <div className="max-w-2xl mx-auto px-4">
