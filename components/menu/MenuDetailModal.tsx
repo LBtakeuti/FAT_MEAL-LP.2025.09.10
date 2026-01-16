@@ -46,7 +46,7 @@ export function MenuDetailModal({ item, isOpen, onClose }: MenuDetailModalProps)
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center px-3 py-16 sm:p-4"
       onClick={onClose}
     >
       {/* オーバーレイ */}
@@ -54,16 +54,27 @@ export function MenuDetailModal({ item, isOpen, onClose }: MenuDetailModalProps)
 
       {/* モーダルコンテンツ */}
       <div
-        className="relative bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+        className="relative bg-white rounded-xl w-full max-w-2xl max-h-[calc(100vh-8rem)] sm:max-h-[85vh] overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* 閉じるボタン（常に表示） */}
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 z-10 w-10 h-10 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95"
+          aria-label="閉じる"
+        >
+          <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
         {/* 画像 */}
-        <div className="relative w-full aspect-[4/3]">
+        <div className="relative w-full aspect-[4/3] sm:aspect-[16/10]">
           <Image
             src={item.image || '/placeholder-menu.jpg'}
             alt={item.name}
             fill
-            className="object-cover"
+            className="object-cover rounded-t-xl"
             sizes="(max-width: 768px) 100vw, 672px"
             priority
           />
