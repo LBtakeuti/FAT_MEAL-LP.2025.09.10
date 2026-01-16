@@ -51,7 +51,6 @@ export const PUT = withAuthDynamic(async (request: NextRequest, context) => {
   const updateData = {
     name: body.name,
     description: body.description || null,
-    price: body.price || null,
     calories: parseInt(body.calories),
     protein: parseFloat(body.protein),
     fat: parseFloat(body.fat),

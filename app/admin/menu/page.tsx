@@ -8,7 +8,6 @@ interface MenuItem {
   id: string;
   name: string;
   description: string | null;
-  price: number | null;
   calories: number;
   protein: number;
   fat: number;
@@ -124,9 +123,6 @@ export default function AdminMenuPage() {
                     栄養成分
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    価格
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     状態
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -170,9 +166,6 @@ export default function AdminMenuPage() {
                           P:{item.protein}g F:{item.fat}g C:{item.carbs}g
                         </div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {item.price ? `¥${item.price.toLocaleString()}` : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <button

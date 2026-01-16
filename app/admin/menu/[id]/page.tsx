@@ -8,7 +8,6 @@ interface MenuItem {
   id: string;
   name: string;
   description: string | null;
-  price: number | null;
   calories: number;
   protein: number;
   fat: number;
@@ -27,7 +26,6 @@ export default function EditMenuPage({ params: promiseParams }: { params: Promis
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    price: '',
     calories: '',
     protein: '',
     fat: '',
@@ -56,7 +54,6 @@ export default function EditMenuPage({ params: promiseParams }: { params: Promis
         setFormData({
           name: data.name,
           description: data.description || '',
-          price: data.price?.toString() || '',
           calories: data.calories.toString(),
           protein: data.protein.toString(),
           fat: data.fat.toString(),
@@ -329,21 +326,6 @@ export default function EditMenuPage({ params: promiseParams }: { params: Promis
                     name="description"
                     rows={3}
                     value={formData.description}
-                    onChange={handleChange}
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm px-3 py-2 border"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-                    価格（円）
-                  </label>
-                  <input
-                    type="number"
-                    id="price"
-                    name="price"
-                    min="0"
-                    value={formData.price}
                     onChange={handleChange}
                     className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm px-3 py-2 border"
                   />

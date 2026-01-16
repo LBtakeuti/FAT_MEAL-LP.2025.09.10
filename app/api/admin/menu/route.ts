@@ -48,7 +48,6 @@ export const POST = withAuth(async (request: NextRequest) => {
   const menuData = {
     name: body.name,
     description: body.description || null,
-    price: body.price || null,
     calories: parseInt(body.calories),
     protein: parseFloat(body.protein),
     fat: parseFloat(body.fat),
