@@ -18,6 +18,23 @@ function getStripeClient() {
   return new Stripe(process.env.STRIPE_SECRET_KEY);
 }
 
+// Stripeサブスクリプションから期間情報を安全に取得（APIバージョン差異対応）
+function getSubscriptionPeriod(subscription: Stripe.Subscription): {
+  currentPeriodStart: number;
+  currentPeriodEnd: number;
+} {
+  const currentPeriodStart = (subscription as any).current_period_start
+    || subscription.items?.data?.[0]?.current_period_start
+    || (subscription as any).billing_cycle_anchor
+    || subscription.created;
+
+  const currentPeriodEnd = (subscription as any).current_period_end
+    || subscription.items?.data?.[0]?.current_period_end
+    || (currentPeriodStart + 30 * 24 * 60 * 60); // fallback: +30 days
+
+  return { currentPeriodStart, currentPeriodEnd };
+}
+
 // セット商品から弁当数を計算
 function calculateMealsFromDescription(description: string): number {
   const match = description.match(/(\d+)個セット/);
@@ -357,9 +374,11 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
     const planName = getPlanName(planId);
 
     // 配送スケジュールを計算（購入日=請求開始日を基準）
-    const startDate = preferredDeliveryDateStr 
+    const { currentPeriodStart, currentPeriodEnd } = getSubscriptionPeriod(subscription);
+
+    const startDate = preferredDeliveryDateStr
       ? new Date(preferredDeliveryDateStr)
-      : new Date((subscription as any).current_period_start * 1000); // 購入日（請求開始日）
+      : new Date(currentPeriodStart * 1000); // 購入日（請求開始日）
 
     const deliverySchedules = calculateInitialDeliverySchedule(planId, startDate);
 
@@ -408,8 +427,8 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
         },
         status: 'active',
         payment_status: 'active',
-        current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
-        current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
+        current_period_start: new Date(currentPeriodStart * 1000).toISOString(),
+        current_period_end: new Date(currentPeriodEnd * 1000).toISOString(),
         started_at: new Date(subscription.created * 1000).toISOString(),
       })
       .select()
@@ -504,7 +523,8 @@ async function handleMonthlySubscriptionPayment(invoice: Stripe.Invoice, stripe:
     }
 
     // 月次配送スケジュールを計算
-    const billingDate = new Date((subscription as any).current_period_start * 1000);
+    const { currentPeriodStart, currentPeriodEnd } = getSubscriptionPeriod(subscription);
+    const billingDate = new Date(currentPeriodStart * 1000);
     const deliverySchedules = calculateMonthlyDeliverySchedule(planId, billingDate);
     const customerEmail = (dbSubscription as any).shipping_address?.email || '';
 
@@ -532,8 +552,8 @@ async function handleMonthlySubscriptionPayment(invoice: Stripe.Invoice, stripe:
     const { error: updateError } = await (supabase
       .from('subscriptions') as any)
       .update({
-        current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
-        current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
+        current_period_start: new Date(currentPeriodStart * 1000).toISOString(),
+        current_period_end: new Date(currentPeriodEnd * 1000).toISOString(),
         next_delivery_date: deliverySchedules[0]?.scheduled_date.toISOString().split('T')[0] || null,
         payment_status: 'active',
         updated_at: new Date().toISOString(),
@@ -577,13 +597,15 @@ async function updateSubscriptionFromStripe(subscription: Stripe.Subscription) {
       status = 'paused';
     }
 
+    const { currentPeriodStart, currentPeriodEnd } = getSubscriptionPeriod(subscription);
+
     const { error: updateError } = await (supabase
       .from('subscriptions') as any)
       .update({
         status: status,
         payment_status: paymentStatus,
-        current_period_start: new Date((subscription as any).current_period_start * 1000).toISOString(),
-        current_period_end: new Date((subscription as any).current_period_end * 1000).toISOString(),
+        current_period_start: new Date(currentPeriodStart * 1000).toISOString(),
+        current_period_end: new Date(currentPeriodEnd * 1000).toISOString(),
         canceled_at: subscription.canceled_at 
           ? new Date(subscription.canceled_at * 1000).toISOString() 
           : null,
