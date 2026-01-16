@@ -46,7 +46,7 @@ export function MenuDetailModal({ item, isOpen, onClose }: MenuDetailModalProps)
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-start sm:items-center justify-center px-3 pt-24 pb-20 sm:p-4"
+      className="fixed inset-0 z-[99999] flex items-start sm:items-center justify-center px-3 pt-24 pb-20 sm:p-4"
       onClick={onClose}
     >
       {/* オーバーレイ */}
