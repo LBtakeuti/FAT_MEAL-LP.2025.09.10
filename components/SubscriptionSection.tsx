@@ -23,26 +23,30 @@ const SubscriptionSection: React.FC = () => {
       id: 'subscription-monthly-24',
       meals: 24,
       title: '24食プラン',
-      monthlyPrice: 18600,
-      productPrice: 15600,
+      originalProductPrice: 15600,
+      productPrice: 11600,
+      discount: 1000,
+      monthlyPrice: 14600,
       shippingFee: 3000,
       deliveriesPerMonth: 2,
       description: '月2回配送',
       subtitle: '12食セット×月2回',
-      pricePerMeal: 775,
+      pricePerMeal: 608,
       popular: true,
     },
     {
       id: 'subscription-monthly-48',
       meals: 48,
       title: '48食プラン',
-      monthlyPrice: 34800,
-      productPrice: 28800,
+      originalProductPrice: 28800,
+      productPrice: 21800,
+      discount: 1000,
+      monthlyPrice: 27800,
       shippingFee: 6000,
       deliveriesPerMonth: 4,
       description: '月4回配送',
       subtitle: '12食セット×月4回',
-      pricePerMeal: 725,
+      pricePerMeal: 579,
     },
   ];
 
@@ -100,17 +104,43 @@ const SubscriptionSection: React.FC = () => {
               {/* 月額価格 */}
               <div className="text-center mb-6 pb-6 border-b border-gray-200">
                 <p className="text-xs text-gray-500 mb-1">月額</p>
-                <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-3xl sm:text-4xl font-bold text-orange-600">
-                    ¥{plan.monthlyPrice.toLocaleString()}
-                  </span>
-                  <span className="text-sm text-gray-500">
-                    /月
-                  </span>
-                </div>
-                <p className="text-xs text-gray-400 mt-2">
-                  （商品¥{plan.productPrice.toLocaleString()} + 送料¥{plan.shippingFee.toLocaleString()}）
-                </p>
+                {plan.discount ? (
+                  <>
+                    <div className="flex items-center justify-center gap-2 mb-1">
+                      <span className="text-lg text-gray-400 line-through">
+                        ¥{plan.originalProductPrice?.toLocaleString()}
+                      </span>
+                      <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded">
+                        ¥{plan.discount.toLocaleString()}OFF
+                      </span>
+                    </div>
+                    <div className="flex items-baseline justify-center gap-1">
+                      <span className="text-3xl sm:text-4xl font-bold text-red-600">
+                        ¥{plan.monthlyPrice.toLocaleString()}
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        /月
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">
+                      （商品¥{plan.productPrice.toLocaleString()} + 送料¥{plan.shippingFee.toLocaleString()}）
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-baseline justify-center gap-1">
+                      <span className="text-3xl sm:text-4xl font-bold text-orange-600">
+                        ¥{plan.monthlyPrice.toLocaleString()}
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        /月
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">
+                      （商品¥{plan.productPrice.toLocaleString()} + 送料¥{plan.shippingFee.toLocaleString()}）
+                    </p>
+                  </>
+                )}
                 <p className="text-xs text-gray-500 mt-1">
                   1食あたり約¥{plan.pricePerMeal}
                 </p>

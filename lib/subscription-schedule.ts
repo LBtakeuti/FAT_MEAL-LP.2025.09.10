@@ -35,17 +35,17 @@ export const PLAN_CONFIGS: { [key: string]: PlanConfig } = {
     plan_id: 'subscription-monthly-24',
     meals_per_delivery: 12,
     deliveries_per_month: 2,
-    product_price: 15600,
+    product_price: 11600,
     shipping_fee_per_delivery: 1500,
-    monthly_total: 18600,
+    monthly_total: 14600,
   },
   'subscription-monthly-48': {
     plan_id: 'subscription-monthly-48',
     meals_per_delivery: 12,
     deliveries_per_month: 4,
-    product_price: 28800,
+    product_price: 21800,
     shipping_fee_per_delivery: 1500,
-    monthly_total: 34800,
+    monthly_total: 27800,
   },
 };
 
