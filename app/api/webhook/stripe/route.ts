@@ -775,6 +775,11 @@ async function sendOrderConfirmationEmail(params: OrderEmailParams) {
         <p><strong>合計金額:</strong> ${formatCurrency(amount)}</p>
       </div>
 
+      <div class="order-details">
+        <p style="margin-top: 0;"><strong>配送について</strong></p>
+        <p>2月10日より順次配送いたします。もうしばらくお待ちください。</p>
+      </div>
+
       <p>ご不明な点がございましたらご連絡ください。</p>
 
       <div class="footer">
