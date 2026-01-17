@@ -1,11 +1,32 @@
 /**
  * サブスクリプションプランの配送スケジュール計算（月額自動更新版）
- * 
+ *
  * プラン構成:
  * - subscription-monthly-12: 月12食（月1回配送）¥9,780/月
  * - subscription-monthly-24: 月24食（月2回配送）¥18,600/月
  * - subscription-monthly-48: 月48食（月4回配送）¥34,800/月
  */
+
+// サービス開始日（2月10日より前の注文は全てこの日に配送開始）
+// TODO: 2月10日以降にこの特別処理を削除する
+const SERVICE_LAUNCH_DATE = new Date('2025-02-10T00:00:00+09:00');
+
+/**
+ * サービス開始日より前かどうかを判定
+ */
+export function isBeforeLaunchDate(date: Date = new Date()): boolean {
+  return date < SERVICE_LAUNCH_DATE;
+}
+
+/**
+ * 配送基準日を取得（2月10日より前なら2月10日を返す）
+ */
+export function getEffectiveDeliveryDate(requestedDate: Date): Date {
+  if (isBeforeLaunchDate(requestedDate)) {
+    return new Date(SERVICE_LAUNCH_DATE);
+  }
+  return requestedDate;
+}
 
 export interface DeliverySchedule {
   delivery_number: number;
@@ -60,101 +81,109 @@ function addDays(date: Date, days: number): Date {
 
 /**
  * 初回配送スケジュールを計算（購入時のみ）
+ * 2月10日より前の注文は全て2月10日を配送基準日とする
  */
 export function calculateInitialDeliverySchedule(
   planId: string,
   preferredDeliveryDate: Date
 ): DeliverySchedule[] {
   const config = PLAN_CONFIGS[planId];
-  
+
   if (!config) {
     throw new Error(`Invalid plan ID: ${planId}`);
   }
-  
+
+  // 2月10日より前の場合は2月10日を配送基準日とする
+  const effectiveDate = getEffectiveDeliveryDate(preferredDeliveryDate);
+
   const schedules: DeliverySchedule[] = [];
-  
+
   if (config.deliveries_per_month === 1) {
     // 月1回配送
     schedules.push({
       delivery_number: 1,
-      scheduled_date: preferredDeliveryDate,
+      scheduled_date: effectiveDate,
       meals_per_delivery: 12,
     });
   } else if (config.deliveries_per_month === 2) {
-    // 月2回配送: 希望日とその2週間後
+    // 月2回配送: 基準日とその2週間後
     schedules.push({
       delivery_number: 1,
-      scheduled_date: preferredDeliveryDate,
+      scheduled_date: effectiveDate,
       meals_per_delivery: 12,
     });
     schedules.push({
       delivery_number: 2,
-      scheduled_date: addDays(preferredDeliveryDate, 14),
+      scheduled_date: addDays(effectiveDate, 14),
       meals_per_delivery: 12,
     });
   } else if (config.deliveries_per_month === 4) {
-    // 月4回配送: 希望日から1週間ごと
+    // 月4回配送: 基準日から1週間ごと
     for (let i = 0; i < 4; i++) {
       schedules.push({
         delivery_number: i + 1,
-        scheduled_date: addDays(preferredDeliveryDate, 7 * i),
+        scheduled_date: addDays(effectiveDate, 7 * i),
         meals_per_delivery: 12,
       });
     }
   }
-  
+
   return schedules;
 }
 
 /**
  * 月次配送スケジュールを計算（毎月の請求成功時）
  * 請求日を基準に配送スケジュールを作成
- * - 12食: 請求日当日
- * - 24食: 請求日当日、+14日
- * - 48食: 請求日当日、+7日、+14日、+21日
+ * 2月10日より前の場合は2月10日を配送基準日とする
+ * - 12食: 基準日当日
+ * - 24食: 基準日当日、+14日
+ * - 48食: 基準日当日、+7日、+14日、+21日
  */
 export function calculateMonthlyDeliverySchedule(
   planId: string,
   billingDate: Date // Stripeの請求日（current_period_start）
 ): DeliverySchedule[] {
   const config = PLAN_CONFIGS[planId];
-  
+
   if (!config) {
     throw new Error(`Invalid plan ID: ${planId}`);
   }
-  
+
+  // 2月10日より前の場合は2月10日を配送基準日とする
+  const effectiveDate = getEffectiveDeliveryDate(billingDate);
+
   const schedules: DeliverySchedule[] = [];
-  
+
   if (config.deliveries_per_month === 1) {
-    // 月1回配送: 請求日当日
+    // 月1回配送: 基準日当日
     schedules.push({
       delivery_number: 1,
-      scheduled_date: billingDate,
+      scheduled_date: effectiveDate,
       meals_per_delivery: 12,
     });
   } else if (config.deliveries_per_month === 2) {
-    // 月2回配送: 請求日当日と2週間後
+    // 月2回配送: 基準日当日と2週間後
     schedules.push({
       delivery_number: 1,
-      scheduled_date: billingDate,
+      scheduled_date: effectiveDate,
       meals_per_delivery: 12,
     });
     schedules.push({
       delivery_number: 2,
-      scheduled_date: addDays(billingDate, 14),
+      scheduled_date: addDays(effectiveDate, 14),
       meals_per_delivery: 12,
     });
   } else if (config.deliveries_per_month === 4) {
-    // 月4回配送: 請求日当日から1週間ごと
+    // 月4回配送: 基準日当日から1週間ごと
     for (let i = 0; i < 4; i++) {
       schedules.push({
         delivery_number: i + 1,
-        scheduled_date: addDays(billingDate, 7 * i),
+        scheduled_date: addDays(effectiveDate, 7 * i),
         meals_per_delivery: 12,
       });
     }
   }
-  
+
   return schedules;
 }
 
