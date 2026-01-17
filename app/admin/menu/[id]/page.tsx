@@ -557,7 +557,7 @@ export default function EditMenuPage({ params: promiseParams }: { params: Promis
                   type="text"
                   value={ingredientInput}
                   onChange={(e) => setIngredientInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addIngredient())}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addIngredient())}
                   className="flex-1 border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm px-3 py-2 border"
                   placeholder="成分を入力してEnter"
                 />
@@ -598,7 +598,7 @@ export default function EditMenuPage({ params: promiseParams }: { params: Promis
                   type="text"
                   value={allergenInput}
                   onChange={(e) => setAllergenInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addAllergen())}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addAllergen())}
                   className="flex-1 border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm px-3 py-2 border"
                   placeholder="アレルゲンを入力してEnter"
                 />
