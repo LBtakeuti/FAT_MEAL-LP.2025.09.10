@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateUser, getSessionToken, setAuthCookie } from '@/lib/auth';
+import {
+  authenticateUser,
+  getSessionToken,
+  setAuthCookie,
+  checkIsAdminByEmail,
+} from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,7 +17,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Supabase認証でユーザーを検証
+    // 1. まず管理者かどうか確認（app_metadataのroleをチェック）
+    const adminUser = await checkIsAdminByEmail(email);
+
+    if (!adminUser) {
+      // 管理者として登録されていない場合
+      console.warn(`管理者権限のないユーザーがログイン試行: ${email}`);
+      return NextResponse.json(
+        { message: '管理者権限がありません' },
+        { status: 403 }
+      );
+    }
+
+    // 2. Supabase認証でパスワードを検証
     const user = await authenticateUser(email, password);
 
     if (!user) {
@@ -22,7 +39,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // セッショントークンを取得
+    // 3. セッショントークンを取得
     const token = await getSessionToken(email, password);
 
     if (!token) {
@@ -33,12 +50,13 @@ export async function POST(request: NextRequest) {
     }
 
     const response = NextResponse.json(
-      { 
-        message: 'ログイン成功', 
+      {
+        message: 'ログイン成功',
         user: {
           id: user.id,
-          email: user.email
-        }
+          email: user.email,
+          role: adminUser.role,
+        },
       },
       { status: 200 }
     );
