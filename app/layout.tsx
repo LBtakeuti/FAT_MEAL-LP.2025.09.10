@@ -4,7 +4,7 @@ import LayoutContent from '@/components/LayoutContent';
 
 export const metadata: Metadata = {
   title: "ふとるめし - 高カロリー・高タンパクの冷凍弁当",
-  description: "ふとるめしは、努力する人を応援し続けます。平均Cal900オーバー、タンパク質70gオーバー。脅威の弁当をご覧あれ。",
+  description: "ふとるめしは、努力する人を応援し続けます。平均Cal500オーバー、タンパク質30gオーバー。脅威の弁当をご覧あれ。",
   metadataBase: new URL('https://www.futorumeshi.com'),
   icons: {
     icon: '/new-fabicon.png',
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "ふとるめし - 高カロリー・高タンパクの冷凍弁当",
-    description: "ふとるめしは、努力する人を応援し続けます。平均Cal900オーバー、タンパク質70gオーバー。脅威の弁当をご覧あれ。",
+    description: "ふとるめしは、努力する人を応援し続けます。平均Cal500オーバー、タンパク質30gオーバー。脅威の弁当をご覧あれ。",
     url: 'https://www.futorumeshi.com',
     siteName: 'ふとるめし',
     images: [
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: "ふとるめし - 高カロリー・高タンパクの冷凍弁当",
-    description: "ふとるめしは、努力する人を応援し続けます。平均Cal900オーバー、タンパク質70gオーバー。脅威の弁当をご覧あれ。",
+    description: "ふとるめしは、努力する人を応援し続けます。平均Cal500オーバー、タンパク質30gオーバー。脅威の弁当をご覧あれ。",
     images: ['/new-fabicon.png'],
   },
 };
