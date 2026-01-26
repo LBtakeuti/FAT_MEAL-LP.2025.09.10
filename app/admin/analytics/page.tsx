@@ -33,16 +33,57 @@ interface AnalyticsData {
   }>;
 }
 
+interface SearchConsoleData {
+  period: string;
+  startDate: string;
+  endDate: string;
+  overview: {
+    clicks: number;
+    impressions: number;
+    ctr: number;
+    position: number;
+  };
+  queries: Array<{
+    query: string;
+    clicks: number;
+    impressions: number;
+    ctr: number;
+    position: number;
+  }>;
+  pages: Array<{
+    page: string;
+    clicks: number;
+    impressions: number;
+    ctr: number;
+    position: number;
+  }>;
+  daily: Array<{
+    date: string;
+    clicks: number;
+    impressions: number;
+  }>;
+}
+
 export default function AnalyticsPage() {
-  const [activeTab, setActiveTab] = useState<'ga4' | 'clarity'>('ga4');
+  const [activeTab, setActiveTab] = useState<'ga4' | 'searchconsole' | 'clarity'>('ga4');
   const [period, setPeriod] = useState<'today' | '7days' | '30days'>('7days');
+  const [scPeriod, setScPeriod] = useState<'7days' | '28days' | '3months'>('28days');
   const [data, setData] = useState<AnalyticsData | null>(null);
+  const [scData, setScData] = useState<SearchConsoleData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [scLoading, setScLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [scError, setScError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
   }, [period]);
+
+  useEffect(() => {
+    if (activeTab === 'searchconsole') {
+      fetchScData();
+    }
+  }, [scPeriod, activeTab]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -63,12 +104,39 @@ export default function AnalyticsPage() {
     }
   };
 
+  const fetchScData = async () => {
+    setScLoading(true);
+    setScError(null);
+
+    try {
+      const response = await fetch(`/api/admin/search-console?period=${scPeriod}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch data');
+      }
+      const result = await response.json();
+      setScData(result);
+    } catch (err) {
+      setScError(err instanceof Error ? err.message : 'データの取得に失敗しました');
+    } finally {
+      setScLoading(false);
+    }
+  };
+
   // 日付をフォーマット（YYYYMMDD → MM/DD）
   const formatDate = (dateStr: string) => {
     if (!dateStr || dateStr.length !== 8) return dateStr;
     const month = dateStr.substring(4, 6);
     const day = dateStr.substring(6, 8);
     return `${parseInt(month)}/${parseInt(day)}`;
+  };
+
+  // Search Console用日付フォーマット（YYYY-MM-DD → MM/DD）
+  const formatDateSc = (dateStr: string) => {
+    if (!dateStr) return dateStr;
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
   };
 
   // 秒を分:秒にフォーマット
@@ -111,7 +179,7 @@ export default function AnalyticsPage() {
             <h1 className="text-2xl font-bold text-gray-900">アナリティクス</h1>
           </div>
 
-          {/* 期間選択（GA4タブのみ表示） */}
+          {/* 期間選択（GA4タブ） */}
           {activeTab === 'ga4' && (
             <div className="flex gap-2">
               {[
@@ -125,6 +193,29 @@ export default function AnalyticsPage() {
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     period === option.value
                       ? 'bg-orange-500 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* 期間選択（Search Consoleタブ） */}
+          {activeTab === 'searchconsole' && (
+            <div className="flex gap-2">
+              {[
+                { value: '7days', label: '7日間' },
+                { value: '28days', label: '28日間' },
+                { value: '3months', label: '3ヶ月' },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => setScPeriod(option.value as typeof scPeriod)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    scPeriod === option.value
+                      ? 'bg-green-500 text-white'
                       : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
                   }`}
                 >
@@ -150,6 +241,21 @@ export default function AnalyticsPage() {
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93s3.05-7.44 7-7.93v15.86zm2-15.86c1.03.13 2 .45 2.87.93H13v-.93zM13 7h5.24c.25.31.48.65.68 1H13V7zm0 3h6.74c.08.33.15.66.19 1H13v-1zm0 9.93V19h2.87c-.87.48-1.84.8-2.87.93zM18.24 17H13v-1h5.92c-.2.35-.43.69-.68 1zm1.5-3H13v-1h6.93c-.04.34-.11.67-.19 1z"/>
               </svg>
               Google Analytics
+            </span>
+          </button>
+          <button
+            onClick={() => setActiveTab('searchconsole')}
+            className={`px-6 py-2.5 rounded-md text-sm font-medium transition-colors ${
+              activeTab === 'searchconsole'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+              </svg>
+              Search Console
             </span>
           </button>
           <button
@@ -381,6 +487,188 @@ export default function AnalyticsPage() {
                 期間: {data.startDate} 〜 {data.endDate}
               </div>
             </div>
+            )}
+          </>
+        )}
+
+        {/* Search Consoleタブ */}
+        {activeTab === 'searchconsole' && (
+          <>
+            {/* ローディング */}
+            {scLoading && (
+              <div className="flex items-center justify-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+              </div>
+            )}
+
+            {/* エラー */}
+            {scError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                <p className="text-red-600 mb-4">{scError}</p>
+                <button
+                  onClick={fetchScData}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  再試行
+                </button>
+              </div>
+            )}
+
+            {/* データ表示 */}
+            {!scLoading && !scError && scData && (
+              <div className="space-y-6">
+                {/* 概要カード */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-white rounded-xl shadow-sm p-6">
+                    <p className="text-sm text-gray-500 mb-1">クリック数</p>
+                    <p className="text-3xl font-bold text-gray-900">{scData.overview.clicks.toLocaleString()}</p>
+                  </div>
+                  <div className="bg-white rounded-xl shadow-sm p-6">
+                    <p className="text-sm text-gray-500 mb-1">表示回数</p>
+                    <p className="text-3xl font-bold text-gray-900">{scData.overview.impressions.toLocaleString()}</p>
+                  </div>
+                  <div className="bg-white rounded-xl shadow-sm p-6">
+                    <p className="text-sm text-gray-500 mb-1">CTR</p>
+                    <p className="text-3xl font-bold text-gray-900">{(scData.overview.ctr * 100).toFixed(1)}%</p>
+                  </div>
+                  <div className="bg-white rounded-xl shadow-sm p-6">
+                    <p className="text-sm text-gray-500 mb-1">平均掲載順位</p>
+                    <p className="text-3xl font-bold text-gray-900">{scData.overview.position.toFixed(1)}</p>
+                  </div>
+                </div>
+
+                {/* 日別グラフ */}
+                {scData.daily.length > 0 && (
+                  <div className="bg-white rounded-xl shadow-sm p-6">
+                    <h2 className="text-lg font-bold text-gray-900 mb-4">日別推移</h2>
+                    <div className="space-y-6">
+                      {/* クリック数 */}
+                      <div>
+                        <p className="text-sm text-gray-500 mb-2">クリック数</p>
+                        <div className="flex items-end gap-1 h-32">
+                          {scData.daily.map((day, index) => {
+                            const maxClicks = getMaxValue(scData.daily.map((d) => d.clicks));
+                            const height = (day.clicks / maxClicks) * 100;
+                            return (
+                              <div key={index} className="flex-1 flex flex-col items-center">
+                                <div
+                                  className="w-full bg-green-500 rounded-t hover:bg-green-600 transition-colors cursor-pointer relative group"
+                                  style={{ height: `${Math.max(height, 2)}%` }}
+                                >
+                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block">
+                                    <div className="bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                                      {day.clicks.toLocaleString()}
+                                    </div>
+                                  </div>
+                                </div>
+                                <span className="text-xs text-gray-500 mt-1 hidden sm:block">{formatDateSc(day.date)}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* 表示回数 */}
+                      <div>
+                        <p className="text-sm text-gray-500 mb-2">表示回数</p>
+                        <div className="flex items-end gap-1 h-32">
+                          {scData.daily.map((day, index) => {
+                            const maxImpressions = getMaxValue(scData.daily.map((d) => d.impressions));
+                            const height = (day.impressions / maxImpressions) * 100;
+                            return (
+                              <div key={index} className="flex-1 flex flex-col items-center">
+                                <div
+                                  className="w-full bg-blue-500 rounded-t hover:bg-blue-600 transition-colors cursor-pointer relative group"
+                                  style={{ height: `${Math.max(height, 2)}%` }}
+                                >
+                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block">
+                                    <div className="bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                                      {day.impressions.toLocaleString()}
+                                    </div>
+                                  </div>
+                                </div>
+                                <span className="text-xs text-gray-500 mt-1 hidden sm:block">{formatDateSc(day.date)}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 検索クエリ */}
+                <div className="bg-white rounded-xl shadow-sm p-6">
+                  <h2 className="text-lg font-bold text-gray-900 mb-4">検索クエリ</h2>
+                  {scData.queries.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-gray-200">
+                            <th className="text-left py-3 px-2 text-sm font-medium text-gray-500">クエリ</th>
+                            <th className="text-right py-3 px-2 text-sm font-medium text-gray-500">クリック</th>
+                            <th className="text-right py-3 px-2 text-sm font-medium text-gray-500">表示</th>
+                            <th className="text-right py-3 px-2 text-sm font-medium text-gray-500">CTR</th>
+                            <th className="text-right py-3 px-2 text-sm font-medium text-gray-500">順位</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {scData.queries.map((query, index) => (
+                            <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                              <td className="py-3 px-2 text-sm text-gray-900">{query.query}</td>
+                              <td className="py-3 px-2 text-sm text-gray-900 text-right">{query.clicks.toLocaleString()}</td>
+                              <td className="py-3 px-2 text-sm text-gray-900 text-right">{query.impressions.toLocaleString()}</td>
+                              <td className="py-3 px-2 text-sm text-gray-900 text-right">{(query.ctr * 100).toFixed(1)}%</td>
+                              <td className="py-3 px-2 text-sm text-gray-900 text-right">{query.position.toFixed(1)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">データがありません</p>
+                  )}
+                </div>
+
+                {/* ページ別 */}
+                <div className="bg-white rounded-xl shadow-sm p-6">
+                  <h2 className="text-lg font-bold text-gray-900 mb-4">ページ別パフォーマンス</h2>
+                  {scData.pages.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-gray-200">
+                            <th className="text-left py-3 px-2 text-sm font-medium text-gray-500">ページ</th>
+                            <th className="text-right py-3 px-2 text-sm font-medium text-gray-500">クリック</th>
+                            <th className="text-right py-3 px-2 text-sm font-medium text-gray-500">表示</th>
+                            <th className="text-right py-3 px-2 text-sm font-medium text-gray-500">CTR</th>
+                            <th className="text-right py-3 px-2 text-sm font-medium text-gray-500">順位</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {scData.pages.map((page, index) => (
+                            <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                              <td className="py-3 px-2 text-sm text-gray-900 font-mono truncate max-w-xs">{page.page.replace('https://www.futorumeshi.com', '')}</td>
+                              <td className="py-3 px-2 text-sm text-gray-900 text-right">{page.clicks.toLocaleString()}</td>
+                              <td className="py-3 px-2 text-sm text-gray-900 text-right">{page.impressions.toLocaleString()}</td>
+                              <td className="py-3 px-2 text-sm text-gray-900 text-right">{(page.ctr * 100).toFixed(1)}%</td>
+                              <td className="py-3 px-2 text-sm text-gray-900 text-right">{page.position.toFixed(1)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">データがありません</p>
+                  )}
+                </div>
+
+                {/* 期間情報 */}
+                <div className="text-center text-sm text-gray-500">
+                  期間: {scData.startDate} 〜 {scData.endDate}
+                  <span className="ml-2 text-xs">(※データは2-3日遅れで反映されます)</span>
+                </div>
+              </div>
             )}
           </>
         )}
