@@ -11,10 +11,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 管理画面へのアクセスをチェック
-  if (request.nextUrl.pathname.startsWith('/admin')) {
-    // ログインページは除外
-    if (request.nextUrl.pathname === '/admin/login') {
+  // 管理画面・管理APIへのアクセスをチェック
+  const isAdminPage = request.nextUrl.pathname.startsWith('/admin');
+  const isAdminApi = request.nextUrl.pathname.startsWith('/api/admin');
+  
+  if (isAdminPage || isAdminApi) {
+    // ログインページとログインAPIは除外
+    if (request.nextUrl.pathname === '/admin/login' || request.nextUrl.pathname === '/api/admin/login') {
       return NextResponse.next();
     }
 
@@ -22,7 +25,10 @@ export async function middleware(request: NextRequest) {
     const token = getAuthToken(request);
 
     if (!token) {
-      // 認証されていない場合はログインページへリダイレクト
+      // APIの場合は401を返す、ページの場合はリダイレクト
+      if (isAdminApi) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
       const loginUrl = new URL('/admin/login', request.url);
       loginUrl.searchParams.set('redirect', request.nextUrl.pathname);
       return NextResponse.redirect(loginUrl);
@@ -32,7 +38,10 @@ export async function middleware(request: NextRequest) {
     const adminUser = await verifyAdminToken(token);
 
     if (!adminUser) {
-      // トークンが無効または管理者でない場合はログインページへリダイレクト
+      // APIの場合は401を返す、ページの場合はリダイレクト
+      if (isAdminApi) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
       const loginUrl = new URL('/admin/login', request.url);
       loginUrl.searchParams.set('redirect', request.nextUrl.pathname);
       loginUrl.searchParams.set('error', 'unauthorized');
@@ -60,5 +69,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: '/admin/:path*'
+  matcher: ['/admin/:path*', '/api/admin/:path*']
 };
