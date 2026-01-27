@@ -35,19 +35,25 @@ function getSubscriptionPeriod(subscription: Stripe.Subscription): {
   return { currentPeriodStart, currentPeriodEnd };
 }
 
-// セット商品から弁当数を計算
-function calculateMealsFromDescription(description: string): number {
-  const match = description.match(/(\d+)個セット/);
+// セット商品から必要なセット数を計算
+function calculateSetsFromDescription(description: string): number {
+  // 18食セット = 3セット
+  if (description.includes('18食') || description.includes('18個')) {
+    return 3;
+  }
+  // 12食セット = 2セット
+  if (description.includes('12食') || description.includes('12個')) {
+    return 2;
+  }
+  // 6食セット = 1セット
+  if (description.includes('6食') || description.includes('6個')) {
+    return 1;
+  }
+  // 数字抽出を試みる
+  const match = description.match(/(\d+)(?:食|個)/);
   if (match) {
-    return parseInt(match[1], 10);
-  }
-  const multiMatch = description.match(/(\d+)種類×(\d+)個/);
-  if (multiMatch) {
-    return parseInt(multiMatch[1], 10) * parseInt(multiMatch[2], 10);
-  }
-  // お試しプラン（6食セット）
-  if (description.includes('6食')) {
-    return 6;
+    const meals = parseInt(match[1], 10);
+    return Math.ceil(meals / 6);
   }
   return 1;
 }
@@ -265,7 +271,7 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe:
   console.log('One-time order processed successfully');
 }
 
-// 在庫を減らす関数
+// 在庫を減らす関数（セット単位）
 async function reduceInventory(items: Stripe.LineItem[]) {
   const supabase = getSupabaseClient();
   if (!supabase) {
@@ -273,54 +279,54 @@ async function reduceInventory(items: Stripe.LineItem[]) {
     return;
   }
 
-  // 購入された商品から総弁当数を計算
-  let totalMealsToReduce = 0;
+  // 購入された商品から必要なセット数を計算
+  let setsToReduce = 0;
   for (const item of items) {
     const description = item.description || '';
     const quantity = item.quantity || 1;
-    const mealsPerItem = calculateMealsFromDescription(description);
-    totalMealsToReduce += mealsPerItem * quantity;
+    const setsPerItem = calculateSetsFromDescription(description);
+    setsToReduce += setsPerItem * quantity;
   }
 
-  if (totalMealsToReduce === 0) {
-    console.log('No meals to reduce from inventory');
+  if (setsToReduce === 0) {
+    console.log('No sets to reduce from inventory');
     return;
   }
 
   try {
-    // 全ての有効なメニューアイテムを取得
-    const { data: menuItems, error: fetchError } = await (supabase
-      .from('menu_items') as any)
-      .select('id, name, stock')
-      .eq('is_active', true)
-      .gt('stock', 0);
+    // 現在のセット在庫を取得
+    const { data: current, error: fetchError } = await (supabase
+      .from('inventory_settings') as any)
+      .select('id, stock_sets')
+      .eq('set_type', '6-set')
+      .single();
 
     if (fetchError) {
-      console.error('Failed to fetch menu items:', fetchError);
+      console.error('Failed to fetch inventory settings:', fetchError);
       return;
     }
 
-    if (!menuItems || menuItems.length === 0) {
-      console.error('No active menu items found');
+    if (!current) {
+      console.error('No inventory settings found');
       return;
     }
 
-    // 各メニューアイテムから均等に在庫を減らす
-    const reductionPerItem = Math.ceil(totalMealsToReduce / menuItems.length);
+    const currentStock = current.stock_sets || 0;
+    const newStock = Math.max(0, currentStock - setsToReduce);
 
-    for (const menuItem of menuItems as any[]) {
-      const newStock = Math.max(0, menuItem.stock - reductionPerItem);
+    // セット在庫を更新
+    const { error: updateError } = await (supabase
+      .from('inventory_settings') as any)
+      .update({
+        stock_sets: newStock,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('set_type', '6-set');
 
-      const { error: updateError } = await (supabase
-        .from('menu_items') as any)
-        .update({ stock: newStock, updated_at: new Date().toISOString() })
-        .eq('id', menuItem.id);
-
-      if (updateError) {
-        console.error(`Failed to update stock for ${menuItem.name}:`, updateError);
-      } else {
-        console.log(`Stock updated for ${menuItem.name}: ${menuItem.stock} -> ${newStock}`);
-      }
+    if (updateError) {
+      console.error('Failed to update inventory settings:', updateError);
+    } else {
+      console.log(`Set inventory updated: ${currentStock} -> ${newStock} (reduced by ${setsToReduce} sets)`);
     }
   } catch (error) {
     console.error('Error reducing inventory:', error);

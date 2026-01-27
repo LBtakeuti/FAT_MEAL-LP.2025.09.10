@@ -174,3 +174,37 @@ CREATE TRIGGER update_news_updated_at BEFORE UPDATE ON news
 
 CREATE TRIGGER update_contact_updated_at BEFORE UPDATE ON contact
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ================================================
+-- Inventory Settings (セット単位の在庫管理)
+-- ================================================
+
+CREATE TABLE IF NOT EXISTS inventory_settings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  set_type TEXT NOT NULL DEFAULT '6-set',
+  stock_sets INTEGER NOT NULL DEFAULT 0 CHECK (stock_sets >= 0),
+  items_per_set INTEGER NOT NULL DEFAULT 6,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 初期データ
+INSERT INTO inventory_settings (set_type, stock_sets, items_per_set)
+VALUES ('6-set', 0, 6)
+ON CONFLICT DO NOTHING;
+
+-- インデックス
+CREATE INDEX IF NOT EXISTS idx_inventory_settings_set_type ON inventory_settings(set_type);
+
+-- RLS有効化
+ALTER TABLE inventory_settings ENABLE ROW LEVEL SECURITY;
+
+-- ポリシー
+CREATE POLICY "Anyone can view inventory settings" ON inventory_settings
+  FOR SELECT USING (true);
+
+CREATE POLICY "Service role can manage inventory settings" ON inventory_settings
+  FOR ALL USING (auth.role() = 'service_role');
+
+-- updated_at トリガー
+CREATE TRIGGER update_inventory_settings_updated_at BEFORE UPDATE ON inventory_settings
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

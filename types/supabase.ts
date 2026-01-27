@@ -537,6 +537,30 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_settings: {
+        Row: {
+          id: string
+          set_type: string
+          stock_sets: number
+          items_per_set: number
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          set_type?: string
+          stock_sets?: number
+          items_per_set?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          set_type?: string
+          stock_sets?: number
+          items_per_set?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

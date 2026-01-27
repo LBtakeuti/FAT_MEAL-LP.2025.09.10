@@ -282,3 +282,53 @@ export interface PaginatedResponse<T> {
   items: T[];
   pagination: PaginationInfo;
 }
+
+// ============================================
+// 在庫管理（セット単位）
+// ============================================
+
+/** 在庫設定（データベース形式） */
+export interface InventorySettingsDB {
+  id: string;
+  set_type: string;
+  stock_sets: number;
+  items_per_set: number;
+  updated_at: string;
+}
+
+/** 在庫設定（フロントエンド形式） */
+export interface InventorySettings {
+  id: string;
+  setType: string;
+  stockSets: number;
+  itemsPerSet: number;
+  updatedAt: string;
+}
+
+/** 在庫チェック結果 */
+export interface InventoryCheckResult {
+  available: boolean;
+  stockSets: number;
+  totalMeals: number;
+  sets: {
+    'plan-6': boolean;
+    'plan-12': boolean;
+    'plan-18': boolean;
+  };
+  maxQuantity: {
+    'plan-6': number;
+    'plan-12': number;
+    'plan-18': number;
+  };
+}
+
+/** DB形式からフロントエンド形式への変換 */
+export function toInventorySettings(db: InventorySettingsDB): InventorySettings {
+  return {
+    id: db.id,
+    setType: db.set_type,
+    stockSets: db.stock_sets,
+    itemsPerSet: db.items_per_set,
+    updatedAt: db.updated_at,
+  };
+}
