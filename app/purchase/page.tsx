@@ -109,6 +109,7 @@ interface CustomerInfo {
   address: string;
   building: string;
   preferredDeliveryDate?: string;
+  referralCode?: string;
 }
 
 // カートアイテムの型
@@ -217,6 +218,7 @@ const PurchasePage: React.FC = () => {
     address: '',
     building: '',
     preferredDeliveryDate: '',
+    referralCode: '',
   });
   const [errors, setErrors] = useState<Partial<CustomerInfo>>({});
 
@@ -229,6 +231,11 @@ const PurchasePage: React.FC = () => {
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null);
   const [couponError, setCouponError] = useState('');
+
+  // 紹介コードのバリデーション状態
+  const [referralCodeError, setReferralCodeError] = useState('');
+  const [referralCodeValid, setReferralCodeValid] = useState(false);
+  const [referralCodeValidating, setReferralCodeValidating] = useState(false);
 
   // 有効なクーポンコード
   const validCoupons: { [key: string]: number } = {
@@ -327,9 +334,19 @@ const PurchasePage: React.FC = () => {
       return { subtotal: 0, shippingFee: 0, totalAmount: 0 };
     }
 
+    const discount = appliedCoupon ? appliedCoupon.discount : 0;
+
+    // お試しプランの場合、totalPriceは既に送料込み
+    if (selectedPlan.isTrial) {
+      const subtotal = selectedPlan.price; // 商品代金（送料別）
+      const shippingFee = selectedPlan.shippingFee;
+      const totalAmount = selectedPlan.totalPrice - discount; // 送料込み総額
+      return { subtotal, shippingFee, totalAmount: Math.max(0, totalAmount) };
+    }
+
+    // サブスクリプションプランの場合、totalPriceは商品代金のみ
     const subtotal = selectedPlan.totalPrice;
     const shippingFee = selectedPlan.shippingFee;
-    const discount = appliedCoupon ? appliedCoupon.discount : 0;
     const totalAmount = subtotal + shippingFee - discount;
 
     return { subtotal, shippingFee, totalAmount: Math.max(0, totalAmount) };
@@ -358,6 +375,61 @@ const PurchasePage: React.FC = () => {
     setAppliedCoupon(null);
     setCouponCode('');
     setCouponError('');
+  };
+
+  // 紹介コードのバリデーション
+  const validateReferralCode = async (code: string) => {
+    if (!code || code.trim() === '') {
+      setReferralCodeError('');
+      setReferralCodeValid(false);
+      return;
+    }
+
+    setReferralCodeValidating(true);
+    setReferralCodeError('');
+    setReferralCodeValid(false);
+
+    try {
+      const response = await fetch('/api/referral/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: code.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (data.valid) {
+        setReferralCodeValid(true);
+        setReferralCodeError('');
+      } else {
+        setReferralCodeValid(false);
+        setReferralCodeError(data.message || '無効な紹介コードです');
+      }
+    } catch (error) {
+      console.error('Referral code validation error:', error);
+      setReferralCodeError('紹介コードの確認中にエラーが発生しました');
+      setReferralCodeValid(false);
+    } finally {
+      setReferralCodeValidating(false);
+    }
+  };
+
+  // 紹介コード入力変更ハンドラー
+  const handleReferralCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.toUpperCase();
+    setCustomerInfo(prev => ({ ...prev, referralCode: value }));
+    // 入力中はエラーをクリア
+    if (referralCodeError) {
+      setReferralCodeError('');
+      setReferralCodeValid(false);
+    }
+  };
+
+  // 紹介コードのblurハンドラー（入力欄からフォーカスが外れた時にバリデーション）
+  const handleReferralCodeBlur = () => {
+    if (customerInfo.referralCode && customerInfo.referralCode.trim() !== '') {
+      validateReferralCode(customerInfo.referralCode);
+    }
   };
 
   // 登録済みプロフィール情報を入力フォームに反映
@@ -540,6 +612,11 @@ const PurchasePage: React.FC = () => {
     //   }
     // }
 
+    // 紹介コードが入力されているが無効な場合はエラー
+    if (customerInfo.referralCode && customerInfo.referralCode.trim() !== '' && !referralCodeValid && !referralCodeValidating) {
+      newErrors.referralCode = '無効な紹介コードです';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -616,6 +693,7 @@ const PurchasePage: React.FC = () => {
               address: customerInfo.address,
               building: customerInfo.building,
               preferredDeliveryDate: customerInfo.preferredDeliveryDate,
+              referralCode: customerInfo.referralCode,
             },
             couponCode: appliedCoupon?.code,
           }),
@@ -779,10 +857,10 @@ const PurchasePage: React.FC = () => {
                       </p>
                       <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mt-2">
                         <span className="text-xl font-bold text-orange-600">
-                          ¥{plan.totalPrice.toLocaleString()}
+                          ¥{(plan.isTrial ? plan.totalPrice : plan.totalPrice + plan.shippingFee).toLocaleString()}
                         </span>
                         <span className="text-xs text-gray-500">
-                          （¥{plan.totalPrice.toLocaleString()} + 送料¥{plan.shippingFee.toLocaleString()}）
+                          （¥{plan.price.toLocaleString()} + 送料¥{plan.shippingFee.toLocaleString()}）
                         </span>
                       </div>
                       <div className="text-xs text-gray-500 mt-1">
@@ -1215,6 +1293,56 @@ const PurchasePage: React.FC = () => {
               className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-orange-600 focus:outline-none"
             />
           </div>
+        </div>
+      </div>
+
+      {/* 紹介コード（独立したブロック） */}
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            紹介コード（任意）
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              name="referralCode"
+              value={customerInfo.referralCode || ''}
+              onChange={handleReferralCodeChange}
+              onBlur={handleReferralCodeBlur}
+              placeholder="紹介者のコードをお持ちの場合はご入力ください"
+              className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none ${
+                referralCodeError
+                  ? 'border-red-500'
+                  : referralCodeValid
+                  ? 'border-green-500'
+                  : 'border-gray-300 focus:border-orange-600'
+              }`}
+            />
+            {referralCodeValidating && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <svg className="animate-spin h-5 w-5 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </div>
+            )}
+            {!referralCodeValidating && referralCodeValid && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                <svg className="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            )}
+          </div>
+          {referralCodeError && (
+            <p className="text-red-500 text-xs mt-1">{referralCodeError}</p>
+          )}
+          {referralCodeValid && (
+            <p className="text-green-600 text-xs mt-1">紹介コードが適用されました</p>
+          )}
+          <p className="text-xs text-gray-500 mt-1">
+            紹介者からコードを受け取っている場合のみご入力ください
+          </p>
         </div>
       </div>
 

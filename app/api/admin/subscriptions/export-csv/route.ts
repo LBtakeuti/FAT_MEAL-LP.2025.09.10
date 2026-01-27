@@ -27,6 +27,7 @@ interface Subscription {
   payment_status: string;
   started_at: string;
   canceled_at: string | null;
+  referral_code?: string;
 }
 
 export async function GET() {
@@ -63,7 +64,8 @@ export async function GET() {
       '契約開始日',
       'ステータス',
       '支払いステータス',
-      '解約日'
+      '解約日',
+      '紹介コード'
     ];
 
     // CSVデータ行
@@ -89,6 +91,7 @@ export async function GET() {
         translateStatus(sub.status),
         translatePaymentStatus(sub.payment_status),
         formatDateTimeJST(sub.canceled_at),
+        sub.referral_code || '',
       ];
     }) || [];
 

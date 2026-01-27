@@ -20,6 +20,7 @@ interface Order {
   email?: string; // 後方互換性
   status: string;
   created_at: string;
+  referral_code?: string;
 }
 
 export async function GET() {
@@ -51,7 +52,8 @@ export async function GET() {
       '数量',
       '金額',
       'ステータス',
-      '注文日時（日本時間）'
+      '注文日時（日本時間）',
+      '紹介コード'
     ];
 
     // CSVデータ行
@@ -66,7 +68,8 @@ export async function GET() {
       order.quantity,
       order.amount || 0,
       translateStatus(order.status),
-      formatDateTimeJST(order.created_at)
+      formatDateTimeJST(order.created_at),
+      order.referral_code || ''
     ]) || [];
 
     // CSV形式に変換（エスケープ処理付き）

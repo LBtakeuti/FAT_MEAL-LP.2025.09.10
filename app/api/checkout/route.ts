@@ -42,6 +42,7 @@ interface CheckoutRequest {
     address: string;
     building?: string;
     preferredDeliveryDate?: string;
+    referralCode?: string;
   };
   couponCode?: string;
 }
@@ -110,6 +111,7 @@ export async function POST(request: NextRequest) {
           address: fullAddress,
           preferred_delivery_date: customerInfo.preferredDeliveryDate || '',
           coupon_code: couponCode || '',
+          referral_code: customerInfo.referralCode || '',
         },
         subscription_data: {
           metadata: {
@@ -118,6 +120,7 @@ export async function POST(request: NextRequest) {
             phone: customerInfo.phone,
             address: fullAddress,
             preferred_delivery_date: customerInfo.preferredDeliveryDate || '',
+            referral_code: customerInfo.referralCode || '',
           },
         },
         locale: 'ja',
@@ -205,6 +208,7 @@ export async function POST(request: NextRequest) {
         building: customerInfo.building || '',
         address: fullAddress,
         coupon_code: couponCode || '',
+        referral_code: customerInfo.referralCode || '',
       },
       locale: 'ja',
     };

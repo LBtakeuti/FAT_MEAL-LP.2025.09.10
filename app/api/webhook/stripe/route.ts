@@ -220,6 +220,7 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe:
   // データベースに注文を保存
   if (supabase) {
     try {
+      const referralCode = session.metadata?.referral_code || '';
       const { error: dbError } = await (supabase
         .from('orders') as any)
         .insert({
@@ -235,12 +236,13 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe:
           amount: amountTotal || 0,
           currency: session.currency || 'jpy',
           status: 'pending',
+          referral_code: referralCode || null,
         });
 
       if (dbError) {
         console.error('Failed to save order to database:', dbError);
       } else {
-        console.log('Order saved to database successfully');
+        console.log('Order saved to database successfully', referralCode ? `(referral: ${referralCode})` : '');
       }
     } catch (error) {
       console.error('Error saving order to database:', error);
@@ -403,6 +405,9 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
     }
 
     console.log(`[Webhook] Creating subscription in database...`);
+    // 紹介コードを取得
+    const referralCode = checkoutSession?.metadata?.referral_code || subscription.metadata?.referral_code || '';
+    
     // subscriptionsテーブルに作成
     const { data: dbSubscription, error: subError } = await (supabase
       .from('subscriptions') as any)
@@ -436,6 +441,7 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
         current_period_start: new Date(currentPeriodStart * 1000).toISOString(),
         current_period_end: new Date(currentPeriodEnd * 1000).toISOString(),
         started_at: new Date(subscription.created * 1000).toISOString(),
+        referral_code: referralCode || null,
       })
       .select()
       .single();
