@@ -63,8 +63,8 @@ export async function POST(request: NextRequest) {
     const supabase = createServerClient();
     const client = getClient(supabase);
     const body = await request.json();
-    
-    const { name, email, phone, notes } = body;
+
+    const { name, email, phone, notes, referral_code: customCode } = body;
 
     if (!name || name.trim() === '') {
       return NextResponse.json(
@@ -73,28 +73,58 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ユニークな紹介コードを生成
-    let referralCode = generateReferralCode();
-    let attempts = 0;
-    const maxAttempts = 10;
+    let referralCode: string;
 
-    while (attempts < maxAttempts) {
+    // カスタム紹介コードが指定されている場合
+    if (customCode && customCode.trim() !== '') {
+      const code = customCode.trim().toUpperCase();
+
+      // 形式チェック（大文字英字と数字のみ、4〜12文字）
+      if (!/^[A-Z0-9]{4,12}$/.test(code)) {
+        return NextResponse.json(
+          { error: '紹介コードは大文字英字と数字のみ、4〜12文字で入力してください' },
+          { status: 400 }
+        );
+      }
+
+      // 重複チェック
       const checkResult = await client.from('referrers')
         .select('id')
-        .eq('referral_code', referralCode)
+        .eq('referral_code', code)
         .single();
 
-      if (!checkResult.data) break;
-      
-      referralCode = generateReferralCode();
-      attempts++;
-    }
+      if (checkResult.data) {
+        return NextResponse.json(
+          { error: 'この紹介コードは既に使用されています' },
+          { status: 400 }
+        );
+      }
 
-    if (attempts >= maxAttempts) {
-      return NextResponse.json(
-        { error: '紹介コードの生成に失敗しました。再度お試しください。' },
-        { status: 500 }
-      );
+      referralCode = code;
+    } else {
+      // 自動生成
+      referralCode = generateReferralCode();
+      let attempts = 0;
+      const maxAttempts = 10;
+
+      while (attempts < maxAttempts) {
+        const checkResult = await client.from('referrers')
+          .select('id')
+          .eq('referral_code', referralCode)
+          .single();
+
+        if (!checkResult.data) break;
+
+        referralCode = generateReferralCode();
+        attempts++;
+      }
+
+      if (attempts >= maxAttempts) {
+        return NextResponse.json(
+          { error: '紹介コードの生成に失敗しました。再度お試しください。' },
+          { status: 500 }
+        );
+      }
     }
 
     const result = await client.from('referrers')

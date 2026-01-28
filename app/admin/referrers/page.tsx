@@ -19,6 +19,7 @@ interface FormData {
   email: string;
   phone: string;
   notes: string;
+  referral_code: string;
 }
 
 interface MonthlyStats {
@@ -50,6 +51,7 @@ export default function ReferrersPage() {
     email: '',
     phone: '',
     notes: '',
+    referral_code: '',
   });
   const [submitting, setSubmitting] = useState(false);
   
@@ -93,7 +95,7 @@ export default function ReferrersPage() {
 
   const openCreateModal = () => {
     setEditingReferrer(null);
-    setFormData({ name: '', email: '', phone: '', notes: '' });
+    setFormData({ name: '', email: '', phone: '', notes: '', referral_code: '' });
     setShowModal(true);
   };
 
@@ -104,6 +106,7 @@ export default function ReferrersPage() {
       email: referrer.email || '',
       phone: referrer.phone || '',
       notes: referrer.notes || '',
+      referral_code: referrer.referral_code,
     });
     setShowModal(true);
   };
@@ -117,7 +120,7 @@ export default function ReferrersPage() {
   const closeModal = () => {
     setShowModal(false);
     setEditingReferrer(null);
-    setFormData({ name: '', email: '', phone: '', notes: '' });
+    setFormData({ name: '', email: '', phone: '', notes: '', referral_code: '' });
   };
 
   const closeStatsModal = () => {
@@ -242,7 +245,7 @@ export default function ReferrersPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">紹介者管理</h1>
           <p className="text-sm text-gray-500 mt-1">
-            紹介者を登録すると、紹介コードが自動生成されます
+            紹介コードは任意で指定可能（未入力の場合は自動生成）
           </p>
         </div>
         <button
@@ -398,6 +401,22 @@ export default function ReferrersPage() {
                     required
                   />
                 </div>
+                {!editingReferrer && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      紹介コード（任意）
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.referral_code}
+                      onChange={(e) => setFormData({ ...formData, referral_code: e.target.value.toUpperCase() })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 font-mono uppercase"
+                      placeholder="例: YAMADA2025（未入力で自動生成）"
+                      maxLength={12}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">大文字英字と数字のみ、4〜12文字</p>
+                  </div>
+                )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     メールアドレス
