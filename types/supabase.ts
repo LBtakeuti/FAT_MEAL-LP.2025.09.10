@@ -561,6 +561,30 @@ export type Database = {
         }
         Relationships: []
       }
+      banner_settings: {
+        Row: {
+          id: number
+          is_active: boolean
+          image_url: string
+          link_url: string
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          is_active?: boolean
+          image_url?: string
+          link_url?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          is_active?: boolean
+          image_url?: string
+          link_url?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       referrers: {
         Row: {
           id: string

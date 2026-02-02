@@ -40,8 +40,8 @@ export const PUT = withAuth(async (request: NextRequest) => {
   if (body.image_url) updateData.image_url = body.image_url;
   if (body.link_url) updateData.link_url = body.link_url;
 
-  const { data, error } = await (supabase
-    .from('banner_settings') as any)
+  const { data, error } = await supabase
+    .from('banner_settings')
     .update(updateData)
     .eq('id', 1)
     .select()
