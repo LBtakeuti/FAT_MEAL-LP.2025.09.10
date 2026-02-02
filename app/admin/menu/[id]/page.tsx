@@ -37,8 +37,8 @@ export default function EditMenuPage({ params: promiseParams }: { params: Promis
     is_active: true,
     display_order: 0,
   });
-  const [ingredientInput, setIngredientInput] = useState('');
-  const [allergenInput, setAllergenInput] = useState('');
+  const [ingredientsText, setIngredientsText] = useState('');
+  const [allergensText, setAllergensText] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [draggingMain, setDraggingMain] = useState(false);
@@ -70,6 +70,8 @@ export default function EditMenuPage({ params: promiseParams }: { params: Promis
           is_active: data.is_active,
           display_order: data.display_order,
         });
+        setIngredientsText((data.ingredients || []).join('、'));
+        setAllergensText((data.allergens || []).join('、'));
       } else {
         alert('メニューの取得に失敗しました');
         router.push('/admin/menu');
@@ -155,40 +157,6 @@ export default function EditMenuPage({ params: promiseParams }: { params: Promis
     const newSubImages = [...formData.sub_images];
     newSubImages[index] = processedValue;
     setFormData(prev => ({ ...prev, sub_images: newSubImages }));
-  };
-
-  const addIngredient = () => {
-    if (ingredientInput.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        ingredients: [...prev.ingredients, ingredientInput.trim()]
-      }));
-      setIngredientInput('');
-    }
-  };
-
-  const removeIngredient = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      ingredients: prev.ingredients.filter((_, i) => i !== index)
-    }));
-  };
-
-  const addAllergen = () => {
-    if (allergenInput.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        allergens: [...prev.allergens, allergenInput.trim()]
-      }));
-      setAllergenInput('');
-    }
-  };
-
-  const removeAllergen = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      allergens: prev.allergens.filter((_, i) => i !== index)
-    }));
   };
 
   const handleFileUpload = async (file: File, isSubImage: boolean = false, subIndex?: number) => {
@@ -551,83 +519,37 @@ export default function EditMenuPage({ params: promiseParams }: { params: Promis
             {/* 成分表記 */}
             <div>
               <h2 className="text-lg font-semibold mb-4">成分表記</h2>
-              
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={ingredientInput}
-                  onChange={(e) => setIngredientInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addIngredient())}
-                  className="flex-1 border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm px-3 py-2 border"
-                  placeholder="成分を入力してEnter"
-                />
-                <button
-                  type="button"
-                  onClick={addIngredient}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                >
-                  追加
-                </button>
-              </div>
-              
-              <div className="mt-2 flex flex-wrap gap-2">
-                {formData.ingredients.map((ingredient, index) => (
-                  <span
-                    key={index}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800"
-                  >
-                    {ingredient}
-                    <button
-                      type="button"
-                      onClick={() => removeIngredient(index)}
-                      className="ml-2 text-blue-600 hover:text-blue-800"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
+              <textarea
+                value={ingredientsText}
+                onChange={(e) => setIngredientsText(e.target.value)}
+                onBlur={(e) => {
+                  const value = e.target.value;
+                  const ingredients = value ? value.split(/[、,]/).map(s => s.trim()).filter(Boolean) : [];
+                  setFormData(prev => ({ ...prev, ingredients }));
+                  setIngredientsText(ingredients.join('、'));
+                }}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm px-3 py-2 border"
+                placeholder="成分を「、」区切りで入力（例: 鶏肉、玉ねぎ、にんじん）"
+                rows={3}
+              />
             </div>
 
             {/* アレルゲン表記 */}
             <div>
               <h2 className="text-lg font-semibold mb-4">アレルゲン表記</h2>
-              
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={allergenInput}
-                  onChange={(e) => setAllergenInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addAllergen())}
-                  className="flex-1 border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm px-3 py-2 border"
-                  placeholder="アレルゲンを入力してEnter"
-                />
-                <button
-                  type="button"
-                  onClick={addAllergen}
-                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-                >
-                  追加
-                </button>
-              </div>
-              
-              <div className="mt-2 flex flex-wrap gap-2">
-                {formData.allergens.map((allergen, index) => (
-                  <span
-                    key={index}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-red-100 text-red-800"
-                  >
-                    {allergen}
-                    <button
-                      type="button"
-                      onClick={() => removeAllergen(index)}
-                      className="ml-2 text-red-600 hover:text-red-800"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
+              <textarea
+                value={allergensText}
+                onChange={(e) => setAllergensText(e.target.value)}
+                onBlur={(e) => {
+                  const value = e.target.value;
+                  const allergens = value ? value.split(/[、,]/).map(s => s.trim()).filter(Boolean) : [];
+                  setFormData(prev => ({ ...prev, allergens }));
+                  setAllergensText(allergens.join('、'));
+                }}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm px-3 py-2 border"
+                placeholder="アレルゲンを「、」区切りで入力（例: 小麦、卵、乳）"
+                rows={3}
+              />
             </div>
 
             {/* 公開設定 */}
