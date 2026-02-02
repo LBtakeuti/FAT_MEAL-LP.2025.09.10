@@ -334,23 +334,23 @@ export default function AnalyticsPage() {
                   {/* ユーザー数 */}
                   <div>
                     <p className="text-sm text-gray-500 mb-2">ユーザー数</p>
-                    <div className="flex items-end gap-1 h-32">
+                    <div className="flex items-end gap-1" style={{ height: 128 }}>
                       {data.daily.map((day, index) => {
                         const maxUsers = getMaxValue(data.daily.map((d) => d.users));
-                        const height = (day.users / maxUsers) * 100;
+                        const heightPx = (day.users / maxUsers) * 112;
                         return (
-                          <div key={index} className="flex-1 flex flex-col items-center">
+                          <div key={index} className="flex-1 flex flex-col items-center h-full justify-end">
                             <div
                               className="w-full bg-blue-500 rounded-t hover:bg-blue-600 transition-colors cursor-pointer relative group"
-                              style={{ height: `${Math.max(height, 2)}%` }}
+                              style={{ height: Math.max(heightPx, 3) }}
                             >
-                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block">
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-10">
                                 <div className="bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
                                   {day.users.toLocaleString()}
                                 </div>
                               </div>
                             </div>
-                            <span className="text-xs text-gray-500 mt-1 hidden sm:block">{formatDate(day.date)}</span>
+                            <span className="text-xs text-gray-500 mt-1 shrink-0">{formatDate(day.date)}</span>
                           </div>
                         );
                       })}
@@ -360,23 +360,23 @@ export default function AnalyticsPage() {
                   {/* PV */}
                   <div>
                     <p className="text-sm text-gray-500 mb-2">ページビュー</p>
-                    <div className="flex items-end gap-1 h-32">
+                    <div className="flex items-end gap-1" style={{ height: 128 }}>
                       {data.daily.map((day, index) => {
                         const maxPV = getMaxValue(data.daily.map((d) => d.pageViews));
-                        const height = (day.pageViews / maxPV) * 100;
+                        const heightPx = (day.pageViews / maxPV) * 112;
                         return (
-                          <div key={index} className="flex-1 flex flex-col items-center">
+                          <div key={index} className="flex-1 flex flex-col items-center h-full justify-end">
                             <div
                               className="w-full bg-orange-500 rounded-t hover:bg-orange-600 transition-colors cursor-pointer relative group"
-                              style={{ height: `${Math.max(height, 2)}%` }}
+                              style={{ height: Math.max(heightPx, 3) }}
                             >
-                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block">
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-10">
                                 <div className="bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
                                   {day.pageViews.toLocaleString()}
                                 </div>
                               </div>
                             </div>
-                            <span className="text-xs text-gray-500 mt-1 hidden sm:block">{formatDate(day.date)}</span>
+                            <span className="text-xs text-gray-500 mt-1 shrink-0">{formatDate(day.date)}</span>
                           </div>
                         );
                       })}
@@ -545,23 +545,23 @@ export default function AnalyticsPage() {
                       {/* クリック数 */}
                       <div>
                         <p className="text-sm text-gray-500 mb-2">クリック数</p>
-                        <div className="flex items-end gap-1 h-32">
+                        <div className="flex items-end gap-1" style={{ height: 128 }}>
                           {scData.daily.map((day, index) => {
                             const maxClicks = getMaxValue(scData.daily.map((d) => d.clicks));
-                            const height = (day.clicks / maxClicks) * 100;
+                            const heightPx = (day.clicks / maxClicks) * 112;
                             return (
-                              <div key={index} className="flex-1 flex flex-col items-center">
+                              <div key={index} className="flex-1 flex flex-col items-center h-full justify-end">
                                 <div
                                   className="w-full bg-green-500 rounded-t hover:bg-green-600 transition-colors cursor-pointer relative group"
-                                  style={{ height: `${Math.max(height, 2)}%` }}
+                                  style={{ height: Math.max(heightPx, 3) }}
                                 >
-                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block">
+                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-10">
                                     <div className="bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
                                       {day.clicks.toLocaleString()}
                                     </div>
                                   </div>
                                 </div>
-                                <span className="text-xs text-gray-500 mt-1 hidden sm:block">{formatDateSc(day.date)}</span>
+                                <span className="text-xs text-gray-500 mt-1 shrink-0">{formatDateSc(day.date)}</span>
                               </div>
                             );
                           })}
@@ -571,23 +571,23 @@ export default function AnalyticsPage() {
                       {/* 表示回数 */}
                       <div>
                         <p className="text-sm text-gray-500 mb-2">表示回数</p>
-                        <div className="flex items-end gap-1 h-32">
+                        <div className="flex items-end gap-1" style={{ height: 128 }}>
                           {scData.daily.map((day, index) => {
                             const maxImpressions = getMaxValue(scData.daily.map((d) => d.impressions));
-                            const height = (day.impressions / maxImpressions) * 100;
+                            const heightPx = (day.impressions / maxImpressions) * 112;
                             return (
-                              <div key={index} className="flex-1 flex flex-col items-center">
+                              <div key={index} className="flex-1 flex flex-col items-center h-full justify-end">
                                 <div
                                   className="w-full bg-blue-500 rounded-t hover:bg-blue-600 transition-colors cursor-pointer relative group"
-                                  style={{ height: `${Math.max(height, 2)}%` }}
+                                  style={{ height: Math.max(heightPx, 3) }}
                                 >
-                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block">
+                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-10">
                                     <div className="bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
                                       {day.impressions.toLocaleString()}
                                     </div>
                                   </div>
                                 </div>
-                                <span className="text-xs text-gray-500 mt-1 hidden sm:block">{formatDateSc(day.date)}</span>
+                                <span className="text-xs text-gray-500 mt-1 shrink-0">{formatDateSc(day.date)}</span>
                               </div>
                             );
                           })}

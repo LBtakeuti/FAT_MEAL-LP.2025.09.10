@@ -33,15 +33,16 @@ export default function AdminLayout({
     { href: '/admin/news', label: 'ニュース管理' },
     { href: '/admin/contacts', label: 'お問い合わせ管理' },
     { href: '/admin/inventory', label: '在庫管理' },
+    { href: '/admin/banner', label: 'バナー管理' },
   ];
 
   return (
     <div className="min-h-screen bg-gray-100">
       {/* サイドバー */}
-      <aside className={`fixed left-0 top-0 h-full bg-gray-900 text-white transition-all duration-300 ${
+      <aside className={`fixed left-0 top-0 h-full bg-gray-900 text-white transition-all duration-300 flex flex-col ${
         isSidebarOpen ? 'w-64' : 'w-16'
       }`}>
-        <div className="p-4">
+        <div className="p-4 flex-shrink-0">
           <div className="flex items-center justify-between mb-8">
             <h1 className={`text-xl font-bold ${!isSidebarOpen && 'hidden'}`}>
               管理画面
@@ -53,23 +54,23 @@ export default function AdminLayout({
               {isSidebarOpen ? '<' : '>'}
             </button>
           </div>
-          
-          <nav className="space-y-2">
-            {menuItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 px-4 py-2 rounded hover:bg-gray-800 transition-colors ${
-                  pathname === item.href ? 'bg-gray-800' : ''
-                }`}
-              >
-                {isSidebarOpen && <span>{item.label}</span>}
-              </Link>
-            ))}
-          </nav>
         </div>
-        
-        <div className="absolute bottom-0 left-0 right-0 p-4">
+
+        <nav className="flex-1 overflow-y-auto px-4 space-y-2">
+          {menuItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center gap-3 px-4 py-2 rounded hover:bg-gray-800 transition-colors ${
+                pathname === item.href ? 'bg-gray-800' : ''
+              }`}
+            >
+              {isSidebarOpen && <span>{item.label}</span>}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="flex-shrink-0 p-4">
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 px-4 py-2 rounded hover:bg-gray-800 transition-colors w-full text-left"

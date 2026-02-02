@@ -1,13 +1,28 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
+
+interface BannerSettings {
+  is_active: boolean;
+  image_url: string;
+  link_url: string;
+}
 
 const LineFloatingButton: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [isLineClosed, setIsLineClosed] = useState(false);
   const [isBannerClosed, setIsBannerClosed] = useState(false);
   const [isNearFooter, setIsNearFooter] = useState(false);
+  const [banner, setBanner] = useState<BannerSettings | null>(null);
+
+  useEffect(() => {
+    fetch('/api/admin/banner')
+      .then(res => res.ok ? res.json() : null)
+      .then(json => {
+        if (json) setBanner(json.data ?? json);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -47,58 +62,63 @@ const LineFloatingButton: React.FC = () => {
     setIsBannerClosed(true);
   };
 
+  const showBanner = banner?.is_active !== false;
+  const bannerImageUrl = banner?.image_url || '/banner-PC.png';
+  const bannerLinkUrl = banner?.link_url || 'https://lin.ee/AqKWBrV';
+
   return (
     <>
       {/* PC用バナー - 画面中央下部 */}
-      <div
-        className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] transition-opacity duration-500 hidden sm:block ${
-          isVisible && !isNearFooter && !isBannerClosed ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
-      >
-        <div className="relative">
-          {/* 閉じるボタン */}
-          <button
-            type="button"
-            onClick={handleBannerClose}
-            onTouchEnd={handleBannerClose}
-            className="absolute -top-2 -right-2 bg-gray-600 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg z-20 hover:bg-gray-700 transition-colors"
-            style={{
-              WebkitTapHighlightColor: 'transparent',
-              touchAction: 'manipulation'
-            }}
-            aria-label="閉じる"
-          >
-            <svg
-              className="w-3 h-3"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              strokeWidth={3}
+      {showBanner && (
+        <div
+          className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] transition-opacity duration-500 hidden sm:block ${
+            isVisible && !isNearFooter && !isBannerClosed ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
+        >
+          <div className="relative">
+            {/* 閉じるボタン */}
+            <button
+              type="button"
+              onClick={handleBannerClose}
+              onTouchEnd={handleBannerClose}
+              className="absolute -top-2 -right-2 bg-gray-600 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg z-20 hover:bg-gray-700 transition-colors"
+              style={{
+                WebkitTapHighlightColor: 'transparent',
+                touchAction: 'manipulation'
+              }}
+              aria-label="閉じる"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 18L18 6M6 6l12 12"
+              <svg
+                className="w-3 h-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                strokeWidth={3}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+            <a
+              href={bannerLinkUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block"
+            >
+              <img
+                src={bannerImageUrl}
+                alt="バナー"
+                width={600}
+                height={100}
+                className="rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
               />
-            </svg>
-          </button>
-          <a
-            href="https://lin.ee/AqKWBrV"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block"
-          >
-            <Image
-              src="/banner-PC.png"
-              alt="24食・48食定期コースが今だけ1000円割引！ふとるめしをご賞味あれ！"
-              width={600}
-              height={100}
-              className="rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
-              priority
-            />
-          </a>
+            </a>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* LINE追従ボタン */}
       <div
