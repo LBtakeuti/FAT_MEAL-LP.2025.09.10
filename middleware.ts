@@ -21,6 +21,11 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next();
     }
 
+    // バナーAPIのGETは認証不要（フロント表示用）
+    if (request.nextUrl.pathname === '/api/admin/banner' && request.method === 'GET') {
+      return NextResponse.next();
+    }
+
     // 認証トークンの確認
     const token = getAuthToken(request);
 
