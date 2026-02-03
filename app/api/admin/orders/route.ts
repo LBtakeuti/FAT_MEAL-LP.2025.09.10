@@ -89,9 +89,9 @@ export async function DELETE(request: NextRequest) {
 
     const supabase = createServerClient();
 
-    const { error } = await (supabase
+    const { error, count } = await (supabase
       .from('orders') as any)
-      .delete()
+      .delete({ count: 'exact' })
       .eq('id', id);
 
     if (error) {
@@ -99,6 +99,13 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json(
         { error: 'Failed to delete order' },
         { status: 500 }
+      );
+    }
+
+    if (count === 0) {
+      return NextResponse.json(
+        { error: 'Order not found' },
+        { status: 404 }
       );
     }
 

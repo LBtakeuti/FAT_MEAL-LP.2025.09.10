@@ -86,9 +86,9 @@ export default function AdminOrdersPage() {
       });
 
       if (response.ok) {
-        setOrders(orders.filter(order => order.id !== orderId));
         setDeleteConfirmId(null);
         setExpandedOrderId(null);
+        await fetchOrders();
       } else {
         alert('注文の削除に失敗しました');
       }
