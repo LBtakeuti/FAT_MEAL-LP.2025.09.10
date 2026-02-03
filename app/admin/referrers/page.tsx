@@ -528,10 +528,10 @@ export default function ReferrersPage() {
                   <div className="bg-orange-50 rounded-lg p-4">
                     <h3 className="text-sm font-medium text-orange-800 mb-2">紹介料単価</h3>
                     <div className="grid grid-cols-2 gap-2 text-sm text-orange-700">
-                      <div>お試し6食プラン: ¥500</div>
-                      <div>12食定期プラン: ¥1,000</div>
-                      <div>24食定期プラン: ¥2,500</div>
-                      <div>48食定期プラン: ¥4,000</div>
+                      <div>お試しプラン: ¥500</div>
+                      <div>6食定期プラン: ¥1,000</div>
+                      <div>12食定期プラン: ¥2,000</div>
+                      <div>24食定期プラン: ¥4,000</div>
                     </div>
                   </div>
 

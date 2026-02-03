@@ -62,9 +62,9 @@ const LineFloatingButton: React.FC = () => {
     setIsBannerClosed(true);
   };
 
-  const showBanner = banner?.is_active !== false;
-  const bannerImageUrl = banner?.image_url || '/banner-PC.png';
-  const bannerLinkUrl = banner?.link_url || 'https://lin.ee/AqKWBrV';
+  const showBanner = banner !== null && banner.is_active && !!banner.image_url;
+  const bannerImageUrl = banner?.image_url || '';
+  const bannerLinkUrl = banner?.link_url || '';
 
   return (
     <>
@@ -81,15 +81,16 @@ const LineFloatingButton: React.FC = () => {
               type="button"
               onClick={handleBannerClose}
               onTouchEnd={handleBannerClose}
-              className="absolute -top-2 -right-2 bg-gray-600 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg z-20 hover:bg-gray-700 transition-colors"
+              className="absolute -top-3 -right-3 bg-gray-600 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg hover:bg-gray-700 transition-colors"
               style={{
                 WebkitTapHighlightColor: 'transparent',
-                touchAction: 'manipulation'
+                touchAction: 'manipulation',
+                zIndex: 10001,
               }}
               aria-label="閉じる"
             >
               <svg
-                className="w-3 h-3"
+                className="w-4 h-4"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"

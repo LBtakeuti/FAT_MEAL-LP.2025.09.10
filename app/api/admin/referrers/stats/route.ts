@@ -25,29 +25,29 @@ interface ReferrerStats {
 }
 
 // 紹介料の計算
-// お試しプラン（6食）: 500円
-// 12食定期プラン: 1,000円
-// 24食定期プラン: 2,500円
-// 48食定期プラン: 4,000円
+// お試しプラン: 500円
+// 6食定期プラン: 1,000円
+// 12食定期プラン: 2,000円
+// 24食定期プラン: 4,000円
 function calculateCommission(planId: string, menuSet: string): { commission: number; planType: string } {
   // お試しプラン
-  if (planId === 'trial-6' || menuSet?.includes('お試し') || menuSet?.includes('6食')) {
-    return { commission: 500, planType: 'お試し6食プラン' };
+  if (planId === 'trial-6' || menuSet?.includes('お試し')) {
+    return { commission: 500, planType: 'お試しプラン' };
   }
-  
-  // 48食定期プラン
-  if (planId === 'subscription-monthly-48' || menuSet?.includes('48食')) {
-    return { commission: 4000, planType: '48食定期プラン' };
+
+  // 24食定期プラン（旧48食）
+  if (planId === 'subscription-monthly-48' || menuSet?.includes('24食セット') || menuSet?.includes('48食')) {
+    return { commission: 4000, planType: '24食定期プラン' };
   }
-  
-  // 24食定期プラン
-  if (planId === 'subscription-monthly-24' || menuSet?.includes('24食')) {
-    return { commission: 2500, planType: '24食定期プラン' };
+
+  // 12食定期プラン（旧24食）
+  if (planId === 'subscription-monthly-24' || menuSet?.includes('12食セット') || menuSet?.includes('24食')) {
+    return { commission: 2000, planType: '12食定期プラン' };
   }
-  
-  // 12食定期プラン
-  if (planId === 'subscription-monthly-12' || menuSet?.includes('12食')) {
-    return { commission: 1000, planType: '12食定期プラン' };
+
+  // 6食定期プラン（旧12食）
+  if (planId === 'subscription-monthly-12' || menuSet?.includes('6食セット') || menuSet?.includes('12食')) {
+    return { commission: 1000, planType: '6食定期プラン' };
   }
   
   // デフォルト（不明なプラン）
