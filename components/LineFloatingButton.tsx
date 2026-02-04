@@ -69,23 +69,25 @@ const LineFloatingButton: React.FC = () => {
   return (
     <>
       {/* PC用バナー - 画面中央下部 */}
-      {showBanner && (
+      {showBanner && !isBannerClosed && (
         <div
           className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] transition-opacity duration-500 hidden sm:block ${
-            isVisible && !isNearFooter && !isBannerClosed ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            isVisible && !isNearFooter ? 'opacity-100' : 'opacity-0 pointer-events-none'
           }`}
         >
           <div className="relative">
             {/* 閉じるボタン */}
             <button
               type="button"
-              onClick={handleBannerClose}
-              onTouchEnd={handleBannerClose}
-              className="absolute -top-3 -right-3 bg-gray-600 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg hover:bg-gray-700 transition-colors"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsBannerClosed(true);
+              }}
+              className="absolute -top-3 -right-3 bg-gray-600 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg hover:bg-gray-700 transition-colors z-[10002] cursor-pointer"
               style={{
                 WebkitTapHighlightColor: 'transparent',
                 touchAction: 'manipulation',
-                zIndex: 10001,
               }}
               aria-label="閉じる"
             >
@@ -193,7 +195,7 @@ const LineFloatingButton: React.FC = () => {
               </div>
 
               {/* パルスアニメーション */}
-              <div className="absolute inset-0 bg-[#06C755] rounded-full animate-ping opacity-20"></div>
+              <div className="absolute inset-0 bg-[#06C755] rounded-full animate-ping opacity-20 pointer-events-none"></div>
             </div>
           </div>
         </a>

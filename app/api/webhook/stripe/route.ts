@@ -335,6 +335,51 @@ async function reduceInventory(items: Stripe.LineItem[]) {
   }
 }
 
+// inventory_settingsのstock_setsを減算する共通関数
+async function reduceInventorySets(setsToReduce: number, reason: string) {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    console.error('[Webhook] Supabase client not available, inventory not reduced');
+    return;
+  }
+
+  if (setsToReduce <= 0) {
+    return;
+  }
+
+  try {
+    const { data: current, error: fetchError } = await (supabase
+      .from('inventory_settings') as any)
+      .select('id, stock_sets')
+      .eq('set_type', '6-set')
+      .single();
+
+    if (fetchError || !current) {
+      console.error('[Webhook] Failed to fetch inventory settings:', fetchError);
+      return;
+    }
+
+    const currentStock = current.stock_sets || 0;
+    const newStock = Math.max(0, currentStock - setsToReduce);
+
+    const { error: updateError } = await (supabase
+      .from('inventory_settings') as any)
+      .update({
+        stock_sets: newStock,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('set_type', '6-set');
+
+    if (updateError) {
+      console.error('[Webhook] Failed to update inventory settings:', updateError);
+    } else {
+      console.log(`[Webhook] Inventory reduced: ${currentStock} -> ${newStock} (${setsToReduce} sets, ${reason})`);
+    }
+  } catch (error) {
+    console.error('[Webhook] Error reducing inventory:', error);
+  }
+}
+
 // サブスクリプション作成処理（Stripe customer.subscription.created）
 async function createSubscriptionFromStripe(subscription: Stripe.Subscription, stripe: Stripe) {
   console.log(`[Webhook] createSubscriptionFromStripe called for subscription: ${subscription.id}`);
@@ -492,6 +537,10 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
       monthlyAmount: planConfig.monthly_total,
     });
 
+    // 在庫を減算（deliveries_per_month × 2セット）
+    const setsToReduce = planConfig.deliveries_per_month * 2;
+    await reduceInventorySets(setsToReduce, `subscription created: ${planName}`);
+
   } catch (error) {
     console.error('Error creating subscription from Stripe:', error);
     throw error;
@@ -575,6 +624,11 @@ async function handleMonthlySubscriptionPayment(invoice: Stripe.Invoice, stripe:
     if (updateError) {
       console.error('Failed to update subscription period:', updateError);
     }
+
+    // 在庫を減算（deliveries_per_month × 2セット）
+    const planConfig = getPlanConfig(planId);
+    const setsToReduce = planConfig.deliveries_per_month * 2;
+    await reduceInventorySets(setsToReduce, `monthly payment: ${planId}`);
 
     console.log(`Monthly payment processed for subscription: ${(dbSubscription as any).id}`);
 

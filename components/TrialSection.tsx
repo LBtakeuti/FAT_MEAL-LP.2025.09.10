@@ -25,7 +25,7 @@ const TrialSection: React.FC = () => {
                 お試し
               </span>
               <h3 className="text-sm sm:text-base font-bold text-gray-800">
-                まずは6食セットから
+                まずは6個セットから
               </h3>
             </div>
             <p className="text-xs text-gray-500">

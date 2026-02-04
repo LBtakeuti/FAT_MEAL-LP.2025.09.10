@@ -2,9 +2,9 @@
  * サブスクリプションプランの配送スケジュール計算（月額自動更新版）
  *
  * プラン構成:
- * - subscription-monthly-12: 月12食（月1回配送）¥9,780/月
- * - subscription-monthly-24: 月24食（月2回配送）¥18,600/月
- * - subscription-monthly-48: 月48食（月4回配送）¥34,800/月
+ * - subscription-monthly-12: 月6食（月1回配送）¥9,780/月
+ * - subscription-monthly-24: 月12食（月2回配送）¥18,600/月
+ * - subscription-monthly-48: 月24食（月4回配送）¥34,800/月
  */
 
 // サービス開始日（2月10日より前の注文は全てこの日に配送開始）
@@ -135,9 +135,9 @@ export function calculateInitialDeliverySchedule(
  * 月次配送スケジュールを計算（毎月の請求成功時）
  * 請求日を基準に配送スケジュールを作成
  * 2月10日より前の場合は2月10日を配送基準日とする
- * - 12食: 基準日当日
- * - 24食: 基準日当日、+14日
- * - 48食: 基準日当日、+7日、+14日、+21日
+ * - 6食: 基準日当日
+ * - 12食: 基準日当日、+14日
+ * - 24食: 基準日当日、+7日、+14日、+21日
  */
 export function calculateMonthlyDeliverySchedule(
   planId: string,
@@ -203,9 +203,9 @@ export function getPlanConfig(planId: string): PlanConfig {
  */
 export function getPlanName(planId: string): string {
   const planNames: { [key: string]: string } = {
-    'subscription-monthly-12': 'ふとるめし12食 月額プラン',
-    'subscription-monthly-24': 'ふとるめし24食 月額プラン',
-    'subscription-monthly-48': 'ふとるめし48食 月額プラン',
+    'subscription-monthly-12': 'ふとるめし6食 月額プラン',
+    'subscription-monthly-24': 'ふとるめし12食 月額プラン',
+    'subscription-monthly-48': 'ふとるめし24食 月額プラン',
   };
   return planNames[planId] || 'ふとるめし月額プラン';
 }
@@ -215,16 +215,16 @@ export function getPlanName(planId: string): string {
  */
 export function getMenuSetName(planId: string): string {
   const menuSetNames: { [key: string]: string } = {
-    'subscription-monthly-12': 'ふとるめし12食セット',
-    'subscription-monthly-24': 'ふとるめし24食セット',
-    'subscription-monthly-48': 'ふとるめし48食セット',
+    'subscription-monthly-12': 'ふとるめし6食セット',
+    'subscription-monthly-24': 'ふとるめし12食セット',
+    'subscription-monthly-48': 'ふとるめし24食セット',
   };
   return menuSetNames[planId] || 'ふとるめしセット';
 }
 
 /**
  * プランIDと配送回数からメニューセット名（配送回数付き）を取得
- * 例: 48食プラン 1回目 → 「ふとるめし48食セット 1回目」
+ * 例: 24食プラン 1回目 → 「ふとるめし24食セット 1回目」
  */
 export function getMenuSetNameWithDeliveryNumber(planId: string, deliveryNumber: number): string {
   const baseName = getMenuSetName(planId);

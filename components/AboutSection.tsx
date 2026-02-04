@@ -34,7 +34,7 @@ const AboutSection: React.FC = () => {
   const features = [
     {
       title: '圧倒的なボリューム',
-      description: '1食平均450kcal！/メイン、副菜のおかずも味がしっかり/ボリュームも満点で満足間違いなし！',
+      description: '1食平均900kcal！/メイン、副菜のおかずも味がしっかり/ボリュームも満点で満足間違いなし！',
       number: '01',
     },
     {
@@ -44,7 +44,7 @@ const AboutSection: React.FC = () => {
     },
     {
       title: '計算されたPFCバランス',
-      description: '平均タンパク質30g超え！筋肉づくりに最適な栄養設計',
+      description: '平均タンパク質60g超え！筋肉づくりに最適な栄養設計',
       number: '03',
     },
   ];
@@ -68,15 +68,15 @@ const AboutSection: React.FC = () => {
           </div>
         </div>
 
-        {/* 3つの特徴 */}
+        {/* 3つの特徴 - 横一列 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
           {features.map((feature, index) => (
             <div
               key={index}
-              className="relative bg-white p-6 sm:p-8 rounded-2xl overflow-hidden"
+              className="relative bg-white p-6 sm:p-8 rounded-2xl overflow-visible"
             >
               {/* 背景番号 */}
-              <div className="absolute top-2 right-2 text-8xl sm:text-9xl lg:text-[12rem] font-bold text-orange-500 opacity-10 leading-none">
+              <div className="absolute top-0 right-0 text-8xl sm:text-9xl lg:text-[10rem] font-bold text-orange-500 opacity-10 leading-none pointer-events-none">
                 {feature.number}
               </div>
               {/* コンテンツ */}
@@ -97,79 +97,17 @@ const AboutSection: React.FC = () => {
           ))}
         </div>
 
-        {/* ボリューム調整セクション */}
-        <div className="mt-10 sm:mt-14 rounded-2xl p-6 sm:p-8">
-          <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 text-center">
-            お弁当の組み合わせでボリューム調整！
-          </h3>
-
-          {/* 説明文 */}
-          <div className="text-sm sm:text-base text-gray-700 mb-6 sm:mb-8 space-y-2">
-            <p className="text-center font-medium text-gray-800">
-              計算されたタンパク質・カロリーで食事を管理し、<br className="sm:hidden" />食事を楽しく、努力にブーストをかけよう！
-            </p>
-          </div>
-
-          {/* お弁当画像と説明 - 画像を横に3つ、説明は下に配置 */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
-            {/* 1食 */}
-            <div className="flex flex-col items-center text-center">
-              <div className="mb-4 w-full max-w-[200px] sm:max-w-[250px] h-[200px] sm:h-[250px] relative">
-                <Image
-                  src="/futorumeshi1.png"
-                  alt="1食のお弁当"
-                  fill
-                  className="object-contain"
-                />
-              </div>
-              <div className="text-xl sm:text-2xl font-bold text-orange-500 mb-2">1食</div>
-              <div className="text-base sm:text-lg font-medium text-gray-900 mb-2">
-                約500kcal＋白米
-              </div>
-              <div className="text-sm sm:text-base text-gray-600">
-                忙しい社会人の方に
-              </div>
-            </div>
-
-            {/* 2食 */}
-            <div className="flex flex-col items-center text-center">
-              <div className="mb-4 w-full max-w-[200px] sm:max-w-[250px] h-[200px] sm:h-[250px] relative">
-                <Image
-                  src="/futorumeshi2.png"
-                  alt="2食のお弁当"
-                  fill
-                  className="object-contain"
-                />
-              </div>
-              <div className="text-xl sm:text-2xl font-bold text-orange-500 mb-2">2食</div>
-              <div className="text-base sm:text-lg font-medium text-gray-900 mb-2">
-                約900kcal＋白米
-              </div>
-              <div className="text-sm sm:text-base text-gray-600">
-                食べ盛りの学生・運動する方に
-              </div>
-            </div>
-
-            {/* 3食 */}
-            <div className="flex flex-col items-center text-center">
-              <div className="mb-4 w-full max-w-[200px] sm:max-w-[250px] h-[200px] sm:h-[250px] relative">
-                <Image
-                  src="/futorumeshi3.png"
-                  alt="3食のお弁当"
-                  fill
-                  className="object-contain"
-                />
-              </div>
-              <div className="text-xl sm:text-2xl font-bold text-orange-500 mb-2">3食</div>
-              <div className="text-base sm:text-lg font-medium text-gray-900 mb-2">
-                1500kCal＋白米
-              </div>
-              <div className="text-sm sm:text-base text-gray-600">
-                増量中・アスリートの方に
-              </div>
-            </div>
-          </div>
+        {/* 2個で1食のSVG - セクションの上に配置 */}
+        <div className="mt-8 sm:mt-12 flex justify-center">
+          <Image
+            src="/new-copy1.svg"
+            alt="太る飯は2個で1食"
+            width={600}
+            height={200}
+            className="w-full max-w-[600px] h-auto"
+          />
         </div>
+
       </div>
     </section>
   );

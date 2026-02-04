@@ -321,7 +321,7 @@ const StatsSection: React.FC = () => {
               <div className="absolute -top-2 left-4 w-4 h-4 bg-gray-900 transform rotate-45"></div>
               <p className="font-bold mb-3 text-white">ふとるめし 15,600円の内訳</p>
               <ul className="space-y-2 text-sm text-gray-200">
-                <li>• 24食セット: 13,400円</li>
+                <li>• 12食セット: 13,400円</li>
                 <li>• 1食あたり: 約558円</li>
                 <li>• 電子レンジ電気代: 約100円/月</li>
               </ul>

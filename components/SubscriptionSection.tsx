@@ -9,20 +9,20 @@ const SubscriptionSection: React.FC = () => {
   const plans = [
     {
       id: 'subscription-monthly-12',
-      meals: 12,
-      title: '12食プラン',
+      meals: 6,
+      title: '6食プラン',
       monthlyPrice: 8280,
       productPrice: 8280,
       shippingFee: 1500,
       deliveriesPerMonth: 1,
       description: '月1回配送',
-      subtitle: '12食セット×月1回',
-      pricePerMeal: 690,
+      subtitle: '6食セット×月1回',
+      pricePerMeal: 1380,
     },
     {
       id: 'subscription-monthly-24',
-      meals: 24,
-      title: '24食プラン',
+      meals: 12,
+      title: '12食プラン',
       originalProductPrice: 15600,
       productPrice: 14600,
       discount: 1000,
@@ -30,14 +30,14 @@ const SubscriptionSection: React.FC = () => {
       shippingFee: 3000,
       deliveriesPerMonth: 2,
       description: '月2回配送',
-      subtitle: '12食セット×月2回',
-      pricePerMeal: 608,
+      subtitle: '6食セット×月2回',
+      pricePerMeal: 1217,
       popular: true,
     },
     {
       id: 'subscription-monthly-48',
-      meals: 48,
-      title: '48食プラン',
+      meals: 24,
+      title: '24食プラン',
       originalProductPrice: 28800,
       productPrice: 27800,
       discount: 1000,
@@ -45,8 +45,8 @@ const SubscriptionSection: React.FC = () => {
       shippingFee: 6000,
       deliveriesPerMonth: 4,
       description: '月4回配送',
-      subtitle: '12食セット×月4回',
-      pricePerMeal: 579,
+      subtitle: '6食セット×月4回',
+      pricePerMeal: 1158,
     },
   ];
 
@@ -99,6 +99,9 @@ const SubscriptionSection: React.FC = () => {
                 <p className="text-sm text-gray-500">
                   {plan.subtitle}
                 </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  ※{plan.meals * 2}食入り
+                </p>
               </div>
 
               {/* 価格 */}
@@ -145,7 +148,7 @@ const SubscriptionSection: React.FC = () => {
                   <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>{plan.description}（各12食）</span>
+                  <span>{plan.description}</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

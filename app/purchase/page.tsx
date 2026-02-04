@@ -41,7 +41,7 @@ const planOptions: PlanOption[] = [
   {
     id: 'trial-6',
     quantity: 6,
-    label: 'ふとるめし6食セット（お試しプラン）',
+    label: 'ふとるめし6個セット（お試しプラン）',
     price: 4200,
     shippingFee: 1500,
     totalPrice: 5700,
@@ -54,13 +54,13 @@ const planOptions: PlanOption[] = [
   // サブスクリプションプラン
   {
     id: 'subscription-monthly-12',
-    quantity: 12,
-    label: 'ふとるめし12食 月額プラン',
+    quantity: 6,
+    label: 'ふとるめし6食 月額プラン',
     price: 8280,
     shippingFee: 1500,
     totalPrice: 8280,
-    description: '月1回配送（12食セット）',
-    perMeal: 690,
+    description: '月1回配送（6食セット）',
+    perMeal: 1380,
     isTrial: false,
     isSubscription: true,
     deliveriesPerMonth: 1,
@@ -68,13 +68,13 @@ const planOptions: PlanOption[] = [
   },
   {
     id: 'subscription-monthly-24',
-    quantity: 24,
-    label: 'ふとるめし24食 月額プラン',
+    quantity: 12,
+    label: 'ふとるめし12食 月額プラン',
     price: 14600,
     shippingFee: 3000,
     totalPrice: 14600,
-    description: '月2回配送（各12食セット）',
-    perMeal: 608,
+    description: '月2回配送（各6食セット）',
+    perMeal: 1217,
     isTrial: false,
     isSubscription: true,
     deliveriesPerMonth: 2,
@@ -82,13 +82,13 @@ const planOptions: PlanOption[] = [
   },
   {
     id: 'subscription-monthly-48',
-    quantity: 48,
-    label: 'ふとるめし48食 月額プラン',
+    quantity: 24,
+    label: 'ふとるめし24食 月額プラン',
     price: 27800,
     shippingFee: 6000,
     totalPrice: 27800,
-    description: '月4回配送（各12食セット）',
-    perMeal: 579,
+    description: '月4回配送（各6食セット）',
+    perMeal: 1158,
     isTrial: false,
     isSubscription: true,
     deliveriesPerMonth: 4,
@@ -855,6 +855,11 @@ const PurchasePage: React.FC = () => {
                       <p className="text-sm text-gray-600 mt-1">
                         {plan.description}
                       </p>
+                      {plan.isSubscription && (
+                        <p className="text-xs text-gray-400 mt-1">
+                          ※{plan.quantity * 2}食入り
+                        </p>
+                      )}
                       <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mt-2">
                         <span className="text-xl font-bold text-orange-600">
                           ¥{(plan.isTrial ? plan.totalPrice : plan.totalPrice + plan.shippingFee).toLocaleString()}

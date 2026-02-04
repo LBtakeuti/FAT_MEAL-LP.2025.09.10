@@ -167,32 +167,29 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// 在庫確認関数
+// 在庫確認関数（inventory_settings.stock_setsで判定）
 async function checkInventoryForDelivery(
   delivery: SubscriptionDelivery,
   supabase: ReturnType<typeof createServerClient>
 ): Promise<boolean> {
   try {
-    // 全てのメニューアイテムの在庫を取得
-    const { data: menuItems, error } = await supabase
-      .from('menu_items')
-      .select('id, stock, is_active')
-      .eq('is_active', true);
+    // inventory_settingsからセット在庫を取得
+    const { data: inventorySettings, error } = await (supabase
+      .from('inventory_settings') as any)
+      .select('stock_sets')
+      .eq('set_type', '6-set')
+      .single();
 
-    if (error || !menuItems || menuItems.length === 0) {
-      console.error('[Subscription Delivery Cron] Failed to fetch menu items:', error);
+    if (error || !inventorySettings) {
+      console.error('[Subscription Delivery Cron] Failed to fetch inventory settings:', error);
       return false;
     }
 
-    // 必要な在庫数を計算
-    // 12食セット: 各弁当1個ずつ必要
-    // 15食セット: 各弁当1個ずつ必要（ただし15食分）
-    const requiredStock = delivery.meals_per_delivery === 12 ? 1 : 1; // 簡易版: 各弁当1個
-    
-    // 最小在庫を確認
-    const minStock = Math.min(...menuItems.map((item: any) => item.stock || 0));
-    
-    return minStock >= requiredStock;
+    // 1配送 = 12食 = 2セット必要
+    const requiredSets = 2;
+    const currentStock = inventorySettings.stock_sets || 0;
+
+    return currentStock >= requiredSets;
   } catch (error) {
     console.error('[Subscription Delivery Cron] Error checking inventory:', error);
     return false;
@@ -235,44 +232,12 @@ async function createOrderFromDelivery(
     throw new Error(`Failed to create order: ${error?.message || 'Unknown error'}`);
   }
 
-  // 在庫を減らす
-  await reduceInventoryForDelivery(delivery, supabase);
+  // 在庫減算はWebhook（注文確定時）でまとめて行うため、Cronでは減算しない
 
   return {
     id: order.id,
     order_number: order.order_number,
   };
-}
-
-// 在庫を減らす関数
-async function reduceInventoryForDelivery(
-  delivery: SubscriptionDelivery,
-  supabase: ReturnType<typeof createServerClient>
-) {
-  try {
-    // 全てのメニューアイテムの在庫を取得
-    const { data: menuItems, error } = await (supabase
-      .from('menu_items') as any)
-      .select('id, stock')
-      .eq('is_active', true);
-
-    if (error || !menuItems) {
-      console.error('[Subscription Delivery Cron] Failed to fetch menu items for inventory reduction:', error);
-      return;
-    }
-
-    // 各メニューアイテムの在庫を1つ減らす（簡易版）
-    // 実際の実装では、配送内容に応じて適切な数量を減らす
-    for (const item of menuItems) {
-      const newStock = Math.max(0, ((item as any).stock || 0) - 1);
-      await (supabase
-        .from('menu_items') as any)
-        .update({ stock: newStock })
-        .eq('id', (item as any).id);
-    }
-  } catch (error) {
-    console.error('[Subscription Delivery Cron] Error reducing inventory:', error);
-  }
 }
 
 // 契約終了処理
