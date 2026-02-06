@@ -320,6 +320,20 @@ const PurchasePage: React.FC = () => {
     }
   }, [searchParams, user]);
 
+  // 紹介コードの自動適用（URLパラメータ ?ref=CODE → localStorage → バックグラウンドバリデーション）
+  useEffect(() => {
+    const refParam = searchParams.get('ref');
+    if (refParam) {
+      localStorage.setItem('referral_code', refParam);
+    }
+    const storedCode = localStorage.getItem('referral_code');
+    if (storedCode) {
+      setCustomerInfo(prev => ({ ...prev, referralCode: storedCode }));
+      validateReferralCode(storedCode);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   // カート内の選択されたプランを取得
   const getSelectedPlan = (): PlanOption | null => {
     const selectedItem = cart.find(item => item.quantity > 0);
@@ -411,24 +425,6 @@ const PurchasePage: React.FC = () => {
       setReferralCodeValid(false);
     } finally {
       setReferralCodeValidating(false);
-    }
-  };
-
-  // 紹介コード入力変更ハンドラー
-  const handleReferralCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.toUpperCase();
-    setCustomerInfo(prev => ({ ...prev, referralCode: value }));
-    // 入力中はエラーをクリア
-    if (referralCodeError) {
-      setReferralCodeError('');
-      setReferralCodeValid(false);
-    }
-  };
-
-  // 紹介コードのblurハンドラー（入力欄からフォーカスが外れた時にバリデーション）
-  const handleReferralCodeBlur = () => {
-    if (customerInfo.referralCode && customerInfo.referralCode.trim() !== '') {
-      validateReferralCode(customerInfo.referralCode);
     }
   };
 
@@ -612,11 +608,6 @@ const PurchasePage: React.FC = () => {
     //   }
     // }
 
-    // 紹介コードが入力されているが無効な場合はエラー
-    if (customerInfo.referralCode && customerInfo.referralCode.trim() !== '' && !referralCodeValid && !referralCodeValidating) {
-      newErrors.referralCode = '無効な紹介コードです';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -625,7 +616,11 @@ const PurchasePage: React.FC = () => {
     if (!isCartEmpty) {
       // サブスクリプションモードでログインしていない場合はログインを促す
       if (!isTrialMode && !user) {
-        router.push('/login?redirect=/purchase&type=subscription');
+        const refCode = localStorage.getItem('referral_code');
+        const redirectUrl = refCode
+          ? `/purchase?type=subscription&ref=${refCode}`
+          : '/purchase?type=subscription';
+        router.push(`/login?redirect=${encodeURIComponent(redirectUrl)}`);
         return;
       }
       setCurrentStep('info');
@@ -693,7 +688,7 @@ const PurchasePage: React.FC = () => {
               address: customerInfo.address,
               building: customerInfo.building,
               preferredDeliveryDate: customerInfo.preferredDeliveryDate,
-              referralCode: customerInfo.referralCode,
+              referralCode: referralCodeValid ? customerInfo.referralCode : undefined,
             },
             couponCode: appliedCoupon?.code,
           }),
@@ -784,7 +779,13 @@ const PurchasePage: React.FC = () => {
               </svg>
               <span>月額プランのご購入にはログインが必要です</span>
               <button
-                onClick={() => router.push('/login?redirect=/purchase&type=subscription')}
+                onClick={() => {
+                  const refCode = localStorage.getItem('referral_code');
+                  const redirectUrl = refCode
+                    ? `/purchase?type=subscription&ref=${refCode}`
+                    : '/purchase?type=subscription';
+                  router.push(`/login?redirect=${encodeURIComponent(redirectUrl)}`);
+                }}
                 className="ml-2 underline hover:text-blue-700"
               >
                 ログインする
@@ -1301,56 +1302,6 @@ const PurchasePage: React.FC = () => {
         </div>
       </div>
 
-      {/* 紹介コード（独立したブロック） */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            紹介コード（任意）
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              name="referralCode"
-              value={customerInfo.referralCode || ''}
-              onChange={handleReferralCodeChange}
-              onBlur={handleReferralCodeBlur}
-              placeholder="紹介者のコードをお持ちの場合はご入力ください"
-              className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none ${
-                referralCodeError
-                  ? 'border-red-500'
-                  : referralCodeValid
-                  ? 'border-green-500'
-                  : 'border-gray-300 focus:border-orange-600'
-              }`}
-            />
-            {referralCodeValidating && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                <svg className="animate-spin h-5 w-5 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              </div>
-            )}
-            {!referralCodeValidating && referralCodeValid && (
-              <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                <svg className="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-            )}
-          </div>
-          {referralCodeError && (
-            <p className="text-red-500 text-xs mt-1">{referralCodeError}</p>
-          )}
-          {referralCodeValid && (
-            <p className="text-green-600 text-xs mt-1">紹介コードが適用されました</p>
-          )}
-          <p className="text-xs text-gray-500 mt-1">
-            紹介者からコードを受け取っている場合のみご入力ください
-          </p>
-        </div>
-      </div>
-
       {/* ボタン */}
       <div className="flex gap-4">
         <button
@@ -1554,12 +1505,12 @@ const PurchasePage: React.FC = () => {
 
         {/* 特商法同意チェックボックス */}
         <div className="bg-white rounded-xl shadow-sm p-6">
-          <label className="flex items-start gap-3 cursor-pointer">
+          <label className="flex items-center gap-3 cursor-pointer">
             <input
               type="checkbox"
               checked={agreedToTerms}
               onChange={(e) => setAgreedToTerms(e.target.checked)}
-              className="mt-1 w-5 h-5 text-orange-600 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
+              className="w-5 h-5 text-orange-600 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
             />
             <span className="text-sm text-gray-700">
               <a
@@ -1586,7 +1537,7 @@ const PurchasePage: React.FC = () => {
                 <h3 className="font-bold text-amber-800 mb-2">定期購入（サブスクリプション）に関するご注意</h3>
                 <ul className="text-sm text-amber-700 space-y-1.5">
                   <li>・ご購入後、毎月自動的に決済が行われます</li>
-                  <li>・解約をご希望の場合は、次回決済日の3日前までにマイページから解約手続きを行ってください</li>
+                  <li>・解約をご希望の場合は、<a href="/contact" target="_blank" rel="noopener noreferrer" className="text-amber-800 underline hover:text-amber-900">お問い合わせ</a>からお申し付けください</li>
                   <li>・お支払い済みの配送についてはキャンセルできかねます</li>
                   <li>・ご不明点は<a href="/contact" target="_blank" rel="noopener noreferrer" className="text-amber-800 underline hover:text-amber-900">お問い合わせ</a>よりご連絡ください</li>
                 </ul>
@@ -1637,7 +1588,7 @@ const PurchasePage: React.FC = () => {
           {/* 戻るボタン */}
           <div className="mb-6">
             <button
-              onClick={() => currentStep === 'plan' ? router.back() : currentStep === 'info' ? handleBackToPlan() : handleBackToInfo()}
+              onClick={() => currentStep === 'plan' ? router.push('/') : currentStep === 'info' ? handleBackToPlan() : handleBackToInfo()}
               className="inline-flex items-center text-gray-600 hover:text-orange-600 transition-colors"
             >
               <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

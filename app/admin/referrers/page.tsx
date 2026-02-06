@@ -183,7 +183,7 @@ export default function ReferrersPage() {
   };
 
   const handleDelete = async (referrer: Referrer) => {
-    if (!confirm(`「${referrer.name}」を削除しますか？\n紹介コード: ${referrer.referral_code}`)) {
+    if (!confirm(`「${referrer.name}」を削除しますか？\n紹介リンク: https://www.futorumeshi.com/purchase?ref=${referrer.referral_code}`)) {
       return;
     }
 
@@ -245,7 +245,7 @@ export default function ReferrersPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">紹介者管理</h1>
           <p className="text-sm text-gray-500 mt-1">
-            紹介コードは任意で指定可能（未入力の場合は自動生成）
+            リンク用コードは任意で指定可能（未入力の場合は自動生成）
           </p>
         </div>
         <button
@@ -274,7 +274,7 @@ export default function ReferrersPage() {
                     紹介者名
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    紹介コード
+                    紹介リンク
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     利用回数
@@ -308,13 +308,13 @@ export default function ReferrersPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
-                          <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
-                            {referrer.referral_code}
-                          </code>
+                          <span className="text-sm text-gray-600 truncate max-w-[200px]" title={`https://www.futorumeshi.com/purchase?ref=${referrer.referral_code}`}>
+                            ...?ref={referrer.referral_code}
+                          </span>
                           <button
-                            onClick={() => copyToClipboard(referrer.referral_code)}
-                            className="text-gray-400 hover:text-gray-600"
-                            title="コピー"
+                            onClick={() => copyToClipboard(`https://www.futorumeshi.com/purchase?ref=${referrer.referral_code}`)}
+                            className="text-gray-400 hover:text-gray-600 flex items-center gap-1"
+                            title="リンクをコピー"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -404,7 +404,7 @@ export default function ReferrersPage() {
                 {!editingReferrer && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      紹介コード（任意）
+                      リンク用コード（任意）
                     </label>
                     <input
                       type="text"
@@ -414,7 +414,7 @@ export default function ReferrersPage() {
                       placeholder="例: YAMADA2025（未入力で自動生成）"
                       maxLength={12}
                     />
-                    <p className="text-xs text-gray-500 mt-1">大文字英字と数字のみ、4〜12文字</p>
+                    <p className="text-xs text-gray-500 mt-1">紹介リンクの ?ref= に使われるコード。大文字英字と数字のみ、4〜12文字</p>
                   </div>
                 )}
                 <div>
@@ -456,7 +456,7 @@ export default function ReferrersPage() {
                 {editingReferrer && (
                   <div className="bg-gray-50 p-3 rounded-lg">
                     <p className="text-sm text-gray-600">
-                      紹介コード: <code className="font-mono font-bold">{editingReferrer.referral_code}</code>
+                      紹介リンク: <code className="font-mono text-xs break-all">https://www.futorumeshi.com/purchase?ref={editingReferrer.referral_code}</code>
                     </p>
                   </div>
                 )}
@@ -492,7 +492,7 @@ export default function ReferrersPage() {
                   {selectedReferrer.name} の利用統計
                 </h2>
                 <p className="text-sm text-gray-500">
-                  紹介コード: <code className="font-mono">{selectedReferrer.referral_code}</code>
+                  紹介リンク: <code className="font-mono text-xs">https://www.futorumeshi.com/purchase?ref={selectedReferrer.referral_code}</code>
                 </p>
               </div>
               <button
