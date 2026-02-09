@@ -19,5 +19,8 @@ export async function GET(request: NextRequest) {
 
   // codeがない場合はクライアントサイドで処理するページにリダイレクト
   // (トークンがハッシュフラグメントにある場合)
-  return NextResponse.redirect(new URL('/auth/callback/client', requestUrl.origin));
+  const clientCallbackUrl = next !== '/'
+    ? `/auth/callback/client?next=${encodeURIComponent(next)}`
+    : '/auth/callback/client';
+  return NextResponse.redirect(new URL(clientCallbackUrl, requestUrl.origin));
 }

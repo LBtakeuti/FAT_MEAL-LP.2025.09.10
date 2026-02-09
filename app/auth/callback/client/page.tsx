@@ -12,6 +12,10 @@ export default function AuthCallbackClient() {
     const handleCallback = async () => {
       const supabase = createBrowserClient();
 
+      // URLのクエリパラメータからリダイレクト先を取得
+      const urlParams = new URLSearchParams(window.location.search);
+      const nextUrl = urlParams.get('next') || '/';
+
       // URLのハッシュフラグメントからトークンを取得
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const accessToken = hashParams.get('access_token');
@@ -31,15 +35,15 @@ export default function AuthCallbackClient() {
           return;
         }
 
-        // 認証成功 - トップページへリダイレクト
-        router.push('/');
+        // 認証成功 - リダイレクト先へ
+        router.push(nextUrl);
         router.refresh();
       } else {
         // トークンがない場合は現在のセッションを確認
         const { data: { session } } = await supabase.auth.getSession();
 
         if (session) {
-          router.push('/');
+          router.push(nextUrl);
           router.refresh();
         } else {
           setError('認証情報が見つかりません');

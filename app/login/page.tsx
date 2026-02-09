@@ -67,7 +67,8 @@ function LoginForm() {
           });
 
           if (!error) {
-            router.push('/');
+            const redirectAfterAuth = searchParams.get('redirect');
+            router.push(redirectAfterAuth || '/');
             router.refresh();
             return;
           }
@@ -94,10 +95,14 @@ function LoginForm() {
     try {
       // 本番環境では環境変数のSITE_URLを使用、なければ現在のoriginを使用
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      const oauthRedirectParam = searchParams.get('redirect');
+      const oauthRedirectTo = oauthRedirectParam
+        ? `${siteUrl}/login?redirect=${encodeURIComponent(oauthRedirectParam)}`
+        : `${siteUrl}/login`;
       const { error: googleError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${siteUrl}/login`,
+          redirectTo: oauthRedirectTo,
         },
       });
 
@@ -128,11 +133,12 @@ function LoginForm() {
     try {
       if (isSignUp) {
         // 新規登録
+        const signUpRedirect = searchParams.get('redirect') || '/';
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback?next=/`,
+            emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(signUpRedirect)}`,
           },
         });
 
