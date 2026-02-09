@@ -10,6 +10,19 @@ import {
   isValidPlanId
 } from '@/lib/subscription-schedule';
 
+// 紹介コミッション金額定義
+const INITIAL_COMMISSION: Record<string, number> = {
+  'trial-6': 500,
+  'subscription-monthly-12': 1000,
+  'subscription-monthly-24': 2000,
+  'subscription-monthly-48': 4000,
+};
+const RECURRING_COMMISSION: Record<string, number> = {
+  'subscription-monthly-12': 300,
+  'subscription-monthly-24': 500,
+  'subscription-monthly-48': 800,
+};
+
 // 遅延初期化（ビルド時にエラーを防ぐ）
 function getStripeClient() {
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -73,6 +86,49 @@ function getSupabaseClient() {
   } catch (error) {
     console.error('Failed to create Supabase client:', error);
     return null;
+  }
+}
+
+// コミッション記録用ヘルパー関数
+async function recordReferralCommission(params: {
+  referralCode: string;
+  sourceType: 'order' | 'subscription_initial' | 'subscription_recurring';
+  sourceId: string;
+  stripeInvoiceId?: string;
+  planId: string;
+  commissionType: 'initial' | 'recurring';
+  commissionAmount: number;
+  billingPeriodStart?: string;
+  billingPeriodEnd?: string;
+}) {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    console.error('[Commission] Supabase client not available');
+    return;
+  }
+
+  try {
+    const { error } = await (supabase
+      .from('referral_commissions') as any)
+      .insert({
+        referral_code: params.referralCode,
+        source_type: params.sourceType,
+        source_id: params.sourceId,
+        stripe_invoice_id: params.stripeInvoiceId || null,
+        plan_id: params.planId,
+        commission_type: params.commissionType,
+        commission_amount: params.commissionAmount,
+        billing_period_start: params.billingPeriodStart || null,
+        billing_period_end: params.billingPeriodEnd || null,
+      });
+
+    if (error) {
+      console.error('[Commission] Failed to record commission:', error);
+    } else {
+      console.log(`[Commission] Recorded ${params.commissionType} commission: ¥${params.commissionAmount} for code ${params.referralCode} (${params.planId})`);
+    }
+  } catch (error) {
+    console.error('[Commission] Error recording commission:', error);
   }
 }
 
@@ -243,6 +299,18 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe:
         console.error('Failed to save order to database:', dbError);
       } else {
         console.log('Order saved to database successfully', referralCode ? `(referral: ${referralCode})` : '');
+
+        // 初回コミッション記録（お試しプラン）
+        if (referralCode && INITIAL_COMMISSION['trial-6']) {
+          await recordReferralCommission({
+            referralCode,
+            sourceType: 'order',
+            sourceId: session.id,
+            planId: 'trial-6',
+            commissionType: 'initial',
+            commissionAmount: INITIAL_COMMISSION['trial-6'],
+          });
+        }
       }
     } catch (error) {
       console.error('Error saving order to database:', error);
@@ -451,8 +519,44 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
 
     console.log(`[Webhook] Creating subscription in database...`);
     // 紹介コードを取得
-    const referralCode = checkoutSession?.metadata?.referral_code || subscription.metadata?.referral_code || '';
-    
+    let referralCode = checkoutSession?.metadata?.referral_code || subscription.metadata?.referral_code || '';
+
+    // 再契約チェック: 同じメールアドレスまたはuser_idでcanceledのサブスクが存在する場合、紹介コードを無効化
+    if (referralCode) {
+      try {
+        let hasCancel = false;
+        if (customerEmail) {
+          const { data: canceledByEmail } = await (supabase
+            .from('subscriptions') as any)
+            .select('id')
+            .eq('status', 'canceled')
+            .contains('shipping_address', JSON.stringify({ email: customerEmail }))
+            .limit(1);
+          if (canceledByEmail && canceledByEmail.length > 0) {
+            hasCancel = true;
+          }
+        }
+        if (!hasCancel && userId) {
+          const { data: canceledByUser } = await (supabase
+            .from('subscriptions') as any)
+            .select('id')
+            .eq('status', 'canceled')
+            .eq('user_id', userId)
+            .limit(1);
+          if (canceledByUser && canceledByUser.length > 0) {
+            hasCancel = true;
+          }
+        }
+        if (hasCancel) {
+          console.log(`[Webhook] Re-subscription detected for ${customerEmail || userId}. Clearing referral code.`);
+          referralCode = '';
+        }
+      } catch (resubCheckError) {
+        console.error('[Webhook] Error checking re-subscription:', resubCheckError);
+        // エラー時は安全側に倒してreferralCodeをそのまま使用
+      }
+    }
+
     // subscriptionsテーブルに作成
     const { data: dbSubscription, error: subError } = await (supabase
       .from('subscriptions') as any)
@@ -497,6 +601,20 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
     }
     
     console.log(`[Webhook] Subscription created in DB: ${(dbSubscription as any).id}`);
+
+    // 初回コミッション記録（サブスクリプション）
+    if (referralCode && INITIAL_COMMISSION[planId]) {
+      await recordReferralCommission({
+        referralCode,
+        sourceType: 'subscription_initial',
+        sourceId: (dbSubscription as any).id,
+        planId,
+        commissionType: 'initial',
+        commissionAmount: INITIAL_COMMISSION[planId],
+        billingPeriodStart: new Date(currentPeriodStart * 1000).toISOString(),
+        billingPeriodEnd: new Date(currentPeriodEnd * 1000).toISOString(),
+      });
+    }
 
     // subscription_deliveriesテーブルに初回配送予定を作成
     const deliveries = deliverySchedules.map((schedule) => ({
@@ -629,6 +747,22 @@ async function handleMonthlySubscriptionPayment(invoice: Stripe.Invoice, stripe:
     const planConfig = getPlanConfig(planId);
     const setsToReduce = planConfig.deliveries_per_month * 2;
     await reduceInventorySets(setsToReduce, `monthly payment: ${planId}`);
+
+    // 継続コミッション記録
+    const dbReferralCode = (dbSubscription as any).referral_code;
+    if (dbReferralCode && RECURRING_COMMISSION[planId]) {
+      await recordReferralCommission({
+        referralCode: dbReferralCode,
+        sourceType: 'subscription_recurring',
+        sourceId: (dbSubscription as any).id,
+        stripeInvoiceId: invoice.id,
+        planId,
+        commissionType: 'recurring',
+        commissionAmount: RECURRING_COMMISSION[planId],
+        billingPeriodStart: new Date(currentPeriodStart * 1000).toISOString(),
+        billingPeriodEnd: new Date(currentPeriodEnd * 1000).toISOString(),
+      });
+    }
 
     console.log(`Monthly payment processed for subscription: ${(dbSubscription as any).id}`);
 

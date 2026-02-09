@@ -26,6 +26,8 @@ interface MonthlyStats {
   month: string;
   count: number;
   totalCommission: number;
+  initialCommission: number;
+  recurringCommission: number;
   byProduct: { [key: string]: { count: number; commission: number } };
 }
 
@@ -33,6 +35,8 @@ interface ReferrerStats {
   referral_code: string;
   totalCount: number;
   totalCommission: number;
+  initialCommission: number;
+  recurringCommission: number;
   monthlyStats: MonthlyStats[];
   byProduct: { [key: string]: { count: number; commission: number } };
 }
@@ -521,18 +525,33 @@ export default function ReferrersPage() {
                     <div className="bg-green-50 rounded-lg p-4">
                       <p className="text-sm text-green-600 font-medium">紹介料合計</p>
                       <p className="text-2xl font-bold text-green-900">{formatAmount(selectedStats.totalCommission)}</p>
+                      {(selectedStats.initialCommission > 0 || selectedStats.recurringCommission > 0) && (
+                        <div className="mt-1 text-xs text-green-700 space-y-0.5">
+                          <div>初回: {formatAmount(selectedStats.initialCommission)}</div>
+                          <div>継続: {formatAmount(selectedStats.recurringCommission)}</div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   {/* 紹介料単価の説明 */}
                   <div className="bg-orange-50 rounded-lg p-4">
-                    <h3 className="text-sm font-medium text-orange-800 mb-2">紹介料単価</h3>
-                    <div className="grid grid-cols-2 gap-2 text-sm text-orange-700">
-                      <div>お試しプラン: ¥500</div>
-                      <div>6食定期プラン: ¥1,000</div>
-                      <div>12食定期プラン: ¥2,000</div>
-                      <div>24食定期プラン: ¥4,000</div>
-                    </div>
+                    <h3 className="text-sm font-medium text-orange-800 mb-2">紹介料レート</h3>
+                    <table className="w-full text-sm text-orange-700">
+                      <thead>
+                        <tr className="border-b border-orange-200">
+                          <th className="text-left py-1">プラン</th>
+                          <th className="text-right py-1">初回</th>
+                          <th className="text-right py-1">継続/月</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr><td className="py-0.5">お試しプラン</td><td className="text-right">¥500</td><td className="text-right text-orange-400">-</td></tr>
+                        <tr><td className="py-0.5">6食定期プラン</td><td className="text-right">¥1,000</td><td className="text-right">¥300</td></tr>
+                        <tr><td className="py-0.5">12食定期プラン</td><td className="text-right">¥2,000</td><td className="text-right">¥500</td></tr>
+                        <tr><td className="py-0.5">24食定期プラン</td><td className="text-right">¥4,000</td><td className="text-right">¥800</td></tr>
+                      </tbody>
+                    </table>
                   </div>
 
                   {/* 商品別内訳 */}
@@ -563,6 +582,8 @@ export default function ReferrersPage() {
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">月</th>
                             <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">回数</th>
                             <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">紹介料</th>
+                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">初回</th>
+                            <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">継続</th>
                             <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">商品内訳</th>
                           </tr>
                         </thead>
@@ -577,6 +598,12 @@ export default function ReferrersPage() {
                               </td>
                               <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
                                 {formatAmount(month.totalCommission)}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-600 text-right">
+                                {formatAmount(month.initialCommission || 0)}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-600 text-right">
+                                {formatAmount(month.recurringCommission || 0)}
                               </td>
                               <td className="px-4 py-3 text-sm text-gray-500">
                                 {Object.entries(month.byProduct).map(([product, data]) => (

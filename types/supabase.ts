@@ -585,6 +585,48 @@ export type Database = {
         }
         Relationships: []
       }
+      referral_commissions: {
+        Row: {
+          id: string
+          referral_code: string
+          source_type: string
+          source_id: string
+          stripe_invoice_id: string | null
+          plan_id: string
+          commission_type: string
+          commission_amount: number
+          billing_period_start: string | null
+          billing_period_end: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          referral_code: string
+          source_type: string
+          source_id: string
+          stripe_invoice_id?: string | null
+          plan_id: string
+          commission_type: string
+          commission_amount: number
+          billing_period_start?: string | null
+          billing_period_end?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          referral_code?: string
+          source_type?: string
+          source_id?: string
+          stripe_invoice_id?: string | null
+          plan_id?: string
+          commission_type?: string
+          commission_amount?: number
+          billing_period_start?: string | null
+          billing_period_end?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       referrers: {
         Row: {
           id: string
