@@ -97,14 +97,21 @@ const AboutSection: React.FC = () => {
           ))}
         </div>
 
-        {/* 2個で1食のSVG - セクションの上に配置 */}
-        <div className="mt-8 sm:mt-12 flex justify-center">
+        {/* ふとるくん + 2個で1食のSVG - セクションの上に配置 */}
+        <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+          <Image
+            src="/hutorukunn3.png"
+            alt="ふとるくん"
+            width={300}
+            height={300}
+            className="w-32 sm:w-40 md:w-48 h-auto"
+          />
           <Image
             src="/new-copy1.svg"
             alt="太る飯は2個で1食"
             width={600}
             height={200}
-            className="w-full max-w-[600px] h-auto"
+            className="w-full max-w-[280px] sm:max-w-[400px] md:max-w-[500px] h-auto"
           />
         </div>
 
