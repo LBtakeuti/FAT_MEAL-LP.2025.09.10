@@ -2,9 +2,9 @@
 
 import { usePathname } from 'next/navigation';
 import { Suspense } from 'react';
-import Header from '@/components/Header';
-import MobileHeader from '@/components/MobileHeader';
-import Footer from '@/components/Footer';
+import Header from '@/components/layout/Header';
+import MobileHeader from '@/components/layout/MobileHeader';
+import Footer from '@/components/layout/Footer';
 
 function PageLoadingFallback() {
   return (

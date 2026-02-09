@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { createBrowserClient } from '@/lib/supabase';
-import LogoutModal from './LogoutModal';
+import LogoutModal from '@/components/ui/LogoutModal';
 import MobileHeaderLogo from './MobileHeaderLogo';
 
 const MobileHeaderClient: React.FC = () => {

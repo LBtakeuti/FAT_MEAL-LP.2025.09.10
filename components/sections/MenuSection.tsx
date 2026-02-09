@@ -2,8 +2,8 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { MenuCard } from './menu/MenuCard';
-import { MenuDetailModal } from './menu/MenuDetailModal';
+import { MenuCard } from '../menu/MenuCard';
+import { MenuDetailModal } from '../menu/MenuDetailModal';
 import type { MenuItem } from '@/types';
 
 interface MenuSectionProps {

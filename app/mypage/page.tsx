@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@/lib/supabase';
 import Link from 'next/link';
-import LogoutModal from '@/components/LogoutModal';
+import LogoutModal from '@/components/ui/LogoutModal';
 
 interface UserProfile {
   id: string;

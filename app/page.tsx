@@ -1,5 +1,5 @@
 import { getMenuItemsServer } from '@/lib/supabase';
-import HomeContent from '@/components/HomeContent';
+import HomeContent from '@/components/pages/HomeContent';
 import type { MenuItem } from '@/types';
 
 export const revalidate = 60; // 60秒でキャッシュを再検証
