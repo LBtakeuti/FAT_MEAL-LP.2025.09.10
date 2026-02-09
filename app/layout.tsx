@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import "./globals.css";
-import LayoutContent from '@/components/LayoutContent';
+import LayoutContent from '@/components/layout/LayoutContent';
 
 // GA4 Measurement ID from environment variable
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
@@ -14,8 +14,8 @@ export const metadata: Metadata = {
   description: "ふとるめしは、努力する人を応援し続けます。平均Cal500オーバー、タンパク質30gオーバー。脅威の弁当をご覧あれ。",
   metadataBase: new URL('https://www.futorumeshi.com'),
   icons: {
-    icon: '/new-fabicon.png',
-    apple: '/new-fabicon.png',
+    icon: '/images/branding/new-fabicon.png',
+    apple: '/images/branding/new-fabicon.png',
   },
   openGraph: {
     title: "ふとるめし - 高カロリー・高タンパクの冷凍弁当",
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     siteName: 'ふとるめし',
     images: [
       {
-        url: '/new-fabicon.png',
+        url: '/images/branding/new-fabicon.png',
         width: 1200,
         height: 630,
         alt: 'ふとるめし - 高カロリー・高タンパクの冷凍弁当',
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: "ふとるめし - 高カロリー・高タンパクの冷凍弁当",
     description: "ふとるめしは、努力する人を応援し続けます。平均Cal500オーバー、タンパク質30gオーバー。脅威の弁当をご覧あれ。",
-    images: ['/new-fabicon.png'],
+    images: ['/images/branding/new-fabicon.png'],
   },
 };
 
