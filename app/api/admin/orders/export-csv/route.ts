@@ -55,8 +55,7 @@ export async function GET() {
       '数量',
       '金額',
       'ステータス',
-      '注文日時（日本時間）',
-      '紹介コード'
+      '注文日時（日本時間）'
     ];
 
     // CSVデータ行
@@ -74,8 +73,7 @@ export async function GET() {
       order.quantity,
       order.amount || 0,
       translateStatus(order.status),
-      formatDateTimeJST(order.created_at),
-      order.referral_code || ''
+      formatDateTimeJST(order.created_at)
     ]) || [];
 
     // CSV形式に変換（エスケープ処理付き）
