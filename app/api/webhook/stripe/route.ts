@@ -977,7 +977,7 @@ async function sendOrderConfirmationEmail(params: OrderEmailParams) {
 
       <div class="order-details">
         <p style="margin-top: 0;"><strong>配送について</strong></p>
-        <p>2月10日より順次配送いたします。もうしばらくお待ちください。</p>
+        <p>ご注文確認後、順次配送いたします。</p>
       </div>
 
       <p>ご不明な点がございましたらご連絡ください。</p>
@@ -1125,7 +1125,7 @@ async function sendSubscriptionPurchaseConfirmationEmail(params: {
         <p>月額料金: ${formatCurrency(params.monthlyAmount)}</p>
         <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 15px 0;">
         <p><strong>配送について</strong></p>
-        <p>2月10日から順次配送いたしますので、もうしばらくお待ちください。</p>
+        <p>ご注文確認後、順次配送いたします。</p>
       </div>
 
       <p>毎月自動で課金・配送されます。解約をご希望の場合はマイページからお申し出ください。</p>

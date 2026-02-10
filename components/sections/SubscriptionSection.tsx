@@ -137,9 +137,6 @@ const SubscriptionSection: React.FC = () => {
                     </p>
                   </>
                 )}
-                <p className="text-xs text-gray-500 mt-1">
-                  1食あたり約¥{plan.pricePerMeal}
-                </p>
               </div>
 
               {/* プラン詳細 */}

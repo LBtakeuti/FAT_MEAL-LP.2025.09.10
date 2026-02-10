@@ -7,27 +7,6 @@
  * - subscription-monthly-48: 月24食（月4回配送）¥34,800/月
  */
 
-// サービス開始日（2月10日より前の注文は全てこの日に配送開始）
-// TODO: 2月10日以降にこの特別処理を削除する
-const SERVICE_LAUNCH_DATE = new Date('2025-02-10T00:00:00+09:00');
-
-/**
- * サービス開始日より前かどうかを判定
- */
-export function isBeforeLaunchDate(date: Date = new Date()): boolean {
-  return date < SERVICE_LAUNCH_DATE;
-}
-
-/**
- * 配送基準日を取得（2月10日より前なら2月10日を返す）
- */
-export function getEffectiveDeliveryDate(requestedDate: Date): Date {
-  if (isBeforeLaunchDate(requestedDate)) {
-    return new Date(SERVICE_LAUNCH_DATE);
-  }
-  return requestedDate;
-}
-
 export interface DeliverySchedule {
   delivery_number: number;
   scheduled_date: Date;
@@ -81,7 +60,6 @@ function addDays(date: Date, days: number): Date {
 
 /**
  * 初回配送スケジュールを計算（購入時のみ）
- * 2月10日より前の注文は全て2月10日を配送基準日とする
  */
 export function calculateInitialDeliverySchedule(
   planId: string,
@@ -93,8 +71,7 @@ export function calculateInitialDeliverySchedule(
     throw new Error(`Invalid plan ID: ${planId}`);
   }
 
-  // 2月10日より前の場合は2月10日を配送基準日とする
-  const effectiveDate = getEffectiveDeliveryDate(preferredDeliveryDate);
+  const effectiveDate = preferredDeliveryDate;
 
   const schedules: DeliverySchedule[] = [];
 
@@ -134,7 +111,6 @@ export function calculateInitialDeliverySchedule(
 /**
  * 月次配送スケジュールを計算（毎月の請求成功時）
  * 請求日を基準に配送スケジュールを作成
- * 2月10日より前の場合は2月10日を配送基準日とする
  * - 6食: 基準日当日
  * - 12食: 基準日当日、+14日
  * - 24食: 基準日当日、+7日、+14日、+21日
@@ -149,8 +125,7 @@ export function calculateMonthlyDeliverySchedule(
     throw new Error(`Invalid plan ID: ${planId}`);
   }
 
-  // 2月10日より前の場合は2月10日を配送基準日とする
-  const effectiveDate = getEffectiveDeliveryDate(billingDate);
+  const effectiveDate = billingDate;
 
   const schedules: DeliverySchedule[] = [];
 
