@@ -44,7 +44,7 @@ const AboutSection: React.FC = () => {
     },
     {
       title: '計算されたPFCバランス',
-      description: '平均タンパク質60g超え！筋肉づくりに最適な栄養設計',
+      description: '平均タンパク質60g超え！筋肉づくりに最適な栄養設計/毎日の食事管理も簡単に！',
       number: '03',
     },
   ];
@@ -68,57 +68,49 @@ const AboutSection: React.FC = () => {
           </div>
         </div>
 
-        {/* 3つの特徴 - 横一列（千鳥配置） */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 items-end">
+        {/* 3つの特徴 - 横一列 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 items-stretch">
           {features.map((feature, index) => (
             <div
               key={index}
-              className={`relative bg-white p-6 sm:p-8 rounded-2xl overflow-visible ${
-                index === 1 ? 'md:mt-8' : ''
-              }`}
+              className="relative bg-white p-6 sm:p-8 rounded-2xl overflow-visible h-full flex flex-col"
             >
               {/* 背景番号 */}
               <div className="absolute top-0 right-0 text-8xl sm:text-9xl lg:text-[10rem] font-bold text-orange-500 opacity-10 leading-none pointer-events-none z-0">
                 {feature.number}
               </div>
-              {/* 1番目の特徴に画像を表示 */}
-              {index === 0 && (
-                <div className="flex justify-center mb-4 relative z-20">
+              {/* 画像エリア - 高さを固定 */}
+              <div className="flex justify-center items-end mb-4 relative z-20 h-24 sm:h-28 md:h-32">
+                {index === 0 && (
                   <Image
                     src="/images/sections/hutoruhaha3.png"
                     alt="ふとる母3"
                     width={150}
                     height={150}
-                    className="w-24 sm:w-28 md:w-32 h-auto"
+                    className="w-auto h-full max-h-24 sm:max-h-28 md:max-h-32 object-contain"
                   />
-                </div>
-              )}
-              {/* 2番目の特徴に画像を表示 */}
-              {index === 1 && (
-                <div className="flex justify-center mb-4 relative z-20">
+                )}
+                {index === 1 && (
                   <Image
                     src="/images/sections/hutoruhaha.png"
                     alt="ふとる母"
                     width={150}
                     height={150}
-                    className="w-24 sm:w-28 md:w-32 h-auto"
+                    className="w-auto h-full max-h-24 sm:max-h-28 md:max-h-32 object-contain"
                   />
-                </div>
-              )}
-              {/* 3番目の特徴に画像を表示 */}
-              {index === 2 && (
-                <div className="flex justify-center mb-4 relative z-20">
+                )}
+                {index === 2 && (
                   <Image
                     src="/images/sections/hutoruhaha2.png"
                     alt="ふとる母2"
                     width={150}
                     height={150}
-                    className="w-24 sm:w-28 md:w-32 h-auto"
+                    className="w-auto h-full max-h-24 sm:max-h-28 md:max-h-32 object-contain"
                   />
-                </div>
-              )}
+                )}
+              </div>
               {/* コンテンツ */}
-              <div className="relative z-10">
+              <div className="relative z-10 flex-1 flex flex-col justify-start">
                 <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-3 text-center whitespace-nowrap">
                   {feature.title}
                 </h3>
@@ -144,23 +136,6 @@ const AboutSection: React.FC = () => {
           ))}
         </div>
 
-        {/* ふとるくん + 2個で1食のSVG - セクションの上に配置 */}
-        <div className="mt-8 sm:mt-12 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
-          <Image
-            src="/images/sections/hutorukunn3.png"
-            alt="ふとるくん"
-            width={300}
-            height={300}
-            className="w-32 sm:w-40 md:w-48 h-auto"
-          />
-          <Image
-            src="/images/sections/new-copy1.svg"
-            alt="太る飯は2個で1食"
-            width={600}
-            height={200}
-            className="w-full max-w-[280px] sm:max-w-[400px] md:max-w-[500px] h-auto"
-          />
-        </div>
 
       </div>
     </section>
