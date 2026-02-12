@@ -175,7 +175,7 @@ const StatsSection: React.FC = () => {
                 <div className="flex justify-between items-start py-3 px-4">
                   <span className="font-bold text-gray-900 font-antique text-sm">1ヶ月の費用</span>
                   <div className="text-right">
-                    <span className="text-gray-700">約25,000〜30,000円</span>
+                    <span className="text-gray-700">約9,000〜24,000円</span>
                     <button
                       ref={buttonRef}
                       onClick={handleDetailClick}
@@ -247,7 +247,7 @@ const StatsSection: React.FC = () => {
                     <td className="py-4 px-6 font-bold text-gray-900 font-antique bg-gray-50">1ヶ月の費用</td>
                     <td className="py-4 px-6 text-gray-700 bg-gray-50 relative">
                       <div className="relative inline-block">
-                        <span>約25,000〜30,000円</span>
+                        <span>約9,000〜24,000円</span>
                         <button
                           ref={buttonRefDesktop}
                           onClick={handleDetailClick}

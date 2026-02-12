@@ -34,12 +34,12 @@ const AboutSection: React.FC = () => {
   const features = [
     {
       title: '圧倒的なボリューム',
-      description: '1食平均900kcal！/メイン、副菜のおかずも味がしっかり/ボリュームも満点で満足間違いなし！',
+      description: '**「ふとるめし」のお弁当は2つで１食！**/個数でボリューム調整も簡単。/しっかりとした味付けで白米が進む！',
       number: '01',
     },
     {
-      title: '妥協なき美味しさ',
-      description: 'ご飯が進む濃いめの味付け。毎日食べても飽きない本格的な味',
+      title: 'レンジでチンだけ',
+      description: '夕食後、息子からまさかの「お腹すいた」の声に対応するための太る飯。/太る飯は、忙しいお母さんを応援します。',
       number: '02',
     },
     {
@@ -68,29 +68,76 @@ const AboutSection: React.FC = () => {
           </div>
         </div>
 
-        {/* 3つの特徴 - 横一列 */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+        {/* 3つの特徴 - 横一列（千鳥配置） */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 items-end">
           {features.map((feature, index) => (
             <div
               key={index}
-              className="relative bg-white p-6 sm:p-8 rounded-2xl overflow-visible"
+              className={`relative bg-white p-6 sm:p-8 rounded-2xl overflow-visible ${
+                index === 1 ? 'md:mt-8' : ''
+              }`}
             >
               {/* 背景番号 */}
-              <div className="absolute top-0 right-0 text-8xl sm:text-9xl lg:text-[10rem] font-bold text-orange-500 opacity-10 leading-none pointer-events-none">
+              <div className="absolute top-0 right-0 text-8xl sm:text-9xl lg:text-[10rem] font-bold text-orange-500 opacity-10 leading-none pointer-events-none z-0">
                 {feature.number}
               </div>
+              {/* 1番目の特徴に画像を表示 */}
+              {index === 0 && (
+                <div className="flex justify-center mb-4 relative z-20">
+                  <Image
+                    src="/images/sections/hutoruhaha3.png"
+                    alt="ふとる母3"
+                    width={150}
+                    height={150}
+                    className="w-24 sm:w-28 md:w-32 h-auto"
+                  />
+                </div>
+              )}
+              {/* 2番目の特徴に画像を表示 */}
+              {index === 1 && (
+                <div className="flex justify-center mb-4 relative z-20">
+                  <Image
+                    src="/images/sections/hutoruhaha.png"
+                    alt="ふとる母"
+                    width={150}
+                    height={150}
+                    className="w-24 sm:w-28 md:w-32 h-auto"
+                  />
+                </div>
+              )}
+              {/* 3番目の特徴に画像を表示 */}
+              {index === 2 && (
+                <div className="flex justify-center mb-4 relative z-20">
+                  <Image
+                    src="/images/sections/hutoruhaha2.png"
+                    alt="ふとる母2"
+                    width={150}
+                    height={150}
+                    className="w-24 sm:w-28 md:w-32 h-auto"
+                  />
+                </div>
+              )}
               {/* コンテンツ */}
               <div className="relative z-10">
                 <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-3 text-center whitespace-nowrap">
                   {feature.title}
                 </h3>
                 <p className="text-sm sm:text-base text-gray-600 leading-relaxed text-center">
-                  {feature.description.split('/').map((line, idx) => (
-                    <React.Fragment key={idx}>
-                      {line}
-                      {idx < feature.description.split('/').length - 1 && <br />}
-                    </React.Fragment>
-                  ))}
+                  {feature.description.split('/').map((line, idx) => {
+                    // **テキスト** をboldに変換
+                    const boldMatch = line.match(/^\*\*(.+)\*\*$/);
+                    const content = boldMatch ? (
+                      <span className="font-bold text-gray-900">{boldMatch[1]}</span>
+                    ) : (
+                      line
+                    );
+                    return (
+                      <React.Fragment key={idx}>
+                        {content}
+                        {idx < feature.description.split('/').length - 1 && <br />}
+                      </React.Fragment>
+                    );
+                  })}
                 </p>
               </div>
             </div>
