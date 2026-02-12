@@ -902,7 +902,7 @@ async function cancelSubscription(subscription: Stripe.Subscription) {
     // pending状態の配送をキャンセル
     const { data: dbSubscription } = await (supabase
       .from('subscriptions') as any)
-      .select('id')
+      .select('id, plan_name, shipping_address')
       .eq('stripe_subscription_id', subscription.id)
       .single();
 
@@ -912,12 +912,75 @@ async function cancelSubscription(subscription: Stripe.Subscription) {
         .update({ status: 'cancelled' })
         .eq('subscription_id', (dbSubscription as any).id)
         .eq('status', 'pending');
+
+      // 解約通知メールを送信
+      const shippingAddress = (dbSubscription as any).shipping_address as any;
+      if (shippingAddress?.email) {
+        await sendSubscriptionCancellationEmail({
+          email: shippingAddress.email,
+          name: shippingAddress.name || 'お客様',
+          planName: (dbSubscription as any).plan_name || 'ふとるめし月額プラン',
+        });
+      }
     }
 
     console.log(`Subscription ${subscription.id} canceled`);
 
   } catch (error) {
     console.error('Error canceling subscription:', error);
+  }
+}
+
+// 解約通知メール送信
+async function sendSubscriptionCancellationEmail(params: {
+  email: string;
+  name: string;
+  planName: string;
+}) {
+  const resend = await getResendClient();
+  if (!resend) {
+    console.log('Resend client not available, skipping cancellation email');
+    return;
+  }
+
+  const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.8; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .content { background: #fff; padding: 30px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="content">
+      <p>${params.name}様</p>
+      <p>「${params.planName}」の解約手続きが完了いたしました。</p>
+      <p>これまでのご利用、誠にありがとうございました。</p>
+      <p>またのご利用を心よりお待ちしております。</p>
+      <p>ご不明な点がございましたらお気軽にご連絡ください。</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  const fromEmail = process.env.RESEND_FROM_EMAIL || 'ふとるめし <noreply@futorumeshi.com>';
+
+  const { error } = await resend.emails.send({
+    from: fromEmail,
+    to: params.email,
+    subject: '【ふとるめし】月額プランの解約が完了しました',
+    html: emailHtml,
+  });
+
+  if (error) {
+    console.error('Failed to send subscription cancellation email:', error);
+  } else {
+    console.log('Subscription cancellation email sent to:', params.email);
   }
 }
 

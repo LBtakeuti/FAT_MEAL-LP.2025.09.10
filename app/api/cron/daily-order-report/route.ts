@@ -25,6 +25,28 @@ interface Order {
   created_at: string;
 }
 
+// Subscription型を定義
+interface NewSubscription {
+  id: string;
+  plan_name: string;
+  plan_id: string;
+  monthly_total_amount: number;
+  deliveries_per_month: number;
+  meals_per_delivery: number;
+  shipping_address: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    postal_code?: string;
+    prefecture?: string;
+    city?: string;
+    address_detail?: string;
+    building?: string;
+  };
+  started_at: string;
+  created_at: string;
+}
+
 export async function GET(request: NextRequest) {
   // Cronジョブの認証（セキュリティのため）
   const authHeader = request.headers.get('authorization');
@@ -84,6 +106,22 @@ export async function GET(request: NextRequest) {
 
     const orderCount = orders?.length || 0;
     console.log('[Cron Job] Found orders:', orderCount);
+
+    // 今日の新規サブスクリプション契約を取得
+    const { data: newSubscriptions, error: subError } = await (supabase
+      .from('subscriptions') as any)
+      .select('id, plan_name, plan_id, monthly_total_amount, deliveries_per_month, meals_per_delivery, shipping_address, started_at, created_at')
+      .gte('created_at', todayStartUTC.toISOString())
+      .lt('created_at', tomorrowStartUTC.toISOString())
+      .order('created_at', { ascending: true }) as { data: NewSubscription[] | null; error: any };
+
+    if (subError) {
+      console.error('[Cron Job] Failed to fetch new subscriptions:', subError);
+      // サブスク取得失敗してもレポート自体は続行
+    }
+
+    const newSubCount = newSubscriptions?.length || 0;
+    console.log('[Cron Job] Found new subscriptions:', newSubCount);
     
     // 送信先メールアドレスの取得（カンマ区切りで複数指定可能）
     // 例: VENDOR_EMAIL=sales@landbridge.co.jp,info@landbridge.co.jp,takeuchi@landbridge.co.jp
@@ -147,8 +185,8 @@ export async function GET(request: NextRequest) {
       return results;
     };
 
-    if (orderCount === 0) {
-      // 購入がない場合のメール
+    if (orderCount === 0 && newSubCount === 0) {
+      // 注文もサブスク新規契約もない場合のメール
       const noOrdersHtml = `
           <!DOCTYPE html>
           <html>
@@ -169,7 +207,7 @@ export async function GET(request: NextRequest) {
                 <h1>本日の注文報告</h1>
               </div>
               <div class="content">
-                <p>${dateStr}の注文はありませんでした。</p>
+                <p>${dateStr}の注文・新規契約はありませんでした。</p>
                 <p>ご確認のほどよろしくお願いいたします。</p>
               </div>
               <div class="footer">
@@ -191,10 +229,11 @@ export async function GET(request: NextRequest) {
         throw new Error(`Failed to send email to all recipients: ${emailResults.failed.map(f => `${f.email} (${f.error})`).join(', ')}`);
       }
 
-      return NextResponse.json({ 
-        success: true, 
+      return NextResponse.json({
+        success: true,
         message: 'No orders email sent',
         orderCount: 0,
+        newSubCount: 0,
         date: dateStr,
         emailResults: {
           sentTo: emailResults.success,
@@ -203,15 +242,59 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // CSVファイルを生成
-    const csvContent = generateCSV(orders || []);
-    const csvBuffer = Buffer.from(csvContent, 'utf-8');
+    // CSVファイルを生成（注文がある場合のみ）
+    const csvContent = orderCount > 0 ? generateCSV(orders || []) : null;
+    const csvBuffer = csvContent ? Buffer.from(csvContent, 'utf-8') : null;
 
     // 注文サマリーを生成
     const totalAmount = orders?.reduce((sum, order) => sum + (order.amount || 0), 0) || 0;
     const totalQuantity = orders?.reduce((sum, order) => sum + (order.quantity || 0), 0) || 0;
 
+    // サブスク新規契約セクションのHTML生成
+    const subscriptionSectionHtml = newSubCount > 0 ? `
+              <div style="margin-top: 30px; border-top: 2px solid #f97316; padding-top: 20px;">
+                <h3 style="color: #f97316;">新規サブスクリプション契約（${newSubCount}件）</h3>
+                ${newSubscriptions?.map(sub => `
+                  <div style="border-bottom: 1px solid #e5e5e5; padding: 15px 0;">
+                    <p><strong>お客様名:</strong> ${escapeHtml(sub.shipping_address?.name || 'お客様')}</p>
+                    <p><strong>メール:</strong> ${escapeHtml(sub.shipping_address?.email || '')}</p>
+                    <p><strong>プラン:</strong> ${escapeHtml(sub.plan_name)}</p>
+                    <p><strong>月額:</strong> ¥${sub.monthly_total_amount.toLocaleString()}</p>
+                    <p><strong>配送:</strong> 月${sub.deliveries_per_month}回（${sub.meals_per_delivery}食/回）</p>
+                  </div>
+                `).join('')}
+              </div>` : '';
+
     // メール送信（CSVファイル添付）
+    const ordersSectionHtml = orderCount > 0 ? `
+              <p>${dateStr}の注文が<strong>${orderCount}件</strong>ございます。</p>
+              ${csvContent ? '<p>詳細は添付のCSVファイルをご確認ください。</p>' : ''}
+
+              <div class="summary">
+                <h3 style="margin-top: 0;">注文サマリー</h3>
+                <div class="summary-item">
+                  <span class="summary-label">注文件数:</span>
+                  <span class="summary-value">${orderCount}件</span>
+                </div>
+                <div class="summary-item">
+                  <span class="summary-label">合計数量:</span>
+                  <span class="summary-value">${totalQuantity}個</span>
+                </div>
+              </div>
+
+              <div class="order-list">
+                <h3>注文一覧</h3>
+                ${orders?.slice(0, 10).map(order => `
+                  <div class="order-item">
+                    <p><strong>注文番号:</strong> ${order.order_number || order.id.slice(0, 8)}</p>
+                    <p><strong>お客様名:</strong> ${escapeHtml(order.customer_name || '')}</p>
+                    <p><strong>メニュー:</strong> ${escapeHtml(order.menu_set || '')}</p>
+                    <p><strong>数量:</strong> ${order.quantity || 0}個</p>
+                  </div>
+                `).join('')}
+                ${orderCount > 10 ? `<p style="color: #6b7280; font-size: 14px;">他 ${orderCount - 10}件の注文があります。詳細はCSVファイルをご確認ください。</p>` : ''}
+              </div>` : `<p>${dateStr}の注文はありませんでした。</p>`;
+
     const orderReportHtml = `
         <!DOCTYPE html>
         <html>
@@ -239,33 +322,8 @@ export async function GET(request: NextRequest) {
               <h1>本日の注文報告</h1>
             </div>
             <div class="content">
-              <p>${dateStr}の注文が<strong>${orderCount}件</strong>ございます。</p>
-              <p>詳細は添付のCSVファイルをご確認ください。</p>
-              
-              <div class="summary">
-                <h3 style="margin-top: 0;">注文サマリー</h3>
-                <div class="summary-item">
-                  <span class="summary-label">注文件数:</span>
-                  <span class="summary-value">${orderCount}件</span>
-                </div>
-                <div class="summary-item">
-                  <span class="summary-label">合計数量:</span>
-                  <span class="summary-value">${totalQuantity}個</span>
-                </div>
-              </div>
-
-              <div class="order-list">
-                <h3>注文一覧</h3>
-                ${orders?.slice(0, 10).map(order => `
-                  <div class="order-item">
-                    <p><strong>注文番号:</strong> ${order.order_number || order.id.slice(0, 8)}</p>
-                    <p><strong>お客様名:</strong> ${escapeHtml(order.customer_name || '')}</p>
-                    <p><strong>メニュー:</strong> ${escapeHtml(order.menu_set || '')}</p>
-                    <p><strong>数量:</strong> ${order.quantity || 0}個</p>
-                  </div>
-                `).join('')}
-                ${orderCount > 10 ? `<p style="color: #6b7280; font-size: 14px;">他 ${orderCount - 10}件の注文があります。詳細はCSVファイルをご確認ください。</p>` : ''}
-              </div>
+              ${ordersSectionHtml}
+              ${subscriptionSectionHtml}
             </div>
             <div class="footer">
               <p>ふとるめし - 太りたいあなたのための高カロリー弁当</p>
@@ -273,18 +331,27 @@ export async function GET(request: NextRequest) {
             </div>
           </div>
         </body>
-          </html>
+        </html>
       `;
 
+    // 件名を生成
+    const subjectParts = [];
+    if (orderCount > 0) subjectParts.push(`注文${orderCount}件`);
+    if (newSubCount > 0) subjectParts.push(`新規サブスク${newSubCount}件`);
+    const subjectDetail = subjectParts.length > 0 ? `（${subjectParts.join('・')}）` : '';
+
+    // CSV添付（注文がある場合のみ）
+    const attachments = csvBuffer ? [
+      {
+        filename: `orders_${jstYear}${String(jstMonth + 1).padStart(2, '0')}${String(jstDate).padStart(2, '0')}.csv`,
+        content: csvBuffer.toString('base64'),
+      },
+    ] : undefined;
+
     const emailResults = await sendEmailToRecipients(
-      `【ふとるめし】${dateStr}の注文報告（${orderCount}件）`,
+      `【ふとるめし】${dateStr}の注文報告${subjectDetail}`,
       orderReportHtml,
-      [
-        {
-          filename: `orders_${jstYear}${String(jstMonth + 1).padStart(2, '0')}${String(jstDate).padStart(2, '0')}.csv`,
-          content: csvBuffer.toString('base64'),
-        },
-      ]
+      attachments
     );
 
     // すべての送信先に失敗した場合のみエラー
@@ -323,6 +390,7 @@ export async function GET(request: NextRequest) {
       success: true,
       message: 'Order report email sent',
       orderCount,
+      newSubCount,
       totalAmount,
       totalQuantity,
       date: dateStr,
