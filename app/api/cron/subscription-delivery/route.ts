@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     
     console.log('[Subscription Delivery Cron] Processing deliveries for:', todayStr);
     
-    // 今日配送予定の配送を取得
+    // 今日以前の未処理配送を取得（過去の取り残し分も含む）
     const { data: todayDeliveries, error: fetchError } = await supabase
       .from('subscription_deliveries')
       .select(`
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
           completed_deliveries
         )
       `)
-      .eq('scheduled_date', todayStr)
+      .lte('scheduled_date', todayStr)
       .eq('status', 'pending') as { data: SubscriptionDelivery[] | null; error: any };
 
     if (fetchError) {

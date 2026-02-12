@@ -16,7 +16,7 @@
     },
     {
       "path": "/api/cron/subscription-delivery",
-      "schedule": "0 9 * * *"
+      "schedule": "0 8 * * *"
     }
   ],
   "env": {
