@@ -24,7 +24,7 @@ export default function AdminLayout({
   };
 
   const menuItems = [
-    { href: '/admin', label: 'ダッシュボード' },
+    { href: '/admin', label: 'ダッシュボード', exact: true },
     { href: '/admin/analytics', label: 'アナリティクス' },
     { href: '/admin/orders', label: '注文管理' },
     { href: '/admin/subscriptions', label: 'サブスクリプション' },
@@ -37,6 +37,13 @@ export default function AdminLayout({
     { href: '/admin/inventory', label: '在庫管理' },
     { href: '/admin/banner', label: 'バナー管理' },
   ];
+
+  const isActive = (item: { href: string; exact?: boolean }) => {
+    if (item.exact) {
+      return pathname === item.href;
+    }
+    return pathname.startsWith(item.href);
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -59,17 +66,25 @@ export default function AdminLayout({
         </div>
 
         <nav className="flex-1 overflow-y-auto px-4 space-y-2">
-          {menuItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 px-4 py-2 rounded hover:bg-gray-800 transition-colors ${
-                pathname === item.href ? 'bg-gray-800' : ''
-              }`}
-            >
-              {isSidebarOpen && <span>{item.label}</span>}
-            </Link>
-          ))}
+          {menuItems.map((item) => {
+            const active = isActive(item);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 px-4 py-2 rounded transition-colors relative ${
+                  active
+                    ? 'bg-orange-600 text-white font-semibold'
+                    : 'hover:bg-gray-800'
+                }`}
+              >
+                {active && (
+                  <span className="absolute left-0 top-0 bottom-0 w-1 bg-orange-400 rounded-l"></span>
+                )}
+                {isSidebarOpen && <span className={active ? 'ml-1' : ''}>{item.label}</span>}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="flex-shrink-0 p-4">
