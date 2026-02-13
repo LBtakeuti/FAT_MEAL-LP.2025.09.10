@@ -151,32 +151,40 @@ export default function EditAmbassadorPage({ params: promiseParams }: { params: 
               <label className="block text-sm font-medium text-gray-700">
                 サムネイル画像 <span className="text-red-500">*</span>
               </label>
+              {formData.thumbnail_image && (
+                <div className="mt-2 mb-3">
+                  <img
+                    src={formData.thumbnail_image}
+                    alt="サムネイルプレビュー"
+                    className="w-40 h-24 object-cover rounded"
+                  />
+                  <p className="mt-1 text-sm text-gray-600">現在の画像が設定されています</p>
+                </div>
+              )}
               <div className="mt-1">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      setThumbnailFileName(file.name);
-                      handleUpload(file, 'thumbnail_image', setUploadingThumbnail);
-                    }
-                  }}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
-                  disabled={uploadingThumbnail}
-                />
+                <label className="block w-full cursor-pointer">
+                  <span className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+                    {formData.thumbnail_image ? '画像を変更' : 'ファイルを選択'}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setThumbnailFileName(file.name);
+                        handleUpload(file, 'thumbnail_image', setUploadingThumbnail);
+                      }
+                    }}
+                    className="sr-only"
+                    disabled={uploadingThumbnail}
+                  />
+                </label>
                 {uploadingThumbnail && <p className="mt-2 text-sm text-gray-500">アップロード中...</p>}
                 {thumbnailFileName && !uploadingThumbnail && (
-                  <p className="mt-2 text-sm text-gray-600">{thumbnailFileName}</p>
+                  <p className="mt-2 text-sm text-gray-600">新しいファイル: {thumbnailFileName}</p>
                 )}
               </div>
-              {formData.thumbnail_image && (
-                <img
-                  src={formData.thumbnail_image}
-                  alt="サムネイルプレビュー"
-                  className="mt-2 w-40 h-24 object-cover rounded"
-                />
-              )}
             </div>
 
             {/* サムネイルラベル */}
@@ -200,32 +208,40 @@ export default function EditAmbassadorPage({ params: promiseParams }: { params: 
               <label className="block text-sm font-medium text-gray-700">
                 アイコン画像 <span className="text-red-500">*</span>
               </label>
+              {formData.icon_image && (
+                <div className="mt-2 mb-3">
+                  <img
+                    src={formData.icon_image}
+                    alt="アイコンプレビュー"
+                    className="w-12 h-12 object-cover rounded-full"
+                  />
+                  <p className="mt-1 text-sm text-gray-600">現在の画像が設定されています</p>
+                </div>
+              )}
               <div className="mt-1">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      setIconFileName(file.name);
-                      handleUpload(file, 'icon_image', setUploadingIcon);
-                    }
-                  }}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
-                  disabled={uploadingIcon}
-                />
+                <label className="block w-full cursor-pointer">
+                  <span className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+                    {formData.icon_image ? '画像を変更' : 'ファイルを選択'}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setIconFileName(file.name);
+                        handleUpload(file, 'icon_image', setUploadingIcon);
+                      }
+                    }}
+                    className="sr-only"
+                    disabled={uploadingIcon}
+                  />
+                </label>
                 {uploadingIcon && <p className="mt-2 text-sm text-gray-500">アップロード中...</p>}
                 {iconFileName && !uploadingIcon && (
-                  <p className="mt-2 text-sm text-gray-600">{iconFileName}</p>
+                  <p className="mt-2 text-sm text-gray-600">新しいファイル: {iconFileName}</p>
                 )}
               </div>
-              {formData.icon_image && (
-                <img
-                  src={formData.icon_image}
-                  alt="アイコンプレビュー"
-                  className="mt-2 w-12 h-12 object-cover rounded-full"
-                />
-              )}
             </div>
 
             {/* 部署名 */}
