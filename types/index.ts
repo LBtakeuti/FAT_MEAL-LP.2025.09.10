@@ -5,6 +5,7 @@
 
 // Export all types
 export * from './ambassador';
+export * from './feedback';
 
 // ============================================
 // メニューアイテム
