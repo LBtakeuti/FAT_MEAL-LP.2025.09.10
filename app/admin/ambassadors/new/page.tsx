@@ -238,13 +238,18 @@ export default function NewAmbassadorPage() {
             <div>
               <label htmlFor="description" className="block text-sm font-medium text-gray-700">
                 説明文 <span className="text-red-500">*</span>
-                <span className="text-gray-400 text-xs ml-2">（最大200文字）</span>
+                <span className={`text-xs ml-2 ${formData.description.length > 80 ? 'text-red-500' : 'text-gray-400'}`}>
+                  （{formData.description.length}/80文字）
+                </span>
               </label>
+              <p className="mt-1 text-xs text-gray-500">
+                フロント表示は3行まで（モバイル：約51文字、PC：約93文字）
+              </p>
               <textarea
                 id="description"
                 name="description"
                 required
-                maxLength={200}
+                maxLength={80}
                 rows={4}
                 value={formData.description}
                 onChange={handleChange}

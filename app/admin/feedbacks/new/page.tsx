@@ -178,13 +178,18 @@ export default function NewFeedbackPage() {
             <div>
               <label htmlFor="description" className="block text-sm font-medium text-gray-700">
                 説明文 <span className="text-red-500">*</span>
-                <span className="text-gray-400 text-xs ml-2">（最大200文字）</span>
+                <span className={`text-xs ml-2 ${formData.description.length > 70 ? 'text-red-500' : 'text-gray-400'}`}>
+                  （{formData.description.length}/70文字）
+                </span>
               </label>
+              <p className="mt-1 text-xs text-gray-500">
+                フロント表示は3行まで（1行約20-25文字）
+              </p>
               <textarea
                 id="description"
                 name="description"
                 required
-                maxLength={200}
+                maxLength={70}
                 rows={4}
                 value={formData.description}
                 onChange={handleChange}
