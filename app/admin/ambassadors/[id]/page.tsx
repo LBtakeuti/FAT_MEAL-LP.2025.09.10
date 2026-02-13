@@ -158,7 +158,17 @@ export default function EditAmbassadorPage({ params: promiseParams }: { params: 
                     alt="サムネイルプレビュー"
                     className="w-40 h-24 object-cover rounded"
                   />
-                  <p className="mt-1 text-sm text-gray-600">現在の画像が設定されています</p>
+                  <div className="mt-1">
+                    <p className="text-xs text-gray-500">現在の画像:</p>
+                    <a
+                      href={formData.thumbnail_image}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:text-blue-800 underline break-all"
+                    >
+                      {formData.thumbnail_image}
+                    </a>
+                  </div>
                 </div>
               )}
               <div className="mt-1">
@@ -215,7 +225,17 @@ export default function EditAmbassadorPage({ params: promiseParams }: { params: 
                     alt="アイコンプレビュー"
                     className="w-12 h-12 object-cover rounded-full"
                   />
-                  <p className="mt-1 text-sm text-gray-600">現在の画像が設定されています</p>
+                  <div className="mt-1">
+                    <p className="text-xs text-gray-500">現在の画像:</p>
+                    <a
+                      href={formData.icon_image}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:text-blue-800 underline break-all"
+                    >
+                      {formData.icon_image}
+                    </a>
+                  </div>
                 </div>
               )}
               <div className="mt-1">
