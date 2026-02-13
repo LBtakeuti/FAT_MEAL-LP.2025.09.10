@@ -5,11 +5,12 @@ import MobileFooterNav from '@/components/layout/MobileFooterNav';
 import HeroSection from '@/components/sections/HeroSection';
 import ProblemsSection from '@/components/sections/ProblemsSection';
 import AboutSection from '@/components/sections/AboutSection';
-import StatsSection from '@/components/sections/StatsSection';
 import PurchaseFlowSection from '@/components/sections/PurchaseFlowSection';
 import TrialSection from '@/components/sections/TrialSection';
 import SubscriptionSection from '@/components/sections/SubscriptionSection';
 import MenuSection from '@/components/sections/MenuSection';
+import AmbassadorSection from '@/components/sections/AmbassadorSection';
+import FeedbackSection from '@/components/sections/FeedbackSection';
 import NewsSection from '@/components/sections/NewsSection';
 import LineFloatingButton from '@/components/ui/LineFloatingButton';
 import type { MenuItem } from '@/types';
@@ -27,8 +28,9 @@ export default function HomeContent({ menuItems }: HomeContentProps) {
         <AboutSection />
         <MenuSection initialMenuItems={menuItems} />
         <SubscriptionSection />
+        <AmbassadorSection />
+        <FeedbackSection />
         <TrialSection />
-        <StatsSection />
         <PurchaseFlowSection />
         <NewsSection />
         {/* モバイルではフッターナビゲーションを表示 */}

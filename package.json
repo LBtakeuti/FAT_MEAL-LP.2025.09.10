@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@google-analytics/data": "^5.2.1",
+    "@splidejs/react-splide": "^0.7.12",
+    "@splidejs/splide": "^4.1.4",
     "@supabase/supabase-js": "^2.57.4",
     "bcryptjs": "^3.0.2",
     "cookies-next": "^6.1.0",

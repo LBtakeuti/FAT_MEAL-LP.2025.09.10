@@ -31,6 +31,8 @@ export default function AdminLayout({
     { href: '/admin/referrers', label: '紹介者管理' },
     { href: '/admin/menu', label: '弁当管理' },
     { href: '/admin/news', label: 'ニュース管理' },
+    { href: '/admin/ambassadors', label: 'アンバサダー管理' },
+    { href: '/admin/feedbacks', label: 'お客様の声管理' },
     { href: '/admin/contacts', label: 'お問い合わせ管理' },
     { href: '/admin/inventory', label: '在庫管理' },
     { href: '/admin/banner', label: 'バナー管理' },

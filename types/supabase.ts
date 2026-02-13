@@ -663,6 +663,90 @@ export type Database = {
         }
         Relationships: []
       }
+      feedbacks: {
+        Row: {
+          id: string
+          thumbnail_image: string
+          thumbnail_label: string | null
+          date: string
+          title: string
+          description: string
+          sort_order: number | null
+          is_active: boolean | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          thumbnail_image: string
+          thumbnail_label?: string | null
+          date: string
+          title: string
+          description: string
+          sort_order?: number | null
+          is_active?: boolean | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          thumbnail_image?: string
+          thumbnail_label?: string | null
+          date?: string
+          title?: string
+          description?: string
+          sort_order?: number | null
+          is_active?: boolean | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ambassadors: {
+        Row: {
+          id: string
+          thumbnail_image: string
+          thumbnail_label: string | null
+          icon_image: string
+          department: string | null
+          date: string
+          title: string
+          description: string
+          sort_order: number | null
+          is_active: boolean | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          thumbnail_image: string
+          thumbnail_label?: string | null
+          icon_image: string
+          department?: string | null
+          date: string
+          title: string
+          description: string
+          sort_order?: number | null
+          is_active?: boolean | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          thumbnail_image?: string
+          thumbnail_label?: string | null
+          icon_image?: string
+          department?: string | null
+          date?: string
+          title?: string
+          description?: string
+          sort_order?: number | null
+          is_active?: boolean | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
