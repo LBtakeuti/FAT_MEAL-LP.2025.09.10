@@ -1,2 +1,2 @@
-export { default as MenuCard } from './MenuCard';
-export { default as MenuDetailModal } from './MenuDetailModal';
+export { MenuCard } from './MenuCard';
+export { MenuDetailModal } from './MenuDetailModal';
