@@ -32,7 +32,7 @@ const ProblemsSection: React.FC = () => {
   }, [images]);
 
   return (
-    <section className="relative overflow-hidden bg-white pt-4 sm:pt-6 pb-12 sm:pb-20">
+    <section id="problems" className="relative overflow-hidden bg-white py-4 sm:pt-6 sm:pb-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* セクション見出し */}
         <div className="text-center mb-6 sm:mb-8">

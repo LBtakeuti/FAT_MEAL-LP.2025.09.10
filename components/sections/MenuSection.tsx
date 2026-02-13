@@ -24,7 +24,7 @@ const MenuSection: React.FC<MenuSectionProps> = ({ initialMenuItems = [] }) => {
   // データなし
   if (initialMenuItems.length === 0) {
     return (
-      <section id="menu" className="bg-white py-8 sm:py-12">
+      <section id="menu" className="bg-white py-0 sm:py-4">
         <div className="max-w-6xl mx-auto px-4">
           <div className="mb-6">
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 font-antique">
@@ -41,7 +41,7 @@ const MenuSection: React.FC<MenuSectionProps> = ({ initialMenuItems = [] }) => {
 
   return (
     <>
-      <section id="menu" className="bg-white py-8 sm:py-12">
+      <section id="menu" className="bg-white py-0 sm:py-4">
         <div className="max-w-6xl mx-auto px-4">
           {/* タイトル */}
           <div className="mb-6">

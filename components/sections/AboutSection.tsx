@@ -50,7 +50,7 @@ const AboutSection: React.FC = () => {
   ];
 
   return (
-    <section className="relative overflow-hidden bg-white pt-0 pb-12 sm:pb-20">
+    <section className="relative overflow-hidden bg-white pt-0 pb-0">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* ヘッダー */}
         <div ref={titleRef} className="mb-4 sm:mb-6 -mt-2 sm:-mt-1">
@@ -80,14 +80,14 @@ const AboutSection: React.FC = () => {
                 {feature.number}
               </div>
               {/* 画像エリア - 高さを固定 */}
-              <div className="flex justify-center items-end mb-4 relative z-20 h-24 sm:h-28 md:h-32">
+              <div className="flex justify-center items-end mb-4 relative z-20 h-40 sm:h-40 md:h-44">
                 {index === 0 && (
                   <Image
                     src="/images/sections/hutoruhaha3.png"
                     alt="ふとる母3"
                     width={150}
                     height={150}
-                    className="w-auto h-full max-h-24 sm:max-h-28 md:max-h-32 object-contain"
+                    className="w-auto h-full max-h-40 sm:max-h-40 md:max-h-44 object-contain"
                   />
                 )}
                 {index === 1 && (
@@ -96,7 +96,7 @@ const AboutSection: React.FC = () => {
                     alt="ふとる母"
                     width={150}
                     height={150}
-                    className="w-auto h-full max-h-24 sm:max-h-28 md:max-h-32 object-contain"
+                    className="w-auto h-full max-h-40 sm:max-h-40 md:max-h-44 object-contain"
                   />
                 )}
                 {index === 2 && (
@@ -105,7 +105,7 @@ const AboutSection: React.FC = () => {
                     alt="ふとる母2"
                     width={150}
                     height={150}
-                    className="w-auto h-full max-h-24 sm:max-h-28 md:max-h-32 object-contain"
+                    className="w-auto h-full max-h-40 sm:max-h-40 md:max-h-44 object-contain"
                   />
                 )}
               </div>
