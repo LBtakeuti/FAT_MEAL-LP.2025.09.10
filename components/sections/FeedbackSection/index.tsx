@@ -3,7 +3,6 @@
 import React from 'react';
 import { useFeedbacks } from './useFeedbacks';
 import { FeedbackCarousel } from './FeedbackCarousel';
-import { MOBILE_CONTAINER_MAX_WIDTH, DESKTOP_CONTAINER_MAX_WIDTH } from '@/lib/constants/card';
 
 export default function FeedbackSection() {
   const { feedbacks, loading } = useFeedbacks();
@@ -18,7 +17,7 @@ export default function FeedbackSection() {
 
   return (
     <section className="py-2 bg-[#F9F8F3]" id="feedback">
-      <div className={`${MOBILE_CONTAINER_MAX_WIDTH} ${DESKTOP_CONTAINER_MAX_WIDTH} mx-auto`}>
+      <div className="max-w-7xl mx-auto">
         <FeedbackCarousel feedbacks={feedbacks} />
       </div>
     </section>

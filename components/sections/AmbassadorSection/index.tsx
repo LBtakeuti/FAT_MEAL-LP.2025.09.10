@@ -3,7 +3,6 @@
 import React from 'react';
 import { useAmbassadors } from './useAmbassadors';
 import { AmbassadorCarousel } from './AmbassadorCarousel';
-import { MOBILE_CONTAINER_MAX_WIDTH, DESKTOP_CONTAINER_MAX_WIDTH } from '@/lib/constants/card';
 
 export default function AmbassadorSection() {
   const { ambassadors, loading } = useAmbassadors();
@@ -18,7 +17,7 @@ export default function AmbassadorSection() {
 
   return (
     <section className="py-2 bg-[#F9F8F3]" id="ambassador">
-      <div className={`${MOBILE_CONTAINER_MAX_WIDTH} ${DESKTOP_CONTAINER_MAX_WIDTH} mx-auto`}>
+      <div className="max-w-7xl mx-auto">
         <AmbassadorCarousel ambassadors={ambassadors} />
       </div>
     </section>
