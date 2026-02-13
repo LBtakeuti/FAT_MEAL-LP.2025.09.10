@@ -69,7 +69,7 @@ export function toMenuItem(db: MenuItemDB): MenuItem {
     protein: String(db.protein),
     fat: String(db.fat),
     carbs: String(db.carbs),
-    image: db.main_image || '/placeholder.jpg',
+    image: db.main_image || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="600" height="400"%3E%3Crect width="600" height="400" fill="%23ddd"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-size="20"%3E画像準備中%3C/text%3E%3C/svg%3E',
     images: images.length > 0 ? images : undefined,
     features: [], // データベースにfeaturesカラムがないため空配列
     ingredients: db.ingredients || [],
