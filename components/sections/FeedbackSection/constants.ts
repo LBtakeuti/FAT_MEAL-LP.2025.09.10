@@ -1,6 +1,9 @@
 import type { Options } from '@splidejs/splide';
+import { CARD_HORIZONTAL_PADDING } from '@/lib/constants/card';
 
 export function getCarouselOptions(count: number): Options {
+  const padding = `${CARD_HORIZONTAL_PADDING}px`;
+
   return {
     type: count > 4 ? 'loop' : 'slide',
     perPage: 4,
@@ -27,7 +30,7 @@ export function getCarouselOptions(count: number): Options {
       640: {
         perPage: 1,
         gap: '1rem',
-        padding: { left: '1.5rem', right: '1.5rem' },
+        padding: { left: padding, right: padding },
         arrows: count > 1,
         pagination: count > 1,
         autoplay: count > 1,

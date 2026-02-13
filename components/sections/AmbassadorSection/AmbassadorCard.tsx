@@ -1,9 +1,16 @@
 import React from 'react';
 import type { AmbassadorItem } from '@/types/ambassador';
+import { CARD_WIDTH, CARD_IMAGE_ASPECT_RATIO } from '@/lib/constants/card';
 
 interface AmbassadorCardProps {
   item: AmbassadorItem;
 }
+
+// モバイル版のカードサイズ定数
+const MOBILE_CARD_WIDTH = CARD_WIDTH;
+const MOBILE_CARD_HEIGHT = Math.round(MOBILE_CARD_WIDTH / CARD_IMAGE_ASPECT_RATIO);
+const MOBILE_AVATAR_SIZE = 40;
+const MOBILE_CONTENT_WIDTH = MOBILE_CARD_WIDTH - MOBILE_AVATAR_SIZE - 16; // 16px = grid gap
 
 export function AmbassadorCard({ item }: AmbassadorCardProps) {
   return (
@@ -46,10 +53,8 @@ export function AmbassadorCard({ item }: AmbassadorCardProps) {
           </div>
 
           {/* Content Column */}
-          <div className="ambassador-content">
-            <p className="ambassador-meta">
-              <time className="ambassador-date">{item.date}</time>
-            </p>
+          <div className="ambassador-content flex flex-col gap-2">
+            <time className="ambassador-date">{item.date}</time>
             <h4 className="ambassador-title">{item.title}</h4>
             <p className="ambassador-description">{item.description}</p>
           </div>
@@ -135,18 +140,12 @@ export function AmbassadorCard({ item }: AmbassadorCardProps) {
         .ambassador-content {
           width: 434px;
         }
-        .ambassador-meta {
-          display: block;
-          font-size: 14px;
-          font-weight: 500;
-        }
         .ambassador-date {
           font-size: 14px;
           font-weight: 500;
           color: #333;
           line-height: 14px;
           letter-spacing: 0.3px;
-          display: inline;
         }
         .ambassador-title {
           font-size: 16px;
@@ -154,7 +153,6 @@ export function AmbassadorCard({ item }: AmbassadorCardProps) {
           line-height: 16px;
           letter-spacing: 0.3px;
           color: #333;
-          margin-top: 8px;
           overflow: hidden;
           display: -webkit-box;
           -webkit-line-clamp: 1;
@@ -166,7 +164,6 @@ export function AmbassadorCard({ item }: AmbassadorCardProps) {
           line-height: 22.4px;
           letter-spacing: 0.3px;
           color: #333;
-          margin-top: 16px;
           overflow: hidden;
           display: -webkit-box;
           -webkit-line-clamp: 3;
@@ -176,34 +173,34 @@ export function AmbassadorCard({ item }: AmbassadorCardProps) {
         /* Mobile responsive */
         @media (max-width: 768px) {
           .ambassador-card {
-            width: 300px;
+            width: ${MOBILE_CARD_WIDTH}px;
           }
           .ambassador-thumbnail {
-            width: 300px;
-            height: 168px;
+            width: ${MOBILE_CARD_WIDTH}px;
+            height: ${MOBILE_CARD_HEIGHT}px;
           }
           .ambassador-thumbnail-img {
-            width: 300px;
-            height: 168px;
+            width: ${MOBILE_CARD_WIDTH}px;
+            height: ${MOBILE_CARD_HEIGHT}px;
           }
           .ambassador-thumbnail-label {
             display: none;
           }
           .ambassador-container {
-            grid-template-columns: 40px 244px;
+            grid-template-columns: ${MOBILE_AVATAR_SIZE}px ${MOBILE_CONTENT_WIDTH}px;
           }
           .ambassador-author {
-            width: 40px;
+            width: ${MOBILE_AVATAR_SIZE}px;
           }
           .ambassador-avatar {
-            width: 40px;
-            height: 40px;
+            width: ${MOBILE_AVATAR_SIZE}px;
+            height: ${MOBILE_AVATAR_SIZE}px;
           }
           .ambassador-author-caption {
             align-items: center;
           }
           .ambassador-content {
-            width: 244px;
+            width: ${MOBILE_CONTENT_WIDTH}px;
           }
           .ambassador-title {
             font-size: 14px;
@@ -212,7 +209,6 @@ export function AmbassadorCard({ item }: AmbassadorCardProps) {
           .ambassador-description {
             font-size: 12px;
             line-height: 19.2px;
-            margin-top: 8px;
           }
         }
       `}</style>
