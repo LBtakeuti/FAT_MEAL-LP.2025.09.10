@@ -7,7 +7,11 @@ import { FeedbackCarousel } from './FeedbackCarousel';
 export default function FeedbackSection() {
   const { feedbacks, loading } = useFeedbacks();
 
-  if (loading || feedbacks.length === 0) {
+  if (loading) {
+    return null;
+  }
+
+  if (feedbacks.length === 0) {
     return null;
   }
 
