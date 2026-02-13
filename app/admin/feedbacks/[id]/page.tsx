@@ -18,6 +18,8 @@ export default function EditFeedbackPage({ params: promiseParams }: { params: Pr
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
+  const [showThumbnailUrlInput, setShowThumbnailUrlInput] = useState(false);
+  const [thumbnailUrlInput, setThumbnailUrlInput] = useState('');
 
   const fetchFeedback = useCallback(async () => {
     try {
@@ -164,23 +166,77 @@ export default function EditFeedbackPage({ params: promiseParams }: { params: Pr
                   </div>
                 </div>
               )}
-              <div className="mt-1">
-                <label className="block w-full cursor-pointer">
-                  <span className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
-                    {formData.thumbnail_image ? '画像を変更' : 'ファイルを選択'}
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleUpload(file, 'thumbnail_image', setUploadingThumbnail);
-                    }}
-                    className="sr-only"
-                    disabled={uploadingThumbnail}
-                  />
-                </label>
-                {uploadingThumbnail && <p className="mt-2 text-sm text-gray-500">アップロード中...</p>}
+              <div className="mt-1 space-y-3">
+                {/* ファイルアップロード or URL入力の切り替え */}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowThumbnailUrlInput(false)}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md ${
+                      !showThumbnailUrlInput
+                        ? 'bg-orange-100 text-orange-700 border border-orange-300'
+                        : 'bg-gray-100 text-gray-700 border border-gray-300'
+                    }`}
+                  >
+                    ファイルアップロード
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowThumbnailUrlInput(true)}
+                    className={`px-3 py-1.5 text-sm font-medium rounded-md ${
+                      showThumbnailUrlInput
+                        ? 'bg-orange-100 text-orange-700 border border-orange-300'
+                        : 'bg-gray-100 text-gray-700 border border-gray-300'
+                    }`}
+                  >
+                    URLを入力
+                  </button>
+                </div>
+
+                {!showThumbnailUrlInput ? (
+                  /* ファイルアップロード */
+                  <>
+                    <label className="block w-full cursor-pointer">
+                      <span className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+                        {formData.thumbnail_image ? '画像を変更' : 'ファイルを選択'}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleUpload(file, 'thumbnail_image', setUploadingThumbnail);
+                        }}
+                        className="sr-only"
+                        disabled={uploadingThumbnail}
+                      />
+                    </label>
+                    {uploadingThumbnail && <p className="mt-2 text-sm text-gray-500">アップロード中...</p>}
+                  </>
+                ) : (
+                  /* URL入力 */
+                  <div className="space-y-2">
+                    <input
+                      type="url"
+                      value={thumbnailUrlInput}
+                      onChange={(e) => setThumbnailUrlInput(e.target.value)}
+                      placeholder="https://example.com/image.jpg"
+                      className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (thumbnailUrlInput) {
+                          setFormData({ ...formData, thumbnail_image: thumbnailUrlInput });
+                          setThumbnailUrlInput('');
+                        }
+                      }}
+                      className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                    >
+                      URLを設定
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
