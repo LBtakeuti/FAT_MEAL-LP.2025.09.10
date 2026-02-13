@@ -2,7 +2,7 @@ import React from 'react';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
 import '@splidejs/react-splide/css';
 import { AmbassadorCard } from './AmbassadorCard';
-import { CAROUSEL_OPTIONS } from './constants';
+import { getCarouselOptions } from './constants';
 import type { AmbassadorItem } from '@/types/ambassador';
 
 interface AmbassadorCarouselProps {
@@ -13,7 +13,7 @@ export function AmbassadorCarousel({ ambassadors }: AmbassadorCarouselProps) {
   return (
     <>
       <Splide
-        options={CAROUSEL_OPTIONS}
+        options={getCarouselOptions(ambassadors.length)}
         aria-label="ふとるめしアンバサダー"
         className="ambassador-splide"
       >

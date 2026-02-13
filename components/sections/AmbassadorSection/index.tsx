@@ -7,7 +7,11 @@ import { AmbassadorCarousel } from './AmbassadorCarousel';
 export default function AmbassadorSection() {
   const { ambassadors, loading } = useAmbassadors();
 
-  if (loading || ambassadors.length === 0) {
+  if (loading) {
+    return null;
+  }
+
+  if (ambassadors.length === 0) {
     return null;
   }
 
