@@ -1,0 +1,11 @@
+export { default as HeroSection } from './HeroSection';
+export { default as AboutSection } from './AboutSection';
+export { default as MenuSection } from './MenuSection';
+export { default as NewsSection } from './NewsSection';
+export { default as StatsSection } from './StatsSection';
+export { default as SubscriptionSection } from './SubscriptionSection';
+export { default as ProblemsSection } from './ProblemsSection';
+export { default as PurchaseFlowSection } from './PurchaseFlowSection';
+export { default as TrialSection } from './TrialSection';
+export { default as AmbassadorSection } from './AmbassadorSection';
+export { default as FeedbackSection } from './FeedbackSection';
