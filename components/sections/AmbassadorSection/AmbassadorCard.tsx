@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import type { AmbassadorItem } from '@/types/ambassador';
 import { CARD_WIDTH, CARD_IMAGE_ASPECT_RATIO } from '@/lib/constants/card';

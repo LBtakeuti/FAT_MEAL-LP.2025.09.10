@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import type { FeedbackItem } from '@/types/feedback';
 import { CARD_WIDTH, CARD_IMAGE_ASPECT_RATIO } from '@/lib/constants/card';
