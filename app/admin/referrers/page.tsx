@@ -166,7 +166,7 @@ export default function ReferrersPage() {
       return;
     }
 
-    if (!confirm(`${referrer.name} に ${formatAmount(unpaidAmount)} を支払い処理しますか？`)) {
+    if (!confirm(`${referrer.name} に ${formatAmount(unpaidAmount)} 支払いましたか？`)) {
       return;
     }
 
@@ -359,12 +359,6 @@ export default function ReferrersPage() {
                     利用回数
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    未払いコミッション
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    支払い累計額
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     ステータス
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -411,26 +405,6 @@ export default function ReferrersPage() {
                         >
                           {referrerStats?.totalCount || 0}回
                         </button>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-900 font-medium">
-                            {formatAmount(referrerStats?.unpaidCommission || 0)}
-                          </span>
-                          {referrerStats && referrerStats.unpaidCommission > 0 && (
-                            <button
-                              onClick={() => handleProcessPayout(referrer, referrerStats)}
-                              disabled={processingPayout}
-                              className="px-2 py-1 text-xs bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50"
-                              title="支払い処理"
-                            >
-                              支払い
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {formatAmount(referrerStats?.paidCommission || 0)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button
@@ -640,12 +614,12 @@ export default function ReferrersPage() {
                           disabled={processingPayout}
                           className="mt-2 w-full px-3 py-1.5 text-sm bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50"
                         >
-                          {processingPayout ? '処理中...' : '支払い処理'}
+                          {processingPayout ? '処理中...' : '支払い完了'}
                         </button>
                       )}
                     </div>
                     <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-sm text-gray-600 font-medium">支払い累計額</p>
+                      <p className="text-sm text-gray-600 font-medium">累計額</p>
                       <p className="text-2xl font-bold text-gray-900">{formatAmount(selectedStats.paidCommission)}</p>
                       <p className="text-xs text-gray-500 mt-1">支払い回数: {payoutHistory.length}回</p>
                     </div>
