@@ -320,13 +320,13 @@ const PurchasePage: React.FC = () => {
     }
   }, [searchParams, user]);
 
-  // 紹介コードの自動適用（URLパラメータ ?ref=CODE → localStorage → バックグラウンドバリデーション）
+  // 紹介コードの自動適用（URLパラメータ ?ref=CODE → sessionStorage → バックグラウンドバリデーション）
   useEffect(() => {
     const refParam = searchParams.get('ref');
     if (refParam) {
-      localStorage.setItem('referral_code', refParam);
+      sessionStorage.setItem('referral_code', refParam);
     }
-    const storedCode = localStorage.getItem('referral_code');
+    const storedCode = sessionStorage.getItem('referral_code');
     if (storedCode) {
       setCustomerInfo(prev => ({ ...prev, referralCode: storedCode }));
       validateReferralCode(storedCode);
