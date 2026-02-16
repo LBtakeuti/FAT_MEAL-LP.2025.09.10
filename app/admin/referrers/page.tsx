@@ -35,10 +35,21 @@ interface ReferrerStats {
   referral_code: string;
   totalCount: number;
   totalCommission: number;
+  paidCommission: number;
+  unpaidCommission: number;
   initialCommission: number;
   recurringCommission: number;
   monthlyStats: MonthlyStats[];
   byProduct: { [key: string]: { count: number; commission: number } };
+}
+
+interface PayoutRecord {
+  id: string;
+  referrer_code: string;
+  amount: number;
+  note: string | null;
+  paid_at: string;
+  created_at: string;
 }
 
 export default function ReferrersPage() {
@@ -63,6 +74,8 @@ export default function ReferrersPage() {
   const [showStatsModal, setShowStatsModal] = useState(false);
   const [selectedReferrer, setSelectedReferrer] = useState<Referrer | null>(null);
   const [selectedStats, setSelectedStats] = useState<ReferrerStats | null>(null);
+  const [payoutHistory, setPayoutHistory] = useState<PayoutRecord[]>([]);
+  const [processingPayout, setProcessingPayout] = useState(false);
 
   const fetchReferrers = useCallback(async () => {
     try {
@@ -115,10 +128,21 @@ export default function ReferrersPage() {
     setShowModal(true);
   };
 
-  const openStatsModal = (referrer: Referrer) => {
+  const openStatsModal = async (referrer: Referrer) => {
     setSelectedReferrer(referrer);
     setSelectedStats(getStatsForCode(referrer.referral_code) || null);
     setShowStatsModal(true);
+
+    // 支払い履歴を取得
+    try {
+      const res = await fetch(`/api/admin/referrers/payouts?code=${referrer.referral_code}`);
+      if (res.ok) {
+        const data = await res.json();
+        setPayoutHistory(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch payout history:', err);
+    }
   };
 
   const closeModal = () => {
@@ -131,6 +155,57 @@ export default function ReferrersPage() {
     setShowStatsModal(false);
     setSelectedReferrer(null);
     setSelectedStats(null);
+    setPayoutHistory([]);
+  };
+
+  const handleProcessPayout = async (referrer: Referrer, stats: ReferrerStats) => {
+    const unpaidAmount = stats.unpaidCommission;
+
+    if (unpaidAmount <= 0) {
+      alert('未払いのコミッションがありません');
+      return;
+    }
+
+    if (!confirm(`${referrer.name} に ${formatAmount(unpaidAmount)} を支払い処理しますか？`)) {
+      return;
+    }
+
+    setProcessingPayout(true);
+    try {
+      const res = await fetch('/api/admin/referrers/payouts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          referrer_code: referrer.referral_code,
+          amount: unpaidAmount,
+          note: `${referrer.name} への支払い`,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed to process payout');
+
+      alert('支払い処理が完了しました');
+
+      // データを再取得
+      await fetchReferrers();
+
+      // モーダルが開いている場合は再読み込み
+      if (showStatsModal && selectedReferrer) {
+        const updatedStats = getStatsForCode(selectedReferrer.referral_code);
+        setSelectedStats(updatedStats || null);
+
+        const payoutRes = await fetch(`/api/admin/referrers/payouts?code=${selectedReferrer.referral_code}`);
+        if (payoutRes.ok) {
+          const data = await payoutRes.json();
+          setPayoutHistory(data);
+        }
+      }
+    } catch (err) {
+      alert('支払い処理に失敗しました');
+      console.error(err);
+    } finally {
+      setProcessingPayout(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -284,7 +359,10 @@ export default function ReferrersPage() {
                     利用回数
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    紹介料合計
+                    未払いコミッション
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    支払い累計額
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     ステータス
@@ -334,8 +412,25 @@ export default function ReferrersPage() {
                           {referrerStats?.totalCount || 0}回
                         </button>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                        {formatAmount(referrerStats?.totalCommission || 0)}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-900 font-medium">
+                            {formatAmount(referrerStats?.unpaidCommission || 0)}
+                          </span>
+                          {referrerStats && referrerStats.unpaidCommission > 0 && (
+                            <button
+                              onClick={() => handleProcessPayout(referrer, referrerStats)}
+                              disabled={processingPayout}
+                              className="px-2 py-1 text-xs bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50"
+                              title="支払い処理"
+                            >
+                              支払い
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {formatAmount(referrerStats?.paidCommission || 0)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button
@@ -534,6 +629,28 @@ export default function ReferrersPage() {
                     </div>
                   </div>
 
+                  {/* 支払い状況 */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-orange-50 rounded-lg p-4 border-2 border-orange-200">
+                      <p className="text-sm text-orange-600 font-medium">未払いコミッション</p>
+                      <p className="text-2xl font-bold text-orange-900">{formatAmount(selectedStats.unpaidCommission)}</p>
+                      {selectedStats.unpaidCommission > 0 && selectedReferrer && (
+                        <button
+                          onClick={() => handleProcessPayout(selectedReferrer, selectedStats)}
+                          disabled={processingPayout}
+                          className="mt-2 w-full px-3 py-1.5 text-sm bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50"
+                        >
+                          {processingPayout ? '処理中...' : '支払い処理'}
+                        </button>
+                      )}
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-sm text-gray-600 font-medium">支払い累計額</p>
+                      <p className="text-2xl font-bold text-gray-900">{formatAmount(selectedStats.paidCommission)}</p>
+                      <p className="text-xs text-gray-500 mt-1">支払い回数: {payoutHistory.length}回</p>
+                    </div>
+                  </div>
+
                   {/* 紹介料単価の説明 */}
                   <div className="bg-orange-50 rounded-lg p-4">
                     <h3 className="text-sm font-medium text-orange-800 mb-2">紹介料レート</h3>
@@ -618,6 +735,39 @@ export default function ReferrersPage() {
                       </table>
                     </div>
                   </div>
+
+                  {/* 支払い履歴 */}
+                  {payoutHistory.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 mb-3">支払い履歴</h3>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">支払日</th>
+                              <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">金額</th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">メモ</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            {payoutHistory.map((payout) => (
+                              <tr key={payout.id}>
+                                <td className="px-4 py-3 text-sm text-gray-900">
+                                  {formatDate(payout.paid_at)}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-900 text-right font-medium">
+                                  {formatAmount(payout.amount)}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-500">
+                                  {payout.note || '-'}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

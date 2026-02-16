@@ -23,6 +23,8 @@ interface ReferrerStats {
   referral_code: string;
   totalCount: number;
   totalCommission: number;
+  paidCommission: number;
+  unpaidCommission: number;
   initialCommission: number;
   recurringCommission: number;
   monthlyStats: MonthlyStats[];
@@ -107,6 +109,30 @@ export async function GET(request: NextRequest) {
       console.error('Failed to fetch referral_commissions:', commissionsResult.error);
     }
 
+    // 支払い済みコミッションを取得
+    let payoutsQuery = client.from('referral_payouts')
+      .select('referrer_code, amount');
+
+    if (referralCode) {
+      payoutsQuery = payoutsQuery.eq('referrer_code', referralCode);
+    }
+
+    const payoutsResult = await payoutsQuery;
+    const payoutsByCode: { [code: string]: number } = {};
+
+    if (payoutsResult.data) {
+      for (const payout of payoutsResult.data) {
+        if (!payoutsByCode[payout.referrer_code]) {
+          payoutsByCode[payout.referrer_code] = 0;
+        }
+        payoutsByCode[payout.referrer_code] += payout.amount;
+      }
+    }
+
+    if (payoutsResult.error) {
+      console.error('Failed to fetch payouts:', payoutsResult.error);
+    }
+
     // フォールバック: referral_commissionsにデータがないコードの分は従来ロジックで取得
     // 注文（お試しプラン）
     let ordersQuery = client.from('orders')
@@ -185,6 +211,8 @@ export async function GET(request: NextRequest) {
           referral_code: code,
           totalCount: 0,
           totalCommission: 0,
+          paidCommission: 0,
+          unpaidCommission: 0,
           initialCommission: 0,
           recurringCommission: 0,
           monthlyStats: [],
@@ -227,9 +255,11 @@ export async function GET(request: NextRequest) {
       monthStats.byProduct[planType].commission += record.commission;
     }
 
-    // 月別を新しい順にソート
+    // 月別を新しい順にソート & 支払い済み/未払いを計算
     for (const code in statsByCode) {
       statsByCode[code].monthlyStats.sort((a, b) => b.month.localeCompare(a.month));
+      statsByCode[code].paidCommission = payoutsByCode[code] || 0;
+      statsByCode[code].unpaidCommission = statsByCode[code].totalCommission - statsByCode[code].paidCommission;
     }
 
     const stats = Object.values(statsByCode);
