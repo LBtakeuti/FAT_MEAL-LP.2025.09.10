@@ -284,8 +284,14 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe:
           stripe_session_id: session.id,
           stripe_payment_intent_id: session.payment_intent as string || null,
           customer_name: customerName || 'お客様',
+          customer_name_kana: session.metadata?.customer_name_kana || '',
           customer_email: customerEmail,
           phone: customerPhone || session.metadata?.phone || '',
+          postal_code: session.metadata?.postal_code || '',
+          prefecture: session.metadata?.prefecture || '',
+          city: session.metadata?.city || '',
+          address_detail: session.metadata?.address_detail || '',
+          building: session.metadata?.building || '',
           address: addressString,
           menu_set: menuSet,
           quantity: totalQuantity,
@@ -520,6 +526,9 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
     console.log(`[Webhook] Creating subscription in database...`);
     // 紹介コードを取得
     let referralCode = checkoutSession?.metadata?.referral_code || subscription.metadata?.referral_code || '';
+    console.log(`[Webhook] Referral code from checkout metadata: ${checkoutSession?.metadata?.referral_code}`);
+    console.log(`[Webhook] Referral code from subscription metadata: ${subscription.metadata?.referral_code}`);
+    console.log(`[Webhook] Final referral code: ${referralCode}`);
 
     // 再契約チェック: 同じメールアドレスまたはuser_idでcanceledのサブスクが存在する場合、紹介コードを無効化
     if (referralCode) {

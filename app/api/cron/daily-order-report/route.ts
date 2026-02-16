@@ -7,7 +7,7 @@ export const maxDuration = 60; // Vercelの最大実行時間
 // Order型を定義
 interface Order {
   id: string;
-  order_number: number;
+  order_number: number | string;
   customer_name: string;
   customer_name_kana: string;
   customer_email: string;
@@ -416,11 +416,15 @@ export async function GET(request: NextRequest) {
 function generateCSV(orders: Order[]): string {
   // CSVヘッダー
   const headers = [
-    '氏名',
+    '出荷予定日',
+    '送り状種類',
+    'お届け先名',
+    'お届け先郵便番号',
+    'お届け先住所',
+    '注文番号',
     'フリガナ',
     'メールアドレス',
     '電話番号',
-    '住所',
     '注文内容',
     '数量',
     '金額',
@@ -430,11 +434,15 @@ function generateCSV(orders: Order[]): string {
 
   // CSVデータ行
   const rows = orders.map((order) => [
+    formatDateJST(order.created_at),
+    '0',
     order.customer_name || '',
+    order.postal_code || '',
+    order.address || '',
+    order.order_number,
     order.customer_name_kana || '',
     order.customer_email || '',
     order.phone || '',
-    order.address || '',
     formatMenuSet(order.menu_set || ''),
     order.quantity || 0,
     order.amount || 0,
@@ -479,6 +487,20 @@ function formatMenuSet(menuSet: string): string {
   if (!menuSet) return '';
   // カンマで分割して改行で結合（CSV内で見やすくする）
   return menuSet.split(',').map(item => item.trim()).join('\n');
+}
+
+// 日付のみJSTでフォーマット（出荷予定日用）
+function formatDateJST(dateString: string): string {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const jstOffset = 9 * 60 * 60 * 1000;
+  const jstDate = new Date(date.getTime() + jstOffset);
+
+  const year = jstDate.getUTCFullYear();
+  const month = String(jstDate.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(jstDate.getUTCDate()).padStart(2, '0');
+
+  return `${year}/${month}/${day}`;
 }
 
 // 日時をJSTでフォーマット

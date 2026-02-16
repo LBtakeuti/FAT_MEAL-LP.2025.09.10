@@ -445,6 +445,7 @@ const PurchasePage: React.FC = () => {
       address: userProfile.address_detail || '',
       building: userProfile.building || '',
       preferredDeliveryDate: customerInfo.preferredDeliveryDate || '',
+      referralCode: customerInfo.referralCode || '',
     });
     setErrors({});
   };
@@ -680,6 +681,8 @@ const PurchasePage: React.FC = () => {
             customerInfo: {
               lastName: customerInfo.lastName,
               firstName: customerInfo.firstName,
+              lastNameKana: customerInfo.lastNameKana,
+              firstNameKana: customerInfo.firstNameKana,
               email: customerInfo.email,
               phone: customerInfo.phone,
               postalCode: customerInfo.postalCode,
@@ -688,7 +691,7 @@ const PurchasePage: React.FC = () => {
               address: customerInfo.address,
               building: customerInfo.building,
               preferredDeliveryDate: customerInfo.preferredDeliveryDate,
-              referralCode: referralCodeValid ? customerInfo.referralCode : undefined,
+              referralCode: customerInfo.referralCode || undefined,
             },
             couponCode: appliedCoupon?.code,
           }),

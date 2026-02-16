@@ -62,7 +62,7 @@ export async function GET() {
     const rows = orders?.map((order) => [
       formatDateJST(order.created_at),
       '0',
-      order.customer_name,
+      order.customer_name || '',
       order.postal_code || '',
       order.address || '',
       order.order_number,

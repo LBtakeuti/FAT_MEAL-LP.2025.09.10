@@ -34,6 +34,8 @@ interface CheckoutRequest {
   customerInfo: {
     lastName: string;
     firstName: string;
+    lastNameKana: string;
+    firstNameKana: string;
     email: string;
     phone: string;
     postalCode: string;
@@ -51,6 +53,9 @@ export async function POST(request: NextRequest) {
   try {
     const body: CheckoutRequest = await request.json();
     const { cart, customerInfo, couponCode, purchaseType = 'one-time' } = body;
+
+    console.log('[Checkout] Received referralCode:', customerInfo.referralCode);
+    console.log('[Checkout] Full customerInfo:', JSON.stringify(customerInfo, null, 2));
 
     // 配送先住所を構築
     const fullAddress = `${customerInfo.postalCode} ${customerInfo.prefecture}${customerInfo.city}${customerInfo.address}${customerInfo.building ? ' ' + customerInfo.building : ''}`;
@@ -102,6 +107,7 @@ export async function POST(request: NextRequest) {
           purchase_type: 'subscription-monthly',
           plan_id: planId,
           customer_name: `${customerInfo.lastName} ${customerInfo.firstName}`,
+          customer_name_kana: `${customerInfo.lastNameKana} ${customerInfo.firstNameKana}`,
           phone: customerInfo.phone,
           postal_code: customerInfo.postalCode,
           prefecture: customerInfo.prefecture,
@@ -200,6 +206,7 @@ export async function POST(request: NextRequest) {
         purchase_type: 'one-time',
         plan_id: trialItem.planId,
         customer_name: `${customerInfo.lastName} ${customerInfo.firstName}`,
+        customer_name_kana: `${customerInfo.lastNameKana} ${customerInfo.firstNameKana}`,
         phone: customerInfo.phone,
         postal_code: customerInfo.postalCode,
         prefecture: customerInfo.prefecture,
