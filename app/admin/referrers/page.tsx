@@ -619,7 +619,7 @@ export default function ReferrersPage() {
                       )}
                     </div>
                     <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-sm text-gray-600 font-medium">累計額</p>
+                      <p className="text-sm text-gray-600 font-medium">支払い累計額</p>
                       <p className="text-2xl font-bold text-gray-900">{formatAmount(selectedStats.paidCommission)}</p>
                       <p className="text-xs text-gray-500 mt-1">支払い回数: {payoutHistory.length}回</p>
                     </div>
