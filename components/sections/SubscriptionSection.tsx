@@ -65,6 +65,9 @@ const SubscriptionSection: React.FC = () => {
           <p className="mt-4 text-gray-600 text-sm sm:text-base">
             毎月届く定期便で、体づくりを習慣に
           </p>
+          <p className="mt-2 text-orange-600 font-bold text-sm sm:text-base">
+            ※ふとるめしは2つで1食です
+          </p>
         </div>
 
         {/* プランカード */}
@@ -100,7 +103,7 @@ const SubscriptionSection: React.FC = () => {
                   {plan.subtitle}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
-                  ※{plan.meals * 2}食入り
+                  ※{plan.meals * 2}個入り
                 </p>
               </div>
 
