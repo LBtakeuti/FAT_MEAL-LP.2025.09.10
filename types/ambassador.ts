@@ -7,4 +7,6 @@ export interface AmbassadorItem {
   date: string;
   title: string;
   description: string;
+  instagram_url: string | null;
+  tiktok_url: string | null;
 }

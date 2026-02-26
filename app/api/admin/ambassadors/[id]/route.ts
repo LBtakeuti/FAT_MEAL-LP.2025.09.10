@@ -54,6 +54,8 @@ export const PUT = withAuthDynamic(async (request: NextRequest, context) => {
     date: body.date,
     title: body.title,
     description: body.description,
+    instagram_url: body.instagram_url || null,
+    tiktok_url: body.tiktok_url || null,
     sort_order: body.sort_order ?? 0,
     is_active: body.is_active ?? true,
     updated_at: new Date().toISOString(),
