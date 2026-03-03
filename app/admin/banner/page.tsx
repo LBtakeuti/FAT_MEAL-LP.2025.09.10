@@ -278,7 +278,7 @@ export default function BannerManagementPage() {
               setSettings(prev => prev ? { ...prev, link_url: e.target.value } : null)
             }
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="https://lin.ee/..."
+            placeholder="https://..."
           />
         </div>
 

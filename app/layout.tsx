@@ -1,7 +1,15 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { Noto_Sans_JP } from 'next/font/google';
 import "./globals.css";
 import LayoutContent from '@/components/layout/LayoutContent';
+
+const notoSansJP = Noto_Sans_JP({
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
+  variable: '--font-noto-sans-jp',
+  display: 'swap',
+});
 
 // GA4 Measurement ID from environment variable
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
@@ -53,7 +61,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://lh3.googleusercontent.com" />
         <link rel="preconnect" href="https://lh3.googleusercontent.com" crossOrigin="anonymous" />
       </head>
-      <body className="font-sans antialiased bg-[#fff7ed]">
+      <body className={`${notoSansJP.variable} font-sans antialiased bg-[#fff7ed]`}>
         {/* Google Analytics 4 */}
         {GA_MEASUREMENT_ID && (
           <>

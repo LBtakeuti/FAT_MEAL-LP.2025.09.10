@@ -12,11 +12,9 @@ export const SNACK_BREAKDOWN: TooltipData = {
 };
 
 export const FUTORUMESHI_BREAKDOWN: TooltipData = {
-  title: 'ふとるめし 15,600円の内訳',
+  title: 'ふとるめし 16,800円の内訳',
   items: [
-    '• 12食プラン: 15,600円',
-    '• 1食あたり: 約660円',
+    '• 12食プラン: 16,800円（送料込）',
     '• 電子レンジ電気代: 約100円/月',
   ],
-  note: '送料別です。',
 };

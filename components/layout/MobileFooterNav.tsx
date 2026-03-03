@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 
 interface MobileFooterNavProps {
@@ -10,10 +10,6 @@ interface MobileFooterNavProps {
 const MobileFooterNav: React.FC<MobileFooterNavProps> = ({ isVisible = false }) => {
   const router = useRouter();
   
-  useEffect(() => {
-    console.log('MobileFooterNav isVisible:', isVisible);
-  }, [isVisible]);
-
   const handleBookNowClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     // Navigate to purchase page

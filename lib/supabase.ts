@@ -2,6 +2,13 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
 import type { MenuItemDB, NewsItemDB, ContactDB } from '@/types';
 
+type MenuItemInsert = Database['public']['Tables']['menu_items']['Insert'];
+type MenuItemUpdate  = Database['public']['Tables']['menu_items']['Update'];
+type NewsInsert      = Database['public']['Tables']['news']['Insert'];
+type NewsUpdate      = Database['public']['Tables']['news']['Update'];
+type ContactInsert   = Database['public']['Tables']['contacts']['Insert'];
+type ContactUpdate   = Database['public']['Tables']['contacts']['Update'];
+
 // 環境変数の型定義
 type SupabaseEnv = {
   url: string;
@@ -262,7 +269,7 @@ export const db = {
       
       const { data, error } = await client
         .from('menu_items')
-        .insert(item as any)
+        .insert(item as MenuItemInsert)
         .select()
         .single();
       
@@ -277,9 +284,9 @@ export const db = {
     async update(id: string, updates: Partial<MenuItemDB>): Promise<boolean> {
       const client = createServerClient();
       
-      const { error } = await (client
-        .from('menu_items') as any)
-        .update({ ...updates, updated_at: new Date().toISOString() })
+      const { error } = await client
+        .from('menu_items')
+        .update({ ...updates, updated_at: new Date().toISOString() } as MenuItemUpdate)
         .eq('id', id);
       
       if (error) {
@@ -349,7 +356,7 @@ export const db = {
       
       const { data, error} = await client
         .from('news')
-        .insert(item as any)
+        .insert(item as NewsInsert)
         .select()
         .single();
       
@@ -365,9 +372,9 @@ export const db = {
     async update(id: string, updates: Partial<NewsItemDB>): Promise<boolean> {
       const client = createServerClient();
       
-      const { error } = await (client
-        .from('news') as any)
-        .update({ ...updates, updated_at: new Date().toISOString() })
+      const { error } = await client
+        .from('news')
+        .update({ ...updates, updated_at: new Date().toISOString() } as NewsUpdate)
         .eq('id', id);
       
       if (error) {
@@ -403,7 +410,7 @@ export const db = {
       
       const { data, error } = await client
         .from('contacts')
-        .insert({ ...contact, status: 'pending' } as any)
+        .insert({ ...contact, status: 'pending' } as ContactInsert)
         .select()
         .single();
       
@@ -434,9 +441,9 @@ export const db = {
     async updateStatus(id: string, status: ContactDB['status']): Promise<boolean> {
       const client = createServerClient();
       
-      const { error } = await (client
-        .from('contacts') as any)
-        .update({ status })
+      const { error } = await client
+        .from('contacts')
+        .update({ status } as ContactUpdate)
         .eq('id', id);
       
       if (error) {

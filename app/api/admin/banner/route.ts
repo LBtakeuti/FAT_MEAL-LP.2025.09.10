@@ -29,7 +29,7 @@ export const GET = withErrorHandler(async () => {
 export const PUT = withAuth(async (request: NextRequest) => {
   const body = await request.json();
 
-  if (typeof body.is_active !== 'boolean' && !body.image_url && !body.link_url) {
+  if (typeof body.is_active !== 'boolean' && body.image_url === undefined && body.link_url === undefined) {
     return jsonBadRequest('更新するフィールドを指定してください');
   }
 
@@ -37,8 +37,8 @@ export const PUT = withAuth(async (request: NextRequest) => {
 
   const updateData: Record<string, unknown> = {};
   if (typeof body.is_active === 'boolean') updateData.is_active = body.is_active;
-  if (body.image_url) updateData.image_url = body.image_url;
-  if (body.link_url) updateData.link_url = body.link_url;
+  if (body.image_url !== undefined) updateData.image_url = body.image_url;
+  if (body.link_url !== undefined) updateData.link_url = body.link_url;
 
   const { data, error } = await supabase
     .from('banner_settings')

@@ -2,12 +2,24 @@
 
 import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+
+interface LocalOrderInfo {
+  customerInfo: {
+    lastName: string;
+    firstName: string;
+    email: string;
+    postalCode: string;
+    prefecture: string;
+    city: string;
+    address: string;
+    building?: string;
+  };
+  cart: unknown[];
+  totalAmount: number;
+}
 
 function PurchaseCompleteContent() {
-  const searchParams = useSearchParams();
-  const sessionId = searchParams.get('session_id');
-  const [orderInfo, setOrderInfo] = useState<any>(null);
+  const [orderInfo, setOrderInfo] = useState<LocalOrderInfo | null>(null);
 
   useEffect(() => {
     // ローカルストレージから注文情報を取得
@@ -32,9 +44,6 @@ function PurchaseCompleteContent() {
       localStorage.removeItem('appliedCoupon');
     }
   }, []);
-
-  // sessionIdを使用（警告回避）
-  console.log('Session ID:', sessionId);
 
   return (
     <main className="min-h-screen bg-gray-100 pt-24 sm:pt-8 py-8">

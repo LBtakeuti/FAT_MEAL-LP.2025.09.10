@@ -416,6 +416,7 @@ export type Database = {
           monthly_shipping_fee: number
           monthly_total_amount: number
           next_delivery_date: string | null
+          notes: string | null
           payment_status: string
           plan_id: string
           plan_name: string
@@ -443,6 +444,7 @@ export type Database = {
           monthly_shipping_fee: number
           monthly_total_amount: number
           next_delivery_date?: string | null
+          notes?: string | null
           payment_status?: string
           plan_id: string
           plan_name: string
@@ -470,6 +472,7 @@ export type Database = {
           monthly_shipping_fee?: number
           monthly_total_amount?: number
           next_delivery_date?: string | null
+          notes?: string | null
           payment_status?: string
           plan_id?: string
           plan_name?: string

@@ -52,11 +52,11 @@ export async function GET() {
       'メールアドレス',
       '電話番号',
       '郵便番号',
-      '都道府県',
-      '市区町村',
+      '都道府県市区町村',
       '番地',
       '建物名',
-      'プラン名',
+      '物品名',
+      '個数',
       '配送回数/月',
       '月額料金',
       '初回配送希望日',
@@ -65,7 +65,8 @@ export async function GET() {
       'ステータス',
       '支払いステータス',
       '解約日',
-      '紹介コード'
+      '紹介コード',
+      '備考'
     ];
 
     // CSVデータ行
@@ -78,11 +79,11 @@ export async function GET() {
         addr.email || '',
         addr.phone || '',
         addr.postal_code || '',
-        addr.prefecture || '',
-        addr.city || '',
+        (addr.prefecture || '') + (addr.city || ''),
         addr.address_detail || '',
         addr.building || '',
-        sub.plan_name,
+        getItemName(sub.plan_id, sub.plan_name),
+        getItemCount(),
         getDeliveryFrequencyLabel(sub.deliveries_per_month),
         sub.monthly_total_amount || 0,
         formatDateJST(sub.preferred_delivery_date),
@@ -92,6 +93,7 @@ export async function GET() {
         translatePaymentStatus(sub.payment_status),
         formatDateTimeJST(sub.canceled_at),
         sub.referral_code || '',
+        sub.notes || '',
       ];
     }) || [];
 
@@ -118,6 +120,19 @@ export async function GET() {
       { status: 500 }
     );
   }
+}
+
+function getItemName(planId: string, fallback: string): string {
+  const itemNames: { [key: string]: string } = {
+    'subscription-monthly-12': 'ふとるめし6食セット（12個）',
+    'subscription-monthly-24': 'ふとるめし12食プラン（24個）',
+    'subscription-monthly-48': 'ふとるめし24食プラン（48個）',
+  };
+  return itemNames[planId] || fallback;
+}
+
+function getItemCount(): number {
+  return 12;
 }
 
 function escapeCSV(value: string): string {
