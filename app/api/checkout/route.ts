@@ -3,24 +3,20 @@ import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-// サブスクリプションプランのStripe Price IDを取得
-function getSubscriptionPriceId(planId: string): string {
+// サブスクリプションPhase1価格ID（初回30%OFF）を取得
+function getSubscriptionPhase1PriceId(planId: string): string {
   const priceMap: { [key: string]: string } = {
-    'subscription-monthly-12': process.env.STRIPE_SUBSCRIPTION_PRICE_12_MONTHLY || '',
-    'subscription-monthly-24': process.env.STRIPE_SUBSCRIPTION_PRICE_24_MONTHLY || '',
-    'subscription-monthly-48': process.env.STRIPE_SUBSCRIPTION_PRICE_48_MONTHLY || '',
+    'subscription-monthly-12': process.env.STRIPE_SUBSCRIPTION_PRICE_12_PHASE1 || '',
+    'subscription-monthly-24': process.env.STRIPE_SUBSCRIPTION_PRICE_24_PHASE1 || '',
+    'subscription-monthly-48': process.env.STRIPE_SUBSCRIPTION_PRICE_48_PHASE1 || '',
   };
   return priceMap[planId] || '';
 }
 
-// サブスクリプションプランの送料価格IDを取得（Recurring Price）
-function getSubscriptionShippingPriceId(planId: string): string {
-  const shippingMap: { [key: string]: string } = {
-    'subscription-monthly-12': process.env.STRIPE_SHIPPING_PRICE_12 || '',
-    'subscription-monthly-24': process.env.STRIPE_SHIPPING_PRICE_24 || '',
-    'subscription-monthly-48': process.env.STRIPE_SHIPPING_PRICE_48 || '',
-  };
-  return shippingMap[planId] || '';
+// サブスクリプション初回送料価格IDを取得（¥0 recurring price）
+// Webhookでスケジュール化するため、Checkoutでは¥0送料を使用
+function getSubscriptionShippingPriceId(_planId: string): string {
+  return process.env.STRIPE_SHIPPING_PRICE_FREE || '';
 }
 
 interface CartItem {
@@ -45,6 +41,7 @@ interface CheckoutRequest {
     building?: string;
     preferredDeliveryDate?: string;
     referralCode?: string;
+    notes?: string;
   };
   couponCode?: string;
 }
@@ -74,7 +71,7 @@ export async function POST(request: NextRequest) {
       }
 
       const planId = subscriptionItem.planId;
-      const priceId = getSubscriptionPriceId(planId);
+      const priceId = getSubscriptionPhase1PriceId(planId);
       const shippingPriceId = getSubscriptionShippingPriceId(planId);
 
       if (!priceId) {
@@ -118,6 +115,7 @@ export async function POST(request: NextRequest) {
           preferred_delivery_date: customerInfo.preferredDeliveryDate || '',
           coupon_code: couponCode || '',
           referral_code: customerInfo.referralCode || '',
+          notes: customerInfo.notes || '',
         },
         subscription_data: {
           metadata: {
@@ -216,6 +214,7 @@ export async function POST(request: NextRequest) {
         address: fullAddress,
         coupon_code: couponCode || '',
         referral_code: customerInfo.referralCode || '',
+        notes: customerInfo.notes || '',
       },
       locale: 'ja',
     };

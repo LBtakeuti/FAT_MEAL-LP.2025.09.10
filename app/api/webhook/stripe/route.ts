@@ -23,6 +23,26 @@ const RECURRING_COMMISSION: Record<string, number> = {
   'subscription-monthly-48': 800,
 };
 
+// サブスクリプションPhase1価格ID（初回30%OFF）を取得
+function getPhase1PriceId(planId: string): string {
+  const priceMap: { [key: string]: string } = {
+    'subscription-monthly-12': process.env.STRIPE_SUBSCRIPTION_PRICE_12_PHASE1 || '',
+    'subscription-monthly-24': process.env.STRIPE_SUBSCRIPTION_PRICE_24_PHASE1 || '',
+    'subscription-monthly-48': process.env.STRIPE_SUBSCRIPTION_PRICE_48_PHASE1 || '',
+  };
+  return priceMap[planId] || '';
+}
+
+// サブスクリプションPhase2価格ID（2ヶ月目〜15%OFF）を取得
+function getPhase2PriceId(planId: string): string {
+  const priceMap: { [key: string]: string } = {
+    'subscription-monthly-12': process.env.STRIPE_SUBSCRIPTION_PRICE_12_PHASE2 || '',
+    'subscription-monthly-24': process.env.STRIPE_SUBSCRIPTION_PRICE_24_PHASE2 || '',
+    'subscription-monthly-48': process.env.STRIPE_SUBSCRIPTION_PRICE_48_PHASE2 || '',
+  };
+  return priceMap[planId] || '';
+}
+
 // 遅延初期化（ビルド時にエラーを防ぐ）
 function getStripeClient() {
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -299,6 +319,7 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe:
           currency: session.currency || 'jpy',
           status: 'pending',
           referral_code: referralCode || null,
+          notes: session.metadata?.notes || null,
         });
 
       if (dbError) {
@@ -580,7 +601,7 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
         meals_per_delivery: planConfig.meals_per_delivery,
         deliveries_per_month: planConfig.deliveries_per_month,
         monthly_product_price: planConfig.product_price,
-        monthly_shipping_fee: planConfig.shipping_fee_per_delivery * planConfig.deliveries_per_month,
+        monthly_shipping_fee: planConfig.monthly_shipping_fee ?? planConfig.shipping_fee_per_delivery * planConfig.deliveries_per_month,
         monthly_total_amount: planConfig.monthly_total,
         next_delivery_date: deliverySchedules[0]?.scheduled_date.toISOString().split('T')[0] || null,
         preferred_delivery_date: preferredDeliveryDateStr || null,
@@ -600,6 +621,7 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
         current_period_end: new Date(currentPeriodEnd * 1000).toISOString(),
         started_at: new Date(subscription.created * 1000).toISOString(),
         referral_code: referralCode || null,
+        notes: checkoutSession?.metadata?.notes || null,
       })
       .select()
       .single();
@@ -667,6 +689,48 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
     // 在庫を減算（deliveries_per_month × 2セット）
     const setsToReduce = planConfig.deliveries_per_month * 2;
     await reduceInventorySets(setsToReduce, `subscription created: ${planName}`);
+
+    // サブスクリプションスケジュール作成（Phase1→Phase2 自動切り替え）
+    // Phase1（初回30%OFF・送料¥0）→ Phase2（2ヶ月目〜15%OFF・送料¥1,500）
+    const phase1PriceId = getPhase1PriceId(planId);
+    const phase2PriceId = getPhase2PriceId(planId);
+    const freeShippingPriceId = process.env.STRIPE_SHIPPING_PRICE_FREE || '';
+    const paidShippingPriceId = process.env.STRIPE_SHIPPING_PRICE_12 || '';
+
+    if (phase1PriceId && phase2PriceId && freeShippingPriceId && paidShippingPriceId) {
+      try {
+        await stripe.subscriptionSchedules.create({
+          from_subscription: subscription.id,
+          phases: [
+            {
+              items: [
+                { price: phase1PriceId, quantity: 1 },
+                { price: freeShippingPriceId, quantity: 1 },
+              ],
+              iterations: 1,
+            },
+            {
+              items: [
+                { price: phase2PriceId, quantity: 1 },
+                { price: paidShippingPriceId, quantity: 1 },
+              ],
+              // iterations 未指定 = 無期限継続
+            },
+          ],
+        });
+        console.log(`[Webhook] Subscription schedule created for ${subscription.id}: Phase1(1 month) → Phase2(ongoing)`);
+      } catch (scheduleError) {
+        // スケジュール作成失敗はログのみ（DB登録は成功しているため致命的エラーにしない）
+        console.error('[Webhook] Failed to create subscription schedule:', scheduleError);
+      }
+    } else {
+      console.warn('[Webhook] Subscription schedule skipped: missing price IDs', {
+        phase1PriceId: !!phase1PriceId,
+        phase2PriceId: !!phase2PriceId,
+        freeShippingPriceId: !!freeShippingPriceId,
+        paidShippingPriceId: !!paidShippingPriceId,
+      });
+    }
 
   } catch (error) {
     console.error('Error creating subscription from Stripe:', error);

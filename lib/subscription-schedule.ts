@@ -1,10 +1,15 @@
 /**
  * サブスクリプションプランの配送スケジュール計算（月額自動更新版）
  *
- * プラン構成:
- * - subscription-monthly-12: 月6食（月1回配送）¥9,780/月
- * - subscription-monthly-24: 月12食（月2回配送）¥18,600/月
- * - subscription-monthly-48: 月24食（月4回配送）¥34,800/月
+ * プラン構成（Phase2・2ヶ月目以降の価格）:
+ * - subscription-monthly-12: 月6食（月1回配送）¥9,150/月（商品¥7,650 + 送料¥1,500）
+ * - subscription-monthly-24: 月12食（月2回配送）¥16,800/月（商品¥15,300 + 送料¥1,500）
+ * - subscription-monthly-48: 月24食（月4回配送）¥32,100/月（商品¥30,600 + 送料¥1,500）
+ *
+ * Phase1（初回30%OFF・送料無料）:
+ * - subscription-monthly-12: ¥4,980（送料¥0）
+ * - subscription-monthly-24: ¥12,600（送料¥0）
+ * - subscription-monthly-48: ¥25,200（送料¥0）
  */
 
 export interface DeliverySchedule {
@@ -17,9 +22,11 @@ export interface PlanConfig {
   plan_id: string;
   meals_per_delivery: number;
   deliveries_per_month: number;
-  product_price: number;
+  product_price: number;            // Phase2商品価格（15%OFF）
   shipping_fee_per_delivery: number;
-  monthly_total: number;
+  monthly_total: number;            // Phase2合計（商品 + フラット送料）
+  monthly_shipping_fee?: number;    // 月額フラット送料（送料統一化後）
+  anchor_price?: number;            // アンカー価格（表示用・打ち消し線）
 }
 
 export const PLAN_CONFIGS: { [key: string]: PlanConfig } = {
@@ -27,25 +34,31 @@ export const PLAN_CONFIGS: { [key: string]: PlanConfig } = {
     plan_id: 'subscription-monthly-12',
     meals_per_delivery: 12,
     deliveries_per_month: 1,
-    product_price: 8280,
+    product_price: 7650,           // ¥9,000 × 85%（Phase2・15%OFF）
     shipping_fee_per_delivery: 1500,
-    monthly_total: 9780,
+    monthly_shipping_fee: 1500,    // フラット送料（月1回固定）
+    monthly_total: 9150,           // 7650 + 1500
+    anchor_price: 9000,            // アンカー価格（表示用）
   },
   'subscription-monthly-24': {
     plan_id: 'subscription-monthly-24',
     meals_per_delivery: 12,
     deliveries_per_month: 2,
-    product_price: 14600,
+    product_price: 15300,          // ¥18,000 × 85%（Phase2・15%OFF）
     shipping_fee_per_delivery: 1500,
-    monthly_total: 17600,
+    monthly_shipping_fee: 1500,    // フラット送料（月1回固定）
+    monthly_total: 16800,          // 15300 + 1500
+    anchor_price: 18000,           // アンカー価格（表示用）
   },
   'subscription-monthly-48': {
     plan_id: 'subscription-monthly-48',
     meals_per_delivery: 12,
     deliveries_per_month: 4,
-    product_price: 27800,
+    product_price: 30600,          // ¥36,000 × 85%（Phase2・15%OFF）
     shipping_fee_per_delivery: 1500,
-    monthly_total: 33800,
+    monthly_shipping_fee: 1500,    // フラット送料（月1回固定）
+    monthly_total: 32100,          // 30600 + 1500
+    anchor_price: 36000,           // アンカー価格（表示用）
   },
 };
 

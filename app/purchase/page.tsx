@@ -24,15 +24,21 @@ interface PlanOption {
   id: string;
   quantity: number;
   label: string;
-  price: number;
-  shippingFee: number;
-  totalPrice: number;
+  price: number;             // 商品代金（サブスクはPhase1価格）
+  shippingFee: number;       // 送料（サブスクPhase1は¥0）
+  totalPrice: number;        // 合計（サブスクはPhase1合計）
   description: string;
-  perMeal: number;
+  perMeal: number;           // 1食あたり（サブスクはPhase1ベース）
   isTrial: boolean;
   isSubscription: boolean;
   deliveriesPerMonth?: number;
   comingSoon: boolean;
+  // サブスクリプション用の追加フィールド
+  anchorPrice?: number;      // アンカー価格（打ち消し線表示用）
+  phase2Price?: number;      // Phase2商品価格（2ヶ月目〜・15%OFF）
+  phase2ShippingFee?: number;// Phase2送料（¥1,500）
+  phase2Total?: number;      // Phase2合計
+  phase2PerMeal?: number;    // Phase2 1食あたり
 }
 
 // 新しいプラン構成
@@ -56,43 +62,58 @@ const planOptions: PlanOption[] = [
     id: 'subscription-monthly-12',
     quantity: 6,
     label: 'ふとるめし6食 月額プラン',
-    price: 7280,
-    shippingFee: 1500,
-    totalPrice: 7280,
+    price: 4980,             // Phase1商品（初回送料無料特価）
+    shippingFee: 0,          // Phase1送料（初回無料）
+    totalPrice: 4980,        // Phase1合計
     description: '月1回配送（6食セット）',
-    perMeal: 1213,
+    perMeal: 830,            // 4980 ÷ 6
     isTrial: false,
     isSubscription: true,
     deliveriesPerMonth: 1,
     comingSoon: false,
+    anchorPrice: 9000,
+    phase2Price: 7650,       // Phase2商品（15%OFF）
+    phase2ShippingFee: 1500, // Phase2送料
+    phase2Total: 9150,       // Phase2合計
+    phase2PerMeal: 1525,     // 9150 ÷ 6
   },
   {
     id: 'subscription-monthly-24',
     quantity: 12,
     label: 'ふとるめし12食 月額プラン',
-    price: 14600,
-    shippingFee: 3000,
-    totalPrice: 14600,
+    price: 12600,            // Phase1商品（初回30%OFF）
+    shippingFee: 0,          // Phase1送料（初回無料）
+    totalPrice: 12600,       // Phase1合計
     description: '月2回配送（各6食セット）',
-    perMeal: 1217,
+    perMeal: 1050,           // 12600 ÷ 12
     isTrial: false,
     isSubscription: true,
     deliveriesPerMonth: 2,
     comingSoon: false,
+    anchorPrice: 18000,
+    phase2Price: 15300,      // Phase2商品（15%OFF）
+    phase2ShippingFee: 1500, // Phase2送料
+    phase2Total: 16800,      // Phase2合計
+    phase2PerMeal: 1400,     // 16800 ÷ 12
   },
   {
     id: 'subscription-monthly-48',
     quantity: 24,
     label: 'ふとるめし24食 月額プラン',
-    price: 27800,
-    shippingFee: 6000,
-    totalPrice: 27800,
+    price: 25200,            // Phase1商品（初回30%OFF）
+    shippingFee: 0,          // Phase1送料（初回無料）
+    totalPrice: 25200,       // Phase1合計
     description: '月4回配送（各6食セット）',
-    perMeal: 1158,
+    perMeal: 1050,           // 25200 ÷ 24
     isTrial: false,
     isSubscription: true,
     deliveriesPerMonth: 4,
     comingSoon: false,
+    anchorPrice: 36000,
+    phase2Price: 30600,      // Phase2商品（15%OFF）
+    phase2ShippingFee: 1500, // Phase2送料
+    phase2Total: 32100,      // Phase2合計
+    phase2PerMeal: 1337,     // ~32100 ÷ 24
   },
 ];
 
@@ -110,6 +131,7 @@ interface CustomerInfo {
   building: string;
   preferredDeliveryDate?: string;
   referralCode?: string;
+  notes?: string;
 }
 
 // カートアイテムの型
@@ -219,6 +241,7 @@ const PurchasePage: React.FC = () => {
     building: '',
     preferredDeliveryDate: '',
     referralCode: '',
+    notes: '',
   });
   const [errors, setErrors] = useState<Partial<CustomerInfo>>({});
 
@@ -692,6 +715,7 @@ const PurchasePage: React.FC = () => {
               building: customerInfo.building,
               preferredDeliveryDate: customerInfo.preferredDeliveryDate,
               referralCode: customerInfo.referralCode || undefined,
+              notes: customerInfo.notes || undefined,
             },
             couponCode: appliedCoupon?.code,
           }),
@@ -864,17 +888,36 @@ const PurchasePage: React.FC = () => {
                           ※{plan.quantity * 2}食入り
                         </p>
                       )}
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mt-2">
-                        <span className="text-xl font-bold text-orange-600">
-                          ¥{(plan.isTrial ? plan.totalPrice : plan.totalPrice + plan.shippingFee).toLocaleString()}
-                        </span>
-                        <span className="text-xs text-gray-500">
-                          （¥{plan.price.toLocaleString()} + 送料¥{plan.shippingFee.toLocaleString()}）
-                        </span>
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        1食あたり ¥{plan.perMeal.toLocaleString()}
-                      </div>
+                      {plan.isSubscription ? (
+                        <div className="mt-2 space-y-0.5">
+                          <div className="text-sm text-gray-400 line-through">
+                            定価 ¥{plan.anchorPrice?.toLocaleString()} / 月
+                          </div>
+                          <div className="flex flex-wrap items-baseline gap-1">
+                            <span className="text-xl font-bold text-orange-600">
+                              初回 ¥{plan.totalPrice.toLocaleString()}
+                            </span>
+                            <span className="text-xs text-green-600 font-medium">送料無料・30%OFF</span>
+                          </div>
+                          <div className="flex flex-wrap items-baseline gap-1">
+                            <span className="text-sm font-medium text-gray-700">
+                              2ヶ月目〜 ¥{plan.phase2Total?.toLocaleString()}
+                            </span>
+                            <span className="text-xs text-gray-500">（15%OFF・送料¥{plan.phase2ShippingFee?.toLocaleString()}）</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mt-2">
+                            <span className="text-xl font-bold text-orange-600">
+                              ¥{plan.totalPrice.toLocaleString()}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              （¥{plan.price.toLocaleString()} + 送料¥{plan.shippingFee.toLocaleString()}）
+                            </span>
+                          </div>
+                        </>
+                      )}
                     </div>
 
                     {/* 選択状態表示 */}
@@ -901,9 +944,12 @@ const PurchasePage: React.FC = () => {
                           <span className="text-sm text-gray-600">
                             {plan.quantity}食/月（{plan.deliveriesPerMonth}回配送）
                           </span>
-                          <span className="text-lg font-semibold text-orange-600">
-                            ¥{(plan.totalPrice + plan.shippingFee).toLocaleString()}
-                          </span>
+                          <div className="text-right">
+                            <div className="text-xs text-gray-500">初回</div>
+                            <span className="text-lg font-semibold text-orange-600">
+                              ¥{plan.totalPrice.toLocaleString()}
+                            </span>
+                          </div>
                         </>
                       ) : (
                         <>
@@ -940,18 +986,34 @@ const PurchasePage: React.FC = () => {
               })()}
             </div>
             <div className="text-right">
-              <p className="text-sm text-gray-500">合計金額</p>
-              <p className="text-3xl text-orange-600">
-                ¥{(() => {
-                  const selectedPlan = getSelectedPlan();
-                  if (!selectedPlan) return '0';
-                  const total = purchaseType === 'subscription-monthly'
-                    ? selectedPlan.totalPrice + selectedPlan.shippingFee
-                    : selectedPlan.totalPrice;
-                  return total.toLocaleString();
-                })()}
-              </p>
-              <p className="text-xs text-gray-500">税込・送料込</p>
+              {purchaseType === 'subscription-monthly' ? (
+                <>
+                  <p className="text-sm text-gray-500">初回合計</p>
+                  <p className="text-3xl text-orange-600">
+                    ¥{(() => {
+                      const selectedPlan = getSelectedPlan();
+                      if (!selectedPlan) return '0';
+                      return selectedPlan.totalPrice.toLocaleString();
+                    })()}
+                  </p>
+                  <p className="text-xs text-green-600 font-medium">送料無料・30%OFF</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    2ヶ月目〜 ¥{getSelectedPlan()?.phase2Total?.toLocaleString()}/月（税込）
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-gray-500">合計金額</p>
+                  <p className="text-3xl text-orange-600">
+                    ¥{(() => {
+                      const selectedPlan = getSelectedPlan();
+                      if (!selectedPlan) return '0';
+                      return selectedPlan.totalPrice.toLocaleString();
+                    })()}
+                  </p>
+                  <p className="text-xs text-gray-500">税込・送料込</p>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -1305,6 +1367,28 @@ const PurchasePage: React.FC = () => {
         </div>
       </div>
 
+      {/* 備考欄 */}
+      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">備考</h3>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            備考（任意）
+          </label>
+          <textarea
+            name="notes"
+            value={customerInfo.notes || ''}
+            onChange={handleInputChange}
+            placeholder="ご要望・ご連絡事項があればご記入ください"
+            maxLength={500}
+            rows={4}
+            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-orange-600 focus:outline-none resize-none"
+          />
+          <p className="text-right text-xs text-gray-400 mt-1">
+            {(customerInfo.notes || '').length} / 500文字
+          </p>
+        </div>
+      </div>
+
       {/* ボタン */}
       <div className="flex gap-4">
         <button
@@ -1341,14 +1425,19 @@ const PurchasePage: React.FC = () => {
                   {selectedPlan.description}
                 </p>
                 {purchaseType === 'subscription-monthly' && (
-                  <p className="text-xs text-green-600 font-medium mt-1">
-                    月額自動更新プラン
-                  </p>
+                  <>
+                    <p className="text-xs text-green-600 font-medium mt-1">
+                      月額自動更新プラン（初回30%OFF・送料無料）
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      2ヶ月目以降 ¥{selectedPlan.phase2Total?.toLocaleString()}/月（15%OFF）
+                    </p>
+                  </>
                 )}
               </div>
               <p className="text-lg text-orange-600">
                 ¥{(purchaseType === 'subscription-monthly'
-                  ? selectedPlan.totalPrice + selectedPlan.shippingFee
+                  ? selectedPlan.totalPrice
                   : selectedPlan.totalPrice
                 ).toLocaleString()}
               </p>
@@ -1363,8 +1452,15 @@ const PurchasePage: React.FC = () => {
 
           {/* 送料 */}
           <div className="flex justify-between items-center py-3 border-b border-gray-200">
-            <p className="text-gray-600">送料</p>
-            <p className="text-gray-900">¥{shippingFee.toLocaleString()}</p>
+            <p className="text-gray-600">
+              送料
+              {purchaseType === 'subscription-monthly' && (
+                <span className="ml-1 text-xs text-green-600">（初回無料）</span>
+              )}
+            </p>
+            <p className={purchaseType === 'subscription-monthly' && shippingFee === 0 ? 'text-green-600 font-medium' : 'text-gray-900'}>
+              {purchaseType === 'subscription-monthly' && shippingFee === 0 ? '¥0（無料）' : `¥${shippingFee.toLocaleString()}`}
+            </p>
           </div>
 
           {/* クーポン割引 */}
@@ -1381,10 +1477,17 @@ const PurchasePage: React.FC = () => {
           {/* 合計 */}
           <div className="flex justify-between items-center py-4 mt-2">
             <p className="font-bold text-gray-900 text-lg">
-              合計（税込）
+              {purchaseType === 'subscription-monthly' ? '初回合計（税込）' : '合計（税込）'}
             </p>
             <p className="text-2xl font-bold text-orange-600">¥{totalAmount.toLocaleString()}</p>
           </div>
+
+          {/* 定期プランの2ヶ月目以降案内 */}
+          {purchaseType === 'subscription-monthly' && selectedPlan && (
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-800">
+              2ヶ月目以降は ¥{selectedPlan.phase2Total?.toLocaleString()}/月（商品¥{selectedPlan.phase2Price?.toLocaleString()} + 送料¥{selectedPlan.phase2ShippingFee?.toLocaleString()}）が自動で課金されます。
+            </div>
+          )}
 
           {/* 配送案内 */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
