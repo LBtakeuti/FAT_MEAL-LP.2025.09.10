@@ -43,6 +43,7 @@ const ProblemsSection: React.FC = () => {
                 width={80}
                 height={80}
                 className="w-16 sm:w-20 md:w-24 h-auto"
+                unoptimized
               />
               <Image
                 src="/images/sections/badge-domestic.png"
@@ -50,6 +51,7 @@ const ProblemsSection: React.FC = () => {
                 width={80}
                 height={80}
                 className="w-16 sm:w-20 md:w-24 h-auto"
+                unoptimized
               />
               <Image
                 src="/images/sections/badge-nutritionist.png"
@@ -57,11 +59,12 @@ const ProblemsSection: React.FC = () => {
                 width={80}
                 height={80}
                 className="w-16 sm:w-20 md:w-24 h-auto"
+                unoptimized
               />
             </div>
           </div>
-          {/* 画像スライダー（PCのみ右側に表示） */}
-          <div className="hidden md:flex flex-1 justify-end">
+          {/* 画像スライダー */}
+          <div className="flex flex-1 justify-center md:justify-end mt-4 md:mt-0">
             <div className="relative w-full max-w-md aspect-square overflow-hidden">
               {sliderImages.map((src, index) => (
                 <div

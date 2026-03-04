@@ -889,21 +889,25 @@ const PurchasePage: React.FC = () => {
                         </p>
                       )}
                       {plan.isSubscription ? (
-                        <div className="mt-2 space-y-0.5">
-                          <div className="text-sm text-gray-400 line-through">
-                            定価 ¥{plan.anchorPrice?.toLocaleString()} / 月
+                        <div className="mt-2 space-y-1">
+                          <div className="text-xs text-gray-400 line-through">
+                            通常価格（送料込）¥{((plan.anchorPrice || 0) + (plan.phase2ShippingFee || 0)).toLocaleString()}
                           </div>
-                          <div className="flex flex-wrap items-baseline gap-1">
-                            <span className="text-xl font-bold text-orange-600">
-                              初回 ¥{plan.totalPrice.toLocaleString()}
+                          {plan.id === 'subscription-monthly-12' ? (
+                            <span className="text-xs bg-red-600 text-white font-bold px-2 py-0.5 rounded">
+                              ゆうさくスポーツキャンペーン 初回限定
                             </span>
-                            <span className="text-xs text-green-600 font-medium">送料無料・30%OFF</span>
+                          ) : (
+                            <span className="text-xs bg-red-600 text-white font-bold px-2 py-0.5 rounded">
+                              初回限定価格
+                            </span>
+                          )}
+                          <div className="text-xl font-black text-red-600">
+                            初回 ¥{plan.totalPrice.toLocaleString()}
+                            <span className="text-xs text-green-600 font-bold ml-1">送料無料</span>
                           </div>
-                          <div className="flex flex-wrap items-baseline gap-1">
-                            <span className="text-sm font-medium text-gray-700">
-                              2ヶ月目〜 ¥{plan.phase2Total?.toLocaleString()}
-                            </span>
-                            <span className="text-xs text-gray-500">（15%OFF・送料¥{plan.phase2ShippingFee?.toLocaleString()}）</span>
+                          <div className="text-xs text-gray-500">
+                            2ヶ月目以降 ¥{plan.phase2Total?.toLocaleString()}（¥{plan.phase2Price?.toLocaleString()} + 送料¥{plan.phase2ShippingFee?.toLocaleString()}）
                           </div>
                         </div>
                       ) : (
