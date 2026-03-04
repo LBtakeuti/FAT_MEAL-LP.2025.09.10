@@ -21,6 +21,7 @@ interface Order {
   status: string;
   created_at: string;
   referral_code?: string;
+  notes?: string;
 }
 
 export async function GET() {
