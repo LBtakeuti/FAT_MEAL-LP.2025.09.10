@@ -214,8 +214,12 @@ export async function POST(request: NextRequest) {
       // サブスクリプションの請求成功時（毎月の自動課金成功時）
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object as Stripe.Invoice;
-        if ((invoice as any).subscription && invoice.billing_reason !== 'subscription_create') {
-          await handleMonthlySubscriptionPayment(invoice, stripe);
+        if ((invoice as any).subscription) {
+          if (invoice.billing_reason === 'subscription_cycle') {
+            await handleMonthlySubscriptionPayment(invoice, stripe);
+          }
+          // subscription_create: createSubscriptionFromStripe内で処理済み
+          // subscription_update: スキップ（スケジュール調整など）
         }
         break;
       }
@@ -668,22 +672,35 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
 
     console.log(`Subscription created: ${(dbSubscription as any).id} with ${deliveries.length} initial deliveries`);
 
-    // 購入完了メール送信
+    // 初回請求額を取得（Phase1実額）
+    let initialInvoiceAmount = planConfig.monthly_total; // フォールバック
+    if (subscription.latest_invoice) {
+      try {
+        const latestInvoice = await stripe.invoices.retrieve(subscription.latest_invoice as string);
+        if (latestInvoice.amount_paid > 0) {
+          initialInvoiceAmount = latestInvoice.amount_paid;
+        }
+      } catch (invoiceError) {
+        console.warn('[Webhook] Failed to retrieve latest invoice, using planConfig price:', invoiceError);
+      }
+    }
+
+    // 購入完了メール送信（実際の請求額を使用）
     await sendSubscriptionPurchaseConfirmationEmail({
       email: customerEmail,
       name: customerName,
       subscriptionId: (dbSubscription as any).id,
       planName: planName,
-      monthlyAmount: planConfig.monthly_total,
+      monthlyAmount: initialInvoiceAmount,
       deliverySchedules: deliverySchedules,
     });
 
-    // Slack通知
+    // Slack通知（実際の請求額を使用）
     await sendSubscriptionSlackNotification({
       customerName: customerName,
       customerEmail: customerEmail,
       planName: planName,
-      monthlyAmount: planConfig.monthly_total,
+      monthlyAmount: initialInvoiceAmount,
     });
 
     // 在庫を減算（deliveries_per_month × 2セット）
@@ -695,19 +712,26 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
     const phase1PriceId = getPhase1PriceId(planId);
     const phase2PriceId = getPhase2PriceId(planId);
     const freeShippingPriceId = process.env.STRIPE_SHIPPING_PRICE_FREE || '';
-    const paidShippingPriceId = process.env.STRIPE_SHIPPING_PRICE_12 || '';
+    const paidShippingPriceId = process.env.STRIPE_SHIPPING_PRICE || '';
 
     if (phase1PriceId && phase2PriceId && freeShippingPriceId && paidShippingPriceId) {
       try {
-        await stripe.subscriptionSchedules.create({
+        // Step1: 既存サブスクをスケジュールに変換（phasesは指定しない）
+        const schedule = await stripe.subscriptionSchedules.create({
           from_subscription: subscription.id,
+        });
+
+        // Step2: Phase1(現在)→Phase2(2ヶ月目〜)を設定
+        await stripe.subscriptionSchedules.update(schedule.id, {
+          end_behavior: 'release',
           phases: [
             {
+              start_date: schedule.phases[0].start_date,
+              end_date: schedule.phases[0].end_date,
               items: [
                 { price: phase1PriceId, quantity: 1 },
                 { price: freeShippingPriceId, quantity: 1 },
               ],
-              iterations: 1,
             },
             {
               items: [
@@ -755,12 +779,6 @@ async function handleMonthlySubscriptionPayment(invoice: Stripe.Invoice, stripe:
   try {
     // サブスクリプションを取得
     const subscription = await stripe.subscriptions.retrieve(stripeSubscriptionId);
-    const planId = subscription.metadata?.plan_id || '';
-
-    if (!planId || !isValidPlanId(planId)) {
-      console.error(`Invalid plan ID: ${planId}`);
-      return;
-    }
 
     // DBのサブスクリプションを取得
     const { data: dbSubscription, error: fetchError } = await (supabase
@@ -771,6 +789,14 @@ async function handleMonthlySubscriptionPayment(invoice: Stripe.Invoice, stripe:
 
     if (fetchError || !dbSubscription) {
       console.error('Subscription not found in database:', fetchError);
+      return;
+    }
+
+    // plan_id: Stripe metadata → DB の plan_id の順で取得
+    const planId = subscription.metadata?.plan_id || (dbSubscription as any).plan_id || '';
+
+    if (!planId || !isValidPlanId(planId)) {
+      console.error(`Invalid plan ID: ${planId}`);
       return;
     }
 
@@ -838,6 +864,30 @@ async function handleMonthlySubscriptionPayment(invoice: Stripe.Invoice, stripe:
     }
 
     console.log(`Monthly payment processed for subscription: ${(dbSubscription as any).id}`);
+
+    // Slack通知（月次更新）
+    const startDate = new Date((dbSubscription as any).started_at);
+    const periodStart = new Date(invoice.period_start * 1000);
+    const monthNumber =
+      (periodStart.getFullYear() - startDate.getFullYear()) * 12 +
+      (periodStart.getMonth() - startDate.getMonth()) + 1;
+
+    await sendSubscriptionRenewalSlackNotification({
+      customerName: (dbSubscription as any).shipping_address?.name || 'お客様',
+      customerEmail: (dbSubscription as any).shipping_address?.email || '',
+      planName: (dbSubscription as any).plan_name,
+      monthNumber,
+      monthlyAmount: invoice.amount_paid,
+    });
+
+    // 更新メール通知
+    await sendSubscriptionRenewalEmail({
+      email: (dbSubscription as any).shipping_address?.email || '',
+      name: (dbSubscription as any).shipping_address?.name || 'お客様',
+      planName: (dbSubscription as any).plan_name,
+      monthNumber,
+      monthlyAmount: invoice.amount_paid,
+    });
 
   } catch (error) {
     console.error('Error handling monthly subscription payment:', error);
@@ -1252,6 +1302,9 @@ async function sendSubscriptionPurchaseConfirmationEmail(params: {
 </head>
 <body>
   <div class="container">
+    <div style="text-align: center; padding: 20px 0 10px;">
+      <img src="https://futorumeshi.com/images/branding/mail-icon.png" alt="ふとるめし" width="80" height="80" style="border-radius: 50%;">
+    </div>
     <div class="content">
       <p>${params.name}様</p>
       <p>この度は「ふとるめし」月額プランをご購入いただき、誠にありがとうございます。</p>
@@ -1265,6 +1318,9 @@ async function sendSubscriptionPurchaseConfirmationEmail(params: {
       </div>
 
       <p>毎月自動で課金・配送されます。解約をご希望の場合はマイページからお申し出ください。</p>
+      <p style="background: #fff8e1; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 4px; margin: 20px 0;">
+        ※ 2ヶ月目以降は価格が変更されます。詳しくはサイト内のプランページをご確認ください。
+      </p>
       <p>ご不明な点がございましたらご連絡ください。</p>
     </div>
   </div>
@@ -1283,6 +1339,78 @@ async function sendSubscriptionPurchaseConfirmationEmail(params: {
 
   if (error) {
     console.error('Failed to send subscription purchase confirmation email:', error);
+  } else {
+    console.log(`[Webhook] Subscription purchase email sent to: ${params.email}`);
+  }
+}
+
+// サブスクリプション更新メール
+async function sendSubscriptionRenewalEmail(params: {
+  email: string;
+  name: string;
+  planName: string;
+  monthNumber: number;
+  monthlyAmount: number;
+}) {
+  const resend = await getResendClient();
+  if (!resend) return;
+
+  const formatCurrency = (value: number) => new Intl.NumberFormat('ja-JP', {
+    style: 'currency',
+    currency: 'JPY',
+  }).format(value);
+
+  const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.8; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .content { background: #fff; padding: 30px; }
+    .plan-details { background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div style="text-align: center; padding: 20px 0 10px;">
+      <img src="https://futorumeshi.com/images/branding/mail-icon.png" alt="ふとるめし" width="80" height="80" style="border-radius: 50%;">
+    </div>
+    <div class="content">
+      <p>${params.name}様</p>
+      <p>いつも「ふとるめし」をご利用いただき、ありがとうございます。<br>
+      ${params.monthNumber}ヶ月目の自動課金が完了しました。</p>
+
+      <div class="plan-details">
+        <p style="margin-top: 0; border-bottom: 1px solid #e5e5e5; padding-bottom: 10px; margin-bottom: 10px;">
+          <strong>${params.planName}</strong>
+        </p>
+        <p style="margin: 0;">今月の請求金額: <strong>${formatCurrency(params.monthlyAmount)}</strong></p>
+      </div>
+
+      <p>引き続き毎月自動で課金・配送いたします。<br>
+      解約をご希望の場合は、マイページよりお手続きください。</p>
+      <p>ご不明な点がございましたら、お気軽にお問い合わせください。</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  const fromEmail = process.env.RESEND_FROM_EMAIL || 'ふとるめし <noreply@futorumeshi.com>';
+
+  const { error } = await resend.emails.send({
+    from: fromEmail,
+    to: params.email,
+    subject: `【ふとるめし】${params.monthNumber}ヶ月目の課金・配送のお知らせ`,
+    html: emailHtml,
+  });
+
+  if (error) {
+    console.error('Failed to send subscription renewal email:', error);
+  } else {
+    console.log(`[Webhook] Subscription renewal email sent to: ${params.email}`);
   }
 }
 
@@ -1332,13 +1460,86 @@ async function sendSubscriptionSlackNotification(params: {
   };
 
   try {
-    await fetch(slackWebhookUrl, {
+    const res = await fetch(slackWebhookUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(message),
     });
+    if (!res.ok) {
+      console.error(`[Webhook] Slack notification failed: ${res.status} ${res.statusText}`);
+    } else {
+      console.log('[Webhook] Subscription Slack notification sent');
+    }
   } catch (error) {
     console.error('Error sending subscription Slack notification:', error);
+  }
+}
+
+// サブスクリプション更新Slack通知
+async function sendSubscriptionRenewalSlackNotification(params: {
+  customerName: string;
+  customerEmail: string;
+  planName: string;
+  monthNumber: number;
+  monthlyAmount: number;
+}) {
+  const slackWebhookUrl = process.env.SLACK_WEBHOOK_URL;
+  if (!slackWebhookUrl) return;
+
+  const formattedAmount = new Intl.NumberFormat('ja-JP', {
+    style: 'currency',
+    currency: 'JPY',
+  }).format(params.monthlyAmount);
+
+  const message = {
+    blocks: [
+      {
+        type: 'header',
+        text: { type: 'plain_text', text: '🔄 サブスクリプション更新', emoji: true },
+      },
+      {
+        type: 'section',
+        fields: [
+          { type: 'mrkdwn', text: `*お客様名:*\n${params.customerName}` },
+          { type: 'mrkdwn', text: `*メール:*\n${params.customerEmail}` },
+        ],
+      },
+      {
+        type: 'section',
+        fields: [
+          { type: 'mrkdwn', text: `*プラン:*\n${params.planName}` },
+          { type: 'mrkdwn', text: `*ヶ月目:*\n${params.monthNumber}ヶ月目` },
+        ],
+      },
+      {
+        type: 'section',
+        fields: [
+          { type: 'mrkdwn', text: `*今月の請求:*\n${formattedAmount}` },
+        ],
+      },
+      { type: 'divider' },
+      {
+        type: 'context',
+        elements: [
+          { type: 'mrkdwn', text: `📅 ${new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}` },
+        ],
+      },
+    ],
+  };
+
+  try {
+    const res = await fetch(slackWebhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(message),
+    });
+    if (!res.ok) {
+      console.error(`[Webhook] Slack renewal notification failed: ${res.status} ${res.statusText}`);
+    } else {
+      console.log('[Webhook] Subscription renewal Slack notification sent');
+    }
+  } catch (error) {
+    console.error('Error sending subscription renewal Slack notification:', error);
   }
 }
 
