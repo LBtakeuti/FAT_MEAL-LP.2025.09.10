@@ -11,39 +11,42 @@ const SubscriptionSection: React.FC = () => {
       id: 'subscription-monthly-12',
       meals: 6,
       title: '6食プラン',
-      originalProductPrice: 9000,
-      productPrice: 7650,
-      discount: 1350,
-      monthlyPrice: 7650,
+      popular: false,
+      anchorWithShipping: 10500,
+      phase1Price: 4980,
+      phase2Price: 7650,
+      phase2Total: 9150,
       shippingFee: 1500,
       deliveriesPerMonth: 1,
       description: '月1回配送',
       subtitle: '6食セット×月1回',
       pricePerMeal: 1275,
+      campaignLabel: 'ゆうさくスポーツキャンペーン 初回限定',
     },
     {
       id: 'subscription-monthly-24',
       meals: 12,
       title: '12食プラン',
-      originalProductPrice: 18000,
-      productPrice: 15300,
-      discount: 2700,
-      monthlyPrice: 15300,
+      popular: true,
+      anchorWithShipping: 19500,
+      phase1Price: 12600,
+      phase2Price: 15300,
+      phase2Total: 16800,
       shippingFee: 1500,
       deliveriesPerMonth: 2,
       description: '月2回配送',
       subtitle: '6食セット×月2回',
       pricePerMeal: 1400,
-      popular: true,
     },
     {
       id: 'subscription-monthly-48',
       meals: 24,
       title: '24食プラン',
-      originalProductPrice: 36000,
-      productPrice: 30600,
-      discount: 5400,
-      monthlyPrice: 30600,
+      popular: false,
+      anchorWithShipping: 37500,
+      phase1Price: 25200,
+      phase2Price: 30600,
+      phase2Total: 32100,
       shippingFee: 1500,
       deliveriesPerMonth: 4,
       description: '月4回配送',
@@ -95,9 +98,6 @@ const SubscriptionSection: React.FC = () => {
 
               {/* プラン名 */}
               <div className="text-center mb-6">
-                <div className="inline-block bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full mb-3">
-                  定期コース
-                </div>
                 <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 font-antique">
                   {plan.title}
                 </h3>
@@ -111,37 +111,34 @@ const SubscriptionSection: React.FC = () => {
 
               {/* 価格 */}
               <div className="text-center mb-6 pb-6 border-b border-gray-200">
-                {plan.discount ? (
-                  <>
-                    <div className="flex items-center justify-center gap-2 mb-1">
-                      <span className="text-lg text-gray-400 line-through">
-                        ¥{plan.originalProductPrice?.toLocaleString()}
-                      </span>
-                      <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded">
-                        ¥{plan.discount.toLocaleString()}OFF
-                      </span>
-                    </div>
-                    <div className="flex items-baseline justify-center gap-1">
-                      <span className="text-3xl sm:text-4xl font-bold text-red-600">
-                        ¥{plan.monthlyPrice.toLocaleString()}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-2">
-                      （¥{plan.productPrice.toLocaleString()} + 送料¥{plan.shippingFee.toLocaleString()}）
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-baseline justify-center gap-1">
-                      <span className="text-3xl sm:text-4xl font-bold text-orange-600">
-                        ¥{plan.monthlyPrice.toLocaleString()}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-2">
-                      （¥{plan.productPrice.toLocaleString()} + 送料¥{plan.shippingFee.toLocaleString()}）
-                    </p>
-                  </>
-                )}
+                {/* 通常価格（打ち消し線） */}
+                <div className="flex justify-center mb-2">
+                  <span className="text-xs text-gray-400">
+                    通常価格（送料込）&nbsp;
+                    <span className="line-through">¥{plan.anchorWithShipping.toLocaleString()}</span>
+                  </span>
+                </div>
+
+                {/* キャンペーンバッジ */}
+                <div className="mb-3">
+                  <span className="bg-red-600 text-white text-xs font-bold py-1.5 px-3 rounded whitespace-nowrap">
+                    {'campaignLabel' in plan && plan.campaignLabel ? plan.campaignLabel : '初回限定価格'}
+                  </span>
+                </div>
+
+                {/* Phase1価格 */}
+                <div className="flex items-baseline justify-center gap-1">
+                  <span className="text-5xl font-black text-red-600">
+                    ¥{plan.phase1Price.toLocaleString()}
+                  </span>
+                </div>
+                <p className="text-sm text-green-600 font-bold mt-1">送料無料</p>
+
+                {/* Phase2注釈 */}
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <p className="text-xs text-gray-400">2ヶ月目以降 ¥{plan.phase2Total.toLocaleString()}</p>
+                  <p className="text-xs text-gray-400">（¥{plan.phase2Price.toLocaleString()} + 送料¥1,500）</p>
+                </div>
               </div>
 
               {/* プラン詳細 */}

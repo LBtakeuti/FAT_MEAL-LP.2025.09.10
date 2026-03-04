@@ -6,5 +6,5 @@ export interface TooltipPosition {
 export interface TooltipData {
   title: string;
   items: string[];
-  note: string;
+  note?: string;
 }
