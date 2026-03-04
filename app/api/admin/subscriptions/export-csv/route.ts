@@ -28,6 +28,7 @@ interface Subscription {
   started_at: string;
   canceled_at: string | null;
   referral_code?: string;
+  notes?: string;
 }
 
 export async function GET() {
