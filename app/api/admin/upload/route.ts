@@ -14,6 +14,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const MAX_SIZE = 4 * 1024 * 1024; // 4MB
+    if (file.size > MAX_SIZE) {
+      return NextResponse.json(
+        { message: `ファイルサイズが上限を超えています（最大4MB、現在: ${(file.size / 1024 / 1024).toFixed(1)}MB）` },
+        { status: 413 }
+      );
+    }
+
     // ファイル名を生成（タイムスタンプ + ランダム文字列）
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;

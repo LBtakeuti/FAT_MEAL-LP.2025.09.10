@@ -19,9 +19,16 @@ export default function NewNewsPage() {
   const [imagePreview, setImagePreview] = useState<string>('');
   const [uploading, setUploading] = useState(false);
 
+  const MAX_IMAGE_SIZE = 4 * 1024 * 1024; // 4MB
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > MAX_IMAGE_SIZE) {
+      alert(`画像サイズが大きすぎます。4MB以下のファイルを選択してください（現在: ${(file.size / 1024 / 1024).toFixed(1)}MB）`);
+      e.target.value = '';
+      return;
+    }
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
   };
@@ -45,8 +52,14 @@ export default function NewNewsPage() {
       });
 
       if (!response.ok) {
-        const err = await response.json();
-        console.error('アップロードエラー:', err);
+        const text = await response.text();
+        let message = text;
+        try { message = JSON.parse(text)?.message ?? text; } catch { /* plain text */ }
+        if (response.status === 413) {
+          alert('画像サイズが大きすぎます。4MB以下の画像を使用してください。');
+        } else {
+          console.error('アップロードエラー:', message);
+        }
         return null;
       }
 
