@@ -81,20 +81,8 @@ const SubscriptionSection: React.FC = () => {
             <div
               key={plan.id}
               onClick={() => handlePurchase(plan.id)}
-              className={`relative bg-white rounded-2xl p-6 sm:p-8 transition-all duration-300 border-2 flex flex-col cursor-pointer hover:shadow-xl hover:scale-[1.02] ${
-                plan.popular
-                  ? 'border-orange-500 shadow-lg'
-                  : 'border-gray-200 hover:border-orange-500'
-              }`}
+              className="relative bg-white rounded-2xl p-6 sm:p-8 transition-all duration-300 border-2 flex flex-col cursor-pointer hover:shadow-xl hover:scale-[1.02] border-gray-200 hover:border-orange-500"
             >
-              {/* 人気バッジ */}
-              {plan.popular && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-orange-500 text-white text-xs font-bold px-4 py-1 rounded-full">
-                    人気
-                  </span>
-                </div>
-              )}
 
               {/* プラン名 */}
               <div className="text-center mb-6">

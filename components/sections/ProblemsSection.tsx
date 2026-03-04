@@ -23,26 +23,28 @@ const ProblemsSection: React.FC = () => {
   return (
     <section id="problems" className="relative overflow-hidden bg-white py-4 sm:pt-6 sm:pb-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row items-end gap-8 md:gap-12">
+        <div className="flex flex-col md:flex-row items-stretch gap-8 md:gap-12">
           {/* メインテキスト */}
-          <div className="flex-1 text-center md:text-left flex flex-col">
-            <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-black leading-relaxed mb-4" style={{ fontFamily: '"Yu Mincho", "游明朝", YuMincho, serif' }}>
-              太ることは簡単ではない。これは学生アスリートに特化した太るための弁当である。
-            </p>
-            <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-2" style={{ fontFamily: '"Noto Sans JP", sans-serif' }}>
-              本気で高みを目指すアスリートに向けた超高カロリーなボリューム弁当です。
-            </p>
-            <p className="text-sm sm:text-base text-gray-700 leading-relaxed mb-4" style={{ fontFamily: '"Noto Sans JP", sans-serif' }}>
-              管理栄養士監修のもと、味とボリュームにこだわったふとるめし。ふとるめしは努力人の味方です。ふとるめしは、頑張る人を応援します。
-            </p>
+          <div className="flex-1 text-center md:text-left flex flex-col justify-between">
+            <div>
+              <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-black leading-relaxed mt-14 mb-2" style={{ fontFamily: '"Yu Mincho", "游明朝", YuMincho, serif' }}>
+                太ることは簡単ではない。これは学生アスリートに特化した太るための弁当である。
+              </p>
+              <p className="text-base sm:text-lg text-gray-700 leading-tight mb-4" style={{ fontFamily: '"Noto Sans JP", sans-serif' }}>
+                本気で高みを目指すアスリートに向けた超高カロリーなボリューム弁当です。
+              </p>
+              <p className="text-base sm:text-lg text-gray-700 leading-tight" style={{ fontFamily: '"Noto Sans JP", sans-serif' }}>
+                管理栄養士監修のもと、味とボリュームにこだわったふとるめし。ふとるめしは努力人の味方です。ふとるめしは、頑張る人を応援します。
+              </p>
+            </div>
             {/* バッジ */}
-            <div className="flex justify-center md:justify-start gap-2 sm:gap-3 mt-2">
+            <div className="flex justify-center md:justify-start gap-2 sm:gap-3 mt-0">
               <Image
                 src="/images/sections/badge-media.png"
                 alt="メディア掲載多数"
                 width={80}
                 height={80}
-                className="w-16 sm:w-20 md:w-24 h-auto"
+                className="w-20 sm:w-24 md:w-32 h-auto"
                 unoptimized
               />
               <Image
@@ -50,7 +52,7 @@ const ProblemsSection: React.FC = () => {
                 alt="国内生産"
                 width={80}
                 height={80}
-                className="w-16 sm:w-20 md:w-24 h-auto"
+                className="w-20 sm:w-24 md:w-32 h-auto"
                 unoptimized
               />
               <Image
@@ -58,7 +60,7 @@ const ProblemsSection: React.FC = () => {
                 alt="管理栄養士監修"
                 width={80}
                 height={80}
-                className="w-16 sm:w-20 md:w-24 h-auto"
+                className="w-20 sm:w-24 md:w-32 h-auto"
                 unoptimized
               />
             </div>
