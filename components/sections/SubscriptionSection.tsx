@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 const SubscriptionSection: React.FC = () => {
@@ -83,6 +84,17 @@ const SubscriptionSection: React.FC = () => {
               onClick={() => handlePurchase(plan.id)}
               className="relative bg-white rounded-2xl p-6 sm:p-8 transition-all duration-300 border-2 flex flex-col cursor-pointer hover:shadow-xl hover:scale-[1.02] border-gray-200 hover:border-orange-500"
             >
+              {/* 初回送料無料バッジ */}
+              <div className="absolute -top-1 -left-1 z-10">
+                <Image
+                  src="/images/branding/badge-free-shipping.png"
+                  alt="初回送料無料"
+                  width={80}
+                  height={80}
+                  className="w-16 sm:w-20 h-auto"
+                  unoptimized
+                />
+              </div>
 
               {/* プラン名 */}
               <div className="text-center mb-6">
@@ -109,7 +121,7 @@ const SubscriptionSection: React.FC = () => {
 
                 {/* キャンペーンバッジ */}
                 <div className="mb-3">
-                  <span className="bg-red-600 text-white text-xs font-bold py-1.5 px-3 rounded whitespace-nowrap">
+                  <span className="bg-gradient-to-b from-red-500 to-red-700 text-white text-xs font-bold py-1.5 px-3 rounded whitespace-nowrap shadow-md">
                     {'campaignLabel' in plan && plan.campaignLabel ? plan.campaignLabel : '初回限定価格'}
                   </span>
                 </div>
@@ -120,7 +132,6 @@ const SubscriptionSection: React.FC = () => {
                     ¥{plan.phase1Price.toLocaleString()}
                   </span>
                 </div>
-                <p className="text-sm text-green-600 font-bold mt-1">送料無料</p>
 
                 {/* Phase2注釈 */}
                 <div className="mt-3 pt-3 border-t border-gray-200">
@@ -157,11 +168,7 @@ const SubscriptionSection: React.FC = () => {
                   e.stopPropagation();
                   handlePurchase(plan.id);
                 }}
-                className={`mt-auto w-full h-14 rounded-xl font-bold text-lg transition-all duration-300 shadow-md ${
-                  plan.popular
-                    ? 'bg-orange-500 text-white hover:bg-orange-600 hover:shadow-lg'
-                    : 'bg-gray-900 text-white hover:bg-gray-800 hover:shadow-lg'
-                }`}
+                className="mt-auto w-full h-14 rounded-xl font-bold text-lg transition-all duration-300 shadow-md bg-orange-500 text-white hover:bg-orange-600 hover:shadow-lg"
               >
                 定期購入する
               </button>
@@ -173,7 +180,8 @@ const SubscriptionSection: React.FC = () => {
         <div className="mt-8 sm:mt-12 text-center text-sm text-gray-500">
           <p className="mb-1">※ 価格は税込表示です</p>
           <p className="mb-1">※ 定期購入はログインが必要です</p>
-          <p>※ 解約はお問い合わせより承ります</p>
+          <p className="mb-1">※ 解約はお問い合わせより承ります</p>
+          <p>※ ゆうさくスポーツキャンペーン中、２ヶ月目以降の商品の価格は15％OFFです。送料は別です。</p>
         </div>
       </div>
     </section>

@@ -6,7 +6,7 @@ import Image from 'next/image';
 const sliderImages = [
   '/images/sections/slider-1.png',
   '/images/sections/slider-2.png',
-  '/images/sections/slider-3.png',
+  '/images/sections/problems-worry.jpeg',
 ];
 
 const ProblemsSection: React.FC = () => {
@@ -27,7 +27,7 @@ const ProblemsSection: React.FC = () => {
           {/* メインテキスト */}
           <div className="flex-1 text-center md:text-left flex flex-col justify-between">
             <div>
-              <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-black leading-relaxed mt-14 mb-2" style={{ fontFamily: '"Yu Mincho", "游明朝", YuMincho, serif' }}>
+              <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-black leading-relaxed mt-14 mb-2" style={{ fontFamily: '"Noto Sans JP", sans-serif' }}>
                 太ることは簡単ではない。これは学生アスリートに特化した太るための弁当である。
               </p>
               <p className="text-base sm:text-lg text-gray-700 leading-tight mb-4" style={{ fontFamily: '"Noto Sans JP", sans-serif' }}>
@@ -38,7 +38,7 @@ const ProblemsSection: React.FC = () => {
               </p>
             </div>
             {/* バッジ */}
-            <div className="flex justify-center md:justify-start gap-2 sm:gap-3 mt-0">
+            <div className="flex justify-between w-full mt-6">
               <Image
                 src="/images/sections/badge-media.png"
                 alt="メディア掲載多数"

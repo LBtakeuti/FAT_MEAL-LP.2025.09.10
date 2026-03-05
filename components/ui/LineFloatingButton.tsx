@@ -11,8 +11,10 @@ interface BannerSettings {
 const LineFloatingButton: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [isBannerClosed, setIsBannerClosed] = useState(false);
+  const [isMobileBannerClosed, setIsMobileBannerClosed] = useState(false);
   const [isNearFooter, setIsNearFooter] = useState(false);
   const [banner, setBanner] = useState<BannerSettings | null>(null);
+  const [mobileBanner, setMobileBanner] = useState<BannerSettings | null>(null);
 
   useEffect(() => {
     fetch('/api/admin/banner')
@@ -21,31 +23,31 @@ const LineFloatingButton: React.FC = () => {
         if (json) setBanner(json.data ?? json);
       })
       .catch(() => {});
+
+    fetch('/api/admin/banner/mobile')
+      .then(res => res.ok ? res.json() : null)
+      .then(json => {
+        if (json) setMobileBanner(json.data ?? json);
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
     const handleScroll = () => {
-      // ヒーローセクションの高さを取得（ビューポートの高さを基準）
       const heroHeight = window.innerHeight;
       const scrollPosition = window.scrollY;
       const windowHeight = window.innerHeight;
       const documentHeight = document.documentElement.scrollHeight;
 
-      // フッターが近づいているかチェック（ページの下から200px以内）
       const footerThreshold = documentHeight - windowHeight - 200;
       setIsNearFooter(scrollPosition > footerThreshold);
 
-      // ヒーローセクションを過ぎたら表示
       setIsVisible(scrollPosition > heroHeight);
     };
 
-    // 初回チェック
     handleScroll();
 
-    // スクロールイベントリスナーを追加
     window.addEventListener('scroll', handleScroll);
-
-    // クリーンアップ
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -55,9 +57,14 @@ const LineFloatingButton: React.FC = () => {
     setIsBannerClosed(true);
   };
 
+  const handleMobileBannerClose = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsMobileBannerClosed(true);
+  };
+
   const showBanner = banner !== null && banner.is_active && !!banner.image_url;
-  const bannerImageUrl = banner?.image_url || '';
-  const bannerLinkUrl = banner?.link_url || '';
+  const showMobileBanner = mobileBanner !== null && mobileBanner.is_active && !!mobileBanner.image_url;
 
   return (
     <>
@@ -69,7 +76,6 @@ const LineFloatingButton: React.FC = () => {
           }`}
         >
           <div className="relative">
-            {/* 閉じるボタン */}
             <button
               type="button"
               onClick={handleBannerClose}
@@ -94,28 +100,80 @@ const LineFloatingButton: React.FC = () => {
                 />
               </svg>
             </button>
-            {bannerLinkUrl ? (
+            {banner.link_url ? (
               <a
-                href={bannerLinkUrl}
+                href={banner.link_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block"
               >
                 <img
-                  src={bannerImageUrl}
+                  src={banner.image_url}
                   alt="バナー"
                   width={600}
                   height={100}
-                  className="rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
+                  className="rounded-lg"
                 />
               </a>
             ) : (
               <img
-                src={bannerImageUrl}
+                src={banner.image_url}
                 alt="バナー"
                 width={600}
                 height={100}
-                className="rounded-lg shadow-lg"
+                className="rounded-lg"
+              />
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* モバイル用バナー - 追従フッターの上・右寄り */}
+      {showMobileBanner && !isMobileBannerClosed && (
+        <div className="fixed bottom-14 right-2 w-[calc(50%-0.5rem)] z-[9998] sm:hidden">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={handleMobileBannerClose}
+              className="absolute -top-2.5 -right-2.5 bg-gray-600 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg hover:bg-gray-700 transition-colors z-[10002] cursor-pointer"
+              style={{
+                WebkitTapHighlightColor: 'transparent',
+                touchAction: 'manipulation',
+              }}
+              aria-label="閉じる"
+            >
+              <svg
+                className="w-3 h-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                strokeWidth={3}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+            {mobileBanner.link_url ? (
+              <a
+                href={mobileBanner.link_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block"
+              >
+                <img
+                  src={mobileBanner.image_url}
+                  alt="バナー"
+                  className="w-full rounded-lg"
+                />
+              </a>
+            ) : (
+              <img
+                src={mobileBanner.image_url}
+                alt="バナー"
+                className="w-full rounded-lg"
               />
             )}
           </div>

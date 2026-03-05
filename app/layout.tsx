@@ -17,6 +17,9 @@ const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 // Microsoft Clarity Project ID from environment variable
 const CLARITY_PROJECT_ID = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID;
 
+// Google Tag Manager ID from environment variable
+const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID;
+
 export const metadata: Metadata = {
   title: "ふとるめし - 高カロリー・高タンパクの冷凍弁当",
   description: "ふとるめしは、努力する人を応援し続けます。平均Cal500オーバー、タンパク質30gオーバー。脅威の弁当をご覧あれ。",
@@ -62,6 +65,35 @@ export default function RootLayout({
         <link rel="preconnect" href="https://lh3.googleusercontent.com" crossOrigin="anonymous" />
       </head>
       <body className={`${notoSansJP.variable} font-sans antialiased bg-[#fff7ed]`}>
+        {/* Google Tag Manager (noscript) */}
+        {GTM_ID && (
+          <noscript>
+            <iframe
+              src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}
+              height="0"
+              width="0"
+              style={{ display: 'none', visibility: 'hidden' }}
+            />
+          </noscript>
+        )}
+
+        {/* Google Tag Manager */}
+        {GTM_ID && (
+          <Script
+            id="gtm-script"
+            strategy="afterInteractive"
+            dangerouslySetInnerHTML={{
+              __html: `
+                (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+                new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+                j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+                'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+                })(window,document,'script','dataLayer','${GTM_ID}');
+              `,
+            }}
+          />
+        )}
+
         {/* Google Analytics 4 */}
         {GA_MEASUREMENT_ID && (
           <>
