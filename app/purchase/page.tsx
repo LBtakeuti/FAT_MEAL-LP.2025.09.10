@@ -876,7 +876,7 @@ const PurchasePage: React.FC = () => {
                   )}
 
                   <div className="flex items-center justify-between">
-                    <div className="flex-1 pr-20">
+                    <div className="flex-1 pr-10 sm:pr-20">
                       <span className="text-lg font-semibold text-gray-900">
                         {plan.label}
                       </span>
@@ -885,7 +885,7 @@ const PurchasePage: React.FC = () => {
                       </p>
                       {plan.isSubscription && (
                         <p className="text-xs text-gray-400 mt-1">
-                          ※{plan.quantity * 2}食入り
+                          ※{plan.quantity * 2}個入り
                         </p>
                       )}
                       {plan.isSubscription ? (
@@ -894,7 +894,7 @@ const PurchasePage: React.FC = () => {
                             通常価格（送料込）¥{((plan.anchorPrice || 0) + (plan.phase2ShippingFee || 0)).toLocaleString()}
                           </div>
                           {plan.id === 'subscription-monthly-12' ? (
-                            <span className="text-xs bg-red-600 text-white font-bold px-2 py-0.5 rounded">
+                            <span className="text-xs bg-red-600 text-white font-bold px-2 py-0.5 rounded whitespace-nowrap">
                               ゆうさくスポーツキャンペーン 初回限定
                             </span>
                           ) : (
@@ -1533,12 +1533,12 @@ const PurchasePage: React.FC = () => {
           </h2>
           {appliedCoupon ? (
             <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-4">
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex flex-wrap items-center gap-2">
+                <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 <span className="text-green-700 font-medium">{appliedCoupon.code}</span>
-                <span className="text-green-600">（¥{appliedCoupon.discount.toLocaleString()}割引）</span>
+                <span className="text-green-600 text-sm">（¥{appliedCoupon.discount.toLocaleString()}割引）</span>
               </div>
               <button
                 onClick={removeCoupon}
@@ -1550,7 +1550,7 @@ const PurchasePage: React.FC = () => {
               </button>
             </div>
           ) : (
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <input
                 type="text"
                 value={couponCode}
@@ -1564,7 +1564,7 @@ const PurchasePage: React.FC = () => {
               <button
                 onClick={applyCoupon}
                 disabled={!couponCode.trim()}
-                className="px-6 py-2 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                className="px-6 py-2 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap"
               >
                 適用
               </button>

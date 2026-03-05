@@ -699,7 +699,7 @@ export default function AnalyticsPage() {
             {/* クイックリンク */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <a
-                href="https://clarity.microsoft.com/projects/view/v7cwgizw86/dashboard"
+                href="https://clarity.microsoft.com/projects/view/vqx6udu1aj/dashboard"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow group"
@@ -719,7 +719,7 @@ export default function AnalyticsPage() {
               </a>
 
               <a
-                href="https://clarity.microsoft.com/projects/view/v7cwgizw86/heatmaps"
+                href="https://clarity.microsoft.com/projects/view/vqx6udu1aj/heatmaps"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow group"
@@ -740,7 +740,7 @@ export default function AnalyticsPage() {
               </a>
 
               <a
-                href="https://clarity.microsoft.com/projects/view/v7cwgizw86/recordings"
+                href="https://clarity.microsoft.com/projects/view/vqx6udu1aj/recordings"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow group"
@@ -765,7 +765,7 @@ export default function AnalyticsPage() {
               <h3 className="text-lg font-bold text-gray-900 mb-4">その他の機能</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <a
-                  href="https://clarity.microsoft.com/projects/view/v7cwgizw86/scrollmaps"
+                  href="https://clarity.microsoft.com/projects/view/vqx6udu1aj/scrollmaps"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 px-4 py-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-sm text-gray-700"
@@ -776,7 +776,7 @@ export default function AnalyticsPage() {
                   スクロールマップ
                 </a>
                 <a
-                  href="https://clarity.microsoft.com/projects/view/v7cwgizw86/insights"
+                  href="https://clarity.microsoft.com/projects/view/vqx6udu1aj/insights"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 px-4 py-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-sm text-gray-700"
@@ -787,7 +787,7 @@ export default function AnalyticsPage() {
                   インサイト
                 </a>
                 <a
-                  href="https://clarity.microsoft.com/projects/view/v7cwgizw86/funnels"
+                  href="https://clarity.microsoft.com/projects/view/vqx6udu1aj/funnels"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 px-4 py-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-sm text-gray-700"
@@ -798,7 +798,7 @@ export default function AnalyticsPage() {
                   ファネル
                 </a>
                 <a
-                  href="https://clarity.microsoft.com/projects/view/v7cwgizw86/settings"
+                  href="https://clarity.microsoft.com/projects/view/vqx6udu1aj/settings"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2 px-4 py-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors text-sm text-gray-700"
