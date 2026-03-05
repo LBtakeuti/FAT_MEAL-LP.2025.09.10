@@ -919,7 +919,7 @@ const PurchasePage: React.FC = () => {
                     </div>
 
                     {/* 選択状態表示 */}
-                    <div className="flex items-center">
+                    <div className="hidden sm:flex items-center">
                       <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                         quantity > 0
                           ? 'border-orange-600 bg-orange-600'
