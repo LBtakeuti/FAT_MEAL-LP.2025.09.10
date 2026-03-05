@@ -22,7 +22,10 @@ export async function middleware(request: NextRequest) {
     }
 
     // バナーAPIのGETは認証不要（フロント表示用）
-    if (request.nextUrl.pathname === '/api/admin/banner' && request.method === 'GET') {
+    const isBannerGet = request.method === 'GET' &&
+      (request.nextUrl.pathname === '/api/admin/banner' ||
+       request.nextUrl.pathname === '/api/admin/banner/mobile');
+    if (isBannerGet) {
       return NextResponse.next();
     }
 
