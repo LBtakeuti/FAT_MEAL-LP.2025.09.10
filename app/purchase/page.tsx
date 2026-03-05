@@ -868,12 +868,6 @@ const PurchasePage: React.FC = () => {
                     </div>
                   )}
                   
-                  {/* サブスクリプションバッジ */}
-                  {plan.isSubscription && (
-                    <div className="absolute top-2 right-2 bg-gradient-to-r from-orange-600 to-red-500 text-white text-xs px-3 py-1 rounded-md font-medium shadow-sm">
-                      お得な定期
-                    </div>
-                  )}
 
                   <div className="flex items-center justify-between">
                     <div className="flex-1 pr-10 sm:pr-20">
