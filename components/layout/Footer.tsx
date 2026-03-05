@@ -5,18 +5,20 @@ import Image from 'next/image';
 
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-[#111827] text-white px-4 py-12 flex-1 flex flex-col justify-center">
+    <footer className="bg-[#111827] text-white px-4 pt-12 pb-[6.5rem] sm:pb-12 flex-1 flex flex-col justify-center">
       <div className="max-w-6xl mx-auto w-full">
         <div className="grid md:grid-cols-2 gap-8 mb-8">
           <div>
             <div className="mb-4 flex justify-center md:justify-start md:ml-12">
-              <Image
-                src="/images/branding/footer-logo.png"
-                alt="ふとるめし"
-                width={200}
-                height={100}
-                className="h-auto w-auto max-h-20 sm:max-h-32"
-              />
+              <a href="/" aria-label="トップページへ">
+                <Image
+                  src="/images/branding/footer-logo.png"
+                  alt="ふとるめし"
+                  width={200}
+                  height={100}
+                  className="h-auto w-auto max-h-20 sm:max-h-32"
+                />
+              </a>
             </div>
           </div>
           
