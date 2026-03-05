@@ -130,12 +130,12 @@ const LineFloatingButton: React.FC = () => {
 
       {/* モバイル用バナー - 追従フッターの上・右寄り */}
       {showMobileBanner && !isMobileBannerClosed && (
-        <div className="fixed bottom-14 right-2 w-[calc(50%-0.5rem)] z-[9998] sm:hidden">
+        <div className="fixed bottom-14 right-2 w-36 z-[9998] sm:hidden">
           <div className="relative">
             <button
               type="button"
               onClick={handleMobileBannerClose}
-              className="absolute -top-2.5 -right-2.5 bg-gray-600 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg hover:bg-gray-700 transition-colors z-[10002] cursor-pointer"
+              className="absolute top-1 right-1 bg-gray-600 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg hover:bg-gray-700 transition-colors z-[10002] cursor-pointer"
               style={{
                 WebkitTapHighlightColor: 'transparent',
                 touchAction: 'manipulation',
