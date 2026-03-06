@@ -6,7 +6,6 @@ export const maxDuration = 60; // Vercelの最大実行時間
 interface SubscriptionDelivery {
   id: string;
   subscription_id: string;
-  delivery_number: number;
   scheduled_date: string;
   menu_set: string;
   meals_per_delivery: number;
@@ -116,7 +115,7 @@ export async function GET(request: NextRequest) {
           .eq('id', delivery.id);
 
         // サブスクリプションの配送回数を更新
-        const newCompletedDeliveries = delivery.delivery_number;
+        const newCompletedDeliveries = (subscription.completed_deliveries || 0) + 1;
         const updateData: any = {
           completed_deliveries: newCompletedDeliveries,
           updated_at: new Date().toISOString(),
@@ -140,7 +139,7 @@ export async function GET(request: NextRequest) {
         }
 
         results.processed++;
-        console.log(`[Subscription Delivery Cron] Successfully processed delivery ${delivery.id} (${delivery.delivery_number}/${subscription.total_deliveries})`);
+        console.log(`[Subscription Delivery Cron] Successfully processed delivery ${delivery.id} (${newCompletedDeliveries}/${subscription.total_deliveries})`);
 
       } catch (error) {
         console.error(`[Subscription Delivery Cron] Failed to process delivery ${delivery.id}:`, error);
