@@ -213,7 +213,7 @@ async function createOrderFromDelivery(
       menu_set: delivery.menu_set,
       quantity: delivery.quantity,
       amount: 0, // サブスクは別途Stripe決済済み
-      status: 'confirmed', // 配送確定
+      status: 'pending', // 注文受付（管理画面で confirmed→shippedに変更）
     })
     .select()
     .single();
