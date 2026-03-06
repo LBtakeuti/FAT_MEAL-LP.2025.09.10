@@ -8,6 +8,7 @@ export async function GET() {
     const { data: orders, error } = await (supabase
       .from('orders') as any)
       .select('*')
+      .not('stripe_session_id', 'like', 'sub_delivery_%')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -41,7 +42,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const validStatuses = ['order_received', 'notified', 'shipped'];
+    const validStatuses = ['pending', 'confirmed', 'shipped'];
     if (!validStatuses.includes(status)) {
       return NextResponse.json(
         { error: 'Invalid status' },
