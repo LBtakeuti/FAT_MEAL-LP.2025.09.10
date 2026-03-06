@@ -200,12 +200,19 @@ async function createOrderFromDelivery(
   const { data: order, error } = await (supabase
     .from('orders') as any)
     .insert({
+      stripe_session_id: `sub_delivery_${delivery.id}`, // サブスク配送用の識別子
       customer_name: shippingAddress.name || 'お客様',
       customer_email: shippingAddress.email || '',
       phone: shippingAddress.phone || '',
+      postal_code: shippingAddress.postal_code || '',
+      prefecture: shippingAddress.prefecture || '',
+      city: shippingAddress.city || '',
+      address_detail: shippingAddress.address_detail || '',
+      building: shippingAddress.building || '',
       address: addressString,
       menu_set: delivery.menu_set,
       quantity: delivery.quantity,
+      amount: 0, // サブスクは別途Stripe決済済み
       status: 'confirmed', // 配送確定
     })
     .select()
