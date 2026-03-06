@@ -16,8 +16,6 @@ interface SubscriptionDelivery {
     plan_name: string;
     shipping_address: any;
     status: string;
-    total_deliveries: number;
-    completed_deliveries: number;
   };
 }
 
@@ -49,9 +47,7 @@ export async function GET(request: NextRequest) {
           id,
           plan_name,
           shipping_address,
-          status,
-          total_deliveries,
-          completed_deliveries
+          status
         )
       `)
       .lte('scheduled_date', todayStr)
@@ -114,32 +110,20 @@ export async function GET(request: NextRequest) {
           })
           .eq('id', delivery.id);
 
-        // サブスクリプションの配送回数を更新
-        const newCompletedDeliveries = (subscription.completed_deliveries || 0) + 1;
-        const updateData: any = {
-          completed_deliveries: newCompletedDeliveries,
-          updated_at: new Date().toISOString(),
-        };
-        
-        // 次回配送番号を更新（最終回でない場合）
-        if (newCompletedDeliveries < subscription.total_deliveries) {
-          updateData.next_delivery_number = newCompletedDeliveries + 1;
-        } else {
-          updateData.next_delivery_number = null; // 最終回完了
-        }
-        
-        await (supabase
-          .from('subscriptions') as any)
-          .update(updateData)
-          .eq('id', subscription.id);
+        // 残りの pending 配送を確認して契約終了判定
+        const { count: remainingPending } = await (supabase
+          .from('subscription_deliveries') as any)
+          .select('id', { count: 'exact', head: true })
+          .eq('subscription_id', delivery.subscription_id)
+          .eq('status', 'pending')
+          .gt('scheduled_date', todayStr);
 
-        // 最終回配送完了の場合、契約終了処理
-        if (newCompletedDeliveries === subscription.total_deliveries) {
+        if (remainingPending === 0) {
           await completeSubscription(subscription.id, supabase);
         }
 
         results.processed++;
-        console.log(`[Subscription Delivery Cron] Successfully processed delivery ${delivery.id} (${newCompletedDeliveries}/${subscription.total_deliveries})`);
+        console.log(`[Subscription Delivery Cron] Successfully processed delivery ${delivery.id} (remaining: ${remainingPending})`);
 
       } catch (error) {
         console.error(`[Subscription Delivery Cron] Failed to process delivery ${delivery.id}:`, error);
@@ -250,8 +234,7 @@ async function completeSubscription(
       .from('subscriptions') as any)
       .update({
         status: 'completed',
-        completed_at: new Date().toISOString(),
-        next_delivery_number: null,
+        canceled_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq('id', subscriptionId);
