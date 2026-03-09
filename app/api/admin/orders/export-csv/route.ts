@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 
 // Order型を定義
@@ -24,14 +24,28 @@ interface Order {
   notes?: string;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const supabase = createServerClient();
+    const { searchParams } = new URL(request.url);
+    const idsParam = searchParams.get('ids');
+    const dateParam = searchParams.get('date');
 
-    const { data: orders, error } = await (supabase
-      .from('orders') as any)
+    let query = (supabase.from('orders') as any)
       .select('*')
-      .order('order_number', { ascending: true }) as { data: Order[] | null; error: any };
+      .not('stripe_session_id', 'like', 'sub_delivery_%')
+      .order('order_number', { ascending: true });
+
+    if (idsParam) {
+      const ids = idsParam.split(',').filter(Boolean);
+      query = query.in('id', ids);
+    } else if (dateParam) {
+      const startOfDayJST = new Date(`${dateParam}T00:00:00+09:00`).toISOString();
+      const endOfDayJST = new Date(`${dateParam}T23:59:59+09:00`).toISOString();
+      query = query.gte('created_at', startOfDayJST).lte('created_at', endOfDayJST);
+    }
+
+    const { data: orders, error } = await query as { data: Order[] | null; error: any };
 
     if (error) {
       console.error('Orders fetch error:', error);

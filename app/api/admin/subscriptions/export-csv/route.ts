@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 
 interface Subscription {
@@ -31,14 +31,28 @@ interface Subscription {
   notes?: string;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const supabase = createServerClient();
-    
-    const { data: subscriptions, error } = await supabase
+    const { searchParams } = new URL(request.url);
+    const idsParam = searchParams.get('ids');
+    const dateParam = searchParams.get('date');
+
+    let query = supabase
       .from('subscriptions')
       .select('*')
-      .order('started_at', { ascending: false }) as { data: Subscription[] | null; error: any };
+      .order('started_at', { ascending: false });
+
+    if (idsParam) {
+      const ids = idsParam.split(',').filter(Boolean);
+      query = (query as any).in('id', ids);
+    } else if (dateParam) {
+      const startOfDayJST = new Date(`${dateParam}T00:00:00+09:00`).toISOString();
+      const endOfDayJST = new Date(`${dateParam}T23:59:59+09:00`).toISOString();
+      query = (query as any).gte('started_at', startOfDayJST).lte('started_at', endOfDayJST);
+    }
+
+    const { data: subscriptions, error } = await query as { data: Subscription[] | null; error: any };
 
     if (error) {
       console.error('Failed to fetch subscriptions:', error);
