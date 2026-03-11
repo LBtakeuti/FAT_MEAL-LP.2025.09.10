@@ -31,12 +31,23 @@ interface Subscription {
   monthly_total_amount: number;
   status: string;
   started_at: string;
+  canceled_at: string | null;
   next_delivery_date: string | null;
   delivery_progress: {
     total: number;
     completed: number;
     pending: number;
     next_delivery: { date: string; menu_set: string } | null;
+  };
+  shipping_address?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    postal_code?: string;
+    prefecture?: string;
+    city?: string;
+    address_detail?: string;
+    building?: string;
   };
 }
 
@@ -64,6 +75,9 @@ export default function AdminOrdersPage() {
   const [subsLoading, setSubsLoading] = useState(false);
   const [subsLoaded, setSubsLoaded] = useState(false);
   const [selectedSubIds, setSelectedSubIds] = useState<Set<string>>(new Set());
+  const [cancelConfirmSubId, setCancelConfirmSubId] = useState<string | null>(null);
+  const [cancellingSubId, setCancellingSubId] = useState<string | null>(null);
+  const [expandedSubId, setExpandedSubId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchOrders();
@@ -125,6 +139,23 @@ export default function AdminOrdersPage() {
       alert('ステータスの更新に失敗しました');
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const handleCancelSubscription = async (subId: string) => {
+    setCancellingSubId(subId);
+    try {
+      const response = await fetch(`/api/admin/subscriptions?id=${subId}`, { method: 'DELETE' });
+      if (response.ok) {
+        setCancelConfirmSubId(null);
+        await fetchSubscriptions();
+      } else {
+        alert('解約処理に失敗しました');
+      }
+    } catch {
+      alert('解約処理に失敗しました');
+    } finally {
+      setCancellingSubId(null);
     }
   };
 
@@ -314,9 +345,7 @@ export default function AdminOrdersPage() {
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">注文番号</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">氏名</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">メール</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">セット内容</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">金額</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ステータス</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">注文日時</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
@@ -325,7 +354,7 @@ export default function AdminOrdersPage() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {filteredOrders.length === 0 ? (
                         <tr>
-                          <td colSpan={9} className="px-6 py-12 text-center text-gray-500">注文がありません</td>
+                          <td colSpan={7} className="px-6 py-12 text-center text-gray-500">注文がありません</td>
                         </tr>
                       ) : (
                         filteredOrders.map((order) => (
@@ -348,11 +377,9 @@ export default function AdminOrdersPage() {
                                 </span>
                               </td>
                               <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{order.customer_name}</td>
-                              <td className="px-4 py-4 text-sm text-gray-900">{order.customer_email || order.email}</td>
                               <td className="px-4 py-4 text-sm text-gray-900 max-w-xs">
                                 <div className="truncate" title={order.menu_set}>{order.menu_set}</div>
                               </td>
-                              <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">¥{order.amount?.toLocaleString() || '-'}</td>
                               <td className="px-4 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                                 <select
                                   value={order.status}
@@ -381,7 +408,7 @@ export default function AdminOrdersPage() {
                             </tr>
                             {expandedOrderId === order.id && (
                               <tr className="bg-gray-50">
-                                <td colSpan={9} className="px-6 py-4">
+                                <td colSpan={7} className="px-6 py-4">
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="bg-white rounded-lg p-4 shadow-sm">
                                       <h4 className="font-semibold text-gray-900 mb-3 border-b pb-2">お客様情報</h4>
@@ -482,56 +509,135 @@ export default function AdminOrdersPage() {
                             className="rounded border-gray-300"
                           />
                         </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">お客様</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">プラン</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">月額</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">氏名</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">セット内容（プラン名）</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">次回配送日</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">配送進捗</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">次回配送</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ステータス</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">契約開始日</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {subscriptions.length === 0 ? (
                         <tr>
-                          <td colSpan={8} className="px-6 py-12 text-center text-gray-500">サブスクリプションがありません</td>
+                          <td colSpan={7} className="px-6 py-12 text-center text-gray-500">サブスクリプションがありません</td>
                         </tr>
                       ) : (
                         subscriptions.map((sub) => (
-                          <tr key={sub.id} className="hover:bg-gray-50">
-                            <td className="px-3 py-4">
-                              <input
-                                type="checkbox"
-                                checked={selectedSubIds.has(sub.id)}
-                                onChange={() => toggleSubSelect(sub.id)}
-                                className="rounded border-gray-300"
-                              />
-                            </td>
-                            <td className="px-4 py-4 whitespace-nowrap">
-                              <div className="text-sm font-medium text-gray-900">{sub.customer_name}</div>
-                              <div className="text-xs text-gray-500">{sub.customer_email}</div>
-                            </td>
-                            <td className="px-4 py-4 text-sm text-gray-900">{sub.plan_name}</td>
-                            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">¥{sub.monthly_total_amount?.toLocaleString() || '-'}</td>
-                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
-                              {sub.delivery_progress ? (
-                                <span>{sub.delivery_progress.completed} / {sub.delivery_progress.total} 回</span>
-                              ) : '-'}
-                            </td>
-                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
-                              {sub.delivery_progress?.next_delivery?.date
-                                ? new Date(sub.delivery_progress.next_delivery.date).toLocaleDateString('ja-JP')
-                                : (sub.next_delivery_date ? new Date(sub.next_delivery_date).toLocaleDateString('ja-JP') : '-')}
-                            </td>
-                            <td className="px-4 py-4 whitespace-nowrap">
-                              <span className={`px-2 py-1 text-xs rounded-full font-medium ${getSubStatusBadgeClass(sub.status)}`}>
-                                {translateSubStatus(sub.status)}
-                              </span>
-                            </td>
-                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {new Date(sub.started_at).toLocaleDateString('ja-JP')}
-                            </td>
-                          </tr>
+                          <React.Fragment key={sub.id}>
+                            <tr
+                              className="hover:bg-gray-50 cursor-pointer"
+                              onClick={() => setExpandedSubId(expandedSubId === sub.id ? null : sub.id)}
+                            >
+                              <td className="px-3 py-4" onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  type="checkbox"
+                                  checked={selectedSubIds.has(sub.id)}
+                                  onChange={() => toggleSubSelect(sub.id)}
+                                  className="rounded border-gray-300"
+                                />
+                              </td>
+                              <td className="px-4 py-4 whitespace-nowrap">
+                                <span className="flex items-center gap-2">
+                                  <svg
+                                    className={`w-4 h-4 transition-transform text-gray-400 flex-shrink-0 ${expandedSubId === sub.id ? 'rotate-90' : ''}`}
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                  >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                  </svg>
+                                  <span>
+                                    <div className="text-sm font-medium text-gray-900">{sub.customer_name}</div>
+                                    <div className="text-xs text-gray-500">{sub.customer_email}</div>
+                                  </span>
+                                </span>
+                              </td>
+                              <td className="px-4 py-4 text-sm text-gray-900">{sub.plan_name}</td>
+                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
+                                {sub.delivery_progress?.next_delivery?.date
+                                  ? new Date(sub.delivery_progress.next_delivery.date).toLocaleDateString('ja-JP')
+                                  : (sub.next_delivery_date ? new Date(sub.next_delivery_date).toLocaleDateString('ja-JP') : '-')}
+                              </td>
+                              <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
+                                {sub.delivery_progress ? (
+                                  <span>{sub.delivery_progress.completed} / {sub.delivery_progress.total} 回</span>
+                                ) : '-'}
+                              </td>
+                              <td className="px-4 py-4 whitespace-nowrap">
+                                <span className={`px-2 py-1 text-xs rounded-full font-medium ${getSubStatusBadgeClass(sub.status)}`}>
+                                  {translateSubStatus(sub.status)}
+                                </span>
+                              </td>
+                              <td className="px-4 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                                {!sub.canceled_at && (
+                                  cancelConfirmSubId === sub.id ? (
+                                    <div className="flex items-center gap-2">
+                                      <button onClick={() => handleCancelSubscription(sub.id)} disabled={cancellingSubId === sub.id} className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 disabled:opacity-50">
+                                        {cancellingSubId === sub.id ? '処理中' : '確定'}
+                                      </button>
+                                      <button onClick={() => setCancelConfirmSubId(null)} className="px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300">取消</button>
+                                    </div>
+                                  ) : (
+                                    <button onClick={() => setCancelConfirmSubId(sub.id)} className="px-3 py-1 bg-red-100 text-red-700 text-xs rounded hover:bg-red-200">解約</button>
+                                  )
+                                )}
+                              </td>
+                            </tr>
+                            {expandedSubId === sub.id && (
+                              <tr className="bg-gray-50">
+                                <td colSpan={7} className="px-6 py-4">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="bg-white rounded-lg p-4 shadow-sm">
+                                      <h4 className="font-semibold text-gray-900 mb-3 border-b pb-2">お客様情報</h4>
+                                      <dl className="space-y-2 text-sm">
+                                        <div className="flex">
+                                          <dt className="w-24 text-gray-500">お名前</dt>
+                                          <dd className="text-gray-900">{sub.shipping_address?.name || sub.customer_name}</dd>
+                                        </div>
+                                        <div className="flex">
+                                          <dt className="w-24 text-gray-500">メール</dt>
+                                          <dd className="text-gray-900">{sub.shipping_address?.email || sub.customer_email}</dd>
+                                        </div>
+                                        <div className="flex">
+                                          <dt className="w-24 text-gray-500">電話番号</dt>
+                                          <dd className="text-gray-900">{sub.shipping_address?.phone || '-'}</dd>
+                                        </div>
+                                        <div className="flex">
+                                          <dt className="w-24 text-gray-500">開始日</dt>
+                                          <dd className="text-gray-900">{new Date(sub.started_at).toLocaleDateString('ja-JP')}</dd>
+                                        </div>
+                                      </dl>
+                                    </div>
+                                    <div className="bg-white rounded-lg p-4 shadow-sm">
+                                      <h4 className="font-semibold text-gray-900 mb-3 border-b pb-2">配送先</h4>
+                                      <dl className="space-y-2 text-sm">
+                                        <div className="flex">
+                                          <dt className="w-24 text-gray-500">郵便番号</dt>
+                                          <dd className="text-gray-900">
+                                            {sub.shipping_address?.postal_code ? `〒${sub.shipping_address.postal_code}` : '-'}
+                                          </dd>
+                                        </div>
+                                        <div className="flex">
+                                          <dt className="w-24 text-gray-500">住所</dt>
+                                          <dd className="text-gray-900">
+                                            {sub.shipping_address?.prefecture || sub.shipping_address?.city || sub.shipping_address?.address_detail ? (
+                                              <>
+                                                {sub.shipping_address.prefecture}{sub.shipping_address.city}{sub.shipping_address.address_detail}
+                                                {sub.shipping_address.building && <><br />{sub.shipping_address.building}</>}
+                                              </>
+                                            ) : '-'}
+                                          </dd>
+                                        </div>
+                                        <div className="flex">
+                                          <dt className="w-24 text-gray-500">月額</dt>
+                                          <dd className="text-gray-900">¥{sub.monthly_total_amount.toLocaleString()}</dd>
+                                        </div>
+                                      </dl>
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
                         ))
                       )}
                     </tbody>

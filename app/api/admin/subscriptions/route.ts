@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
+import Stripe from 'stripe';
 
 interface Subscription {
   id: string;
@@ -47,9 +48,11 @@ export async function GET(_request: NextRequest) {
           id,
           status,
           scheduled_date,
-          menu_set
+          menu_set,
+          carrier_notified_at
         )
       `)
+      .neq('status', 'canceled')
       .order('started_at', { ascending: false }) as { data: (Subscription & { subscription_deliveries: any[] })[] | null; error: any };
 
     if (error) {
@@ -93,6 +96,8 @@ export async function GET(_request: NextRequest) {
             menu_set: nextDelivery.menu_set,
           } : null,
         },
+        // 全配送レコード（リマインダー表示用）
+        subscription_deliveries: deliveries,
       };
     }) || [];
 
@@ -104,4 +109,40 @@ export async function GET(_request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function DELETE(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get('id');
+  if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
+
+  const supabase = createServerClient();
+
+  const { data: sub, error: fetchError } = await supabase
+    .from('subscriptions')
+    .select('stripe_subscription_id')
+    .eq('id', id)
+    .single();
+
+  if (fetchError || !sub) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+
+  try {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+    await stripe.subscriptions.update(sub.stripe_subscription_id, {
+      cancel_at_period_end: true,
+    });
+  } catch (stripeError) {
+    console.error('Stripe cancellation failed:', stripeError);
+    return NextResponse.json({ error: 'Stripe cancellation failed' }, { status: 500 });
+  }
+
+  await supabase
+    .from('subscriptions')
+    .update({
+      status: 'canceled',
+      canceled_at: new Date().toISOString(),
+    })
+    .eq('id', id);
+
+  return NextResponse.json({ success: true });
 }

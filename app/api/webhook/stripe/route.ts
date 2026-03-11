@@ -192,6 +192,12 @@ export async function POST(request: NextRequest) {
           break;
         }
         
+        // ふとるめし以外の商品（他プロジェクト）をフィルタリング
+        if (session.metadata?.purchase_type !== 'one-time') {
+          console.log(`[Webhook] Skipping checkout.session.completed: purchase_type="${session.metadata?.purchase_type}" is not "one-time" (session: ${session.id})`);
+          break;
+        }
+
         // 一回購入の場合
         await handleSuccessfulPayment(session, stripe);
         break;
