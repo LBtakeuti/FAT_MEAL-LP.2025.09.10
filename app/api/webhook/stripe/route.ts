@@ -260,7 +260,7 @@ export async function POST(request: NextRequest) {
 // 一回購入（お試しプラン）の処理
 async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe: Stripe) {
   const customerEmail = session.customer_details?.email;
-  const customerName = session.customer_details?.name || session.metadata?.customer_name;
+  const customerName = session.metadata?.customer_name || 'お客様';
   const customerPhone = session.customer_details?.phone || session.metadata?.phone;
   const amountTotal = session.amount_total;
 

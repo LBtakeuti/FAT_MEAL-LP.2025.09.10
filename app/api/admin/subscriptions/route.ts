@@ -95,6 +95,9 @@ export async function GET(_request: NextRequest) {
             date: nextDelivery.scheduled_date,
             menu_set: nextDelivery.menu_set,
           } : null,
+          estimated_next_delivery: !nextDelivery && sub.current_period_end
+            ? { date: sub.current_period_end, is_estimated: true }
+            : null,
         },
         // 全配送レコード（リマインダー表示用）
         subscription_deliveries: deliveries,

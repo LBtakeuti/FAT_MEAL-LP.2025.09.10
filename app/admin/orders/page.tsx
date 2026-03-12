@@ -74,6 +74,7 @@ export default function AdminOrdersPage() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [subsLoading, setSubsLoading] = useState(false);
   const [subsLoaded, setSubsLoaded] = useState(false);
+  const [subsError, setSubsError] = useState(false);
   const [selectedSubIds, setSelectedSubIds] = useState<Set<string>>(new Set());
   const [cancelConfirmSubId, setCancelConfirmSubId] = useState<string | null>(null);
   const [cancellingSubId, setCancellingSubId] = useState<string | null>(null);
@@ -105,15 +106,19 @@ export default function AdminOrdersPage() {
 
   const fetchSubscriptions = async () => {
     setSubsLoading(true);
+    setSubsError(false);
     try {
       const response = await fetch('/api/admin/subscriptions');
       if (response.ok) {
         const data = await response.json();
         setSubscriptions(data);
         setSubsLoaded(true);
+      } else {
+        setSubsError(true);
       }
     } catch (error) {
       console.error('Failed to fetch subscriptions:', error);
+      setSubsError(true);
     } finally {
       setSubsLoading(false);
     }
@@ -322,10 +327,14 @@ export default function AdminOrdersPage() {
                     選択CSV出力 ({selectedOrderIds.size})
                   </button>
                   <button
-                    onClick={() => { window.location.href = '/api/admin/orders/export-csv'; }}
-                    className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
+                    onClick={() => {
+                      const ids = [...selectedOrderIds].join(',');
+                      window.location.href = `/api/admin/orders/delivery-csv?ids=${ids}`;
+                    }}
+                    disabled={selectedOrderIds.size === 0}
+                    className="px-4 py-2 bg-teal-600 text-white text-sm rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    CSV出力（全件）
+                    配送用CSV出力 ({selectedOrderIds.size})
                   </button>
                 </div>
               </div>
@@ -465,9 +474,19 @@ export default function AdminOrdersPage() {
       {/* サブスクリプションタブ */}
       {activeTab === 'subscription' && (
         <>
-          {subsLoading ? (
+          {(subsLoading || !subsLoaded) ? (
             <div className="flex items-center justify-center h-64">
               <div className="text-gray-600">読み込み中...</div>
+            </div>
+          ) : subsError ? (
+            <div className="text-center py-12">
+              <p className="text-red-500 mb-4">データの取得に失敗しました</p>
+              <button
+                onClick={() => { setSubsLoaded(false); fetchSubscriptions(); }}
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+              >
+                再読み込み
+              </button>
             </div>
           ) : (
             <>
@@ -489,10 +508,14 @@ export default function AdminOrdersPage() {
                   選択CSV出力 ({selectedSubIds.size})
                 </button>
                 <button
-                  onClick={() => { window.location.href = '/api/admin/subscriptions/export-csv'; }}
-                  className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
+                  onClick={() => {
+                    const ids = [...selectedSubIds].join(',');
+                    window.location.href = `/api/admin/subscriptions/delivery-csv?ids=${ids}`;
+                  }}
+                  disabled={selectedSubIds.size === 0}
+                  className="px-4 py-2 bg-teal-600 text-white text-sm rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  CSV出力（全件）
+                  配送用CSV出力 ({selectedSubIds.size})
                 </button>
               </div>
 
@@ -553,9 +576,14 @@ export default function AdminOrdersPage() {
                               </td>
                               <td className="px-4 py-4 text-sm text-gray-900">{sub.plan_name}</td>
                               <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
-                                {sub.delivery_progress?.next_delivery?.date
-                                  ? new Date(sub.delivery_progress.next_delivery.date).toLocaleDateString('ja-JP')
-                                  : (sub.next_delivery_date ? new Date(sub.next_delivery_date).toLocaleDateString('ja-JP') : '-')}
+                                {sub.delivery_progress?.next_delivery?.date ? (
+                                  new Date(sub.delivery_progress.next_delivery.date).toLocaleDateString('ja-JP')
+                                ) : (sub.delivery_progress as any)?.estimated_next_delivery?.date ? (
+                                  <div>
+                                    <div>{new Date((sub.delivery_progress as any).estimated_next_delivery.date).toLocaleDateString('ja-JP')}</div>
+                                    <div className="text-xs text-gray-400 mt-0.5">次回配送：次回更新後の配送予定日</div>
+                                  </div>
+                                ) : '-'}
                               </td>
                               <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
                                 {sub.delivery_progress ? (
