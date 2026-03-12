@@ -176,6 +176,7 @@ export default function AdminDashboard() {
     todayOneTimeRevenue: 0,
     allTimeSubRevenue: 0,
     allTimeOneTimeRevenue: 0,
+    allTimeTotalRevenue: 0,
     nextMonthSubscriptionForecast: 0,
   });
 
@@ -296,6 +297,20 @@ export default function AdminDashboard() {
             ¥{stats.nextMonthSubscriptionForecast.toLocaleString('ja-JP')}
           </div>
           <div className="text-xs text-indigo-500 mt-1">アクティブ契約ベース</div>
+        </div>
+      </div>
+
+      {/* 総売上 */}
+      <div className="bg-gradient-to-r from-rose-500 to-pink-600 p-5 rounded-lg shadow mb-8 flex items-center justify-between">
+        <div className="flex items-center gap-2 text-white">
+          <span className="text-2xl">💰</span>
+          <div>
+            <div className="text-sm font-medium opacity-90">総売上（サブスク＋買い切り累計）</div>
+            <div className="text-xs opacity-70 mt-0.5">全期間・全商品</div>
+          </div>
+        </div>
+        <div className="text-3xl font-bold text-white">
+          ¥{stats.allTimeTotalRevenue.toLocaleString('ja-JP')}
         </div>
       </div>
 

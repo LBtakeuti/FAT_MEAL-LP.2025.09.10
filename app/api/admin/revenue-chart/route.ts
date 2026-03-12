@@ -92,7 +92,7 @@ export async function GET(req: NextRequest) {
       created: fromUnix > 0 ? { gte: fromUnix } : undefined,
       limit: 100,
     })) {
-      if (!(invoice as any).subscription) continue;
+      if (!(invoice as any).subscription && !(invoice as any).parent?.subscription_details?.subscription) continue;
       const jst = toJST(invoice.created);
       const label = getLabel(jst, type);
       const sortKey = getSortKey(jst, type);

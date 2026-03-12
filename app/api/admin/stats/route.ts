@@ -97,7 +97,7 @@ export async function GET() {
         limit: 100,
       });
       todaySubscriptionRevenue = todayInvoices.data
-        .filter((inv) => (inv as any).subscription)
+        .filter((inv) => (inv as any).subscription || (inv as any).parent?.subscription_details?.subscription)
         .reduce((sum, inv) => sum + inv.amount_paid, 0);
     } catch (err) {
       console.error('Stripe revenue stats error:', err);
@@ -161,6 +161,7 @@ export async function GET() {
       todayOneTimeRevenue,
       allTimeSubRevenue,
       allTimeOneTimeRevenue,
+      allTimeTotalRevenue: allTimeSubRevenue + allTimeOneTimeRevenue,
       nextMonthSubscriptionForecast,
     };
 
