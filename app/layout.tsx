@@ -17,6 +17,9 @@ const CLARITY_PROJECT_ID = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID;
 // Google Tag Manager ID from environment variable
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID;
 
+// Google Analytics 4 Measurement ID
+const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+
 export const metadata: Metadata = {
   title: "ふとるめし - 高カロリー・高タンパクの冷凍弁当",
   description: "ふとるめしは、努力する人を応援し続けます。平均Cal500オーバー、タンパク質30gオーバー。脅威の弁当をご覧あれ。",
@@ -89,6 +92,30 @@ export default function RootLayout({
               `,
             }}
           />
+        )}
+
+        {/* Google Analytics 4 (gtag.js 直接実装) */}
+        {GA_MEASUREMENT_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script
+              id="ga4-init"
+              strategy="afterInteractive"
+              dangerouslySetInnerHTML={{
+                __html: `
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('js', new Date());
+                  gtag('config', '${GA_MEASUREMENT_ID}', {
+                    page_path: window.location.pathname,
+                  });
+                `,
+              }}
+            />
+          </>
         )}
 
         {/* Microsoft Clarity */}

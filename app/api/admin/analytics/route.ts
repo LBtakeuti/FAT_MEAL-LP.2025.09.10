@@ -78,12 +78,12 @@ export async function GET(request: NextRequest) {
       sourceResponse,
       pageResponse,
     ] = await Promise.all([
-      // 概要（合計値）
+      // 概要（合計値）— totalUsers を activeUsers の代替として追加
       analyticsClient.runReport({
         property: `properties/${propertyId}`,
         dateRanges: [{ startDate, endDate }],
         metrics: [
-          { name: 'activeUsers' },
+          { name: 'totalUsers' },      // 全ユーザー（engaged/non-engaged 問わず）
           { name: 'sessions' },
           { name: 'screenPageViews' },
           { name: 'bounceRate' },
@@ -103,13 +103,13 @@ export async function GET(request: NextRequest) {
         orderBys: [{ dimension: { dimensionName: 'date' } }],
       }),
 
-      // デバイス別
+      // デバイス別（sessionsベースで取得 — activeUsers=0でも表示できるよう修正）
       analyticsClient.runReport({
         property: `properties/${propertyId}`,
         dateRanges: [{ startDate, endDate }],
         dimensions: [{ name: 'deviceCategory' }],
-        metrics: [{ name: 'activeUsers' }],
-        orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
+        metrics: [{ name: 'sessions' }],
+        orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
       }),
 
       // 流入元
@@ -134,12 +134,13 @@ export async function GET(request: NextRequest) {
     ]);
 
     // レスポンスを整形
+    const row = overviewResponse[0]?.rows?.[0]?.metricValues;
     const overview = {
-      activeUsers: parseInt(overviewResponse[0]?.rows?.[0]?.metricValues?.[0]?.value || '0'),
-      sessions: parseInt(overviewResponse[0]?.rows?.[0]?.metricValues?.[1]?.value || '0'),
-      pageViews: parseInt(overviewResponse[0]?.rows?.[0]?.metricValues?.[2]?.value || '0'),
-      bounceRate: parseFloat(overviewResponse[0]?.rows?.[0]?.metricValues?.[3]?.value || '0'),
-      avgSessionDuration: parseFloat(overviewResponse[0]?.rows?.[0]?.metricValues?.[4]?.value || '0'),
+      activeUsers: parseInt(row?.[0]?.value || '0'), // totalUsers（全ユーザー）
+      sessions: parseInt(row?.[1]?.value || '0'),
+      pageViews: parseInt(row?.[2]?.value || '0'),
+      bounceRate: parseFloat(row?.[3]?.value || '0'),
+      avgSessionDuration: parseFloat(row?.[4]?.value || '0'),
     };
 
     const daily = (dailyResponse[0]?.rows || []).map((row) => ({
@@ -150,7 +151,7 @@ export async function GET(request: NextRequest) {
 
     const devices = (deviceResponse[0]?.rows || []).map((row) => ({
       device: row.dimensionValues?.[0]?.value || '',
-      users: parseInt(row.metricValues?.[0]?.value || '0'),
+      users: parseInt(row.metricValues?.[0]?.value || '0'), // sessionsベースの値
     }));
 
     const sources = (sourceResponse[0]?.rows || []).map((row) => ({
