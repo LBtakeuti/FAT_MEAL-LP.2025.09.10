@@ -39,30 +39,39 @@ export async function GET(_request: NextRequest) {
   try {
     const supabase = createServerClient();
 
-    // サブスクリプションと配送情報を取得
+    // Step 1: サブスクリプションのみ取得（ネストJOIN削除）
     const { data: subscriptions, error } = await supabase
       .from('subscriptions')
-      .select(`
-        *,
-        subscription_deliveries (
-          id,
-          status,
-          scheduled_date,
-          menu_set,
-          carrier_notified_at
-        )
-      `)
+      .select('*')
       .neq('status', 'canceled')
-      .order('started_at', { ascending: false }) as { data: (Subscription & { subscription_deliveries: any[] })[] | null; error: any };
+      .order('started_at', { ascending: false }) as { data: Subscription[] | null; error: any };
+
+    console.log('[subscriptions API] count:', subscriptions?.length ?? 0, 'error:', error?.message ?? 'none');
 
     if (error) {
       console.error('Failed to fetch subscriptions:', error);
       throw error;
     }
 
-    // 配送先情報を整形
+    // Step 2: 配送情報を別クエリで取得（RLS干渉を回避）
+    const subIds = (subscriptions || []).map((s) => s.id);
+    const deliveriesMap: Record<string, any[]> = {};
+
+    if (subIds.length > 0) {
+      const { data: deliveries } = await (supabase as any)
+        .from('subscription_deliveries')
+        .select('id, status, scheduled_date, menu_set, carrier_notified_at, subscription_id')
+        .in('subscription_id', subIds);
+
+      for (const d of ((deliveries as any[]) || [])) {
+        if (!deliveriesMap[d.subscription_id]) deliveriesMap[d.subscription_id] = [];
+        deliveriesMap[d.subscription_id].push(d);
+      }
+    }
+
+    // Step 3: マージして整形
     const formattedSubscriptions = subscriptions?.map(sub => {
-      const deliveries = sub.subscription_deliveries || [];
+      const deliveries = deliveriesMap[sub.id] || [];
       const totalDeliveries = deliveries.length;
       const completedDeliveries = deliveries.filter((d: any) => d.status === 'shipped').length;
       const pendingDeliveries = deliveries.filter((d: any) => d.status === 'pending');

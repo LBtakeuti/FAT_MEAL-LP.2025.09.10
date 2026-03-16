@@ -32,9 +32,8 @@ function validateEnv(): SupabaseEnv {
   return { url, anonKey, serviceRoleKey };
 }
 
-// シングルトンインスタンス
+// シングルトンインスタンス（ブラウザ側のみ）
 let browserClientInstance: ReturnType<typeof createClient<Database>> | null = null;
-let serverClientInstance: ReturnType<typeof createClient<Database>> | null = null;
 
 // クライアント側用のSupabaseクライアント（シングルトン）
 export function createBrowserClient() {
@@ -55,28 +54,23 @@ export function createBrowserClient() {
   return browserClientInstance;
 }
 
-// サーバー側用のSupabaseクライアント（管理者権限・シングルトン）
+// サーバー側用のSupabaseクライアント（管理者権限）
+// シングルトンを廃止 — サーバーレス環境でenv varsを毎回フレッシュに読む
 export function createServerClient() {
-  if (serverClientInstance) {
-    return serverClientInstance;
-  }
-
   const { url, serviceRoleKey } = validateEnv();
-  
+
   if (!serviceRoleKey) {
     throw new Error(
       'サーバー側のSupabaseクライアントにはSUPABASE_SERVICE_ROLE_KEYが必要です。'
     );
   }
-  
-  serverClientInstance = createClient<Database>(url, serviceRoleKey, {
+
+  return createClient<Database>(url, serviceRoleKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false
     }
   });
-  
-  return serverClientInstance;
 }
 
 // デフォルトのクライアント（クライアント側用）
