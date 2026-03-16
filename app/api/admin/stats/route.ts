@@ -82,36 +82,47 @@ export async function GET() {
       const todayStartUnix = Math.floor((Date.UTC(year, month, day) - jstOffset) / 1000);
       const todayEndUnix = Math.floor((Date.UTC(year, month, day + 1) - jstOffset) / 1000);
 
-      // アクティブなサブスク数（Stripe直接）
-      const activeSubsList = await stripe.subscriptions.list({ status: 'active', limit: 100 });
-      activeSubscriptions = activeSubsList.data.length;
+      // 本サイトのサブスクIDをSupabaseから取得（フィルタの正）
+      const { data: dbSubs } = await (supabase.from('subscriptions') as any)
+        .select('stripe_subscription_id, status, monthly_total_amount');
+      const dbSubsAll = dbSubs || [];
+      const ourSubIds = new Set<string>(
+        dbSubsAll.map((s: any) => s.stripe_subscription_id).filter(Boolean)
+      );
+      const activeDbSubs = dbSubsAll.filter((s: any) => s.status === 'active');
 
-      // 今日のサブスク売上
+      // アクティブなサブスク数（Supabase = 本サイトのみ）
+      activeSubscriptions = activeDbSubs.length;
+
+      // 来月のサブスク見込み（Supabase上のアクティブサブスクの monthly_total_amount 合計）
+      nextMonthSubscriptionForecast = activeDbSubs.reduce(
+        (sum: number, s: any) => sum + (s.monthly_total_amount || 0),
+        0
+      );
+
+      // 今日のサブスク売上（本サイトのサブスクIDに一致するinvoiceのみ）
       const todayInvoices = await stripe.invoices.list({
         status: 'paid',
         created: { gte: todayStartUnix, lt: todayEndUnix },
         limit: 100,
       });
       todaySubscriptionRevenue = todayInvoices.data
-        .filter((inv) => (inv as any).subscription || (inv as any).parent?.subscription_details?.subscription)
+        .filter((inv) => {
+          const subId = (inv as any).subscription
+            || (inv as any).parent?.subscription_details?.subscription;
+          return subId && ourSubIds.has(subId);
+        })
         .reduce((sum, inv) => sum + inv.amount_paid, 0);
 
-      // 累計サブスク売上（Stripe paid invoices 全件合計）
+      // 累計サブスク売上（本サイトのサブスクIDに一致するinvoiceのみ）
       let subTotal = 0;
       for await (const invoice of stripe.invoices.list({ status: 'paid', limit: 100 })) {
         const subId = (invoice as any).subscription
           || (invoice as any).parent?.subscription_details?.subscription;
-        if (!subId) continue;
+        if (!subId || !ourSubIds.has(subId)) continue;
         subTotal += invoice.amount_paid;
       }
       allTimeSubRevenue = subTotal;
-
-      // 来月のサブスク見込み（アクティブサブスクの price × quantity 合計）
-      nextMonthSubscriptionForecast = activeSubsList.data.reduce((sum, sub) => {
-        return sum + sub.items.data.reduce((iSum, item) => {
-          return iSum + ((item.price.unit_amount || 0) * (item.quantity || 1));
-        }, 0);
-      }, 0);
     } catch (err) {
       console.error('Stripe revenue stats error:', err);
     }
@@ -122,18 +133,20 @@ export async function GET() {
       const jstNow = new Date(Date.now() + jstOffset);
       const todayStr = jstNow.toISOString().split('T')[0];
 
-      // 今日の買い切り売上
+      // 今日の買い切り売上（サブスク由来の自動注文を除外）
       const { data: todayOrders } = await (supabase.from('orders') as any)
         .select('amount')
         .gt('amount', 0)
+        .not('stripe_session_id', 'like', 'sub_delivery_%')
         .gte('created_at', `${todayStr}T00:00:00+09:00`)
         .lt('created_at', `${todayStr}T23:59:59+09:00`);
       todayOneTimeRevenue = (todayOrders || []).reduce((sum: number, o: any) => sum + (o.amount ?? 0), 0);
 
-      // 累計買い切り売上
+      // 累計買い切り売上（サブスク由来の自動注文を除外）
       const { data: allOrders } = await (supabase.from('orders') as any)
         .select('amount')
-        .gt('amount', 0);
+        .gt('amount', 0)
+        .not('stripe_session_id', 'like', 'sub_delivery_%');
       allTimeOneTimeRevenue = (allOrders || []).reduce((sum: number, o: any) => sum + (o.amount ?? 0), 0);
     } catch (err) {
       console.error('Revenue stats error:', err);

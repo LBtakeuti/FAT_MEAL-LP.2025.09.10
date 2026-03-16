@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { createServerClient } from '@/lib/supabase';
 
 type ChartEntry = {
   label: string;
@@ -84,9 +85,17 @@ export async function GET(req: NextRequest) {
       fromUnix = 0; // 全期間
     }
 
+    // 本サイトのサブスクIDをSupabaseから取得（本サイト以外のStripe履歴を除外するため）
+    const supabase = createServerClient();
+    const { data: dbSubs } = await (supabase.from('subscriptions') as any)
+      .select('stripe_subscription_id');
+    const ourSubIds = new Set<string>(
+      (dbSubs || []).map((s: any) => s.stripe_subscription_id).filter(Boolean)
+    );
+
     const map = new Map<string, ChartEntry>();
 
-    // サブスク売上: Stripe インボイス（subscription付き）
+    // サブスク売上: 本サイトのサブスクIDに一致するinvoiceのみ集計
     let subInvoiceCount = 0;
     let totalInvoiceCount = 0;
     for await (const invoice of stripe.invoices.list({
@@ -96,7 +105,7 @@ export async function GET(req: NextRequest) {
     })) {
       totalInvoiceCount++;
       const subId = (invoice as any).subscription || (invoice as any).parent?.subscription_details?.subscription;
-      if (!subId) continue;
+      if (!subId || !ourSubIds.has(subId)) continue; // 本サイト以外を除外
       subInvoiceCount++;
       const jst = toJST(invoice.created);
       const label = getLabel(jst, type);
@@ -106,7 +115,7 @@ export async function GET(req: NextRequest) {
       entry.subscriptionCount += 1;
       entry.total += invoice.amount_paid;
     }
-    console.log(`[revenue-chart] type=${type} invoices: total=${totalInvoiceCount} sub=${subInvoiceCount}`);
+    console.log(`[revenue-chart] type=${type} invoices: total=${totalInvoiceCount} sub=${subInvoiceCount} (filtered by ${ourSubIds.size} site sub IDs)`);
 
     // 買い切り売上: checkout sessions (purchase_type=one-time)
     for await (const session of stripe.checkout.sessions.list({
