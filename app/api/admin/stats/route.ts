@@ -42,14 +42,7 @@ export async function GET() {
     let upcomingDeliveries = 0;
 
     try {
-      // アクティブなサブスクリプション数
-      const { count: activeCount } = await (supabase
-        .from('subscriptions') as any)
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'active');
-      activeSubscriptions = activeCount || 0;
-
-      // 今週配送予定の件数
+      // 今週配送予定の件数（DBから取得）
       const now = new Date();
       const jstOffset = 9 * 60 * 60 * 1000;
       const jstNow = new Date(now.getTime() + jstOffset);
@@ -68,8 +61,6 @@ export async function GET() {
         .lt('scheduled_date', weekLaterStr);
       upcomingDeliveries = deliveriesCount || 0;
     } catch {
-      // subscriptionsテーブルがない場合は0
-      activeSubscriptions = 0;
       upcomingDeliveries = 0;
     }
 
@@ -80,7 +71,7 @@ export async function GET() {
     let allTimeSubRevenue = 0;
     let nextMonthSubscriptionForecast = 0;
 
-    // 今日のサブスク売上（Stripe invoices）
+    // Stripe から売上統計・サブスク統計を取得
     try {
       const stripe = getStripe();
       const jstOffset = 9 * 60 * 60 * 1000;
@@ -91,6 +82,11 @@ export async function GET() {
       const todayStartUnix = Math.floor((Date.UTC(year, month, day) - jstOffset) / 1000);
       const todayEndUnix = Math.floor((Date.UTC(year, month, day + 1) - jstOffset) / 1000);
 
+      // アクティブなサブスク数（Stripe直接）
+      const activeSubsList = await stripe.subscriptions.list({ status: 'active', limit: 100 });
+      activeSubscriptions = activeSubsList.data.length;
+
+      // 今日のサブスク売上
       const todayInvoices = await stripe.invoices.list({
         status: 'paid',
         created: { gte: todayStartUnix, lt: todayEndUnix },
@@ -99,11 +95,28 @@ export async function GET() {
       todaySubscriptionRevenue = todayInvoices.data
         .filter((inv) => (inv as any).subscription || (inv as any).parent?.subscription_details?.subscription)
         .reduce((sum, inv) => sum + inv.amount_paid, 0);
+
+      // 累計サブスク売上（Stripe paid invoices 全件合計）
+      let subTotal = 0;
+      for await (const invoice of stripe.invoices.list({ status: 'paid', limit: 100 })) {
+        const subId = (invoice as any).subscription
+          || (invoice as any).parent?.subscription_details?.subscription;
+        if (!subId) continue;
+        subTotal += invoice.amount_paid;
+      }
+      allTimeSubRevenue = subTotal;
+
+      // 来月のサブスク見込み（アクティブサブスクの price × quantity 合計）
+      nextMonthSubscriptionForecast = activeSubsList.data.reduce((sum, sub) => {
+        return sum + sub.items.data.reduce((iSum, item) => {
+          return iSum + ((item.price.unit_amount || 0) * (item.quantity || 1));
+        }, 0);
+      }, 0);
     } catch (err) {
       console.error('Stripe revenue stats error:', err);
     }
 
-    // 今日の買い切り・累計売上（Supabase DB）
+    // 今日の買い切り・累計買い切り売上（Supabase DB）
     try {
       const jstOffset = 9 * 60 * 60 * 1000;
       const jstNow = new Date(Date.now() + jstOffset);
@@ -122,25 +135,6 @@ export async function GET() {
         .select('amount')
         .gt('amount', 0);
       allTimeOneTimeRevenue = (allOrders || []).reduce((sum: number, o: any) => sum + (o.amount ?? 0), 0);
-
-      // 累計サブスク売上（配送済み件数 × 1配送単価）
-      const { data: shippedDeliveries } = await (supabase
-        .from('subscription_deliveries') as any)
-        .select('subscriptions(monthly_total_amount, deliveries_per_month)')
-        .eq('status', 'shipped');
-      allTimeSubRevenue = (shippedDeliveries || []).reduce((sum: number, d: any) => {
-        const sub = d.subscriptions;
-        if (!sub?.monthly_total_amount || !sub?.deliveries_per_month) return sum;
-        return sum + Math.floor(sub.monthly_total_amount / sub.deliveries_per_month);
-      }, 0);
-
-      // 来月予測（アクティブサブスクのmonthly_total_amount合計）
-      const { data: activeSubs } = await (supabase.from('subscriptions') as any)
-        .select('monthly_total_amount')
-        .eq('status', 'active');
-      nextMonthSubscriptionForecast = (activeSubs || []).reduce(
-        (sum: number, row: any) => sum + (row.monthly_total_amount || 0), 0
-      );
     } catch (err) {
       console.error('Revenue stats error:', err);
     }

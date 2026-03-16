@@ -87,12 +87,17 @@ export async function GET(req: NextRequest) {
     const map = new Map<string, ChartEntry>();
 
     // サブスク売上: Stripe インボイス（subscription付き）
+    let subInvoiceCount = 0;
+    let totalInvoiceCount = 0;
     for await (const invoice of stripe.invoices.list({
       status: 'paid',
       created: fromUnix > 0 ? { gte: fromUnix } : undefined,
       limit: 100,
     })) {
-      if (!(invoice as any).subscription && !(invoice as any).parent?.subscription_details?.subscription) continue;
+      totalInvoiceCount++;
+      const subId = (invoice as any).subscription || (invoice as any).parent?.subscription_details?.subscription;
+      if (!subId) continue;
+      subInvoiceCount++;
       const jst = toJST(invoice.created);
       const label = getLabel(jst, type);
       const sortKey = getSortKey(jst, type);
@@ -101,6 +106,7 @@ export async function GET(req: NextRequest) {
       entry.subscriptionCount += 1;
       entry.total += invoice.amount_paid;
     }
+    console.log(`[revenue-chart] type=${type} invoices: total=${totalInvoiceCount} sub=${subInvoiceCount}`);
 
     // 買い切り売上: checkout sessions (purchase_type=one-time)
     for await (const session of stripe.checkout.sessions.list({
