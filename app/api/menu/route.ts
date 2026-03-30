@@ -40,6 +40,7 @@ export async function GET() {
       protein: String(item.protein),
       fat: String(item.fat),
       carbs: String(item.carbs),
+      weight: String(item.weight ?? ''),
       image: item.main_image,
       ingredients: item.ingredients || [],
       allergens: item.allergens || []

@@ -76,10 +76,10 @@ export async function GET(request: NextRequest) {
         (addr.prefecture || '') + (addr.city || '') + (addr.address_detail || ''),
         addr.building || '',
         addr.name || '',
-        '090-3221-6638',
-        '3430827',
-        '埼玉県越谷市川柳町２丁目４０１',
-        'LandBridge株式会社',
+        process.env.SENDER_PHONE || '',
+        process.env.SENDER_POSTAL_CODE || '',
+        process.env.SENDER_ADDRESS || '',
+        process.env.SENDER_COMPANY || '',
         getItemName(sub.plan_name, sub.meals_per_delivery, deliveryNumber),
       ];
     }) || [];

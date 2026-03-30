@@ -20,7 +20,7 @@ const SubscriptionSection: React.FC = () => {
       shippingFee: 1500,
       deliveriesPerMonth: 1,
       description: '月1回配送',
-      subtitle: '6食セット×月1回',
+      subtitle: '12個入り（1食2個×6食分）',
       pricePerMeal: 1275,
       campaignLabel: 'ゆうさくスポーツキャンペーン 初回限定',
     },
@@ -36,7 +36,7 @@ const SubscriptionSection: React.FC = () => {
       shippingFee: 1500,
       deliveriesPerMonth: 2,
       description: '月2回配送',
-      subtitle: '6食セット×月2回',
+      subtitle: '24個入り（1食2個×12食分）',
       pricePerMeal: 1400,
     },
     {
@@ -51,7 +51,7 @@ const SubscriptionSection: React.FC = () => {
       shippingFee: 1500,
       deliveriesPerMonth: 4,
       description: '月4回配送',
-      subtitle: '6食セット×月4回',
+      subtitle: '48個入り（1食2個×24食分）',
       pricePerMeal: 1275,
     },
   ];
@@ -72,7 +72,7 @@ const SubscriptionSection: React.FC = () => {
             毎月届く定期便で、体づくりを習慣に
           </p>
           <p className="mt-2 text-orange-600 font-bold text-sm sm:text-base">
-            ※ふとるめしは2つで1食です
+            ※1食＝2個セットです
           </p>
         </div>
 
@@ -103,9 +103,6 @@ const SubscriptionSection: React.FC = () => {
                 </h3>
                 <p className="text-sm text-gray-500">
                   {plan.subtitle}
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  ※{plan.meals * 2}個入り
                 </p>
               </div>
 

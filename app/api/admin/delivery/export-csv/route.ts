@@ -26,20 +26,21 @@ export async function GET(request: NextRequest) {
       if (error) {
         console.error('Failed to fetch subscription_deliveries:', error);
       } else if (deliveries) {
-        // 各 subscription の shipped 済みカウントを取得して配送番号を算出
+        // 各 subscription の全配送履歴を取得して配送番号を算出
         const subscriptionIds = [...new Set(deliveries.map((d: any) => d.subscriptions?.id).filter(Boolean))];
-        const shippedCountMap: Record<string, number> = {};
+        // subscription_id -> [{scheduled_date, status}] のマップ
+        const allDeliveriesMap: Record<string, Array<{ scheduled_date: string; status: string }>> = {};
 
         if (subscriptionIds.length > 0) {
-          const { data: shippedData } = await (supabase as any)
+          const { data: allData } = await (supabase as any)
             .from('subscription_deliveries')
-            .select('subscription_id, status')
-            .in('subscription_id', subscriptionIds)
-            .eq('status', 'shipped');
+            .select('subscription_id, scheduled_date, status')
+            .in('subscription_id', subscriptionIds);
 
-          if (shippedData) {
-            for (const d of shippedData) {
-              shippedCountMap[d.subscription_id] = (shippedCountMap[d.subscription_id] || 0) + 1;
+          if (allData) {
+            for (const d of allData) {
+              if (!allDeliveriesMap[d.subscription_id]) allDeliveriesMap[d.subscription_id] = [];
+              allDeliveriesMap[d.subscription_id].push({ scheduled_date: d.scheduled_date, status: d.status });
             }
           }
         }
@@ -47,8 +48,11 @@ export async function GET(request: NextRequest) {
         for (const d of deliveries) {
           const sub = d.subscriptions;
           const addr = sub?.shipping_address || {};
-          const completedCount = shippedCountMap[sub?.id] || 0;
-          const deliveryNumber = completedCount + 1;
+          // 自分より前の日付に shipped 済みの件数 = 自分の配送番号 - 1
+          const prevShipped = (allDeliveriesMap[sub?.id] || []).filter(
+            (x) => x.scheduled_date < d.scheduled_date && x.status === 'shipped'
+          ).length;
+          const deliveryNumber = prevShipped + 1;
           const itemName = `${sub?.plan_name || ''}（${d.meals_per_delivery || 12}個）${deliveryNumber}回目`;
 
           rows.push([
@@ -60,10 +64,10 @@ export async function GET(request: NextRequest) {
             (addr.prefecture || '') + (addr.city || '') + (addr.address_detail || ''),
             addr.building || '',
             addr.name || '',
-            '090-3221-6638',
-            '3430827',
-            '埼玉県越谷市川柳町２丁目４０１',
-            'LandBridge株式会社',
+            process.env.SENDER_PHONE || '',
+            process.env.SENDER_POSTAL_CODE || '',
+            process.env.SENDER_ADDRESS || '',
+            process.env.SENDER_COMPANY || '',
             itemName,
           ]);
         }
@@ -91,10 +95,10 @@ export async function GET(request: NextRequest) {
             (o.prefecture || '') + (o.city || '') + (o.address_detail || ''),
             o.building || '',
             o.customer_name || '',
-            '090-3221-6638',
-            '3430827',
-            '埼玉県越谷市川柳町２丁目４０１',
-            'LandBridge株式会社',
+            process.env.SENDER_PHONE || '',
+            process.env.SENDER_POSTAL_CODE || '',
+            process.env.SENDER_ADDRESS || '',
+            process.env.SENDER_COMPANY || '',
             itemName,
           ]);
         }

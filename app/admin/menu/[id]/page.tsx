@@ -12,6 +12,7 @@ interface MenuItem {
   protein: number;
   fat: number;
   carbs: number;
+  weight: number | null;
   main_image: string | null;
   sub_images: string[];
   ingredients: string[];
@@ -30,6 +31,7 @@ export default function EditMenuPage({ params: promiseParams }: { params: Promis
     protein: '',
     fat: '',
     carbs: '',
+    weight: '',
     main_image: '',
     sub_images: ['', '', '', ''],
     ingredients: [] as string[],
@@ -58,6 +60,7 @@ export default function EditMenuPage({ params: promiseParams }: { params: Promis
           protein: data.protein.toString(),
           fat: data.fat.toString(),
           carbs: data.carbs.toString(),
+          weight: data.weight ? data.weight.toString() : '',
           main_image: data.main_image || '',
           sub_images: [
             data.sub_images[0] || '',
@@ -511,6 +514,22 @@ export default function EditMenuPage({ params: promiseParams }: { params: Promis
                     value={formData.carbs}
                     onChange={handleChange}
                     className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm px-3 py-2 border"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="weight" className="block text-sm font-medium text-gray-700">
+                    総重量（g）
+                  </label>
+                  <input
+                    type="number"
+                    id="weight"
+                    name="weight"
+                    min="0"
+                    value={formData.weight}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm px-3 py-2 border"
+                    placeholder="450"
                   />
                 </div>
               </div>

@@ -12,17 +12,31 @@ export default function AuthCallbackClient() {
     const handleCallback = async () => {
       const supabase = createBrowserClient();
 
-      // URLのクエリパラメータからリダイレクト先を取得
+      // URLのクエリパラメータからリダイレクト先とcodeを取得
       const urlParams = new URLSearchParams(window.location.search);
       const nextUrl = urlParams.get('next') || '/';
+      const code = urlParams.get('code');
 
-      // URLのハッシュフラグメントからトークンを取得
+      // PKCE フロー：メール認証リンクに含まれる code を交換
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) {
+          console.error('Code exchange error:', error);
+          setError('認証に失敗しました');
+          setTimeout(() => router.push('/login?error=auth_failed'), 2000);
+          return;
+        }
+        router.push(nextUrl);
+        router.refresh();
+        return;
+      }
+
+      // ハッシュフラグメントにトークンがある場合（Implicit フロー / Google OAuth）
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
       const accessToken = hashParams.get('access_token');
       const refreshToken = hashParams.get('refresh_token');
 
       if (accessToken) {
-        // セッションを設定
         const { error } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken || '',
@@ -35,11 +49,10 @@ export default function AuthCallbackClient() {
           return;
         }
 
-        // 認証成功 - リダイレクト先へ
         router.push(nextUrl);
         router.refresh();
       } else {
-        // トークンがない場合は現在のセッションを確認
+        // 既にセッションがある場合（再訪問等）
         const { data: { session } } = await supabase.auth.getSession();
 
         if (session) {

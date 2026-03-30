@@ -37,6 +37,7 @@ export default async function Home() {
     protein: String(item.protein || 0),
     fat: String(item.fat || 0),
     carbs: String(item.carbs || 0),
+    weight: String(item.weight ?? ''),
     image: item.main_image || '',
     features: [],
     ingredients: item.ingredients || [],

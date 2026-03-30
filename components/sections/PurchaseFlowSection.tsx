@@ -33,23 +33,11 @@ const PurchaseFlowSection: React.FC = () => {
     <section className="relative overflow-hidden bg-white py-12 sm:py-20">
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* ヘッダー */}
-        <div className="text-center mb-10 sm:mb-16">
-          {/* セクションタイトル */}
-          <div className="text-center mb-10 sm:mb-16 relative">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 relative z-10">
-              購入の流れ
-            </h2>
-            <div className="flex justify-center -mt-6 sm:-mt-8 relative z-0">
-              <Image
-                src="/images/sections/b_simple_111_0M 2.png"
-                alt=""
-                width={3923}
-                height={465}
-                className="w-full max-w-3xl h-auto"
-              />
-            </div>
-          </div>
-          <p className="text-base sm:text-lg text-gray-600">
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900">
+            購入の流れ
+          </h2>
+          <p className="mt-3 text-base sm:text-lg text-gray-600">
             簡単4ステップでお届け
           </p>
         </div>

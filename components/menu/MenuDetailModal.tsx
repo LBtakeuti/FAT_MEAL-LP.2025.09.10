@@ -9,9 +9,10 @@ interface MenuDetailModalProps {
   item: MenuItem;
   isOpen: boolean;
   onClose: () => void;
+  showPurchaseButton?: boolean;
 }
 
-export function MenuDetailModal({ item, isOpen, onClose }: MenuDetailModalProps) {
+export function MenuDetailModal({ item, isOpen, onClose, showPurchaseButton = true }: MenuDetailModalProps) {
   const router = useRouter();
 
   // ESCキーで閉じる & 背景スクロール防止
@@ -164,14 +165,16 @@ export function MenuDetailModal({ item, isOpen, onClose }: MenuDetailModalProps)
         </div>
 
         {/* 購入ボタン（固定） */}
-        <div className="sticky bottom-0 p-4 bg-white border-t border-gray-100 rounded-b-xl">
-          <button
-            onClick={handlePurchase}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 sm:py-4 rounded-lg transition-colors text-base sm:text-lg"
-          >
-            購入へ進む
-          </button>
-        </div>
+        {showPurchaseButton && (
+          <div className="sticky bottom-0 p-4 bg-white border-t border-gray-100 rounded-b-xl">
+            <button
+              onClick={handlePurchase}
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 sm:py-4 rounded-lg transition-colors text-base sm:text-lg"
+            >
+              購入へ進む
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

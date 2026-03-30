@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createBrowserClient } from '@/lib/supabase';
+import { MenuDetailModal } from '@/components/menu/MenuDetailModal';
+import type { MenuItem } from '@/types';
 
 // ユーザープロフィール型
 interface UserProfile {
@@ -65,7 +67,7 @@ const planOptions: PlanOption[] = [
     price: 4980,             // Phase1商品（初回送料無料特価）
     shippingFee: 0,          // Phase1送料（初回無料）
     totalPrice: 4980,        // Phase1合計
-    description: '月1回配送（6食セット）',
+    description: '月1回配送｜12個入り（1食2個×6食分）',
     perMeal: 830,            // 4980 ÷ 6
     isTrial: false,
     isSubscription: true,
@@ -84,7 +86,7 @@ const planOptions: PlanOption[] = [
     price: 12600,            // Phase1商品（初回30%OFF）
     shippingFee: 0,          // Phase1送料（初回無料）
     totalPrice: 12600,       // Phase1合計
-    description: '月2回配送（各6食セット）',
+    description: '月2回配送｜24個入り（1食2個×12食分）',
     perMeal: 1050,           // 12600 ÷ 12
     isTrial: false,
     isSubscription: true,
@@ -103,7 +105,7 @@ const planOptions: PlanOption[] = [
     price: 25200,            // Phase1商品（初回30%OFF）
     shippingFee: 0,          // Phase1送料（初回無料）
     totalPrice: 25200,       // Phase1合計
-    description: '月4回配送（各6食セット）',
+    description: '月4回配送｜48個入り（1食2個×24食分）',
     perMeal: 1050,           // 25200 ÷ 24
     isTrial: false,
     isSubscription: true,
@@ -250,6 +252,9 @@ const PurchasePage: React.FC = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [, setProfileLoading] = useState(true);
 
+  // step=confirm 復元後のプロフィール作成用（user確定前にlocalStorageが消えるため保持）
+  const pendingProfileDataRef = useRef<CustomerInfo | null>(null);
+
   // クーポン
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null);
@@ -259,6 +264,11 @@ const PurchasePage: React.FC = () => {
   const [referralCodeError, setReferralCodeError] = useState('');
   const [referralCodeValid, setReferralCodeValid] = useState(false);
   const [referralCodeValidating, setReferralCodeValidating] = useState(false);
+
+  // メニュー一覧・アコーディオン開閉状態（排他制御、デフォルトで最初のサブスクプランを開く）
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [openPlanId, setOpenPlanId] = useState<string>('subscription-monthly-12');
+  const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
 
   // 有効なクーポンコード
   const validCoupons: { [key: string]: number } = {
@@ -309,10 +319,29 @@ const PurchasePage: React.FC = () => {
     fetchInventory();
   }, []);
 
+  // メニュー一覧を取得
   useEffect(() => {
+    const fetchMenuItems = async () => {
+      try {
+        const res = await fetch('/api/menu');
+        if (res.ok) {
+          const data = await res.json();
+          setMenuItems(data.map((item: any) => ({ ...item, features: item.features ?? [] })));
+        }
+      } catch (error) {
+        console.error('Failed to fetch menu items:', error);
+      }
+    };
+    fetchMenuItems();
+  }, []);
+
+  useEffect(() => {
+    // step=confirm で復元中の場合はプラン設定をスキップ（cart上書き防止）
+    if (searchParams.get('step') === 'confirm') return;
+
     const planParam = searchParams.get('plan');
     const typeParam = searchParams.get('type');
-    
+
     // ログイン後にサブスクリプション購入に戻ってきた場合
     if (typeParam === 'subscription' && user) {
       setPurchaseType('subscription-monthly');
@@ -356,6 +385,67 @@ const PurchasePage: React.FC = () => {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
+
+  // 会員登録後の STEP2 データ復元（?step=confirm で戻ってきた場合）
+  useEffect(() => {
+    const stepParam = searchParams.get('step');
+    if (stepParam !== 'confirm') return;
+
+    const saved = localStorage.getItem('purchase_step2_data');
+    if (!saved) return;
+
+    try {
+      const { customerInfo: savedInfo, cart: savedCart, purchaseType: savedType, appliedCoupon: savedCoupon } = JSON.parse(saved);
+      setCustomerInfo(savedInfo);
+      setCart(savedCart);
+      setPurchaseType(savedType);
+      setIsTrialMode(savedType !== 'subscription-monthly');
+      if (savedCoupon) setAppliedCoupon(savedCoupon);
+      setCurrentStep('confirm');
+      localStorage.removeItem('purchase_step2_data');
+      window.scrollTo(0, 0);
+
+      // user が null の場合もあるため、pendingProfileDataRef に保持しておく
+      // 実際のプロフィール作成は下の useEffect で user 確定後に行う
+      pendingProfileDataRef.current = savedInfo;
+    } catch (err) {
+      console.error('Failed to restore purchase data:', err);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  // step=confirm 復元後、user が確定したらプロフィールを自動作成（新規会員のみ）
+  useEffect(() => {
+    if (!user || !pendingProfileDataRef.current) return;
+
+    const savedInfo = pendingProfileDataRef.current;
+    pendingProfileDataRef.current = null; // 二重実行防止
+
+    fetch(`/api/users/profile?userId=${user.id}`)
+      .then(res => {
+        if (res.status === 404) {
+          fetch('/api/users/profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user.id,
+              email: savedInfo.email,
+              last_name: savedInfo.lastName,
+              first_name: savedInfo.firstName,
+              last_name_kana: savedInfo.lastNameKana,
+              first_name_kana: savedInfo.firstNameKana,
+              phone: savedInfo.phone,
+              postal_code: savedInfo.postalCode,
+              prefecture: savedInfo.prefecture,
+              city: savedInfo.city,
+              address_detail: savedInfo.address,
+              building: savedInfo.building,
+            }),
+          }).catch(err => console.error('Failed to create profile:', err));
+        }
+      })
+      .catch(err => console.error('Failed to check profile:', err));
+  }, [user]);
 
   // カート内の選択されたプランを取得
   const getSelectedPlan = (): PlanOption | null => {
@@ -638,22 +728,22 @@ const PurchasePage: React.FC = () => {
 
   const handleProceedToInfo = () => {
     if (!isCartEmpty) {
-      // サブスクリプションモードでログインしていない場合はログインを促す
-      if (!isTrialMode && !user) {
-        const refCode = localStorage.getItem('referral_code');
-        const redirectUrl = refCode
-          ? `/purchase?type=subscription&ref=${refCode}`
-          : '/purchase?type=subscription';
-        router.push(`/login?redirect=${encodeURIComponent(redirectUrl)}`);
-        return;
-      }
       setCurrentStep('info');
       window.scrollTo(0, 0);
     }
   };
 
+  const PURCHASE_SESSION_KEY = 'purchase_step2_data';
+
   const handleProceedToConfirm = () => {
     if (validateForm()) {
+      // STEP2 の入力内容を sessionStorage に保存（会員登録後の復元用）
+      localStorage.setItem(PURCHASE_SESSION_KEY, JSON.stringify({
+        customerInfo,
+        cart,
+        purchaseType,
+        appliedCoupon,
+      }));
       setCurrentStep('confirm');
       window.scrollTo(0, 0);
     }
@@ -742,25 +832,25 @@ const PurchasePage: React.FC = () => {
         <div className={`flex items-center justify-center w-8 h-8 rounded-full ${currentStep === 'plan' ? 'bg-orange-600 text-white' : 'bg-orange-600 text-white'}`}>
           1
         </div>
-        <span className={`ml-2 text-sm font-medium ${currentStep === 'plan' ? 'text-orange-600' : 'text-gray-900'}`}>
+        <span className={`ml-1.5 text-xs font-medium whitespace-nowrap ${currentStep === 'plan' ? 'text-orange-600' : 'text-gray-900'}`}>
           プラン選択
         </span>
       </div>
-      <div className={`w-12 h-0.5 mx-2 ${currentStep !== 'plan' ? 'bg-orange-600' : 'bg-gray-300'}`} />
+      <div className={`w-8 h-0.5 mx-1.5 ${currentStep !== 'plan' ? 'bg-orange-600' : 'bg-gray-300'}`} />
       <div className="flex items-center">
         <div className={`flex items-center justify-center w-8 h-8 rounded-full ${currentStep === 'info' ? 'bg-orange-600 text-white' : currentStep === 'confirm' ? 'bg-orange-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
           2
         </div>
-        <span className={`ml-2 text-sm font-medium ${currentStep === 'info' ? 'text-orange-600' : currentStep === 'confirm' ? 'text-gray-900' : 'text-gray-500'}`}>
+        <span className={`ml-1.5 text-xs font-medium whitespace-nowrap ${currentStep === 'info' ? 'text-orange-600' : currentStep === 'confirm' ? 'text-gray-900' : 'text-gray-500'}`}>
           お客様情報
         </span>
       </div>
-      <div className={`w-12 h-0.5 mx-2 ${currentStep === 'confirm' ? 'bg-orange-600' : 'bg-gray-300'}`} />
+      <div className={`w-8 h-0.5 mx-1.5 ${currentStep === 'confirm' ? 'bg-orange-600' : 'bg-gray-300'}`} />
       <div className="flex items-center">
         <div className={`flex items-center justify-center w-8 h-8 rounded-full ${currentStep === 'confirm' ? 'bg-orange-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
           3
         </div>
-        <span className={`ml-2 text-sm font-medium ${currentStep === 'confirm' ? 'text-orange-600' : 'text-gray-500'}`}>
+        <span className={`ml-1.5 text-xs font-medium whitespace-nowrap ${currentStep === 'confirm' ? 'text-orange-600' : 'text-gray-500'}`}>
           確認・決済
         </span>
       </div>
@@ -827,8 +917,11 @@ const PurchasePage: React.FC = () => {
         <h2 className="text-xl font-bold text-gray-900 mb-2">
           {isTrialMode ? 'お試しプランを選択してください' : '月額プランを選択してください'}
         </h2>
+        {!isTrialMode && (
+          <p className="text-sm text-orange-600 font-medium mb-2">※1食＝2個セットです</p>
+        )}
         <p className="text-sm text-gray-500 mb-6">
-          {isTrialMode 
+          {isTrialMode
             ? 'お試しプランは1回のみの購入です。'
             : '月額プランは1つまで選択可能です。毎月自動で課金・配送されます。'}
         </p>
@@ -854,11 +947,13 @@ const PurchasePage: React.FC = () => {
                   onClick={() => {
                     // 他のプランを0にして、選択したプランを1にする（トグル動作）
                     const isSelected = quantity > 0;
-                    setCart(prev => prev.map(item => 
-                      item.planId === plan.id 
+                    setCart(prev => prev.map(item =>
+                      item.planId === plan.id
                         ? { ...item, quantity: isSelected ? 0 : 1 }
                         : { ...item, quantity: 0 }
                     ));
+                    // タップしたプランのアコーディオンを開く（排他制御）
+                    if (plan.isSubscription) setOpenPlanId(plan.id);
                   }}
                 >
                   {/* お試しプランバッジ */}
@@ -877,11 +972,6 @@ const PurchasePage: React.FC = () => {
                       <p className="text-sm text-gray-600 mt-1">
                         {plan.description}
                       </p>
-                      {plan.isSubscription && (
-                        <p className="text-xs text-gray-400 mt-1">
-                          ※{plan.quantity * 2}個入り
-                        </p>
-                      )}
                       {plan.isSubscription ? (
                         <div className="mt-2 space-y-1">
                           <div className="text-xs text-gray-400 line-through">
@@ -961,6 +1051,48 @@ const PurchasePage: React.FC = () => {
                       )}
                     </div>
                   )}
+
+                  {/* 届くメニュー（サブスクプランのみ・プランタップ連動で開閉） */}
+                  {plan.isSubscription && (
+                    <div
+                      className={`overflow-hidden transition-all duration-300 ease-in-out ${openPlanId === plan.id ? 'max-h-[600px] mt-3' : 'max-h-0'}`}
+                    >
+                      <div className="border-t border-gray-100 pt-3">
+                        {menuItems.length > 0 ? (
+                          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                            {menuItems.map((menu) => (
+                              <div
+                                key={menu.id}
+                                className="text-center cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedMenuItem(menu);
+                                }}
+                              >
+                                <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 hover:opacity-80 transition-opacity">
+                                  {menu.image ? (
+                                    <img
+                                      src={menu.image}
+                                      alt={menu.name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">
+                                      No Image
+                                    </div>
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-700 mt-1 leading-tight line-clamp-2">{menu.name}</p>
+                                <p className="text-xs text-orange-500 font-medium">{menu.calories}kcal</p>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-400">メニュー情報を読み込んでいます...</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -1022,16 +1154,7 @@ const PurchasePage: React.FC = () => {
         disabled={isCartEmpty}
         className="w-full bg-orange-500 text-white py-4 rounded-lg font-semibold hover:bg-orange-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
-        {!isTrialMode && !user ? (
-          <>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-            </svg>
-            ログインして進む
-          </>
-        ) : (
-          'お客様情報の入力へ進む'
-        )}
+        お客様情報の入力へ進む
       </button>
     </div>
   );
@@ -1650,6 +1773,49 @@ const PurchasePage: React.FC = () => {
           </div>
         )}
 
+        {/* サブスク未ログイン時：会員登録を促すセクション */}
+        {purchaseType === 'subscription-monthly' && !user && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+            <div className="flex items-start gap-3 mb-4">
+              <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              <div>
+                <h3 className="font-bold text-blue-900 mb-1">定期購入には会員登録が必要です</h3>
+                <p className="text-sm text-blue-700">
+                  入力いただいたお客様情報は、会員情報として自動登録されます。次回以降のご購入がスムーズになります。
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => {
+                  const refCode = sessionStorage.getItem('referral_code');
+                  const redirectUrl = refCode
+                    ? `/purchase?type=subscription&step=confirm&ref=${refCode}`
+                    : '/purchase?type=subscription&step=confirm';
+                  router.push(`/login?redirect=${encodeURIComponent(redirectUrl)}`);
+                }}
+                className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-center"
+              >
+                会員登録する
+              </button>
+              <button
+                onClick={() => {
+                  const refCode = sessionStorage.getItem('referral_code');
+                  const redirectUrl = refCode
+                    ? `/purchase?type=subscription&step=confirm&ref=${refCode}`
+                    : '/purchase?type=subscription&step=confirm';
+                  router.push(`/login?redirect=${encodeURIComponent(redirectUrl)}`);
+                }}
+                className="flex-1 bg-white text-blue-600 border-2 border-blue-600 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors text-center"
+              >
+                既にお持ちの方はログイン
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* ボタン */}
         <div className="flex gap-4">
           <button
@@ -1660,9 +1826,9 @@ const PurchasePage: React.FC = () => {
           </button>
           <button
             onClick={handleProceedToPayment}
-            disabled={checkoutLoading || !agreedToTerms}
+            disabled={checkoutLoading || !agreedToTerms || (purchaseType === 'subscription-monthly' && !user)}
             className={`flex-1 py-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 ${
-              checkoutLoading || !agreedToTerms
+              checkoutLoading || !agreedToTerms || (purchaseType === 'subscription-monthly' && !user)
                 ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
                 : 'bg-orange-500 text-white hover:bg-orange-600'
             }`}
@@ -1716,6 +1882,16 @@ const PurchasePage: React.FC = () => {
           {currentStep === 'confirm' && renderConfirmation()}
         </div>
       </main>
+
+      {/* メニュー詳細モーダル */}
+      {selectedMenuItem && (
+        <MenuDetailModal
+          item={selectedMenuItem}
+          isOpen={true}
+          onClose={() => setSelectedMenuItem(null)}
+          showPurchaseButton={false}
+        />
+      )}
     </>
   );
 };

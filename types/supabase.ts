@@ -133,6 +133,7 @@ export type Database = {
           stock: number | null
           sub_images: string[] | null
           updated_at: string | null
+          weight: number | null
         }
         Insert: {
           allergens?: string[] | null
@@ -153,6 +154,7 @@ export type Database = {
           stock?: number | null
           sub_images?: string[] | null
           updated_at?: string | null
+          weight?: number | null
         }
         Update: {
           allergens?: string[] | null
@@ -173,6 +175,7 @@ export type Database = {
           stock?: number | null
           sub_images?: string[] | null
           updated_at?: string | null
+          weight?: number | null
         }
         Relationships: []
       }

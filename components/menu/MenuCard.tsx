@@ -36,9 +36,9 @@ export function MenuCard({
   return (
     <div
       onClick={handleClick}
-      className={`group cursor-pointer ${className}`}
+      className={`group cursor-pointer bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 ${className}`}
     >
-      {/* 画像 - 4:3比率 */}
+      {/* 画像 */}
       <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
         {item.image ? (
           <Image
@@ -53,17 +53,30 @@ export function MenuCard({
         ) : (
           <ImagePlaceholder name={item.name} />
         )}
-        {/* ホバー時の拡大アイコン */}
-        <div className="absolute bottom-2 right-2 w-6 h-6 bg-white/80 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-          <svg className="w-3.5 h-3.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-          </svg>
+      </div>
+
+      {/* カード情報 */}
+      <div className="p-2.5">
+        {/* タイトル */}
+        <h3 className="text-sm font-medium text-gray-900 line-clamp-2 leading-snug mb-2">
+          {item.name}
+        </h3>
+
+        {/* 栄養バッジ */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-xs bg-orange-50 text-orange-700 px-2 py-0.5 rounded-full font-medium border border-orange-100">
+            {item.calories} kcal
+          </span>
+          <span className="text-xs bg-orange-500 text-white px-2 py-0.5 rounded-full font-medium">
+            タンパク質 {item.protein}g
+          </span>
+          {item.weight && (
+            <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+              {item.weight}g
+            </span>
+          )}
         </div>
       </div>
-      {/* タイトル */}
-      <h3 className="mt-2 text-sm font-medium text-gray-900 text-center line-clamp-2">
-        {item.name}
-      </h3>
     </div>
   );
 }

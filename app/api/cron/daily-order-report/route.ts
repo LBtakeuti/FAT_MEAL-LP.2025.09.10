@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
     // 送信先メールアドレスの取得（カンマ区切りで複数指定可能）
     // 例: VENDOR_EMAIL=sales@landbridge.co.jp,info@landbridge.co.jp,takeuchi@landbridge.co.jp
     const vendorEmailsEnv = process.env.VENDOR_EMAIL || '';
-    const fallbackEmail = 'takeuchi@landbridge.co.jp'; // フォールバック用
+    const fallbackEmail = process.env.MAIL_ALERT_TO || '';
     
     // カンマ区切りで分割し、空白を削除
     const recipientEmails = vendorEmailsEnv
@@ -140,7 +140,7 @@ export async function GET(request: NextRequest) {
     console.log('[Cron Job] Sending email to:', emailsToSend.join(', '));
     
     // 認証済みドメインを使用（環境変数で設定可能、デフォルトは認証済みドメイン）
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'ふとるめし <noreply@futorumeshi.com>';
+    const fromEmail = process.env.RESEND_FROM_EMAIL || '';
     console.log('[Cron Job] Using from email:', fromEmail);
 
     // JSTの日付文字列を生成
