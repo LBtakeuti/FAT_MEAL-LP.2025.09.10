@@ -62,12 +62,14 @@ const NewsDetailClient: React.FC<NewsDetailClientProps> = ({ newsItem, allNews }
 
           {/* Article Image if exists */}
           {newsItem.image && (
-            <div className="relative w-full h-[200px] sm:h-[300px] md:h-[400px] mb-8 rounded-lg overflow-hidden">
+            <div className="w-full mb-8">
               <Image
                 src={newsItem.image}
                 alt={newsItem.title}
-                fill
-                className="object-cover"
+                width={0}
+                height={0}
+                sizes="100vw"
+                className="w-full h-auto rounded-lg"
               />
             </div>
           )}
