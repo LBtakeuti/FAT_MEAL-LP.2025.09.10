@@ -3,31 +3,40 @@
 import React from 'react';
 import type { FeedbackItem } from '@/types/feedback';
 import { CARD_WIDTH, CARD_IMAGE_ASPECT_RATIO } from '@/lib/constants/card';
+import { SnsEmbed } from './SnsEmbed';
 
 interface FeedbackCardProps {
   item: FeedbackItem;
 }
 
 export function FeedbackCard({ item }: FeedbackCardProps) {
+  const hasSnsEmbed = item.sns_type && item.sns_url && item.sns_embed_active;
+
   return (
     <>
       <div className="feedback-card pb-2">
-        {/* Thumbnail */}
-        <div
-          className="relative rounded-lg overflow-hidden"
-          style={{ aspectRatio: CARD_IMAGE_ASPECT_RATIO }}
-        >
-          <img
-            src={item.thumbnail_image}
-            alt={item.title}
-            className="w-full h-full object-cover"
-          />
-          {item.thumbnail_label && (
-            <span className="absolute top-2.5 left-2.5 bg-orange-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full">
-              {item.thumbnail_label}
-            </span>
-          )}
-        </div>
+        {/* SNS埋め込み or サムネイル */}
+        {hasSnsEmbed ? (
+          <div className="rounded-lg overflow-hidden">
+            <SnsEmbed snsType={item.sns_type!} snsUrl={item.sns_url!} />
+          </div>
+        ) : (
+          <div
+            className="relative rounded-lg overflow-hidden"
+            style={{ aspectRatio: CARD_IMAGE_ASPECT_RATIO }}
+          >
+            <img
+              src={item.thumbnail_image}
+              alt={item.title}
+              className="w-full h-full object-cover"
+            />
+            {item.thumbnail_label && (
+              <span className="absolute top-2.5 left-2.5 bg-orange-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full">
+                {item.thumbnail_label}
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Content */}
         <div className="flex flex-col gap-2 mt-4">

@@ -5,4 +5,7 @@ export interface FeedbackItem {
   date: string;
   title: string;
   description: string;
+  sns_type: string | null;
+  sns_url: string | null;
+  sns_embed_active: boolean | null;
 }

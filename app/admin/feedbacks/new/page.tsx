@@ -13,6 +13,9 @@ export default function NewFeedbackPage() {
     description: '',
     sort_order: 0,
     is_active: true,
+    sns_type: '',
+    sns_url: '',
+    sns_embed_active: true,
   });
   const [submitting, setSubmitting] = useState(false);
   const [uploadingThumbnail, setUploadingThumbnail] = useState(false);
@@ -206,6 +209,72 @@ export default function NewFeedbackPage() {
                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
               />
               <p className="mt-1 text-xs text-gray-400">{formData.description.length}/200</p>
+            </div>
+
+            {/* SNSリンク埋め込み */}
+            <div className="border border-gray-200 rounded-lg p-4 space-y-4">
+              <h2 className="text-sm font-semibold text-gray-800">SNSリンク埋め込み（任意）</h2>
+              <p className="text-xs text-gray-500">設定すると、サムネイル画像の代わりにSNS投稿が埋め込み表示されます。</p>
+
+              {/* SNS種別 */}
+              <div>
+                <label htmlFor="sns_type" className="block text-sm font-medium text-gray-700">
+                  SNS種別
+                </label>
+                <select
+                  id="sns_type"
+                  name="sns_type"
+                  value={formData.sns_type}
+                  onChange={handleChange}
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                >
+                  <option value="">選択しない</option>
+                  <option value="instagram">Instagram</option>
+                  <option value="twitter">X (Twitter)</option>
+                  <option value="tiktok">TikTok</option>
+                  <option value="youtube">YouTube</option>
+                </select>
+              </div>
+
+              {/* SNS URL */}
+              {formData.sns_type && (
+                <div>
+                  <label htmlFor="sns_url" className="block text-sm font-medium text-gray-700">
+                    投稿URL
+                  </label>
+                  <input
+                    type="url"
+                    id="sns_url"
+                    name="sns_url"
+                    value={formData.sns_url}
+                    onChange={handleChange}
+                    placeholder={
+                      formData.sns_type === 'instagram' ? 'https://www.instagram.com/p/XXXXX/' :
+                      formData.sns_type === 'twitter' ? 'https://twitter.com/user/status/XXXXX' :
+                      formData.sns_type === 'tiktok' ? 'https://www.tiktok.com/@user/video/XXXXX' :
+                      'https://www.youtube.com/watch?v=XXXXX'
+                    }
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                  />
+                </div>
+              )}
+
+              {/* 埋め込み有効/無効 */}
+              {formData.sns_type && (
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="sns_embed_active"
+                    name="sns_embed_active"
+                    checked={formData.sns_embed_active}
+                    onChange={handleChange}
+                    className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="sns_embed_active" className="ml-2 block text-sm text-gray-700">
+                    埋め込みを有効にする
+                  </label>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

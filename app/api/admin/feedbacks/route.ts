@@ -49,6 +49,9 @@ export const POST = withAuth(async (request: NextRequest) => {
     description: body.description,
     sort_order: body.sort_order ?? 0,
     is_active: body.is_active ?? true,
+    sns_type: body.sns_type || null,
+    sns_url: body.sns_url || null,
+    sns_embed_active: body.sns_embed_active ?? true,
   };
 
   const { data, error } = await (supabase.from('feedbacks') as any)
