@@ -27,10 +27,10 @@ export default function HomeContent({ menuItems }: HomeContentProps) {
         <ProblemsSection />
         <AboutSection />
         <MenuSection initialMenuItems={menuItems} />
+        <TrialSection />
         <SubscriptionSection />
         <AmbassadorSection />
         <FeedbackSection />
-        <TrialSection />
         <PurchaseFlowSection />
         <NewsSection />
         {/* モバイルではフッターナビゲーションを表示 */}

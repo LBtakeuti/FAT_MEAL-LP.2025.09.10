@@ -679,9 +679,8 @@ export type Database = {
           description: string
           sort_order: number | null
           is_active: boolean | null
-          sns_type: string | null
-          sns_url: string | null
-          sns_embed_active: boolean | null
+          instagram_url: string | null
+          tiktok_url: string | null
           created_at: string
           updated_at: string
         }
@@ -694,9 +693,8 @@ export type Database = {
           description: string
           sort_order?: number | null
           is_active?: boolean | null
-          sns_type?: string | null
-          sns_url?: string | null
-          sns_embed_active?: boolean | null
+          instagram_url?: string | null
+          tiktok_url?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -709,9 +707,8 @@ export type Database = {
           description?: string
           sort_order?: number | null
           is_active?: boolean | null
-          sns_type?: string | null
-          sns_url?: string | null
-          sns_embed_active?: boolean | null
+          instagram_url?: string | null
+          tiktok_url?: string | null
           created_at?: string
           updated_at?: string
         }
