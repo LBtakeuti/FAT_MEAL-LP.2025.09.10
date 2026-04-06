@@ -36,6 +36,8 @@ export default function AdminLayout({
     { href: '/admin/contacts', label: 'お問い合わせ管理' },
     { href: '/admin/inventory', label: '在庫管理' },
     { href: '/admin/banner', label: 'バナー管理' },
+    { href: '/admin/media-logos', label: 'メディアロゴ管理' },
+    { href: '/admin/surveys', label: 'アンケート集計' },
   ];
 
   const isActive = (item: { href: string; exact?: boolean }) => {

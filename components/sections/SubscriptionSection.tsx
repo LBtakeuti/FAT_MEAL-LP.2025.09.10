@@ -11,7 +11,7 @@ const SubscriptionSection: React.FC = () => {
     {
       id: 'subscription-monthly-12',
       meals: 6,
-      title: '6食プラン',
+      title: '12食プラン',
       popular: false,
       anchorWithShipping: 10500,
       phase1Price: 4980,
@@ -20,7 +20,7 @@ const SubscriptionSection: React.FC = () => {
       shippingFee: 1500,
       deliveriesPerMonth: 1,
       description: '月1回配送',
-      subtitle: '12個入り（1食2個×6食分）',
+      subtitle: '',
       pricePerMeal: 1275,
       campaignLabel: 'ゆうさくスポーツキャンペーン 初回限定',
     },
@@ -63,22 +63,74 @@ const SubscriptionSection: React.FC = () => {
   return (
     <section id="subscription" className="relative overflow-hidden bg-white py-12 sm:py-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* ヘッダー */}
-        <div className="text-center mb-10 sm:mb-14">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 font-antique">
-            <span className="text-orange-600">定期コース</span>でお得に継続
-          </h2>
-          <p className="mt-4 text-gray-600 text-sm sm:text-base">
-            毎月届く定期便で、体づくりを習慣に
-          </p>
-          <p className="mt-2 text-orange-600 font-bold text-sm sm:text-base">
-            ※1食＝2個セットです
-          </p>
-        </div>
+        {/* ヘッダー非表示 */}
 
         {/* プランカード */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-          {plans.map((plan) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto">
+          {/* お試しプランカード */}
+          <div
+            onClick={() => router.push('/purchase?plan=trial-6')}
+            className="relative bg-white rounded-2xl p-6 sm:p-8 transition-all duration-300 border-2 flex flex-col cursor-pointer hover:shadow-xl hover:scale-[1.02] border-gray-200 hover:border-gray-500"
+          >
+            {/* プラン名 */}
+            <div className="text-center mb-6">
+              <span className="inline-block bg-gray-200 text-gray-700 text-xs font-bold px-3 py-1 rounded-full mb-3">
+                お試し
+              </span>
+              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 font-antique">
+                お試し6個セット
+              </h3>
+              <p className="text-sm text-gray-500">
+                6種類×1個ずつ / 1回限りの購入 / 定期契約なし
+              </p>
+            </div>
+
+            {/* 価格 */}
+            <div className="text-center mb-6 pb-6 border-b border-gray-200">
+              <div className="flex items-baseline justify-center gap-2">
+                <span className="text-5xl font-black text-gray-800">
+                  ¥5,700
+                </span>
+                <span className="text-sm text-gray-500">税込・送料込</span>
+              </div>
+            </div>
+
+            {/* プラン詳細 */}
+            <ul className="space-y-2 mb-6 text-sm text-gray-600 flex-1">
+              <li className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>1回限りの購入</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>定期契約なし</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>まずは味を試したい方に</span>
+              </li>
+            </ul>
+
+            {/* 購入ボタン */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push('/purchase?plan=trial-6');
+              }}
+              className="mt-auto w-full h-14 rounded-xl font-bold text-lg transition-all duration-300 shadow-md bg-gray-700 text-white hover:bg-gray-800 hover:shadow-lg"
+            >
+              お試し購入する
+            </button>
+          </div>
+
+          {/* 定期プランカード */}
+          {plans.filter((plan) => plan.id === 'subscription-monthly-12').map((plan) => (
             <div
               key={plan.id}
               onClick={() => handlePurchase(plan.id)}
@@ -101,9 +153,6 @@ const SubscriptionSection: React.FC = () => {
                 <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 font-antique">
                   {plan.title}
                 </h3>
-                <p className="text-sm text-gray-500">
-                  {plan.subtitle}
-                </p>
               </div>
 
               {/* 価格 */}
@@ -129,16 +178,16 @@ const SubscriptionSection: React.FC = () => {
                     ¥{plan.phase1Price.toLocaleString()}
                   </span>
                 </div>
-
-                {/* Phase2注釈 */}
-                <div className="mt-3 pt-3 border-t border-gray-200">
-                  <p className="text-xs text-gray-400">2ヶ月目以降 ¥{plan.phase2Total.toLocaleString()}</p>
-                  <p className="text-xs text-gray-400">（¥{plan.phase2Price.toLocaleString()} + 送料¥1,500）</p>
-                </div>
               </div>
 
               {/* プラン詳細 */}
               <ul className="space-y-2 mb-6 text-sm text-gray-600 flex-1">
+                <li className="flex items-center gap-2">
+                  <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span>お弁当6種類×2個ずつ</span>
+                </li>
                 <li className="flex items-center gap-2">
                   <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />

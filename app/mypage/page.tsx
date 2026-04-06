@@ -66,6 +66,48 @@ const prefectures = [
   '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県'
 ];
 
+const CANCELLATION_REASONS = [
+  {
+    category: '量・配送に関すること',
+    options: [
+      { key: 'too_much_quantity', label: '届く量が多すぎた' },
+      { key: 'too_frequent', label: '配送の頻度が多すぎた' },
+      { key: 'freezer_full', label: '冷凍庫に入りきらなかった' },
+    ],
+  },
+  {
+    category: '商品・品質に関すること',
+    options: [
+      { key: 'taste_mismatch', label: '味が自分に合わなかった' },
+      { key: 'menu_variety', label: 'メニューのバリエーションが少なかった' },
+      { key: 'nutrition_mismatch', label: 'カロリーや栄養バランスが合わなかった' },
+    ],
+  },
+  {
+    category: '料金に関すること',
+    options: [
+      { key: 'too_expensive', label: '料金が高いと感じた' },
+      { key: 'unexpected_price', label: '想定していた料金と違った' },
+    ],
+  },
+  {
+    category: '目的・状況の変化',
+    options: [
+      { key: 'goal_reached', label: '目標体重・体型に達した' },
+      { key: 'sports_stopped', label: '部活・スポーツをやめた・休止した' },
+      { key: 'self_managed', label: '自分で食事管理できるようになった' },
+      { key: 'family_cooking', label: '家族・保護者が食事を用意できるようになった' },
+    ],
+  },
+  {
+    category: 'サービス・使い勝手に関すること',
+    options: [
+      { key: 'confusing_ui', label: '注文・解約の操作がわかりにくかった' },
+      { key: 'delivery_schedule', label: '配送日の調整が難しかった' },
+    ],
+  },
+];
+
 export default function MyPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
@@ -78,6 +120,13 @@ export default function MyPage() {
   const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'subscriptions'>('profile');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [logoutLoading, setLogoutLoading] = useState(false);
+
+  // 解約モーダル用 state
+  const [cancelModalSub, setCancelModalSub] = useState<Subscription | null>(null);
+  const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
+  const [cancelMessage, setCancelMessage] = useState('');
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [cancelSuccess, setCancelSuccess] = useState(false);
 
   useEffect(() => {
     const supabase = createBrowserClient();
@@ -175,6 +224,49 @@ export default function MyPage() {
     const supabase = createBrowserClient();
     await supabase.auth.signOut();
     window.location.href = '/';
+  };
+
+  const toggleReason = (key: string) => {
+    setSelectedReasons(prev =>
+      prev.includes(key) ? prev.filter(r => r !== key) : [...prev, key]
+    );
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!cancelModalSub || selectedReasons.length === 0) return;
+    setCancelLoading(true);
+    try {
+      const res = await fetch('/api/users/subscriptions/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subscriptionId: cancelModalSub.id,
+          stripeSubscriptionId: cancelModalSub.stripe_subscription_id,
+          reasons: selectedReasons,
+          message: cancelMessage || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || '解約に失敗しました');
+      }
+      setCancelSuccess(true);
+      // サブスクリプション一覧を更新
+      if (user) {
+        loadSubscriptions(user.id, user.email || '');
+      }
+      // 3秒後にモーダルを閉じる
+      setTimeout(() => {
+        setCancelModalSub(null);
+        setSelectedReasons([]);
+        setCancelMessage('');
+        setCancelSuccess(false);
+      }, 3000);
+    } catch (error: any) {
+      alert(error.message || '解約処理に失敗しました');
+    } finally {
+      setCancelLoading(false);
+    }
   };
 
   if (loading) {
@@ -326,36 +418,129 @@ export default function MyPage() {
                             </div>
                           )}
                         </div>
+                        {sub.status === 'active' && (
+                          <button
+                            onClick={() => {
+                              setCancelModalSub(sub);
+                              setSelectedReasons([]);
+                              setCancelMessage('');
+                              setCancelSuccess(false);
+                            }}
+                            className="mt-3 w-full py-2 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
+                          >
+                            解約する
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>
                 )}
               </div>
 
-              {/* 解約についての説明（小さく表示） */}
+              {/* 解約についての説明 */}
               <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-600">
-                <h3 className="font-medium text-gray-700 mb-2 flex items-center gap-1">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  解約について
-                </h3>
                 <p className="text-xs leading-relaxed text-gray-500">
-                  定期購入の解約をご希望の場合は、お問い合わせフォームよりご連絡ください。
-                  次回課金日の3営業日前までにお申し出いただければ、次回分より解約となります。
-                  なお、解約後も課金済みの期間分は通常通り配送されます。
+                  解約は各プランの「解約する」ボタンからお手続きいただけます。
+                  解約後も課金済みの期間分は通常通り配送されます。
+                  ご不明点は<a href="/contact" className="text-orange-600 hover:underline">お問い合わせ</a>よりご連絡ください。
                 </p>
-                <p className="mt-3">
-                  <a 
-                    href="/contact?subject=cancellation" 
-                    className="inline-flex items-center gap-1 text-orange-600 hover:text-orange-700 hover:underline text-xs font-medium"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </div>
+            </div>
+          )}
+
+          {/* 解約理由選択モーダル */}
+          {cancelModalSub && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6">
+                {cancelSuccess ? (
+                  <div className="text-center py-8">
+                    <svg className="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
-                    お問い合わせ
-                  </a>
-                </p>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">解約手続きが完了しました</h3>
+                    <p className="text-sm text-gray-600">
+                      解約確認メールをお送りしました。<br />
+                      課金済みの期間分は通常通り配送されます。
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <h3 className="text-xl font-bold text-gray-900 mb-1">定期購入の解約</h3>
+                    <p className="text-sm text-gray-500 mb-4">
+                      {cancelModalSub.plan_name}を解約します。<br />
+                      よろしければ解約の理由をお聞かせください（複数選択可）。
+                    </p>
+
+                    <div className="space-y-4 mb-4">
+                      {CANCELLATION_REASONS.map((group) => (
+                        <div key={group.category}>
+                          <h4 className="text-sm font-semibold text-gray-700 mb-2">{group.category}</h4>
+                          <div className="space-y-2">
+                            {group.options.map((option) => (
+                              <label key={option.key} className="flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedReasons.includes(option.key)}
+                                  onChange={() => toggleReason(option.key)}
+                                  className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                                />
+                                <span className="text-sm text-gray-700">{option.label}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        その他ご意見（任意）
+                      </label>
+                      <textarea
+                        value={cancelMessage}
+                        onChange={(e) => setCancelMessage(e.target.value)}
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        placeholder="改善のためのご意見があればお聞かせください"
+                      />
+                    </div>
+
+                    {selectedReasons.length === 0 && (
+                      <p className="text-red-500 text-xs mb-3">解約の理由を1つ以上お選びください</p>
+                    )}
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => {
+                          setCancelModalSub(null);
+                          setSelectedReasons([]);
+                          setCancelMessage('');
+                        }}
+                        className="flex-1 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+                      >
+                        キャンセル
+                      </button>
+                      <button
+                        onClick={handleCancelSubscription}
+                        disabled={cancelLoading || selectedReasons.length === 0}
+                        className={`flex-1 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
+                          cancelLoading || selectedReasons.length === 0
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-red-600 text-white hover:bg-red-700'
+                        }`}
+                      >
+                        {cancelLoading ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            処理中...
+                          </>
+                        ) : (
+                          '解約を確定する'
+                        )}
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}

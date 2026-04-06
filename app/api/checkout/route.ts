@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { createServerClient } from '@/lib/supabase';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -44,6 +45,14 @@ interface CheckoutRequest {
     notes?: string;
   };
   couponCode?: string;
+  survey?: {
+    q1_answers: string[];
+    q1_other_text?: string;
+    q2_answers: string[];
+    q2_other_text?: string;
+    q3_answers: string[];
+    q3_other_text?: string;
+  };
 }
 
 export async function POST(request: NextRequest) {
@@ -150,6 +159,26 @@ export async function POST(request: NextRequest) {
       }
 
       const session = await stripe.checkout.sessions.create(sessionParams);
+
+      // アンケートデータを保存
+      if (body.survey) {
+        try {
+          const supabase = createServerClient();
+          await (supabase.from('purchase_surveys') as any).insert({
+            stripe_session_id: session.id,
+            customer_email: customerInfo.email,
+            q1_answers: body.survey.q1_answers,
+            q1_other_text: body.survey.q1_other_text || null,
+            q2_answers: body.survey.q2_answers,
+            q2_other_text: body.survey.q2_other_text || null,
+            q3_answers: body.survey.q3_answers,
+            q3_other_text: body.survey.q3_other_text || null,
+          });
+        } catch (surveyError) {
+          console.error('Failed to save survey data:', surveyError);
+        }
+      }
+
       return NextResponse.json({ url: session.url });
     }
 
@@ -239,6 +268,26 @@ export async function POST(request: NextRequest) {
     }
 
     const session = await stripe.checkout.sessions.create(sessionParams);
+
+    // アンケートデータを保存
+    if (body.survey) {
+      try {
+        const supabase = createServerClient();
+        await (supabase.from('purchase_surveys') as any).insert({
+          stripe_session_id: session.id,
+          customer_email: customerInfo.email,
+          q1_answers: body.survey.q1_answers,
+          q1_other_text: body.survey.q1_other_text || null,
+          q2_answers: body.survey.q2_answers,
+          q2_other_text: body.survey.q2_other_text || null,
+          q3_answers: body.survey.q3_answers,
+          q3_other_text: body.survey.q3_other_text || null,
+        });
+      } catch (surveyError) {
+        console.error('Failed to save survey data:', surveyError);
+      }
+    }
+
     return NextResponse.json({ url: session.url });
   } catch (error: any) {
     console.error('Checkout session error:', error);

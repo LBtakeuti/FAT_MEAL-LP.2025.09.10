@@ -305,6 +305,7 @@ export type Database = {
           id: string
           message: string | null
           reason: string | null
+          reasons: string[] | null
           status: string
           stripe_subscription_id: string | null
           subscription_id: string
@@ -319,6 +320,7 @@ export type Database = {
           id?: string
           message?: string | null
           reason?: string | null
+          reasons?: string[] | null
           status?: string
           stripe_subscription_id?: string | null
           subscription_id: string
@@ -333,6 +335,7 @@ export type Database = {
           id?: string
           message?: string | null
           reason?: string | null
+          reasons?: string[] | null
           status?: string
           stripe_subscription_id?: string | null
           subscription_id?: string
@@ -714,6 +717,36 @@ export type Database = {
         }
         Relationships: []
       }
+      media_logos: {
+        Row: {
+          id: string
+          name: string
+          image_url: string
+          sort_order: number
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          image_url: string
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          image_url?: string
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ambassadors: {
         Row: {
           id: string
@@ -758,6 +791,66 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      purchase_surveys: {
+        Row: {
+          id: string
+          order_id: string | null
+          subscription_id: string | null
+          stripe_session_id: string
+          customer_email: string
+          q1_answers: string[]
+          q1_other_text: string | null
+          q2_answers: string[]
+          q2_other_text: string | null
+          q3_answers: string[]
+          q3_other_text: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          order_id?: string | null
+          subscription_id?: string | null
+          stripe_session_id: string
+          customer_email: string
+          q1_answers?: string[]
+          q1_other_text?: string | null
+          q2_answers?: string[]
+          q2_other_text?: string | null
+          q3_answers?: string[]
+          q3_other_text?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          order_id?: string | null
+          subscription_id?: string | null
+          stripe_session_id?: string
+          customer_email?: string
+          q1_answers?: string[]
+          q1_other_text?: string | null
+          q2_answers?: string[]
+          q2_other_text?: string | null
+          q3_answers?: string[]
+          q3_other_text?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_surveys_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_surveys_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

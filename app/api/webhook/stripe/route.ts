@@ -307,7 +307,7 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe:
   if (supabase) {
     try {
       const referralCode = session.metadata?.referral_code || '';
-      const { error: dbError } = await (supabase
+      const { data: insertedOrder, error: dbError } = await (supabase
         .from('orders') as any)
         .insert({
           user_id: userId,
@@ -330,12 +330,21 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe:
           status: 'pending',
           referral_code: referralCode || null,
           notes: session.metadata?.notes || null,
-        });
+        })
+        .select('id')
+        .single();
 
       if (dbError) {
         console.error('Failed to save order to database:', dbError);
       } else {
         console.log('Order saved to database successfully', referralCode ? `(referral: ${referralCode})` : '');
+
+        // アンケートを注文に紐付け
+        if (insertedOrder?.id) {
+          await (supabase.from('purchase_surveys') as any)
+            .update({ order_id: insertedOrder.id })
+            .eq('stripe_session_id', session.id);
+        }
 
         // 初回コミッション記録（お試しプラン）
         if (referralCode && INITIAL_COMMISSION['trial-6']) {
@@ -642,6 +651,13 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
     }
     
     console.log(`[Webhook] Subscription created in DB: ${(dbSubscription as any).id}`);
+
+    // アンケートをサブスクリプションに紐付け
+    if (checkoutSession?.id) {
+      await (supabase.from('purchase_surveys') as any)
+        .update({ subscription_id: (dbSubscription as any).id })
+        .eq('stripe_session_id', checkoutSession.id);
+    }
 
     // 初回コミッション記録（サブスクリプション）
     if (referralCode && INITIAL_COMMISSION[planId]) {
@@ -1097,7 +1113,7 @@ async function sendSubscriptionCancellationEmail(params: {
 </html>
   `;
 
-  const fromEmail = process.env.RESEND_FROM_EMAIL || 'ふとるめし <noreply@futorumeshi.com>';
+  const fromEmail = process.env.RESEND_FROM_EMAIL || '';
 
   const { error } = await resend.emails.send({
     from: fromEmail,
@@ -1176,7 +1192,7 @@ async function sendOrderConfirmationEmail(params: OrderEmailParams) {
 
       <div class="footer">
         <p style="margin: 0;">LandBridge株式会社</p>
-        <p style="margin: 5px 0;"><a href="mailto:info@landbridge.co.jp">info@landbridge.co.jp</a></p>
+        <p style="margin: 5px 0;"><a href="mailto:${process.env.MAIL_CONTACT_EMAIL || ''}">${process.env.MAIL_CONTACT_EMAIL || ''}</a></p>
       </div>
     </div>
   </div>
@@ -1184,7 +1200,7 @@ async function sendOrderConfirmationEmail(params: OrderEmailParams) {
 </html>
   `;
 
-  const fromEmail = process.env.FROM_EMAIL || 'ふとるめし <noreply@futorumeshi.com>';
+  const fromEmail = process.env.RESEND_FROM_EMAIL || '';
 
   const { error } = await resend.emails.send({
     from: fromEmail,
@@ -1334,7 +1350,7 @@ async function sendSubscriptionPurchaseConfirmationEmail(params: {
 </html>
   `;
 
-  const fromEmail = process.env.RESEND_FROM_EMAIL || 'ふとるめし <noreply@futorumeshi.com>';
+  const fromEmail = process.env.RESEND_FROM_EMAIL || '';
 
   const { error } = await resend.emails.send({
     from: fromEmail,
@@ -1404,7 +1420,7 @@ async function sendSubscriptionRenewalEmail(params: {
 </html>
   `;
 
-  const fromEmail = process.env.RESEND_FROM_EMAIL || 'ふとるめし <noreply@futorumeshi.com>';
+  const fromEmail = process.env.RESEND_FROM_EMAIL || '';
 
   const { error } = await resend.emails.send({
     from: fromEmail,
@@ -1587,7 +1603,7 @@ async function sendPaymentFailedEmail(params: {
 </html>
   `;
 
-  const fromEmail = process.env.RESEND_FROM_EMAIL || 'ふとるめし <noreply@futorumeshi.com>';
+  const fromEmail = process.env.RESEND_FROM_EMAIL || '';
 
   const { error } = await resend.emails.send({
     from: fromEmail,

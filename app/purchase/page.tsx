@@ -62,12 +62,12 @@ const planOptions: PlanOption[] = [
   // サブスクリプションプラン
   {
     id: 'subscription-monthly-12',
-    quantity: 6,
-    label: 'ふとるめし6食 月額プラン',
+    quantity: 12,
+    label: 'ふとるめし12食 月額プラン',
     price: 4980,             // Phase1商品（初回送料無料特価）
     shippingFee: 0,          // Phase1送料（初回無料）
     totalPrice: 4980,        // Phase1合計
-    description: '月1回配送｜12個入り（1食2個×6食分）',
+    description: '月1回配送',
     perMeal: 830,            // 4980 ÷ 6
     isTrial: false,
     isSubscription: true,
@@ -79,6 +79,7 @@ const planOptions: PlanOption[] = [
     phase2Total: 9150,       // Phase2合計
     phase2PerMeal: 1525,     // 9150 ÷ 6
   },
+  /* 一時非表示
   {
     id: 'subscription-monthly-24',
     quantity: 12,
@@ -117,6 +118,7 @@ const planOptions: PlanOption[] = [
     phase2Total: 32100,      // Phase2合計
     phase2PerMeal: 1337,     // ~32100 ÷ 24
   },
+  一時非表示 */
 ];
 
 interface CustomerInfo {
@@ -347,16 +349,15 @@ const PurchasePage: React.FC = () => {
       setPurchaseType('subscription-monthly');
       setIsTrialMode(false);
     }
-    
-    // お試しプラン（trial-6）が指定された場合のみお試しモードに
+
+    // プランが指定された場合は選択状態にする
     if (planParam === 'trial-6') {
-      setIsTrialMode(true);
+      setIsTrialMode(false);
       setPurchaseType('one-time');
       setCart(prev => prev.map(item =>
         item.planId === 'trial-6' ? { ...item, quantity: 1 } : { ...item, quantity: 0 }
       ));
     } else if (planParam && planOptions.some(p => p.id === planParam)) {
-      // その他のプラン（サブスクリプション）が指定された場合
       const plan = planOptions.find(p => p.id === planParam);
       if (plan && plan.isSubscription) {
         setIsTrialMode(false);
@@ -366,7 +367,7 @@ const PurchasePage: React.FC = () => {
         ));
       }
     } else {
-      // パラメータなしの場合はサブスクリプションモード
+      // パラメータなしの場合はサブスクリプションをデフォルト選択
       setIsTrialMode(false);
       setPurchaseType('subscription-monthly');
     }
@@ -762,6 +763,24 @@ const PurchasePage: React.FC = () => {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
 
+  // アンケート state
+  const [surveyQ1, setSurveyQ1] = useState<string[]>([]);
+  const [surveyQ1Other, setSurveyQ1Other] = useState('');
+  const [surveyQ2, setSurveyQ2] = useState<string[]>([]);
+  const [surveyQ2Other, setSurveyQ2Other] = useState('');
+  const [surveyQ3, setSurveyQ3] = useState<string[]>([]);
+  const [surveyQ3Other, setSurveyQ3Other] = useState('');
+
+  const isSurveyComplete = surveyQ1.length > 0 && surveyQ2.length > 0 && surveyQ3.length > 0;
+
+  const toggleSurveyOption = (
+    current: string[],
+    setter: React.Dispatch<React.SetStateAction<string[]>>,
+    value: string
+  ) => {
+    setter(current.includes(value) ? current.filter(v => v !== value) : [...current, value]);
+  };
+
   const handleProceedToPayment = async () => {
     if (!isCartEmpty && !checkoutLoading) {
       setCheckoutLoading(true);
@@ -808,6 +827,14 @@ const PurchasePage: React.FC = () => {
               notes: customerInfo.notes || undefined,
             },
             couponCode: appliedCoupon?.code,
+            survey: {
+              q1_answers: surveyQ1,
+              q1_other_text: surveyQ1.includes('other') ? surveyQ1Other : undefined,
+              q2_answers: surveyQ2,
+              q2_other_text: surveyQ2.includes('other') ? surveyQ2Other : undefined,
+              q3_answers: surveyQ3,
+              q3_other_text: surveyQ3.includes('other') ? surveyQ3Other : undefined,
+            },
           }),
         });
 
@@ -859,79 +886,39 @@ const PurchasePage: React.FC = () => {
 
   const renderPlanSelection = () => (
     <div className="space-y-6">
-      {/* お試しモードの場合のみ表示するお試しプラン情報 */}
-      {isTrialMode && (
-        <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-orange-200 p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs px-3 py-1 rounded-md font-medium shadow-sm">
-              初回限定
-            </span>
-            <h2 className="text-xl font-bold text-gray-900">お試しプラン</h2>
-          </div>
-          <p className="text-sm text-gray-600 mb-2">
-            6種類×1個ずつのセットを1回だけ購入できます。定期契約なしでお気軽にお試しいただけます。
-          </p>
-          <div className="text-lg font-bold text-orange-600">
-            ¥5,700（税込・送料込）
-          </div>
-        </div>
-      )}
-
-      {/* サブスクリプションモードの場合のヘッダー */}
-      {!isTrialMode && (
-        <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-xl border border-orange-200 p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <span className="bg-gradient-to-r from-orange-600 to-red-500 text-white text-xs px-3 py-1 rounded-md font-medium shadow-sm">
-              お得な定期
-            </span>
-            <h2 className="text-xl font-bold text-gray-900">ふとるめし定期便</h2>
-          </div>
-          <p className="text-sm text-gray-600">
-            毎月自動でお届け。お得な定期プランをお選びください。
-          </p>
-          {!user && (
-            <div className="mt-3 flex items-center gap-2 text-sm text-blue-600">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-              <span>月額プランのご購入にはログインが必要です</span>
-              <button
-                onClick={() => {
-                  const refCode = localStorage.getItem('referral_code');
-                  const redirectUrl = refCode
-                    ? `/purchase?type=subscription&ref=${refCode}`
-                    : '/purchase?type=subscription';
-                  router.push(`/login?redirect=${encodeURIComponent(redirectUrl)}`);
-                }}
-                className="ml-2 underline hover:text-blue-700"
-              >
-                ログインする
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* プラン選択 */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <h2 className="text-xl font-bold text-gray-900 mb-2">
-          {isTrialMode ? 'お試しプランを選択してください' : '月額プランを選択してください'}
+          プランを選択してください
         </h2>
-        {!isTrialMode && (
-          <p className="text-sm text-orange-600 font-medium mb-2">※1食＝2個セットです</p>
-        )}
-        <p className="text-sm text-gray-500 mb-6">
-          {isTrialMode
-            ? 'お試しプランは1回のみの購入です。'
-            : '月額プランは1つまで選択可能です。毎月自動で課金・配送されます。'}
+        <p className="text-gray-500 mb-2" style={{ fontSize: '14px' }}>
+          ふとるめしは通常のお弁当よりも大きなお弁当なので、冷凍庫の容量を確保してからご注文をお願いします。
         </p>
+        <p className="text-sm text-gray-500 mb-6">
+          いずれか1つを選択してください。
+        </p>
+        {!user && (
+          <div className="mb-4 flex items-center gap-2 text-sm text-blue-600 bg-blue-50 rounded-lg p-3">
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <span>月額プランのご購入にはログインが必要です</span>
+            <button
+              onClick={() => {
+                const refCode = localStorage.getItem('referral_code');
+                const redirectUrl = refCode
+                  ? `/purchase?type=subscription&ref=${refCode}`
+                  : '/purchase?type=subscription';
+                router.push(`/login?redirect=${encodeURIComponent(redirectUrl)}`);
+              }}
+              className="ml-2 underline hover:text-blue-700"
+            >
+              ログインする
+            </button>
+          </div>
+        )}
         <div className="space-y-4">
           {planOptions
-            .filter(plan => 
-              isTrialMode 
-                ? plan.isTrial 
-                : plan.isSubscription
-            )
             .map((plan) => {
               const cartItem = cart.find(item => item.planId === plan.id);
               const quantity = cartItem?.quantity || 0;
@@ -952,6 +939,10 @@ const PurchasePage: React.FC = () => {
                         ? { ...item, quantity: isSelected ? 0 : 1 }
                         : { ...item, quantity: 0 }
                     ));
+                    // purchaseType を選択プランに合わせて切り替え
+                    if (!isSelected) {
+                      setPurchaseType(plan.isTrial ? 'one-time' : 'subscription-monthly');
+                    }
                     // タップしたプランのアコーディオンを開く（排他制御）
                     if (plan.isSubscription) setOpenPlanId(plan.id);
                   }}
@@ -974,9 +965,6 @@ const PurchasePage: React.FC = () => {
                       </p>
                       {plan.isSubscription ? (
                         <div className="mt-2 space-y-1">
-                          <div className="text-xs text-gray-400 line-through">
-                            通常価格（送料込）¥{((plan.anchorPrice || 0) + (plan.phase2ShippingFee || 0)).toLocaleString()}
-                          </div>
                           {plan.id === 'subscription-monthly-12' ? (
                             <span className="text-xs bg-red-600 text-white font-bold px-2 py-0.5 rounded whitespace-nowrap">
                               ゆうさくスポーツキャンペーン 初回限定
@@ -987,11 +975,9 @@ const PurchasePage: React.FC = () => {
                             </span>
                           )}
                           <div className="text-xl font-black text-red-600">
-                            初回 ¥{plan.totalPrice.toLocaleString()}
+                            <span className="text-gray-400 line-through mr-1">¥{((plan.anchorPrice || 0) + (plan.phase2ShippingFee || 0)).toLocaleString()}</span>
+                            →初回 ¥{plan.totalPrice.toLocaleString()}
                             <span className="text-xs text-green-600 font-bold ml-1">送料無料</span>
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            2ヶ月目以降 ¥{plan.phase2Total?.toLocaleString()}（¥{plan.phase2Price?.toLocaleString()} + 送料¥{plan.phase2ShippingFee?.toLocaleString()}）
                           </div>
                         </div>
                       ) : (
@@ -1120,16 +1106,18 @@ const PurchasePage: React.FC = () => {
                 <>
                   <p className="text-sm text-gray-500">初回合計</p>
                   <p className="text-3xl text-orange-600">
-                    ¥{(() => {
+                    <span className="text-gray-400 line-through mr-1">¥{(() => {
+                      const selectedPlan = getSelectedPlan();
+                      if (!selectedPlan) return '0';
+                      return ((selectedPlan.anchorPrice || 0) + (selectedPlan.phase2ShippingFee || 0)).toLocaleString();
+                    })()}</span>
+                    →¥{(() => {
                       const selectedPlan = getSelectedPlan();
                       if (!selectedPlan) return '0';
                       return selectedPlan.totalPrice.toLocaleString();
                     })()}
                   </p>
-                  <p className="text-xs text-green-600 font-medium">送料無料・30%OFF</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    2ヶ月目〜 ¥{getSelectedPlan()?.phase2Total?.toLocaleString()}/月（税込）
-                  </p>
+                  <p className="text-xs text-green-600 font-medium">送料無料</p>
                 </>
               ) : (
                 <>
@@ -1240,6 +1228,14 @@ const PurchasePage: React.FC = () => {
               })()}
             </div>
             <p className="text-xl text-orange-600">
+              {purchaseType === 'subscription-monthly' && (() => {
+                const selectedPlan = getSelectedPlan();
+                if (!selectedPlan) return null;
+                return (
+                  <span className="text-gray-400 line-through mr-1">¥{((selectedPlan.anchorPrice || 0) + (selectedPlan.phase2ShippingFee || 0)).toLocaleString()}</span>
+                );
+              })()}
+              {purchaseType === 'subscription-monthly' && '→'}
               ¥{(() => {
                 const selectedPlan = getSelectedPlan();
                 if (!selectedPlan) return '0';
@@ -1556,32 +1552,50 @@ const PurchasePage: React.FC = () => {
                   </>
                 )}
               </div>
-              <p className="text-lg text-orange-600">
+              <p className="text-lg text-gray-900">
                 ¥{(purchaseType === 'subscription-monthly'
-                  ? selectedPlan.totalPrice
+                  ? ((selectedPlan.anchorPrice || 0) + (selectedPlan.phase2ShippingFee || 0))
                   : selectedPlan.totalPrice
                 ).toLocaleString()}
               </p>
             </div>
           )}
 
-          {/* 商品代金 */}
-          <div className="flex justify-between items-center py-3 border-b border-gray-200">
-            <p className="text-gray-600">商品代金</p>
-            <p className="text-gray-900">¥{subtotal.toLocaleString()}</p>
-          </div>
+          {/* 商品代金（定期以外のみ表示） */}
+          {purchaseType !== 'subscription-monthly' && (
+            <div className="flex justify-between items-center py-3 border-b border-gray-200">
+              <p className="text-gray-600">商品代金</p>
+              <p className="text-gray-900">¥{subtotal.toLocaleString()}</p>
+            </div>
+          )}
+
+          {/* キャンペーン割引 */}
+          {purchaseType === 'subscription-monthly' && selectedPlan?.anchorPrice && (
+            <div className="flex justify-between items-center py-3 border-b border-gray-200">
+              <div className="flex items-center gap-2">
+                <p className="text-red-600 font-medium">初回30%OFFキャンペーン</p>
+              </div>
+              <p className="text-red-600 font-medium">
+                -¥{(selectedPlan.anchorPrice - subtotal).toLocaleString()}
+              </p>
+            </div>
+          )}
 
           {/* 送料 */}
           <div className="flex justify-between items-center py-3 border-b border-gray-200">
-            <p className="text-gray-600">
+            <p className={purchaseType === 'subscription-monthly' && shippingFee === 0 ? 'text-red-600 font-medium' : 'text-gray-600'}>
               送料
-              {purchaseType === 'subscription-monthly' && (
-                <span className="ml-1 text-xs text-green-600">（初回無料）</span>
+              {purchaseType === 'subscription-monthly' && shippingFee === 0 && (
+                <span className="ml-1 text-xs">（初回無料）</span>
               )}
             </p>
-            <p className={purchaseType === 'subscription-monthly' && shippingFee === 0 ? 'text-green-600 font-medium' : 'text-gray-900'}>
-              {purchaseType === 'subscription-monthly' && shippingFee === 0 ? '¥0（無料）' : `¥${shippingFee.toLocaleString()}`}
-            </p>
+            {purchaseType === 'subscription-monthly' && shippingFee === 0 ? (
+              <p className="text-red-600 font-medium">
+                -¥{(selectedPlan?.phase2ShippingFee || 1500).toLocaleString()}
+              </p>
+            ) : (
+              <p className="text-gray-900">¥{shippingFee.toLocaleString()}</p>
+            )}
           </div>
 
           {/* クーポン割引 */}
@@ -1753,6 +1767,113 @@ const PurchasePage: React.FC = () => {
           </label>
         </div>
 
+        {/* 購入前アンケート（必須） */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-1">購入前に教えてください（必須）</h2>
+          <p className="text-sm text-gray-500 mb-5">今後のサービス改善のためにお聞かせください。</p>
+
+          {/* Q1: 認知経路 */}
+          <div className="mb-6">
+            <h3 className="text-sm font-semibold text-gray-800 mb-2">Q1. ふとるめしを何で知りましたか？</h3>
+            <div className="space-y-2">
+              {[
+                { value: 'instagram', label: 'Instagram' },
+                { value: 'tiktok', label: 'TikTok' },
+                { value: 'youtube', label: 'YouTube' },
+                { value: 'google', label: 'Google検索' },
+                { value: 'friends', label: '友人・知人の紹介' },
+                { value: 'school_club', label: '学校・部活の関係者' },
+                { value: 'other', label: 'その他' },
+              ].map((opt) => (
+                <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={surveyQ1.includes(opt.value)}
+                    onChange={() => toggleSurveyOption(surveyQ1, setSurveyQ1, opt.value)}
+                    className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                  />
+                  <span className="text-sm text-gray-700">{opt.label}</span>
+                </label>
+              ))}
+              {surveyQ1.includes('other') && (
+                <input
+                  type="text"
+                  value={surveyQ1Other}
+                  onChange={(e) => setSurveyQ1Other(e.target.value)}
+                  placeholder="具体的に教えてください"
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Q2: 利用者 */}
+          <div className="mb-6">
+            <h3 className="text-sm font-semibold text-gray-800 mb-2">Q2. どなたが食べますか？</h3>
+            <div className="space-y-2">
+              {[
+                { value: 'self', label: '自分' },
+                { value: 'child', label: 'お子さま' },
+                { value: 'partner', label: 'パートナー' },
+                { value: 'other', label: 'その他' },
+              ].map((opt) => (
+                <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={surveyQ2.includes(opt.value)}
+                    onChange={() => toggleSurveyOption(surveyQ2, setSurveyQ2, opt.value)}
+                    className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                  />
+                  <span className="text-sm text-gray-700">{opt.label}</span>
+                </label>
+              ))}
+              {surveyQ2.includes('other') && (
+                <input
+                  type="text"
+                  value={surveyQ2Other}
+                  onChange={(e) => setSurveyQ2Other(e.target.value)}
+                  placeholder="具体的に教えてください"
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Q3: 期待 */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-800 mb-2">Q3. ふとるめしに期待することは？</h3>
+            <div className="space-y-2">
+              {[
+                { value: 'weight_gain', label: '体重・体格を増やしたい' },
+                { value: 'muscle', label: '筋肉をつけてパフォーマンスを上げたい' },
+                { value: 'convenience', label: '食事の準備の手間を減らしたい' },
+                { value: 'nutrition', label: '栄養バランスをしっかり管理したい' },
+                { value: 'competition', label: '試合・大会に向けて体をつくりたい' },
+                { value: 'other', label: 'その他' },
+              ].map((opt) => (
+                <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={surveyQ3.includes(opt.value)}
+                    onChange={() => toggleSurveyOption(surveyQ3, setSurveyQ3, opt.value)}
+                    className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                  />
+                  <span className="text-sm text-gray-700">{opt.label}</span>
+                </label>
+              ))}
+              {surveyQ3.includes('other') && (
+                <input
+                  type="text"
+                  value={surveyQ3Other}
+                  onChange={(e) => setSurveyQ3Other(e.target.value)}
+                  placeholder="期待することを教えてください"
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* サブスクリプション解約に関する注意書き */}
         {purchaseType === 'subscription-monthly' && (
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
@@ -1764,7 +1885,6 @@ const PurchasePage: React.FC = () => {
                 <h3 className="font-bold text-amber-800 mb-2">定期購入（サブスクリプション）に関するご注意</h3>
                 <ul className="text-sm text-amber-700 space-y-1.5">
                   <li>・ご購入後、毎月自動的に決済が行われます</li>
-                  <li>・解約をご希望の場合は、<a href="/contact" target="_blank" rel="noopener noreferrer" className="text-amber-800 underline hover:text-amber-900">お問い合わせ</a>からお申し付けください</li>
                   <li>・お支払い済みの配送についてはキャンセルできかねます</li>
                   <li>・ご不明点は<a href="/contact" target="_blank" rel="noopener noreferrer" className="text-amber-800 underline hover:text-amber-900">お問い合わせ</a>よりご連絡ください</li>
                 </ul>
@@ -1826,9 +1946,9 @@ const PurchasePage: React.FC = () => {
           </button>
           <button
             onClick={handleProceedToPayment}
-            disabled={checkoutLoading || !agreedToTerms || (purchaseType === 'subscription-monthly' && !user)}
+            disabled={checkoutLoading || !agreedToTerms || !isSurveyComplete || (purchaseType === 'subscription-monthly' && !user)}
             className={`flex-1 py-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 ${
-              checkoutLoading || !agreedToTerms || (purchaseType === 'subscription-monthly' && !user)
+              checkoutLoading || !agreedToTerms || !isSurveyComplete || (purchaseType === 'subscription-monthly' && !user)
                 ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
                 : 'bg-orange-500 text-white hover:bg-orange-600'
             }`}

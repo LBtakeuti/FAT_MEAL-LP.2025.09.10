@@ -3,6 +3,7 @@
 import React from 'react';
 import MobileFooterNav from '@/components/layout/MobileFooterNav';
 import HeroSection from '@/components/sections/HeroSection';
+import MediaLogosSection from '@/components/sections/MediaLogosSection';
 import ProblemsSection from '@/components/sections/ProblemsSection';
 import AboutSection from '@/components/sections/AboutSection';
 import PurchaseFlowSection from '@/components/sections/PurchaseFlowSection';
@@ -24,10 +25,11 @@ export default function HomeContent({ menuItems }: HomeContentProps) {
     <>
       <main className="normal-scroll">
         <HeroSection />
+        <MediaLogosSection />
         <ProblemsSection />
         <AboutSection />
         <MenuSection initialMenuItems={menuItems} />
-        <TrialSection />
+        {/* <TrialSection /> SubscriptionSectionにお試しカード統合済み */}
         <SubscriptionSection />
         <AmbassadorSection />
         <FeedbackSection />

@@ -39,11 +39,10 @@ export async function GET(_request: NextRequest) {
   try {
     const supabase = createServerClient();
 
-    // Step 1: サブスクリプションのみ取得（ネストJOIN削除）
+    // Step 1: サブスクリプションを取得（解約済み含む）
     const { data: subscriptions, error } = await supabase
       .from('subscriptions')
       .select('*')
-      .neq('status', 'canceled')
       .order('started_at', { ascending: false }) as { data: Subscription[] | null; error: any };
 
     console.log('[subscriptions API] count:', subscriptions?.length ?? 0, 'error:', error?.message ?? 'none');
@@ -66,6 +65,27 @@ export async function GET(_request: NextRequest) {
       for (const d of ((deliveries as any[]) || [])) {
         if (!deliveriesMap[d.subscription_id]) deliveriesMap[d.subscription_id] = [];
         deliveriesMap[d.subscription_id].push(d);
+      }
+    }
+
+    // Step 2.5: 解約理由を取得
+    const canceledSubIds = (subscriptions || []).filter(s => s.status === 'canceled').map(s => s.id);
+    const cancellationMap: Record<string, { reasons: string[]; reason: string | null; message: string | null; created_at: string }> = {};
+    if (canceledSubIds.length > 0) {
+      const { data: cancelRequests } = await (supabase as any)
+        .from('subscription_cancellation_requests')
+        .select('subscription_id, reasons, reason, message, created_at')
+        .in('subscription_id', canceledSubIds)
+        .order('created_at', { ascending: false });
+      for (const req of ((cancelRequests as any[]) || [])) {
+        if (!cancellationMap[req.subscription_id]) {
+          cancellationMap[req.subscription_id] = {
+            reasons: req.reasons || [],
+            reason: req.reason,
+            message: req.message,
+            created_at: req.created_at,
+          };
+        }
       }
     }
 
@@ -110,6 +130,8 @@ export async function GET(_request: NextRequest) {
         },
         // 全配送レコード（リマインダー表示用）
         subscription_deliveries: deliveries,
+        // 解約理由
+        cancellation_request: cancellationMap[sub.id] || null,
       };
     }) || [];
 

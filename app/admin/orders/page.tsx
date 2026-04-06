@@ -49,7 +49,31 @@ interface Subscription {
     address_detail?: string;
     building?: string;
   };
+  cancellation_request?: {
+    reasons: string[];
+    reason: string | null;
+    message: string | null;
+    created_at: string;
+  } | null;
 }
+
+const REASON_LABELS: Record<string, string> = {
+  too_much_quantity: '届く量が多すぎた',
+  too_frequent: '配送の頻度が多すぎた',
+  freezer_full: '冷凍庫に入りきらなかった',
+  taste_mismatch: '味が自分に合わなかった',
+  menu_variety: 'メニューのバリエーションが少なかった',
+  nutrition_mismatch: 'カロリーや栄養バランスが合わなかった',
+  too_expensive: '料金が高いと感じた',
+  unexpected_price: '想定していた料金と違った',
+  goal_reached: '目標体重・体型に達した',
+  sports_stopped: '部活・スポーツをやめた・休止した',
+  self_managed: '自分で食事管理できるようになった',
+  family_cooking: '家族・保護者が食事を用意できるようになった',
+  confusing_ui: '注文・解約の操作がわかりにくかった',
+  didnt_know_2pieces: '1食が2個であることを知らなかった',
+  delivery_schedule: '配送日の調整が難しかった',
+};
 
 const getJSTToday = () => {
   const jstOffset = 9 * 60 * 60 * 1000;
@@ -662,6 +686,28 @@ export default function AdminOrdersPage() {
                                       </dl>
                                     </div>
                                   </div>
+                                  {/* 解約理由 */}
+                                  {sub.cancellation_request && (
+                                    <div className="mt-4 bg-red-50 rounded-lg p-4 shadow-sm">
+                                      <h4 className="font-semibold text-red-900 mb-3 border-b border-red-200 pb-2">解約理由</h4>
+                                      <ul className="text-sm text-red-800 space-y-1 mb-2">
+                                        {(sub.cancellation_request.reasons?.length > 0
+                                          ? sub.cancellation_request.reasons
+                                          : sub.cancellation_request.reason?.split(', ') || []
+                                        ).map((r: string, i: number) => (
+                                          <li key={i}>・{REASON_LABELS[r] || r}</li>
+                                        ))}
+                                      </ul>
+                                      {sub.cancellation_request.message && (
+                                        <div className="text-sm text-red-700 bg-red-100 p-2 rounded mt-2">
+                                          <span className="font-medium">コメント: </span>{sub.cancellation_request.message}
+                                        </div>
+                                      )}
+                                      <p className="text-xs text-red-500 mt-2">
+                                        {new Date(sub.cancellation_request.created_at).toLocaleDateString('ja-JP')} に解約申請
+                                      </p>
+                                    </div>
+                                  )}
                                 </td>
                               </tr>
                             )}
