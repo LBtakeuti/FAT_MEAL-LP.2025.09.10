@@ -226,7 +226,6 @@ const SubscriptionSection: React.FC = () => {
         <div className="mt-8 sm:mt-12 text-center text-sm text-gray-500">
           <p className="mb-1">※ 価格は税込表示です</p>
           <p className="mb-1">※ 定期購入はログインが必要です</p>
-          <p className="mb-1">※ 解約はお問い合わせより承ります</p>
           <p>※ ゆうさくスポーツキャンペーン中、２ヶ月目以降の商品の価格は15％OFFです。送料は別です。</p>
         </div>
       </div>
