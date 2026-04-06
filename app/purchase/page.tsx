@@ -1617,13 +1617,6 @@ const PurchasePage: React.FC = () => {
             <p className="text-2xl font-bold text-orange-600">¥{totalAmount.toLocaleString()}</p>
           </div>
 
-          {/* 定期プランの2ヶ月目以降案内 */}
-          {purchaseType === 'subscription-monthly' && selectedPlan && (
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-800">
-              2ヶ月目以降は ¥{selectedPlan.phase2Total?.toLocaleString()}/月（商品¥{selectedPlan.phase2Price?.toLocaleString()} + 送料¥{selectedPlan.phase2ShippingFee?.toLocaleString()}）が自動で課金されます。
-            </div>
-          )}
-
           {/* 配送案内 */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
             <div className="flex items-center gap-2 text-blue-700">
