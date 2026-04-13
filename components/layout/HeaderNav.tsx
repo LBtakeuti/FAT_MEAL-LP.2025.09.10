@@ -35,23 +35,20 @@ const HeaderNav: React.FC = () => {
         <Link href="/menu-list" className="text-[#374151] hover:text-orange-600 font-medium transition-colors">メニュー</Link>
         <Link href="/news" className="text-[#374151] hover:text-orange-600 font-medium transition-colors">お知らせ</Link>
         <Link href="/contact" className="text-[#374151] hover:text-orange-600 font-medium transition-colors">お問い合わせ</Link>
+        <Link
+          href={isLoggedIn ? '/mypage' : '/login'}
+          className="text-[#374151] hover:text-orange-600 font-medium transition-colors"
+        >
+          {isLoggedIn ? 'マイページ' : 'ログイン'}
+        </Link>
       </nav>
 
-      {/* マイページボタン - 右端に絶対配置 */}
+      {/* ふとるめしを始めるボタン - 右端に絶対配置 */}
       <Link
-        href="/mypage"
-        className={`absolute right-0 flex items-center gap-2 px-4 py-2 rounded font-antique text-sm lg:text-base ${
-          isLoggedIn === null
-            ? 'text-[#374151] border border-[#374151]'
-            : isLoggedIn
-              ? 'bg-[#FF6B35] text-white hover:bg-[#E55220] transition-all duration-300'
-              : 'text-[#374151] hover:text-[#FF6B35] border border-[#374151] hover:border-[#FF6B35] transition-all duration-300'
-        }`}
+        href="/purchase?type=subscription"
+        className="absolute right-0 flex items-center px-5 py-2 rounded-full bg-[#FF6B35] text-white font-antique font-bold text-sm lg:text-base hover:bg-[#E55220] transition-colors whitespace-nowrap"
       >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        </svg>
-        マイページ
+        購入する
       </Link>
     </div>
   );

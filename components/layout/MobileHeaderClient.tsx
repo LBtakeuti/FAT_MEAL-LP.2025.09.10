@@ -64,21 +64,13 @@ const MobileHeaderClient: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* マイページボタン */}
+            {/* 購入ボタン */}
             <Link
-              href="/mypage"
-              className={`flex items-center justify-center w-9 h-9 rounded-full ${
-                isLoggedIn === null
-                  ? 'text-[#374151] border border-[#374151]'
-                  : isLoggedIn
-                    ? 'bg-[#FF6B35] text-white hover:bg-[#E55220] transition-all duration-300'
-                    : 'text-[#374151] border border-[#374151] hover:text-[#FF6B35] hover:border-[#FF6B35] transition-all duration-300'
-              }`}
-              aria-label="マイページ"
+              href="/purchase"
+              className="flex items-center justify-center px-4 h-9 rounded-full bg-[#FF6B35] text-white font-bold text-sm hover:bg-[#E55220] transition-all duration-300 whitespace-nowrap"
+              aria-label="購入"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
+              購入
             </Link>
 
             {/* Hamburger Menu Button */}

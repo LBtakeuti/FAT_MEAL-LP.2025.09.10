@@ -2,13 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
+  PieChart,
+  Pie,
+  Cell,
   ResponsiveContainer,
+  Tooltip,
 } from 'recharts';
 
 interface AggregatedItem {
@@ -34,6 +32,11 @@ interface CancellationData {
 }
 
 type Tab = 'purchase' | 'cancellation';
+
+const COLORS = [
+  '#f97316', '#3b82f6', '#10b981', '#8b5cf6',
+  '#ef4444', '#f59e0b', '#06b6d4', '#ec4899',
+];
 
 export default function SurveysPage() {
   const [activeTab, setActiveTab] = useState<Tab>('purchase');
@@ -89,46 +92,100 @@ export default function SurveysPage() {
     window.location.href = `${endpoint}?${params.toString()}`;
   };
 
-  const renderChart = (title: string, items: AggregatedItem[]) => (
-    <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-      <h3 className="text-lg font-bold text-gray-900 mb-4">{title}</h3>
-      <div className="mb-4" style={{ height: Math.max(250, items.length * 32) }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={items} layout="vertical" margin={{ left: 200, right: 20 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis type="number" />
-            <YAxis type="category" dataKey="label" width={190} tick={{ fontSize: 12 }} />
-            <Tooltip formatter={(value) => [`${value}件`, '回答数']} />
-            <Bar dataKey="count" fill={activeTab === 'purchase' ? '#f97316' : '#ef4444'} radius={[0, 4, 4, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+  const renderDonutCard = (title: string, items: AggregatedItem[]) => {
+    const sorted = [...items].sort((a, b) => b.count - a.count);
+    const hasData = sorted.some(item => item.count > 0);
+    const totalAnswers = sorted.reduce((sum, item) => sum + item.count, 0);
+
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h3 className="text-sm font-bold text-gray-700 mb-4 leading-snug">{title}</h3>
+
+        {!hasData ? (
+          <p className="text-center text-gray-400 text-sm py-8">データなし</p>
+        ) : (
+          <>
+            {/* ドーナツチャート */}
+            <div className="relative mx-auto" style={{ width: 180, height: 180 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={sorted.filter(i => i.count > 0)}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={80}
+                    paddingAngle={2}
+                    dataKey="count"
+                    stroke="none"
+                  >
+                    {sorted.filter(i => i.count > 0).map((_, idx) => (
+                      <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value, _, entry: any) => [
+                      `${value}件 (${entry.payload.percentage}%)`,
+                      entry.payload.label,
+                    ]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              {/* 中央の回答数 */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <span className="text-2xl font-bold text-gray-900">{totalAnswers}</span>
+                <span className="text-[10px] text-gray-400">回答</span>
+              </div>
+            </div>
+
+            {/* ランキング */}
+            <div className="mt-4 space-y-2">
+              {sorted.map((item, idx) => {
+                const rank = idx + 1;
+                const isTop = rank <= 3 && item.count > 0;
+                return (
+                  <div key={item.value} className="flex items-center gap-2">
+                    {/* 順位バッジ */}
+                    <span
+                      className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                        item.count === 0
+                          ? 'bg-gray-100 text-gray-300'
+                          : isTop
+                          ? 'text-white'
+                          : 'bg-gray-100 text-gray-500'
+                      }`}
+                      style={item.count > 0 && isTop ? { backgroundColor: COLORS[idx % COLORS.length] } : undefined}
+                    >
+                      {rank}
+                    </span>
+                    {/* ラベル */}
+                    <span className={`flex-1 text-sm truncate ${item.count === 0 ? 'text-gray-300' : 'text-gray-700'}`}>
+                      {item.label}
+                    </span>
+                    {/* 件数＋バー */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{
+                            width: `${item.percentage}%`,
+                            backgroundColor: item.count > 0 ? COLORS[idx % COLORS.length] : 'transparent',
+                          }}
+                        />
+                      </div>
+                      <span className={`text-xs font-medium w-8 text-right ${item.count === 0 ? 'text-gray-300' : 'text-gray-600'}`}>
+                        {item.count}件
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-gray-200">
-            {items.some(i => i.category) && (
-              <th className="text-left py-2 text-gray-600">カテゴリ</th>
-            )}
-            <th className="text-left py-2 text-gray-600">選択肢</th>
-            <th className="text-right py-2 text-gray-600">回答数</th>
-            <th className="text-right py-2 text-gray-600">割合</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item) => (
-            <tr key={item.value} className="border-b border-gray-100">
-              {items.some(i => i.category) && (
-                <td className="py-2 text-gray-500 text-xs">{item.category || '-'}</td>
-              )}
-              <td className="py-2 text-gray-900">{item.label}</td>
-              <td className="text-right py-2 font-medium">{item.count}件</td>
-              <td className="text-right py-2 text-gray-600">{item.percentage}%</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+    );
+  };
 
   const totalCount = activeTab === 'purchase' ? (surveyData?.totalCount || 0) : (cancelData?.totalCount || 0);
 
@@ -213,10 +270,11 @@ export default function SurveysPage() {
         </div>
       ) : (
         <>
-          <div className={`border rounded-lg p-4 mb-6 ${
+          {/* サマリー */}
+          <div className={`rounded-xl p-4 mb-6 ${
             activeTab === 'purchase'
-              ? 'bg-orange-50 border-orange-200'
-              : 'bg-red-50 border-red-200'
+              ? 'bg-orange-50 border border-orange-200'
+              : 'bg-red-50 border border-red-200'
           }`}>
             <p className={`text-sm ${activeTab === 'purchase' ? 'text-orange-800' : 'text-red-800'}`}>
               合計 <span className="font-bold text-lg">{totalCount}</span> 件
@@ -229,16 +287,19 @@ export default function SurveysPage() {
             </p>
           </div>
 
+          {/* ドーナツチャート 3列 */}
           {activeTab === 'purchase' && surveyData && (
-            <>
-              {renderChart('Q1. ふとるめしを何で知りましたか？', surveyData.aggregated.q1)}
-              {renderChart('Q2. どなたが食べますか？', surveyData.aggregated.q2)}
-              {renderChart('Q3. ふとるめしに期待することは？', surveyData.aggregated.q3)}
-            </>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {renderDonutCard('Q1. ふとるめしを何で知りましたか？', surveyData.aggregated.q1)}
+              {renderDonutCard('Q2. どなたが食べますか？', surveyData.aggregated.q2)}
+              {renderDonutCard('Q3. ふとるめしに期待することは？', surveyData.aggregated.q3)}
+            </div>
           )}
 
           {activeTab === 'cancellation' && cancelData && (
-            <>{renderChart('解約理由', cancelData.aggregated)}</>
+            <div className="max-w-md mx-auto">
+              {renderDonutCard('解約理由', cancelData.aggregated)}
+            </div>
           )}
         </>
       )}

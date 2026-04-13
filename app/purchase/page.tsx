@@ -956,7 +956,7 @@ const PurchasePage: React.FC = () => {
                   
 
                   <div className="flex items-center justify-between">
-                    <div className="flex-1 pr-10 sm:pr-20">
+                    <div className="flex-1 pr-20">
                       <span className="text-lg font-semibold text-gray-900">
                         {plan.label}
                       </span>

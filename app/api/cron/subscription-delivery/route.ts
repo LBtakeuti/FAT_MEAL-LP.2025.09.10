@@ -276,7 +276,7 @@ async function sendSubscriptionCompletionEmail(params: { email: string; name: st
     }
 
     const resend = new Resend(process.env.RESEND_API_KEY);
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'ふとるめし <noreply@futorumeshi.com>';
+    const fromEmail = process.env.RESEND_FROM_EMAIL || '';
 
     const emailHtml = `
 <!DOCTYPE html>

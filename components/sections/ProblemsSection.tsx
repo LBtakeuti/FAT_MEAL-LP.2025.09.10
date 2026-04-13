@@ -38,7 +38,7 @@ const ProblemsSection: React.FC = () => {
               </p>
             </div>
             {/* バッジ */}
-            <div className="flex justify-between w-full mt-6">
+            <div className="flex justify-center gap-6 sm:gap-10 w-full mt-6">
               <Image
                 src="/images/sections/badge-media.png"
                 alt="メディア掲載多数"
@@ -65,27 +65,7 @@ const ProblemsSection: React.FC = () => {
               />
             </div>
           </div>
-          {/* 画像スライダー */}
-          <div className="flex flex-1 justify-center md:justify-end mt-4 md:mt-0">
-            <div className="relative w-full max-w-md aspect-square overflow-hidden">
-              {sliderImages.map((src, index) => (
-                <div
-                  key={src}
-                  className={`absolute inset-0 transition-opacity duration-1000 ${
-                    index === currentImageIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
-                  }`}
-                >
-                  <Image
-                    src={src}
-                    alt="ふとるめし"
-                    fill
-                    className="object-cover"
-                    priority={index === 0}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* 画像スライダー 一時非表示 */}
         </div>
       </div>
     </section>
