@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createBrowserClient } from '@/lib/supabase';
 import { MenuDetailModal } from '@/components/menu/MenuDetailModal';
+import { PlanSelectorCards, type PlanCardData } from '@/components/purchase/PlanSelectorCards';
 import type { MenuItem } from '@/types';
 
 // ユーザープロフィール型
@@ -384,6 +385,16 @@ const PurchasePage: React.FC = () => {
       setCustomerInfo(prev => ({ ...prev, referralCode: storedCode }));
       validateReferralCode(storedCode);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  // シートからの遷移: ?step=info なら info ステップへ自動進行（プラン選択済みのとき）
+  useEffect(() => {
+    const stepParam = searchParams.get('step');
+    if (stepParam !== 'info') return;
+    const planParam = searchParams.get('plan');
+    if (!planParam || !planOptions.some((p) => p.id === planParam)) return;
+    setCurrentStep('info');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
@@ -884,266 +895,83 @@ const PurchasePage: React.FC = () => {
     </div>
   );
 
+  const planCardData: PlanCardData[] = planOptions.map((plan) => ({
+    id: plan.id,
+    mealCount: plan.quantity,
+    title: plan.isTrial ? 'お試し6個セット' : `${plan.quantity}食 月額プラン`,
+    subtitle: plan.description,
+    anchorPrice: plan.isSubscription
+      ? (plan.anchorPrice || 0) + (plan.phase2ShippingFee || 0)
+      : undefined,
+    totalPrice: plan.totalPrice,
+    badge: plan.isTrial ? '初回限定' : undefined,
+    highlight: plan.isSubscription
+      ? plan.id === 'subscription-monthly-12'
+        ? 'ゆうさくスポーツキャンペーン 初回限定'
+        : '初回限定価格'
+      : undefined,
+    shippingNote: plan.isSubscription ? '送料無料' : undefined,
+    isSubscription: plan.isSubscription,
+  }));
+
+  const currentSelectedId = cart.find((item) => item.quantity > 0)?.planId || null;
+
+  const handlePlanSelect = (id: string) => {
+    const plan = planOptions.find((p) => p.id === id);
+    if (!plan) return;
+    setCart((prev) =>
+      prev.map((item) => (item.planId === id ? { ...item, quantity: 1 } : { ...item, quantity: 0 }))
+    );
+    setPurchaseType(plan.isTrial ? 'one-time' : 'subscription-monthly');
+    if (plan.isSubscription) setOpenPlanId(plan.id);
+  };
+
   const renderPlanSelection = () => (
     <div className="space-y-6">
-      {/* プラン選択 */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-2">
-          プランを選択してください
-        </h2>
-        <p className="text-gray-500 mb-2" style={{ fontSize: '14px' }}>
-          ふとるめしは通常のお弁当よりも大きなお弁当なので、冷凍庫の容量を確保してからご注文をお願いします。
+      <div>
+        <h2 className="text-xl font-bold text-gray-900 mb-1">何食お届けしましょうか？</h2>
+        <p className="text-sm text-gray-500">
+          初回限定価格で、お気軽に始められます。
         </p>
-        <p className="text-sm text-gray-500 mb-6">
-          いずれか1つを選択してください。
-        </p>
-        {!user && (
-          <div className="mb-4 flex items-center gap-2 text-sm text-blue-600 bg-blue-50 rounded-lg p-3">
-            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-            <span>月額プランのご購入にはログインが必要です</span>
-            <button
-              onClick={() => {
-                const refCode = localStorage.getItem('referral_code');
-                const redirectUrl = refCode
-                  ? `/purchase?type=subscription&ref=${refCode}`
-                  : '/purchase?type=subscription';
-                router.push(`/login?redirect=${encodeURIComponent(redirectUrl)}`);
-              }}
-              className="ml-2 underline hover:text-blue-700"
-            >
-              ログインする
-            </button>
-          </div>
-        )}
-        <div className="space-y-4">
-          {planOptions
-            .map((plan) => {
-              const cartItem = cart.find(item => item.planId === plan.id);
-              const quantity = cartItem?.quantity || 0;
-
-              return (
-                <div
-                  key={plan.id}
-                  className={`relative rounded-lg border-2 p-4 transition-all cursor-pointer ${
-                    quantity > 0
-                      ? 'border-orange-500 bg-orange-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                  onClick={() => {
-                    // 他のプランを0にして、選択したプランを1にする（トグル動作）
-                    const isSelected = quantity > 0;
-                    setCart(prev => prev.map(item =>
-                      item.planId === plan.id
-                        ? { ...item, quantity: isSelected ? 0 : 1 }
-                        : { ...item, quantity: 0 }
-                    ));
-                    // purchaseType を選択プランに合わせて切り替え
-                    if (!isSelected) {
-                      setPurchaseType(plan.isTrial ? 'one-time' : 'subscription-monthly');
-                    }
-                    // タップしたプランのアコーディオンを開く（排他制御）
-                    if (plan.isSubscription) setOpenPlanId(plan.id);
-                  }}
-                >
-                  {/* お試しプランバッジ */}
-                  {plan.isTrial && (
-                    <div className="absolute top-2 right-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs px-3 py-1 rounded-md font-medium shadow-sm">
-                      初回限定
-                    </div>
-                  )}
-                  
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 pr-20">
-                      <span className="text-lg font-semibold text-gray-900">
-                        {plan.label}
-                      </span>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {plan.description}
-                      </p>
-                      {plan.isSubscription ? (
-                        <div className="mt-2 space-y-1">
-                          {plan.id === 'subscription-monthly-12' ? (
-                            <span className="text-xs bg-red-600 text-white font-bold px-2 py-0.5 rounded whitespace-nowrap">
-                              ゆうさくスポーツキャンペーン 初回限定
-                            </span>
-                          ) : (
-                            <span className="text-xs bg-red-600 text-white font-bold px-2 py-0.5 rounded">
-                              初回限定価格
-                            </span>
-                          )}
-                          <div className="text-xl font-black text-red-600">
-                            <span className="text-gray-400 line-through mr-1">¥{((plan.anchorPrice || 0) + (plan.phase2ShippingFee || 0)).toLocaleString()}</span>
-                            →初回 ¥{plan.totalPrice.toLocaleString()}
-                            <span className="text-xs text-green-600 font-bold ml-1">送料無料</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mt-2">
-                            <span className="text-xl font-bold text-orange-600">
-                              ¥{plan.totalPrice.toLocaleString()}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              （¥{plan.price.toLocaleString()} + 送料¥{plan.shippingFee.toLocaleString()}）
-                            </span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    {/* 選択状態表示 */}
-                    <div className="hidden sm:flex items-center">
-                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                        quantity > 0
-                          ? 'border-orange-600 bg-orange-600'
-                          : 'border-gray-300'
-                      }`}>
-                        {quantity > 0 && (
-                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 小計表示 */}
-                  {quantity > 0 && (
-                    <div className="mt-3 pt-3 border-t border-orange-200 flex justify-between items-center">
-                      {purchaseType === 'subscription-monthly' ? (
-                        <>
-                          <span className="text-sm text-gray-600">
-                            {plan.quantity}食/月（{plan.deliveriesPerMonth}回配送）
-                          </span>
-                          <div className="text-right">
-                            <div className="text-xs text-gray-500">初回</div>
-                            <span className="text-lg font-semibold text-orange-600">
-                              ¥{plan.totalPrice.toLocaleString()}
-                            </span>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-sm text-gray-600">
-                            {plan.quantity}食（1回限り）
-                          </span>
-                          <span className="text-lg font-semibold text-orange-600">
-                            ¥{plan.totalPrice.toLocaleString()}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  {/* 届くメニュー（サブスクプランのみ・プランタップ連動で開閉） */}
-                  {plan.isSubscription && (
-                    <div
-                      className={`overflow-hidden transition-all duration-300 ease-in-out ${openPlanId === plan.id ? 'max-h-[600px] mt-3' : 'max-h-0'}`}
-                    >
-                      <div className="border-t border-gray-100 pt-3">
-                        {menuItems.length > 0 ? (
-                          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                            {menuItems.map((menu) => (
-                              <div
-                                key={menu.id}
-                                className="text-center cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedMenuItem(menu);
-                                }}
-                              >
-                                <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 hover:opacity-80 transition-opacity">
-                                  {menu.image ? (
-                                    <img
-                                      src={menu.image}
-                                      alt={menu.name}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">
-                                      No Image
-                                    </div>
-                                  )}
-                                </div>
-                                <p className="text-xs text-gray-700 mt-1 leading-tight line-clamp-2">{menu.name}</p>
-                                <p className="text-xs text-orange-500 font-medium">{menu.calories}kcal</p>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-xs text-gray-400">メニュー情報を読み込んでいます...</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-        </div>
       </div>
 
-      {/* 合計金額 */}
-      {!isCartEmpty && (
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-sm text-gray-500">ご注文内容</p>
-              {(() => {
-                const selectedPlan = getSelectedPlan();
-                if (!selectedPlan) return null;
-                return (
-                  <p className="text-gray-900 font-medium">
-                    {selectedPlan.label}
-                  </p>
-                );
-              })()}
-            </div>
-            <div className="text-right">
-              {purchaseType === 'subscription-monthly' ? (
-                <>
-                  <p className="text-sm text-gray-500">初回合計</p>
-                  <p className="text-3xl text-orange-600">
-                    <span className="text-gray-400 line-through mr-1">¥{(() => {
-                      const selectedPlan = getSelectedPlan();
-                      if (!selectedPlan) return '0';
-                      return ((selectedPlan.anchorPrice || 0) + (selectedPlan.phase2ShippingFee || 0)).toLocaleString();
-                    })()}</span>
-                    →¥{(() => {
-                      const selectedPlan = getSelectedPlan();
-                      if (!selectedPlan) return '0';
-                      return selectedPlan.totalPrice.toLocaleString();
-                    })()}
-                  </p>
-                  <p className="text-xs text-green-600 font-medium">送料無料</p>
-                </>
-              ) : (
-                <>
-                  <p className="text-sm text-gray-500">合計金額</p>
-                  <p className="text-3xl text-orange-600">
-                    ¥{(() => {
-                      const selectedPlan = getSelectedPlan();
-                      if (!selectedPlan) return '0';
-                      return selectedPlan.totalPrice.toLocaleString();
-                    })()}
-                  </p>
-                  <p className="text-xs text-gray-500">税込・送料込</p>
-                </>
-              )}
-            </div>
-          </div>
+      {!user && (
+        <div className="flex items-start gap-2 text-sm text-blue-600 bg-blue-50 rounded-lg p-3">
+          <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          <span className="flex-1">月額プランのご購入にはログインが必要です</span>
+          <button
+            onClick={() => {
+              const refCode = localStorage.getItem('referral_code');
+              const redirectUrl = refCode
+                ? `/purchase?type=subscription&ref=${refCode}`
+                : '/purchase?type=subscription';
+              router.push(`/login?redirect=${encodeURIComponent(redirectUrl)}`);
+            }}
+            className="underline hover:text-blue-700 flex-shrink-0"
+          >
+            ログインする
+          </button>
         </div>
       )}
+
+      <PlanSelectorCards
+        plans={planCardData}
+        selectedId={currentSelectedId}
+        onSelect={handlePlanSelect}
+      />
 
       <button
         onClick={handleProceedToInfo}
         disabled={isCartEmpty}
-        className="w-full bg-orange-500 text-white py-4 rounded-lg font-semibold hover:bg-orange-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className="w-full bg-[#E8593C] text-white py-3.5 rounded-full font-bold hover:bg-[#d64a2e] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
       >
         お客様情報の入力へ進む
       </button>
+      <p className="text-xs text-gray-400 text-center">
+        送料無料 ・ いつでも解約可能 ・ 管理栄養士監修
+      </p>
     </div>
   );
 
@@ -1210,12 +1038,12 @@ const PurchasePage: React.FC = () => {
   };
 
   const renderCustomerInfoForm = () => (
-    <div className="space-y-6">
+    <div className="space-y-6 [word-break:keep-all] [overflow-wrap:anywhere]">
       {/* 選択中のプラン表示 */}
       {!isCartEmpty && (
         <div className="bg-white border border-gray-200 rounded-xl p-4">
-          <div className="flex justify-between items-center">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+            <div className="min-w-0">
               <span className="text-sm text-gray-500">ご注文内容</span>
               {(() => {
                 const selectedPlan = getSelectedPlan();
@@ -1227,7 +1055,7 @@ const PurchasePage: React.FC = () => {
                 );
               })()}
             </div>
-            <p className="text-xl text-orange-600">
+            <p className="text-xl text-orange-600 whitespace-nowrap">
               {purchaseType === 'subscription-monthly' && (() => {
                 const selectedPlan = getSelectedPlan();
                 if (!selectedPlan) return null;

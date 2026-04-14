@@ -16,7 +16,7 @@ export default function FeedbackSection() {
   }
 
   return (
-    <section className="py-2 bg-[#F9F8F3]" id="feedback">
+    <section className="pt-2 pb-10 bg-[#F9F8F3]" id="feedback">
       <div className="max-w-7xl mx-auto">
         <FeedbackCarousel feedbacks={feedbacks} />
       </div>

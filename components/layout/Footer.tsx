@@ -35,7 +35,7 @@ const Footer: React.FC = () => {
         
         <div className="border-t border-gray-800 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center text-sm text-gray-400">
-            <p>© 2025 ふとるめし. All rights reserved.</p>
+            <p>© 2026 ふとるめし. All rights reserved.</p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <a href="/terms" className="hover:text-white transition-colors">利用規約</a>
               <a href="/privacy" className="hover:text-white transition-colors">プライバシーポリシー</a>
