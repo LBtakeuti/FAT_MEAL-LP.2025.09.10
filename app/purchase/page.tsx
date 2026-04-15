@@ -864,37 +864,6 @@ const PurchasePage: React.FC = () => {
     }
   };
 
-  const renderStepIndicator = () => (
-    <div className="flex items-center justify-center mb-8">
-      <div className="flex items-center">
-        <div className={`flex items-center justify-center w-8 h-8 rounded-full ${currentStep === 'plan' ? 'bg-orange-600 text-white' : 'bg-orange-600 text-white'}`}>
-          1
-        </div>
-        <span className={`ml-1.5 text-xs font-medium whitespace-nowrap ${currentStep === 'plan' ? 'text-orange-600' : 'text-gray-900'}`}>
-          プラン選択
-        </span>
-      </div>
-      <div className={`w-8 h-0.5 mx-1.5 ${currentStep !== 'plan' ? 'bg-orange-600' : 'bg-gray-300'}`} />
-      <div className="flex items-center">
-        <div className={`flex items-center justify-center w-8 h-8 rounded-full ${currentStep === 'info' ? 'bg-orange-600 text-white' : currentStep === 'confirm' ? 'bg-orange-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
-          2
-        </div>
-        <span className={`ml-1.5 text-xs font-medium whitespace-nowrap ${currentStep === 'info' ? 'text-orange-600' : currentStep === 'confirm' ? 'text-gray-900' : 'text-gray-500'}`}>
-          お客様情報
-        </span>
-      </div>
-      <div className={`w-8 h-0.5 mx-1.5 ${currentStep === 'confirm' ? 'bg-orange-600' : 'bg-gray-300'}`} />
-      <div className="flex items-center">
-        <div className={`flex items-center justify-center w-8 h-8 rounded-full ${currentStep === 'confirm' ? 'bg-orange-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
-          3
-        </div>
-        <span className={`ml-1.5 text-xs font-medium whitespace-nowrap ${currentStep === 'confirm' ? 'text-orange-600' : 'text-gray-500'}`}>
-          確認・決済
-        </span>
-      </div>
-    </div>
-  );
-
   const planCardData: PlanCardData[] = planOptions.map((plan) => ({
     id: plan.id,
     mealCount: plan.quantity,
@@ -928,13 +897,6 @@ const PurchasePage: React.FC = () => {
 
   const renderPlanSelection = () => (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-gray-900 mb-1">何食お届けしましょうか？</h2>
-        <p className="text-sm text-gray-500">
-          初回限定価格で、お気軽に始められます。
-        </p>
-      </div>
-
       {!user && (
         <div className="flex items-start gap-2 text-sm text-blue-600 bg-blue-50 rounded-lg p-3">
           <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1038,7 +1000,7 @@ const PurchasePage: React.FC = () => {
   };
 
   const renderCustomerInfoForm = () => (
-    <div className="space-y-6 [word-break:keep-all] [overflow-wrap:anywhere]">
+    <div className="space-y-6 [word-break:keep-all] [overflow-wrap:normal] [line-break:strict]">
       {/* 選択中のプラン表示 */}
       {!isCartEmpty && (
         <div className="bg-white border border-gray-200 rounded-xl p-4">
@@ -1055,24 +1017,6 @@ const PurchasePage: React.FC = () => {
                 );
               })()}
             </div>
-            <p className="text-xl text-orange-600 whitespace-nowrap">
-              {purchaseType === 'subscription-monthly' && (() => {
-                const selectedPlan = getSelectedPlan();
-                if (!selectedPlan) return null;
-                return (
-                  <span className="text-gray-400 line-through mr-1">¥{((selectedPlan.anchorPrice || 0) + (selectedPlan.phase2ShippingFee || 0)).toLocaleString()}</span>
-                );
-              })()}
-              {purchaseType === 'subscription-monthly' && '→'}
-              ¥{(() => {
-                const selectedPlan = getSelectedPlan();
-                if (!selectedPlan) return '0';
-                const total = purchaseType === 'subscription-monthly'
-                  ? selectedPlan.totalPrice + selectedPlan.shippingFee
-                  : selectedPlan.totalPrice;
-                return total.toLocaleString();
-              })()}
-            </p>
           </div>
         </div>
       )}
@@ -1697,20 +1641,13 @@ const PurchasePage: React.FC = () => {
 
         {/* サブスクリプション解約に関する注意書き */}
         {purchaseType === 'subscription-monthly' && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
-            <div className="flex items-start gap-3">
-              <svg className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              <div>
-                <h3 className="font-bold text-amber-800 mb-2">定期購入（サブスクリプション）に関するご注意</h3>
-                <ul className="text-sm text-amber-700 space-y-1.5">
-                  <li>・ご購入後、毎月自動的に決済が行われます</li>
-                  <li>・お支払い済みの配送についてはキャンセルできかねます</li>
-                  <li>・ご不明点は<a href="/contact" target="_blank" rel="noopener noreferrer" className="text-amber-800 underline hover:text-amber-900">お問い合わせ</a>よりご連絡ください</li>
-                </ul>
-              </div>
-            </div>
+          <div className="rounded-lg px-4 py-3 [word-break:keep-all] [overflow-wrap:normal]">
+            <p className="text-xs text-gray-500 mb-1.5">定期購入（サブスクリプション）に関するご注意</p>
+            <ul className="text-xs text-gray-500 space-y-1 leading-relaxed">
+              <li>・ご購入後、毎月自動的に決済が行われます</li>
+              <li>・お支払い済みの配送についてはキャンセルできかねます</li>
+              <li>・ご不明点は<a href="/contact" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-700">お問い合わせ</a>よりご連絡ください</li>
+            </ul>
           </div>
         )}
 
@@ -1813,9 +1750,6 @@ const PurchasePage: React.FC = () => {
           <div className="text-center mb-6">
             <h1 className="text-2xl font-bold text-gray-900">ご購入手続き</h1>
           </div>
-
-          {/* ステップインジケーター */}
-          {renderStepIndicator()}
 
           {/* コンテンツ */}
           {currentStep === 'plan' && renderPlanSelection()}

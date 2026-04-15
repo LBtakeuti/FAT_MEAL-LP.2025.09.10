@@ -857,6 +857,7 @@ button:hover {
 
 .menu-inner {
   max-width: 880px;
+  width: fit-content;
   margin: 0 auto;
 }
 
@@ -868,7 +869,7 @@ button:hover {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 24px;
+  margin-bottom: 5px;
   font-family: var(--font-noto-sans-jp), 'Noto Sans JP', sans-serif;
 }
 
@@ -909,7 +910,7 @@ button:hover {
   .menu-desc {
     font-size: 12px;
     line-height: 2;
-    margin-bottom: 28px;
+    margin-bottom: 0;
   }
 
   .menu-line1 {
@@ -929,6 +930,8 @@ button:hover {
   font-weight: 500;
   color: #1a1a1a;
   text-align: center;
+  padding-top: 8px;
+  white-space: nowrap;
   margin-bottom: 52px;
   font-family: var(--font-noto-sans-jp), 'Noto Sans JP', sans-serif;
 }
@@ -1033,8 +1036,9 @@ button:hover {
 }
 
 @media (max-width: 768px) {
-  .comparison-section {
-    padding: 40px 20px;
+  .comparison-section,
+  .normal-scroll section.comparison-section {
+    padding: 0 20px 40px;
   }
 
   .comparison-title {
@@ -1058,3 +1062,44 @@ button:hover {
     font-size: 19px;
   }
 }
+
+/* ===== 個別メッセージ本文（TipTap出力 & 管理エディタ共通） ===== */
+.message-body,
+.ProseMirror {
+  color: #1f2937;
+  line-height: 1.9;
+  font-size: 16px;
+}
+.message-body p,
+.ProseMirror p { margin: 0 0 1em 0; }
+.message-body h1,
+.ProseMirror h1 { font-size: 1.5em; font-weight: 700; margin: 1.2em 0 0.6em; }
+.message-body h2,
+.ProseMirror h2 { font-size: 1.3em; font-weight: 700; margin: 1.1em 0 0.5em; }
+.message-body h3,
+.ProseMirror h3 { font-size: 1.1em; font-weight: 700; margin: 1em 0 0.4em; }
+.message-body strong,
+.ProseMirror strong { font-weight: 700; }
+.message-body em,
+.ProseMirror em { font-style: italic; }
+.message-body a,
+.ProseMirror a { color: #E8593C; text-decoration: underline; }
+.message-body ul,
+.ProseMirror ul { list-style: disc; padding-left: 1.5em; margin: 0 0 1em; }
+.message-body ol,
+.ProseMirror ol { list-style: decimal; padding-left: 1.5em; margin: 0 0 1em; }
+.message-body blockquote,
+.ProseMirror blockquote {
+  border-left: 3px solid #e5e7eb;
+  padding-left: 1em;
+  color: #6b7280;
+  margin: 0 0 1em;
+}
+.message-body code,
+.ProseMirror code {
+  background: #f3f4f6;
+  padding: 0.15em 0.35em;
+  border-radius: 3px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.ProseMirror:focus { outline: none; }

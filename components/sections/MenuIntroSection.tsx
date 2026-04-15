@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 
 const MenuIntroSection: React.FC = () => {
   return (
@@ -20,12 +21,16 @@ const MenuIntroSection: React.FC = () => {
           管理栄養士が設計した、増量のための弁当がここにある。
         </p>
 
-        {/* <div className="menu-img-wrap">
-          <img
-            src="/images/sections/slider-1.png"
+        <div className="menu-img-wrap mt-4">
+          <Image
+            src="/images/sections/menu-six.webp"
             alt="ふとるめし 全6メニュー"
+            width={1600}
+            height={1050}
+            sizes="(min-width: 768px) 880px, 100vw"
+            className="w-full h-auto rounded-lg"
           />
-        </div> 画像一時非表示 */}
+        </div>
       </div>
     </section>
   );

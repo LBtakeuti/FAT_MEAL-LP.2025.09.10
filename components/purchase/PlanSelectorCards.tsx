@@ -61,8 +61,9 @@ export function PlanSelectorCards({ plans, selectedId, onSelect }: PlanSelectorC
               <span className="text-2xl font-black text-[#E8593C]">
                 ¥{plan.totalPrice.toLocaleString()}
               </span>
+              <span className="text-xs font-bold text-gray-600 ml-1">/食</span>
               {plan.shippingNote && (
-                <span className="text-xs text-green-600 font-bold ml-2">{plan.shippingNote}</span>
+                <span className={`text-xs font-bold ml-2 ${plan.shippingNote === '料別' ? 'text-gray-500' : 'text-green-600'}`}>{plan.shippingNote}</span>
               )}
             </div>
 

@@ -41,7 +41,7 @@ export function PurchaseSheetShell({ title = 'プランを選ぶ', children }: P
   }, [close]);
 
   return (
-    <div className="fixed inset-0 z-[9999]">
+    <div className="fixed inset-0 z-[10002]">
       {/* Overlay */}
       <div
         onClick={close}
