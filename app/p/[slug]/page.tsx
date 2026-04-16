@@ -43,9 +43,9 @@ export default async function PromoterSlugPage({ params }: PageProps) {
   if (!promoterPage) redirect('/');
 
   const supabase = createServerClient();
-  (supabase as unknown as { rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown> })
-    .rpc('increment_promoter_page_view', { page_slug: slug })
-    .catch((e: unknown) => console.error('Failed to increment view_count:', e));
+  const rpcClient = supabase as unknown as { rpc: (fn: string, args: Record<string, unknown>) => { then: (fn: (res: { error: unknown }) => void) => void } };
+  const { error: rpcError } = await rpcClient.rpc('increment_promoter_page_view', { page_slug: slug });
+  if (rpcError) console.error('Failed to increment view_count:', rpcError);
 
   const menuItemsDB = await getMenuItemsServer(6);
   const menuItems: MenuItem[] = menuItemsDB.map((item) => ({
