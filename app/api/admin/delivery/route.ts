@@ -3,7 +3,7 @@ import { createServerClient } from '@/lib/supabase';
 
 export type DeliveryItem = {
   id: string;
-  source: 'subscription' | 'order';
+  source: 'subscription' | 'order' | 'tiktok';
   date: string; // YYYY-MM-DD
   customer_name: string;
   customer_email: string;
@@ -20,6 +20,7 @@ export type DeliveryItem = {
   status: string;
   subscription_id?: string;
   delivery_number?: number;
+  tiktok_order_id?: string;
 };
 
 export async function GET(request: NextRequest) {
@@ -167,6 +168,53 @@ export async function GET(request: NextRequest) {
             meals_per_delivery: o.quantity || 6,
             quantity: o.quantity || 6,
             status: o.status,
+          });
+        }
+      }
+    }
+
+    // tiktok_shop_orders の取得
+    if (!sourceFilter || sourceFilter === 'tiktok') {
+      let tkQuery = (supabase as any)
+        .from('tiktok_shop_orders')
+        .select('*')
+        .order('created_time', { ascending: true });
+
+      if (from) tkQuery = tkQuery.gte('created_time', `${from}T00:00:00+09:00`);
+      if (to) tkQuery = tkQuery.lte('created_time', `${to}T23:59:59+09:00`);
+      if (statusFilter) tkQuery = tkQuery.eq('status', statusFilter);
+
+      const { data: tikTokOrders, error: tkError } = await tkQuery;
+      if (tkError) {
+        console.error('Failed to fetch tiktok_shop_orders:', tkError);
+      } else if (tikTokOrders) {
+        for (const t of tikTokOrders) {
+          const dateStr = t.created_time ? (t.created_time as string).slice(0, 10) : '';
+          const name = t.recipient || [t.last_name, t.first_name].filter(Boolean).join(' ');
+          // TikTok の Phone は (+81)09012345678 のような形式のことがあるため数字化
+          const phoneDigits = (t.phone || '').replace(/[^0-9+]/g, '');
+          const phone = phoneDigits.startsWith('+81')
+            ? '0' + phoneDigits.slice(3)
+            : phoneDigits;
+          const addrDetail = [t.county, t.city_ward, t.address_line_1].filter(Boolean).join('');
+          items.push({
+            id: t.id,
+            source: 'tiktok',
+            date: dateStr,
+            customer_name: name,
+            customer_email: '',
+            phone,
+            postal_code: t.zipcode || '',
+            prefecture: t.prefecture || '',
+            city: '',
+            address_detail: addrDetail,
+            building: t.address_line_2 || '',
+            plan_name: t.product_name || t.seller_sku || 'TikTok注文',
+            menu_set: t.product_name || t.seller_sku || 'TikTok注文',
+            meals_per_delivery: t.quantity || 1,
+            quantity: t.quantity || 1,
+            status: t.status || 'pending',
+            tiktok_order_id: t.tiktok_order_id,
           });
         }
       }

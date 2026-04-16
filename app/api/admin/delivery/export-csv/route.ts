@@ -7,9 +7,16 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const subIdsParam = searchParams.get('sub_ids');
     const orderIdsParam = searchParams.get('order_ids');
+    const tiktokIdsParam = searchParams.get('tiktok_ids');
 
     const subIds = subIdsParam ? subIdsParam.split(',').filter(Boolean) : [];
     const orderIds = orderIdsParam ? orderIdsParam.split(',').filter(Boolean) : [];
+    const tiktokIds = tiktokIdsParam ? tiktokIdsParam.split(',').filter(Boolean) : [];
+
+    const senderPhone = process.env.SENDER_PHONE || '090-3221-6638';
+    const senderPostalCode = process.env.SENDER_POSTAL_CODE || '3430827';
+    const senderAddress = process.env.SENDER_ADDRESS || '埼玉県越谷市川柳町２丁目４０１';
+    const senderCompany = process.env.SENDER_COMPANY || 'LandBridge株式会社';
 
     const rows: string[][] = [];
 
@@ -64,10 +71,10 @@ export async function GET(request: NextRequest) {
             (addr.prefecture || '') + (addr.city || '') + (addr.address_detail || ''),
             addr.building || '',
             addr.name || '',
-            process.env.SENDER_PHONE || '',
-            process.env.SENDER_POSTAL_CODE || '',
-            process.env.SENDER_ADDRESS || '',
-            process.env.SENDER_COMPANY || '',
+            senderPhone,
+            senderPostalCode,
+            senderAddress,
+            senderCompany,
             itemName,
           ]);
         }
@@ -95,10 +102,47 @@ export async function GET(request: NextRequest) {
             (o.prefecture || '') + (o.city || '') + (o.address_detail || ''),
             o.building || '',
             o.customer_name || '',
-            process.env.SENDER_PHONE || '',
-            process.env.SENDER_POSTAL_CODE || '',
-            process.env.SENDER_ADDRESS || '',
-            process.env.SENDER_COMPANY || '',
+            senderPhone,
+            senderPostalCode,
+            senderAddress,
+            senderCompany,
+            itemName,
+          ]);
+        }
+      }
+    }
+
+    // tiktok_shop_orders の取得
+    if (tiktokIds.length > 0) {
+      const { data: tikTokOrders, error } = await (supabase as any)
+        .from('tiktok_shop_orders')
+        .select('*')
+        .in('id', tiktokIds);
+
+      if (error) {
+        console.error('Failed to fetch tiktok_shop_orders:', error);
+      } else if (tikTokOrders) {
+        for (const t of tikTokOrders) {
+          const name = t.recipient || [t.last_name, t.first_name].filter(Boolean).join(' ');
+          const phoneDigits = (t.phone || '').replace(/[^0-9+]/g, '');
+          const phone = phoneDigits.startsWith('+81') ? '0' + phoneDigits.slice(3) : phoneDigits;
+          const addr = [t.prefecture, t.county, t.city_ward, t.address_line_1]
+            .filter(Boolean)
+            .join('');
+          const itemName = `${t.product_name || t.seller_sku || 'TikTok注文'}（${t.quantity || 1}個）`;
+          rows.push([
+            '0',
+            '1',
+            formatNextDayJST(t.created_time || new Date().toISOString()),
+            phone,
+            (t.zipcode || '').replace(/-/g, ''),
+            addr,
+            t.address_line_2 || '',
+            name,
+            senderPhone,
+            senderPostalCode,
+            senderAddress,
+            senderCompany,
             itemName,
           ]);
         }

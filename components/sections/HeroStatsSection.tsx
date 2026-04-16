@@ -3,7 +3,11 @@
 import React from 'react';
 import Link from 'next/link';
 
-const HeroStatsSection: React.FC = () => {
+interface HeroStatsSectionProps {
+  hideCta?: boolean;
+}
+
+const HeroStatsSection: React.FC<HeroStatsSectionProps> = ({ hideCta = false }) => {
   return (
     <section className="hero-stats-section">
       {/* PC版：3枚独立カード */}
@@ -67,11 +71,13 @@ const HeroStatsSection: React.FC = () => {
       </div>
 
       {/* CTAボタン */}
-      <div className="hero-stats-cta">
-        <Link href="/purchase" className="hero-stats-cta-btn">
-          まずは太る
-        </Link>
-      </div>
+      {!hideCta && (
+        <div className="hero-stats-cta">
+          <Link href="/purchase" className="hero-stats-cta-btn">
+            まずは太る
+          </Link>
+        </div>
+      )}
     </section>
   );
 };

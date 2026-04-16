@@ -16,7 +16,7 @@ export default function AmbassadorSection() {
   }
 
   return (
-    <section className="py-2 bg-[#F9F8F3]" id="ambassador">
+    <section className="pt-2 pb-10 bg-[#F9F8F3]" id="ambassador">
       <div className="max-w-7xl mx-auto">
         <AmbassadorCarousel ambassadors={ambassadors} />
       </div>

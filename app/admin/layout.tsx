@@ -27,6 +27,7 @@ export default function AdminLayout({
     { href: '/admin', label: 'ダッシュボード', exact: true },
     { href: '/admin/analytics', label: 'アナリティクス' },
     { href: '/admin/orders', label: '注文管理' },
+    { href: '/admin/tiktok-shop', label: 'TikTok Shop' },
     { href: '/admin/delivery', label: '配送管理' },
     { href: '/admin/referrers', label: '紹介者管理' },
     { href: '/admin/menu', label: '弁当管理' },
@@ -38,7 +39,8 @@ export default function AdminLayout({
     { href: '/admin/banner', label: 'バナー管理' },
     { href: '/admin/media-logos', label: 'メディアロゴ管理' },
     { href: '/admin/surveys', label: 'アンケート集計' },
-    { href: '/admin/messages', label: '個別メッセージ' },
+    { href: '/admin/promoter-pages', label: '個別メッセージ' },
+    { href: '/admin/tiktok-shop', label: 'TikTok Shop' },
   ];
 
   const isActive = (item: { href: string; exact?: boolean }) => {

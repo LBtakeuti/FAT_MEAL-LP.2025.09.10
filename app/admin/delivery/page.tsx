@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 
 type DeliveryItem = {
   id: string;
-  source: 'subscription' | 'order';
+  source: 'subscription' | 'order' | 'tiktok';
   date: string;
   customer_name: string;
   customer_email: string;
@@ -44,7 +44,7 @@ export default function AdminDeliveryPage() {
   const [items, setItems] = useState<DeliveryItem[]>([]);
   const [overdueCount, setOverdueCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [sourceFilter, setSourceFilter] = useState<'' | 'subscription' | 'order'>('');
+  const [sourceFilter, setSourceFilter] = useState<'' | 'subscription' | 'order' | 'tiktok'>('');
   const [statusFilter, setStatusFilter] = useState<'' | 'pending' | 'shipped'>('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -108,9 +108,14 @@ export default function AdminDeliveryPage() {
       .filter(i => i.source === 'order' && selectedIds.has(i.id))
       .map(i => i.id)
       .join(',');
+    const tiktokIds = items
+      .filter(i => i.source === 'tiktok' && selectedIds.has(i.id))
+      .map(i => i.id)
+      .join(',');
     const params = new URLSearchParams();
     if (subIds) params.set('sub_ids', subIds);
     if (orderIds) params.set('order_ids', orderIds);
+    if (tiktokIds) params.set('tiktok_ids', tiktokIds);
     window.location.href = `/api/admin/delivery/export-csv?${params}`;
   };
 
@@ -127,9 +132,12 @@ export default function AdminDeliveryPage() {
     }
   };
 
-  const getSourceBadge = (source: 'subscription' | 'order') => {
+  const getSourceBadge = (source: 'subscription' | 'order' | 'tiktok') => {
     if (source === 'subscription') {
       return <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-800 font-medium">サブスク</span>;
+    }
+    if (source === 'tiktok') {
+      return <span className="px-2 py-0.5 text-xs rounded-full bg-pink-100 text-pink-800 font-medium">TikTok</span>;
     }
     return <span className="px-2 py-0.5 text-xs rounded-full bg-orange-100 text-orange-800 font-medium">買い切り</span>;
   };
@@ -169,7 +177,7 @@ export default function AdminDeliveryPage() {
 
         {/* 種別フィルター */}
         <div className="flex gap-1">
-          {(['', 'subscription', 'order'] as const).map((v) => (
+          {(['', 'subscription', 'order', 'tiktok'] as const).map((v) => (
             <button
               key={v}
               onClick={() => setSourceFilter(v)}
@@ -179,7 +187,7 @@ export default function AdminDeliveryPage() {
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
-              {v === '' ? '全て' : v === 'subscription' ? 'サブスク' : '買い切り'}
+              {v === '' ? '全て' : v === 'subscription' ? 'サブスク' : v === 'order' ? '買い切り' : 'TikTok'}
             </button>
           ))}
         </div>
