@@ -65,6 +65,29 @@ export default function AdminTikTokShopPage() {
     }
   };
 
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  const handleStatusChange = async (id: string, newStatus: string) => {
+    setUpdatingId(id);
+    try {
+      const res = await fetch(`/api/admin/tiktok-shop/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok) {
+        setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
+      } else {
+        const data = await res.json();
+        alert(data.message || 'ステータス更新に失敗しました');
+      }
+    } catch {
+      alert('ステータス更新に失敗しました');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm('この注文を削除しますか？')) return;
     await fetch(`/api/admin/tiktok-shop/${id}`, { method: 'DELETE' });
@@ -122,41 +145,52 @@ export default function AdminTikTokShopPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">注文ID</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">注文日時</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">商品 / SKU</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">数量</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">金額</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">お届け先</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">追跡番号</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ステータス</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">操作</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">配送日</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">種別</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">お客様名</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">プラン</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">個数</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ステータス</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {orders.map((o) => (
                   <tr key={o.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm font-mono text-gray-900">{o.tiktok_order_id}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
-                      {o.created_time ? new Date(o.created_time).toLocaleString('ja-JP') : '-'}
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {o.created_time ? o.created_time.slice(0, 10) : '-'}
                     </td>
-                    <td className="px-4 py-3 text-sm">
-                      <div className="text-gray-900">{o.product_name}</div>
-                      <div className="text-xs text-gray-500 font-mono">{o.seller_sku}</div>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <span className="px-2 py-0.5 text-xs rounded-full bg-pink-100 text-pink-800 font-medium">TikTok</span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">{o.quantity}</td>
-                    <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">{o.order_amount}</td>
-                    <td className="px-4 py-3 text-sm">
-                      <div className="text-gray-900">{formatName(o)}</div>
-                      <div className="text-xs text-gray-500">{formatAddress(o)}</div>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {formatName(o)}
                     </td>
-                    <td className="px-4 py-3 text-xs font-mono text-gray-700">{o.tracking_id || '-'}</td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 px-2">
-                        {o.order_status || o.status}
-                      </span>
+                    <td className="px-4 py-4 text-sm text-gray-900 max-w-xs">
+                      <div className="truncate" title={o.product_name || ''}>{o.product_name || o.seller_sku || '-'}</div>
                     </td>
-                    <td className="px-4 py-3 text-right text-sm">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {o.quantity}個
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <select
+                        value={o.status}
+                        onChange={(e) => handleStatusChange(o.id, e.target.value)}
+                        disabled={updatingId === o.id}
+                        className={`px-2 py-1 text-xs rounded-full font-semibold border-0 cursor-pointer focus:ring-2 focus:ring-orange-500 ${
+                          o.status === 'shipped' ? 'bg-green-100 text-green-800' :
+                          o.status === 'confirmed' ? 'bg-yellow-100 text-yellow-800' :
+                          o.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-700'
+                        } ${updatingId === o.id ? 'opacity-50' : ''}`}
+                      >
+                        <option value="pending">未発送</option>
+                        <option value="confirmed">確認済</option>
+                        <option value="shipped">発送済</option>
+                        <option value="cancelled">キャンセル</option>
+                      </select>
+                    </td>
+                    <td className="px-4 py-4 text-right text-sm">
                       <button onClick={() => handleDelete(o.id)} className="text-red-600 hover:text-red-900">
                         削除
                       </button>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
+import { withAuth, jsonSuccess, jsonBadRequest, jsonError } from '@/lib/api-helpers';
 
 export type DeliveryItem = {
   id: string;
@@ -235,3 +236,45 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+// PATCH: ステータス更新（source別にテーブルを分岐）
+export const PATCH = withAuth(async (request: NextRequest) => {
+  const body = await request.json();
+  const { id, source, status } = body;
+
+  if (!id || !source || !status) {
+    return jsonBadRequest('id, source, status は必須です');
+  }
+
+  const allowedStatuses = ['pending', 'confirmed', 'shipped'];
+  if (!allowedStatuses.includes(status)) {
+    return jsonBadRequest('不正なステータスです');
+  }
+
+  const supabase = createServerClient() as any;
+  const now = new Date().toISOString();
+
+  if (source === 'subscription') {
+    const { error } = await supabase
+      .from('subscription_deliveries')
+      .update({ status, delivered_date: status === 'shipped' ? now : null })
+      .eq('id', id);
+    if (error) return jsonError('サブスク配送の更新に失敗しました', 500, error);
+  } else if (source === 'order') {
+    const { error } = await supabase
+      .from('orders')
+      .update({ status, updated_at: now })
+      .eq('id', id);
+    if (error) return jsonError('注文の更新に失敗しました', 500, error);
+  } else if (source === 'tiktok') {
+    const { error } = await supabase
+      .from('tiktok_shop_orders')
+      .update({ status, updated_at: now })
+      .eq('id', id);
+    if (error) return jsonError('TikTok注文の更新に失敗しました', 500, error);
+  } else {
+    return jsonBadRequest('不正なsourceです');
+  }
+
+  return jsonSuccess({ message: 'ステータスを更新しました' });
+});

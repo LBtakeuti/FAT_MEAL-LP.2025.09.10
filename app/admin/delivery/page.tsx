@@ -123,13 +123,37 @@ export default function AdminDeliveryPage() {
     ? [...items].sort((a, b) => a.date.localeCompare(b.date))
     : [...items].sort((a, b) => b.date.localeCompare(a.date));
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending': return <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-700 font-medium">未発送</span>;
-      case 'confirmed': return <span className="px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-800 font-medium">確認済</span>;
-      case 'shipped': return <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-800 font-medium">発送済</span>;
-      default: return <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 font-medium">{status}</span>;
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  const handleStatusChange = async (item: DeliveryItem, newStatus: string) => {
+    setUpdatingId(item.id);
+    try {
+      const res = await fetch('/api/admin/delivery', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: item.id, source: item.source, status: newStatus }),
+      });
+      if (res.ok) {
+        setItems(prev => prev.map(i => i.id === item.id ? { ...i, status: newStatus } : i));
+      } else {
+        const data = await res.json();
+        alert(data.message || 'ステータス更新に失敗しました');
+      }
+    } catch {
+      alert('ステータス更新に失敗しました');
+    } finally {
+      setUpdatingId(null);
     }
+  };
+
+  const STATUS_OPTIONS = [
+    { value: 'pending', label: '未発送', color: 'bg-gray-100 text-gray-700' },
+    { value: 'confirmed', label: '確認済', color: 'bg-yellow-100 text-yellow-800' },
+    { value: 'shipped', label: '発送済', color: 'bg-green-100 text-green-800' },
+  ];
+
+  const getStatusColor = (status: string) => {
+    return STATUS_OPTIONS.find(s => s.value === status)?.color || 'bg-gray-100 text-gray-600';
   };
 
   const getSourceBadge = (source: 'subscription' | 'order' | 'tiktok') => {
@@ -304,7 +328,16 @@ export default function AdminDeliveryPage() {
                           {item.quantity}個
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
-                          {getStatusBadge(item.status)}
+                          <select
+                            value={item.status}
+                            onChange={(e) => handleStatusChange(item, e.target.value)}
+                            disabled={updatingId === item.id}
+                            className={`px-2 py-1 text-xs rounded-full font-medium border-0 cursor-pointer focus:ring-2 focus:ring-orange-500 ${getStatusColor(item.status)} ${updatingId === item.id ? 'opacity-50' : ''}`}
+                          >
+                            {STATUS_OPTIONS.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
                           {item.source === 'subscription' && item.delivery_number != null

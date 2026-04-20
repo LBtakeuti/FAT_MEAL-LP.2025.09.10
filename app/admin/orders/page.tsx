@@ -2,6 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 
+interface PurchaseSurvey {
+  q1_answers: string[];
+  q1_other_text: string | null;
+  q2_answers: string[];
+  q2_other_text: string | null;
+  q3_answers: string[];
+  q3_other_text: string | null;
+}
+
 interface Order {
   id: string;
   order_number: number;
@@ -21,6 +30,7 @@ interface Order {
   amount: number;
   status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
   created_at: string;
+  survey?: PurchaseSurvey | null;
 }
 
 interface Subscription {
@@ -73,6 +83,32 @@ const REASON_LABELS: Record<string, string> = {
   confusing_ui: '注文・解約の操作がわかりにくかった',
   didnt_know_2pieces: '1食が2個であることを知らなかった',
   delivery_schedule: '配送日の調整が難しかった',
+};
+
+const SURVEY_Q1_LABELS: Record<string, string> = {
+  instagram: 'Instagram',
+  tiktok: 'TikTok',
+  youtube: 'YouTube',
+  google: 'Google検索',
+  friends: '友人・知人の紹介',
+  school_club: '学校・部活の関係者',
+  other: 'その他',
+};
+
+const SURVEY_Q2_LABELS: Record<string, string> = {
+  self: '自分',
+  child: 'お子さま',
+  partner: 'パートナー',
+  other: 'その他',
+};
+
+const SURVEY_Q3_LABELS: Record<string, string> = {
+  weight_gain: '体重・体格を増やしたい',
+  muscle: '筋肉をつけてパフォーマンスを上げたい',
+  convenience: '食事の準備の手間を減らしたい',
+  nutrition: '栄養バランスをしっかり管理したい',
+  competition: '試合・大会に向けて体をつくりたい',
+  other: 'その他',
 };
 
 const getJSTToday = () => {
@@ -467,6 +503,35 @@ export default function AdminOrdersPage() {
                                       </dl>
                                     </div>
                                   </div>
+                                  {/* 購入時アンケート */}
+                                  {order.survey && (
+                                    <div className="mt-4 bg-blue-50 rounded-lg p-4 shadow-sm">
+                                      <h4 className="font-semibold text-blue-900 mb-3 border-b border-blue-200 pb-2">購入時アンケート</h4>
+                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                        <div>
+                                          <dt className="text-blue-600 font-medium mb-1">Q1. どこで知りましたか</dt>
+                                          <dd className="text-gray-800">
+                                            {order.survey.q1_answers.map((a: string) => SURVEY_Q1_LABELS[a] || a).join('、')}
+                                            {order.survey.q1_other_text && <span className="text-gray-500">（{order.survey.q1_other_text}）</span>}
+                                          </dd>
+                                        </div>
+                                        <div>
+                                          <dt className="text-blue-600 font-medium mb-1">Q2. 誰が食べますか</dt>
+                                          <dd className="text-gray-800">
+                                            {order.survey.q2_answers.map((a: string) => SURVEY_Q2_LABELS[a] || a).join('、')}
+                                            {order.survey.q2_other_text && <span className="text-gray-500">（{order.survey.q2_other_text}）</span>}
+                                          </dd>
+                                        </div>
+                                        <div>
+                                          <dt className="text-blue-600 font-medium mb-1">Q3. 目的</dt>
+                                          <dd className="text-gray-800">
+                                            {order.survey.q3_answers.map((a: string) => SURVEY_Q3_LABELS[a] || a).join('、')}
+                                            {order.survey.q3_other_text && <span className="text-gray-500">（{order.survey.q3_other_text}）</span>}
+                                          </dd>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
                                   <div className="mt-4 pt-4 border-t border-gray-200 flex justify-end">
                                     {deleteConfirmId === order.id ? (
                                       <div className="flex items-center gap-3">

@@ -19,7 +19,28 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json(orders || []);
+    // 注文に紐づくアンケートデータを取得
+    const emails = [...new Set((orders || []).map((o: any) => o.customer_email).filter(Boolean))];
+    const sessionIds = [...new Set((orders || []).map((o: any) => o.stripe_session_id).filter(Boolean))];
+
+    let surveys: any[] = [];
+    if (sessionIds.length > 0 || emails.length > 0) {
+      const { data: surveyData } = await (supabase
+        .from('purchase_surveys') as any)
+        .select('*')
+        .or(`stripe_session_id.in.(${sessionIds.join(',')}),customer_email.in.(${emails.join(',')})`);
+      surveys = surveyData || [];
+    }
+
+    // アンケートを注文に紐づけ
+    const enrichedOrders = (orders || []).map((order: any) => {
+      const survey = surveys.find(
+        (s: any) => s.stripe_session_id === order.stripe_session_id || s.customer_email === order.customer_email
+      );
+      return { ...order, survey: survey || null };
+    });
+
+    return NextResponse.json(enrichedOrders);
   } catch (error) {
     console.error('Unexpected error:', error);
     return NextResponse.json(
