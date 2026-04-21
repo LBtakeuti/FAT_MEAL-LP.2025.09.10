@@ -89,10 +89,11 @@ const SubscriptionSection: React.FC = () => {
             <div className="text-center mb-6 pb-6 border-b border-gray-200">
               <div className="flex items-baseline justify-center gap-2">
                 <span className="text-5xl font-black text-gray-800">
-                  ¥5,700
+                  ¥950
                 </span>
-                <span className="text-sm text-gray-500">税込・送料込</span>
+                <span className="text-sm text-gray-500">/食（税込・送料込）</span>
               </div>
+              <p className="text-xs text-gray-400 mt-1">6個セット合計 ¥5,700</p>
             </div>
 
             {/* プラン詳細 */}
@@ -160,8 +161,8 @@ const SubscriptionSection: React.FC = () => {
                 {/* 通常価格（打ち消し線） */}
                 <div className="flex justify-center mb-2">
                   <span className="text-xs text-gray-400">
-                    通常価格（送料込）&nbsp;
-                    <span className="line-through">¥{plan.anchorWithShipping.toLocaleString()}</span>
+                    通常価格&nbsp;
+                    <span className="line-through">¥{Math.round(plan.anchorWithShipping / 12).toLocaleString()}/食</span>
                   </span>
                 </div>
 
@@ -172,12 +173,14 @@ const SubscriptionSection: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Phase1価格 */}
+                {/* Phase1価格（1食あたり） */}
                 <div className="flex items-baseline justify-center gap-1">
                   <span className="text-5xl font-black text-red-600">
-                    ¥{plan.phase1Price.toLocaleString()}
+                    ¥{Math.round(plan.phase1Price / 12).toLocaleString()}
                   </span>
+                  <span className="text-sm text-gray-500">/食</span>
                 </div>
+                <p className="text-xs text-gray-400 mt-1">12食合計 ¥{plan.phase1Price.toLocaleString()}</p>
               </div>
 
               {/* プラン詳細 */}

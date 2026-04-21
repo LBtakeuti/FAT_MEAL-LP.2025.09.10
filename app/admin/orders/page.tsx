@@ -65,6 +65,7 @@ interface Subscription {
     message: string | null;
     created_at: string;
   } | null;
+  survey?: PurchaseSurvey | null;
 }
 
 const REASON_LABELS: Record<string, string> = {
@@ -751,6 +752,35 @@ export default function AdminOrdersPage() {
                                       </dl>
                                     </div>
                                   </div>
+                                  {/* 購入時アンケート */}
+                                  {sub.survey && (
+                                    <div className="mt-4 bg-blue-50 rounded-lg p-4 shadow-sm">
+                                      <h4 className="font-semibold text-blue-900 mb-3 border-b border-blue-200 pb-2">購入時アンケート</h4>
+                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                        <div>
+                                          <dt className="text-blue-600 font-medium mb-1">Q1. どこで知りましたか</dt>
+                                          <dd className="text-gray-800">
+                                            {sub.survey.q1_answers.map((a: string) => SURVEY_Q1_LABELS[a] || a).join('、')}
+                                            {sub.survey.q1_other_text && <span className="text-gray-500">（{sub.survey.q1_other_text}）</span>}
+                                          </dd>
+                                        </div>
+                                        <div>
+                                          <dt className="text-blue-600 font-medium mb-1">Q2. 誰が食べますか</dt>
+                                          <dd className="text-gray-800">
+                                            {sub.survey.q2_answers.map((a: string) => SURVEY_Q2_LABELS[a] || a).join('、')}
+                                            {sub.survey.q2_other_text && <span className="text-gray-500">（{sub.survey.q2_other_text}）</span>}
+                                          </dd>
+                                        </div>
+                                        <div>
+                                          <dt className="text-blue-600 font-medium mb-1">Q3. 目的</dt>
+                                          <dd className="text-gray-800">
+                                            {sub.survey.q3_answers.map((a: string) => SURVEY_Q3_LABELS[a] || a).join('、')}
+                                            {sub.survey.q3_other_text && <span className="text-gray-500">（{sub.survey.q3_other_text}）</span>}
+                                          </dd>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
                                   {/* 解約理由 */}
                                   {sub.cancellation_request && (
                                     <div className="mt-4 bg-red-50 rounded-lg p-4 shadow-sm">

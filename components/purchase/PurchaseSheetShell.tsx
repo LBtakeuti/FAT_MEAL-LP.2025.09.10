@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface PurchaseSheetShellProps {
@@ -11,6 +11,14 @@ interface PurchaseSheetShellProps {
 export function PurchaseSheetShell({ title = 'プランを選ぶ', children }: PurchaseSheetShellProps) {
   const router = useRouter();
   const [visible, setVisible] = useState(false);
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  // ステップ切り替え時にスクロールをリセット
+  useEffect(() => {
+    const handleReset = () => bodyRef.current?.scrollTo(0, 0);
+    window.addEventListener('purchase-sheet-scroll-reset', handleReset);
+    return () => window.removeEventListener('purchase-sheet-scroll-reset', handleReset);
+  }, []);
 
   const close = useCallback(() => {
     setVisible(false);
@@ -74,7 +82,7 @@ export function PurchaseSheetShell({ title = 'プランを選ぶ', children }: P
           </div>
 
           {/* Body */}
-          <div className="overflow-y-auto flex-1 overscroll-contain">
+          <div ref={bodyRef} className="overflow-y-auto flex-1 overscroll-contain">
             {children}
           </div>
         </div>

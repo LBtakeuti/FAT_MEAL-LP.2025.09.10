@@ -74,7 +74,7 @@ const planOptions: PlanOption[] = [
     shippingFee: 0,          // Phase1送料（初回無料）
     totalPrice: 4980,        // Phase1合計
     description: '月1回配送',
-    perMeal: 830,            // 4980 ÷ 6
+    perMeal: 415,            // 4980 ÷ 12
     isTrial: false,
     isSubscription: true,
     deliveriesPerMonth: 1,
@@ -743,10 +743,15 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
     return Object.keys(newErrors).length === 0;
   };
 
+  const resetSheetScroll = () => {
+    window.scrollTo(0, 0);
+    window.dispatchEvent(new Event('purchase-sheet-scroll-reset'));
+  };
+
   const handleProceedToInfo = () => {
     if (!isCartEmpty) {
       setCurrentStep('info');
-      window.scrollTo(0, 0);
+      resetSheetScroll();
     }
   };
 
@@ -762,18 +767,18 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
         appliedCoupon,
       }));
       setCurrentStep('confirm');
-      window.scrollTo(0, 0);
+      resetSheetScroll();
     }
   };
 
   const handleBackToPlan = () => {
     setCurrentStep('plan');
-    window.scrollTo(0, 0);
+    resetSheetScroll();
   };
 
   const handleBackToInfo = () => {
     setCurrentStep('info');
-    window.scrollTo(0, 0);
+    resetSheetScroll();
   };
 
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -874,10 +879,11 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
     mealCount: plan.quantity,
     title: plan.isTrial ? 'お試し6個セット' : `${plan.quantity}食 月額プラン`,
     subtitle: plan.description,
-    anchorPrice: plan.isSubscription
-      ? (plan.anchorPrice || 0) + (plan.phase2ShippingFee || 0)
+    anchorPrice: plan.isSubscription && plan.anchorPrice
+      ? Math.round(((plan.anchorPrice || 0) + (plan.phase2ShippingFee || 0)) / plan.quantity)
       : undefined,
     totalPrice: plan.totalPrice,
+    perMeal: plan.perMeal,
     badge: plan.isTrial ? '初回限定' : undefined,
     highlight: plan.isSubscription
       ? plan.id === 'subscription-monthly-12'
@@ -927,6 +933,7 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
         plans={planCardData}
         selectedId={currentSelectedId}
         onSelect={handlePlanSelect}
+        onProceed={handleProceedToInfo}
       />
 
       <button

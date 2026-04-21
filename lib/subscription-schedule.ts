@@ -191,9 +191,9 @@ export function getPlanConfig(planId: string): PlanConfig {
  */
 export function getPlanName(planId: string): string {
   const planNames: { [key: string]: string } = {
-    'subscription-monthly-12': 'ふとるめし6食 月額プラン',
-    'subscription-monthly-24': 'ふとるめし12食 月額プラン',
-    'subscription-monthly-48': 'ふとるめし24食 月額プラン',
+    'subscription-monthly-12': 'ふとるめし12食 月額プラン',
+    'subscription-monthly-24': 'ふとるめし24食 月額プラン',
+    'subscription-monthly-48': 'ふとるめし48食 月額プラン',
   };
   return planNames[planId] || 'ふとるめし月額プラン';
 }
@@ -203,9 +203,9 @@ export function getPlanName(planId: string): string {
  */
 export function getMenuSetName(planId: string): string {
   const menuSetNames: { [key: string]: string } = {
-    'subscription-monthly-12': 'ふとるめし6食セット',
-    'subscription-monthly-24': 'ふとるめし12食セット',
-    'subscription-monthly-48': 'ふとるめし24食セット',
+    'subscription-monthly-12': 'ふとるめし12食セット',
+    'subscription-monthly-24': 'ふとるめし24食セット',
+    'subscription-monthly-48': 'ふとるめし48食セット',
   };
   return menuSetNames[planId] || 'ふとるめしセット';
 }

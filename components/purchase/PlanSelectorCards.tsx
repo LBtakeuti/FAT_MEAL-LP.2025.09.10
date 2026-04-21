@@ -9,6 +9,7 @@ export interface PlanCardData {
   subtitle: string;
   anchorPrice?: number;
   totalPrice: number;
+  perMeal: number;
   badge?: string;
   highlight?: string;
   shippingNote?: string;
@@ -19,18 +20,17 @@ interface PlanSelectorCardsProps {
   plans: PlanCardData[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  onProceed?: () => void;
 }
 
-export function PlanSelectorCards({ plans, selectedId, onSelect }: PlanSelectorCardsProps) {
+export function PlanSelectorCards({ plans, selectedId, onSelect, onProceed }: PlanSelectorCardsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {plans.map((plan) => {
         const isSelected = selectedId === plan.id;
         return (
-          <button
+          <div
             key={plan.id}
-            type="button"
-            onClick={() => onSelect(plan.id)}
             className={`relative text-left rounded-2xl border-2 bg-white p-5 transition-all
               ${isSelected ? 'border-[#E8593C] shadow-md ring-2 ring-[#E8593C]/20' : 'border-gray-200 hover:border-gray-300'}`}
           >
@@ -53,13 +53,13 @@ export function PlanSelectorCards({ plans, selectedId, onSelect }: PlanSelectorC
             )}
 
             <div className="mt-2">
-              {plan.anchorPrice && plan.anchorPrice > plan.totalPrice && (
+              {plan.anchorPrice && plan.anchorPrice > plan.perMeal && (
                 <span className="text-sm text-gray-400 line-through mr-2">
                   ¥{plan.anchorPrice.toLocaleString()}
                 </span>
               )}
               <span className="text-2xl font-black text-[#E8593C]">
-                ¥{plan.totalPrice.toLocaleString()}
+                ¥{plan.perMeal.toLocaleString()}
               </span>
               <span className="text-xs font-bold text-gray-600 ml-1">/食</span>
               {plan.shippingNote && (
@@ -67,11 +67,21 @@ export function PlanSelectorCards({ plans, selectedId, onSelect }: PlanSelectorC
               )}
             </div>
 
-            <div className={`mt-4 w-full text-center rounded-full py-2.5 text-sm font-bold transition-colors
-              ${isSelected ? 'bg-[#E8593C] text-white' : 'bg-gray-100 text-gray-700'}`}>
+            <button
+              type="button"
+              onClick={() => {
+                if (isSelected && onProceed) {
+                  onProceed();
+                } else {
+                  onSelect(plan.id);
+                }
+              }}
+              className={`mt-4 w-full text-center rounded-full py-2.5 text-sm font-bold transition-colors
+              ${isSelected ? 'bg-[#E8593C] text-white' : 'bg-gray-100 text-gray-700'}`}
+            >
               {isSelected ? '選択中' : 'このプランを選ぶ'}
-            </div>
-          </button>
+            </button>
+          </div>
         );
       })}
     </div>

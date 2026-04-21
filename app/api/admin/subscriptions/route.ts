@@ -89,6 +89,21 @@ export async function GET(_request: NextRequest) {
       }
     }
 
+    // Step 2.6: 購入時アンケートを取得
+    const emails = [...new Set((subscriptions || []).map(s => s.shipping_address?.email).filter(Boolean))];
+    const surveyMap: Record<string, any> = {};
+    if (emails.length > 0) {
+      const { data: surveys } = await (supabase as any)
+        .from('purchase_surveys')
+        .select('*')
+        .in('customer_email', emails);
+      for (const s of ((surveys as any[]) || [])) {
+        if (s.customer_email && !surveyMap[s.customer_email]) {
+          surveyMap[s.customer_email] = s;
+        }
+      }
+    }
+
     // Step 3: マージして整形
     const formattedSubscriptions = subscriptions?.map(sub => {
       const deliveries = deliveriesMap[sub.id] || [];
@@ -132,6 +147,8 @@ export async function GET(_request: NextRequest) {
         subscription_deliveries: deliveries,
         // 解約理由
         cancellation_request: cancellationMap[sub.id] || null,
+        // 購入時アンケート
+        survey: (sub.shipping_address?.email && surveyMap[sub.shipping_address.email]) || null,
       };
     }) || [];
 

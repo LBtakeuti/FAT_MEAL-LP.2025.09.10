@@ -139,9 +139,9 @@ export async function GET(request: NextRequest) {
 
 function getItemName(planId: string, fallback: string): string {
   const itemNames: { [key: string]: string } = {
-    'subscription-monthly-12': 'ふとるめし6食セット（12個）',
-    'subscription-monthly-24': 'ふとるめし12食プラン（24個）',
-    'subscription-monthly-48': 'ふとるめし24食プラン（48個）',
+    'subscription-monthly-12': 'ふとるめし12食セット',
+    'subscription-monthly-24': 'ふとるめし24食セット',
+    'subscription-monthly-48': 'ふとるめし48食セット',
   };
   return itemNames[planId] || fallback;
 }
