@@ -106,7 +106,7 @@ export default function AdminTikTokShopPage() {
     <div className="max-w-7xl mx-auto">
       <div className="bg-white shadow rounded-lg">
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">TikTok Shop 注文管理</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-6">TikTok Shop 注文管理</h1>
           <label className="cursor-pointer inline-flex items-center px-4 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium disabled:opacity-50">
             <span>{uploading ? '取込中...' : 'CSVを取り込む'}</span>
             <input
@@ -138,7 +138,8 @@ export default function AdminTikTokShopPage() {
 
         {loading ? (
           <div className="py-12 text-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-600 mx-auto" />
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">読み込み中...</p>
           </div>
         ) : (
           <div className="overflow-x-auto mt-4">

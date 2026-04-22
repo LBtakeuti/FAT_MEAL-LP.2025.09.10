@@ -320,7 +320,7 @@ export default function AdminOrdersPage() {
 
   return (
     <div className="p-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">注文管理</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">注文管理</h1>
 
       {/* 内タブ */}
       <div className="flex border-b border-gray-200 mb-6">
@@ -351,22 +351,25 @@ export default function AdminOrdersPage() {
         <>
           {ordersLoading ? (
             <div className="flex items-center justify-center h-64">
-              <div className="text-gray-600">読み込み中...</div>
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">読み込み中...</p>
+              </div>
             </div>
           ) : (
             <>
               <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
                 <div className="flex gap-2 flex-wrap">
-                  <button onClick={() => setFilter('all')} className={`px-4 py-2 rounded-lg text-sm ${filter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                  <button onClick={() => setFilter('all')} className={`px-4 py-2 rounded-lg text-sm ${filter === 'all' ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
                     すべて ({orders.length})
                   </button>
-                  <button onClick={() => setFilter('pending')} className={`px-4 py-2 rounded-lg text-sm ${filter === 'pending' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                  <button onClick={() => setFilter('pending')} className={`px-4 py-2 rounded-lg text-sm ${filter === 'pending' ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
                     注文受付 ({orders.filter(o => o.status === 'pending').length})
                   </button>
-                  <button onClick={() => setFilter('confirmed')} className={`px-4 py-2 rounded-lg text-sm ${filter === 'confirmed' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                  <button onClick={() => setFilter('confirmed')} className={`px-4 py-2 rounded-lg text-sm ${filter === 'confirmed' ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
                     連絡済み ({orders.filter(o => o.status === 'confirmed').length})
                   </button>
-                  <button onClick={() => setFilter('shipped')} className={`px-4 py-2 rounded-lg text-sm ${filter === 'shipped' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                  <button onClick={() => setFilter('shipped')} className={`px-4 py-2 rounded-lg text-sm ${filter === 'shipped' ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
                     発送済み ({orders.filter(o => o.status === 'shipped' || o.status === 'delivered').length})
                   </button>
                 </div>
@@ -566,7 +569,10 @@ export default function AdminOrdersPage() {
         <>
           {(subsLoading || !subsLoaded) ? (
             <div className="flex items-center justify-center h-64">
-              <div className="text-gray-600">読み込み中...</div>
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">読み込み中...</p>
+              </div>
             </div>
           ) : subsError ? (
             <div className="text-center py-12">

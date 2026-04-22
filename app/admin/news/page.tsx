@@ -141,7 +141,7 @@ export default function AdminNewsPage() {
               </tbody>
             </table>
             {newsItems.length === 0 && (
-              <div className="text-center py-8">
+              <div className="text-center py-12">
                 <p className="text-gray-500">ニュースがありません</p>
               </div>
             )}

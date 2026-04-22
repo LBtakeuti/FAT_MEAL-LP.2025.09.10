@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 
@@ -253,12 +253,32 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
-    overview: false,
-    orders: false,
-    products: false,
-    people: false,
-  });
+  // 現在のパスに該当するグループを自動展開
+  const getInitialOpenGroups = () => {
+    const groups: Record<string, boolean> = {
+      overview: false,
+      orders: false,
+      products: false,
+      people: false,
+    };
+    for (const group of menuGroups) {
+      if (group.items.some((item) => pathname.startsWith(item.href))) {
+        groups[group.key] = true;
+      }
+    }
+    return groups;
+  };
+
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(getInitialOpenGroups);
+
+  // ページ遷移時に該当グループを自動展開
+  useEffect(() => {
+    for (const group of menuGroups) {
+      if (group.items.some((item) => pathname.startsWith(item.href))) {
+        setOpenGroups((prev) => ({ ...prev, [group.key]: true }));
+      }
+    }
+  }, [pathname]);
 
   // ログインページの場合はレイアウトを表示しない
   if (pathname === '/admin/login') {
@@ -306,13 +326,14 @@ export default function AdminLayout({
             <div key={group.key}>
               {/* グループヘッダー（サイドバー展開時のみ表示） */}
               {isSidebarOpen && (
-                <button
+                <div
                   onClick={() => toggleGroup(group.key)}
-                  className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-200 transition-colors"
+                  role="button"
+                  className="flex items-center justify-between w-full px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer select-none hover:text-gray-200"
                 >
                   <span>{group.label}</span>
                   <IconChevron open={openGroups[group.key]} />
-                </button>
+                </div>
               )}
 
               {/* グループ内アイテム */}

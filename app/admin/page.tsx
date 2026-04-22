@@ -55,7 +55,7 @@ function RevenueCharts() {
         <select
           value={period}
           onChange={(e) => setPeriod(e.target.value as Period)}
-          className="border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+          className="border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
         >
           {PERIOD_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
@@ -68,16 +68,16 @@ function RevenueCharts() {
         <div className="bg-white p-4 rounded-lg shadow">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-gray-700">サブスク</h3>
-            <div className="flex rounded overflow-hidden border border-purple-300 text-xs">
+            <div className="flex rounded overflow-hidden border border-orange-300 text-xs">
               <button
                 onClick={() => setSubFilter('revenue')}
-                className={`px-3 py-1 ${subFilter === 'revenue' ? 'bg-purple-600 text-white' : 'bg-white text-purple-600'}`}
+                className={`px-3 py-1 ${subFilter === 'revenue' ? 'bg-orange-600 text-white' : 'bg-white text-orange-600'}`}
               >
                 売上
               </button>
               <button
                 onClick={() => setSubFilter('count')}
-                className={`px-3 py-1 ${subFilter === 'count' ? 'bg-purple-600 text-white' : 'bg-white text-purple-600'}`}
+                className={`px-3 py-1 ${subFilter === 'count' ? 'bg-orange-600 text-white' : 'bg-white text-orange-600'}`}
               >
                 契約数
               </button>
@@ -198,7 +198,7 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-8">ダッシュボード</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">ダッシュボード</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-white p-6 rounded-lg shadow">
@@ -247,66 +247,55 @@ export default function AdminDashboard() {
       </div>
 
       {/* 売上統計 */}
-      <h2 className="text-xl font-semibold mb-4">売上統計</h2>
+      <h2 className="text-lg font-semibold text-gray-900 mb-4">売上統計</h2>
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-        <div className="bg-teal-50 p-5 rounded-lg shadow">
-          <div className="flex items-center gap-1 text-teal-600 text-xs mb-1">
-            <span>📦</span><span>今日のサブスク売上</span>
-          </div>
-          <div className="text-2xl font-bold text-teal-800">
+        <div className="bg-orange-50 p-5 rounded-lg shadow-sm">
+          <div className="text-xs text-orange-600 mb-1">今日のサブスク売上</div>
+          <div className="text-2xl font-bold text-gray-900">
             ¥{stats.todaySubscriptionRevenue.toLocaleString('ja-JP')}
           </div>
-          <div className="text-xs text-teal-500 mt-1">本日 JST</div>
+          <div className="text-xs text-gray-400 mt-1">本日 JST</div>
         </div>
 
-        <div className="bg-orange-50 p-5 rounded-lg shadow">
-          <div className="flex items-center gap-1 text-orange-600 text-xs mb-1">
-            <span>🛒</span><span>今日の買い切り売上</span>
-          </div>
-          <div className="text-2xl font-bold text-orange-800">
+        <div className="bg-gray-50 p-5 rounded-lg shadow-sm">
+          <div className="text-xs text-gray-600 mb-1">今日の買い切り売上</div>
+          <div className="text-2xl font-bold text-gray-900">
             ¥{stats.todayOneTimeRevenue.toLocaleString('ja-JP')}
           </div>
-          <div className="text-xs text-orange-500 mt-1">本日 JST</div>
+          <div className="text-xs text-gray-400 mt-1">本日 JST</div>
         </div>
 
-        <div className="bg-purple-50 p-5 rounded-lg shadow">
-          <div className="flex items-center gap-1 text-purple-600 text-xs mb-1">
-            <span>📊</span><span>これまでのサブスク売上</span>
-          </div>
-          <div className="text-2xl font-bold text-purple-800">
+        <div className="bg-orange-50 p-5 rounded-lg shadow-sm">
+          <div className="text-xs text-orange-600 mb-1">サブスク累計売上</div>
+          <div className="text-2xl font-bold text-gray-900">
             ¥{stats.allTimeSubRevenue.toLocaleString('ja-JP')}
           </div>
-          <div className="text-xs text-purple-500 mt-1">配送済み累計</div>
+          <div className="text-xs text-gray-400 mt-1">配送済み累計</div>
         </div>
 
-        <div className="bg-amber-50 p-5 rounded-lg shadow">
-          <div className="flex items-center gap-1 text-amber-600 text-xs mb-1">
-            <span>🛒</span><span>これまでの買い切り売上</span>
-          </div>
-          <div className="text-2xl font-bold text-amber-800">
+        <div className="bg-gray-50 p-5 rounded-lg shadow-sm">
+          <div className="text-xs text-gray-600 mb-1">買い切り累計売上</div>
+          <div className="text-2xl font-bold text-gray-900">
             ¥{stats.allTimeOneTimeRevenue.toLocaleString('ja-JP')}
           </div>
-          <div className="text-xs text-amber-500 mt-1">全期間累計</div>
+          <div className="text-xs text-gray-400 mt-1">全期間累計</div>
         </div>
 
-        <div className="bg-indigo-50 p-5 rounded-lg shadow">
-          <div className="flex items-center gap-1 text-indigo-600 text-xs mb-1">
-            <span>📅</span><span>来月のサブスク見込み</span>
-          </div>
-          <div className="text-2xl font-bold text-indigo-800">
+        <div className="bg-blue-50 p-5 rounded-lg shadow-sm">
+          <div className="text-xs text-blue-600 mb-1">来月のサブスク見込み</div>
+          <div className="text-2xl font-bold text-gray-900">
             ¥{stats.nextMonthSubscriptionForecast.toLocaleString('ja-JP')}
           </div>
-          <div className="text-xs text-indigo-500 mt-1">アクティブ契約ベース</div>
+          <div className="text-xs text-gray-400 mt-1">アクティブ契約ベース</div>
         </div>
       </div>
 
       {/* 総売上 */}
-      <div className="bg-gradient-to-r from-rose-500 to-pink-600 p-5 rounded-lg shadow mb-8 flex items-center justify-between">
+      <div className="bg-gray-900 p-5 rounded-lg shadow-sm mb-8 flex items-center justify-between">
         <div className="flex items-center gap-2 text-white">
-          <span className="text-2xl">💰</span>
           <div>
             <div className="text-sm font-medium opacity-90">総売上（サブスク＋買い切り累計）</div>
-            <div className="text-xs opacity-70 mt-0.5">全期間・全商品</div>
+            <div className="text-xs opacity-60 mt-0.5">全期間・全商品</div>
           </div>
         </div>
         <div className="text-3xl font-bold text-white">
@@ -315,7 +304,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* 売上グラフ */}
-      <h2 className="text-xl font-semibold mb-4">売上グラフ</h2>
+      <h2 className="text-lg font-semibold text-gray-900 mb-4">売上グラフ</h2>
       <RevenueCharts />
     </div>
   );

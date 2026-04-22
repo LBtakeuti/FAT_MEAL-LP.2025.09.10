@@ -192,7 +192,7 @@ export default function AnalyticsPage() {
                   onClick={() => setPeriod(option.value as typeof period)}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     period === option.value
-                      ? 'bg-orange-500 text-white'
+                      ? 'bg-orange-600 text-white'
                       : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
                   }`}
                 >
@@ -282,7 +282,7 @@ export default function AnalyticsPage() {
             {/* ローディング */}
             {loading && (
               <div className="flex items-center justify-center py-20">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
               </div>
             )}
 

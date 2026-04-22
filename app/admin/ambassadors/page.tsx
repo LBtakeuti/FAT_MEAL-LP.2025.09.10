@@ -173,7 +173,7 @@ export default function AdminAmbassadorsPage() {
               </tbody>
             </table>
             {ambassadors.length === 0 && (
-              <div className="text-center py-8">
+              <div className="text-center py-12">
                 <p className="text-gray-500">アンバサダーがありません</p>
               </div>
             )}

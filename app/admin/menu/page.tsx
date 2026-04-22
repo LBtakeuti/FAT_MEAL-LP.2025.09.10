@@ -198,7 +198,7 @@ export default function AdminMenuPage() {
               </tbody>
             </table>
             {menuItems.length === 0 && (
-              <div className="text-center py-8">
+              <div className="text-center py-12">
                 <p className="text-gray-500">メニューがありません</p>
                 <Link
                   href="/admin/menu/new"

@@ -158,7 +158,7 @@ export default function PromoterPagesAdmin() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">個別メッセージ</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">個別メッセージ</h1>
         <button
           onClick={openCreate}
           className="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700"
@@ -170,7 +170,12 @@ export default function PromoterPagesAdmin() {
       {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">{error}</div>}
 
       {loading ? (
-        <p>読み込み中...</p>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">読み込み中...</p>
+          </div>
+        </div>
       ) : (
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <table className="w-full">

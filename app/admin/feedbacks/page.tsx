@@ -171,7 +171,7 @@ export default function AdminFeedbacksPage() {
               </tbody>
             </table>
             {feedbacks.length === 0 && (
-              <div className="text-center py-8">
+              <div className="text-center py-12">
                 <p className="text-gray-500">フィードバックがありません</p>
               </div>
             )}

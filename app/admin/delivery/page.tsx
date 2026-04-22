@@ -168,7 +168,7 @@ export default function AdminDeliveryPage() {
 
   return (
     <div className="p-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">配送管理</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">配送管理</h1>
 
       {/* リマインダーバナー */}
       {overdueCount > 0 && (
@@ -207,7 +207,7 @@ export default function AdminDeliveryPage() {
               onClick={() => setSourceFilter(v)}
               className={`px-3 py-1.5 rounded-lg text-sm ${
                 sourceFilter === v
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-orange-600 text-white'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
@@ -224,7 +224,7 @@ export default function AdminDeliveryPage() {
               onClick={() => setStatusFilter(v)}
               className={`px-3 py-1.5 rounded-lg text-sm ${
                 statusFilter === v
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-orange-600 text-white'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
@@ -248,7 +248,10 @@ export default function AdminDeliveryPage() {
       {/* テーブル */}
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="text-gray-600">読み込み中...</div>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">読み込み中...</p>
+          </div>
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow overflow-hidden">

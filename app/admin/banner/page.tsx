@@ -162,7 +162,10 @@ export default function BannerManagementPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-gray-500">読み込み中...</div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">読み込み中...</p>
+        </div>
       </div>
     );
   }
@@ -177,7 +180,7 @@ export default function BannerManagementPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">バナー管理</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">バナー管理</h1>
 
       {/* タブ */}
       <div className="flex border-b border-gray-200 mb-6">

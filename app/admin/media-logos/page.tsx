@@ -135,7 +135,7 @@ export default function AdminMediaLogosPage() {
               </tbody>
             </table>
             {logos.length === 0 && (
-              <div className="text-center py-8">
+              <div className="text-center py-12">
                 <p className="text-gray-500">メディアロゴがありません</p>
               </div>
             )}

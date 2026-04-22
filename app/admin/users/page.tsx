@@ -93,7 +93,7 @@ export default function AdminUsersPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">ユーザー管理</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">ユーザー管理</h1>
 
       {/* 検索 */}
       <form onSubmit={handleSearch} className="mb-6 flex gap-3">

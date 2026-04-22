@@ -123,7 +123,7 @@ export default function AdminContactsPage() {
         <div className="bg-white shadow rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex justify-between items-center">
-              <h1 className="text-2xl font-bold text-gray-900">お問い合わせ管理</h1>
+              <h1 className="text-2xl font-bold text-gray-900 mb-6">お問い合わせ管理</h1>
               <Link
                 href="/admin"
                 className="text-gray-600 hover:text-gray-900 font-medium"
@@ -139,7 +139,7 @@ export default function AdminContactsPage() {
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   filter === 'all'
                     ? 'bg-orange-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
               >
                 すべて ({contacts.length})
@@ -149,7 +149,7 @@ export default function AdminContactsPage() {
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   filter === 'pending'
                     ? 'bg-orange-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
               >
                 未対応 ({contacts.filter(c => c.status === 'pending').length})
@@ -159,7 +159,7 @@ export default function AdminContactsPage() {
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   filter === 'responded'
                     ? 'bg-orange-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
               >
                 対応済み ({contacts.filter(c => c.status === 'responded').length})
@@ -169,7 +169,7 @@ export default function AdminContactsPage() {
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   filter === 'closed'
                     ? 'bg-orange-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
               >
                 完了 ({contacts.filter(c => c.status === 'closed').length})

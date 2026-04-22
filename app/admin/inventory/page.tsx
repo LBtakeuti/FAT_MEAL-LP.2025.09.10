@@ -88,7 +88,7 @@ export default function AdminInventoryPage() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
           <p className="text-gray-600">読み込み中...</p>
         </div>
       </div>
@@ -100,7 +100,7 @@ export default function AdminInventoryPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-8">在庫管理</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">在庫管理</h1>
 
       {error && (
         <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
