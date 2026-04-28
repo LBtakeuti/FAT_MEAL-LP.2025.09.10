@@ -106,6 +106,16 @@ function IconMedia() {
     </svg>
   );
 }
+function IconCustomers() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="7" cy="6" r="3" />
+      <circle cx="15" cy="8" r="2" />
+      <path d="M1,18 c0,-4 3,-7 6,-7 s6,3 6,7" />
+      <path d="M13,18 c0,-3 1.5,-4.5 3,-4.5 s2.5,1.5 2.5,4.5" />
+    </svg>
+  );
+}
 function IconUsers() {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -234,6 +244,7 @@ const menuGroups: MenuGroup[] = [
     key: 'people',
     label: '顧客・連携',
     items: [
+      { href: '/admin/customers', label: '顧客管理', icon: IconCustomers },
       { href: '/admin/users', label: 'ユーザー管理', icon: IconUsers },
       { href: '/admin/referrers', label: '紹介者管理', icon: IconReferrers },
       { href: '/admin/ambassadors', label: 'アンバサダー管理', icon: IconAmbassador },

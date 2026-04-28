@@ -37,7 +37,7 @@ const PromoterContentSection: React.FC<PromoterContentSectionProps> = ({ blocks,
             return (
               <p
                 key={index}
-                className="text-base md:text-lg text-gray-800 leading-relaxed whitespace-pre-wrap [word-break:keep-all] [overflow-wrap:normal]"
+                className="text-base md:text-lg text-gray-800 font-bold leading-relaxed whitespace-pre-wrap text-center [word-break:keep-all] [overflow-wrap:normal]"
               >
                 {block.value}
               </p>
