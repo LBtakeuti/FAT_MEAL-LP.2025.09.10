@@ -81,6 +81,16 @@ export function PurchaseSheetShell({ title = 'プランを選ぶ', children }: P
             <div className="w-9" />
           </div>
 
+          {/* Logo */}
+          <div className="flex justify-center py-3 border-b border-gray-100 flex-shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/branding/logo-header.png"
+              alt="ふとるめし"
+              className="h-20 w-auto"
+            />
+          </div>
+
           {/* Body */}
           <div ref={bodyRef} className="overflow-y-auto flex-1 overscroll-contain">
             {children}

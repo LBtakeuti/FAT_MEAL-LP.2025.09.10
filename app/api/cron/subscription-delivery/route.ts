@@ -98,12 +98,10 @@ export async function GET(request: NextRequest) {
         // 注文を作成
         const order = await createOrderFromDelivery(delivery, subscription, supabase);
         
-        // 配送予定を更新
+        // 配送予定を更新（ステータスは手動管理のため変更しない）
         await (supabase
           .from('subscription_deliveries') as any)
           .update({
-            status: 'shipped',
-            delivered_date: todayStr,
             order_id: order.id,
             order_number: order.order_number,
             updated_at: new Date().toISOString(),

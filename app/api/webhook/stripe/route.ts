@@ -203,6 +203,17 @@ export async function POST(request: NextRequest) {
         break;
       }
 
+      // PaymentIntent決済完了（Stripe Elements経由の買い切り）
+      case 'payment_intent.succeeded': {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        // Stripe Elements経由の買い切り注文のみ処理（purchase_typeメタデータで判定）
+        if (paymentIntent.metadata?.purchase_type === 'one-time') {
+          console.log(`[Webhook] PaymentIntent succeeded for one-time purchase: ${paymentIntent.id}`);
+          await handlePaymentIntentSucceeded(paymentIntent, stripe);
+        }
+        break;
+      }
+
       // サブスクリプション作成時
       case 'customer.subscription.created': {
         const subscription = event.data.object as Stripe.Subscription;
@@ -267,6 +278,19 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe:
   if (!customerEmail) {
     console.error('No customer email found in session');
     return;
+  }
+
+  // 冪等性チェック: 同じセッションで既に注文が作成されていればスキップ
+  const idempotencySupabase = getSupabaseClient();
+  if (idempotencySupabase) {
+    const { data: existing } = await (idempotencySupabase.from('orders') as any)
+      .select('id')
+      .eq('stripe_session_id', session.id)
+      .maybeSingle();
+    if (existing) {
+      console.log(`[Checkout] Order already exists for session ${session.id}, skipping`);
+      return;
+    }
   }
 
   // 注文詳細を取得
@@ -385,6 +409,129 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe:
   await reduceInventory(productItems);
 
   console.log('One-time order processed successfully');
+}
+
+// Stripe Elements経由の買い切り注文処理（PaymentIntent.succeeded）
+async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent, _stripe: Stripe) {
+  const metadata = paymentIntent.metadata;
+  const customerEmail = metadata?.email;
+  const customerName = metadata?.customer_name || 'お客様';
+  const amount = paymentIntent.amount;
+
+  if (!customerEmail) {
+    console.error('[PaymentIntent] No customer email in metadata');
+    return;
+  }
+
+  const supabase = getSupabaseClient();
+
+  // 冪等性チェック: 同じPaymentIntentで既に注文が作成されていればスキップ
+  if (supabase) {
+    const { data: existing } = await (supabase.from('orders') as any)
+      .select('id')
+      .eq('stripe_payment_intent_id', paymentIntent.id)
+      .maybeSingle();
+    if (existing) {
+      console.log(`[PaymentIntent] Order already exists for ${paymentIntent.id}, skipping`);
+      return;
+    }
+  }
+
+  // ユーザーIDを取得
+  let userId: string | null = null;
+  if (supabase) {
+    try {
+      const { data: users } = await supabase.auth.admin.listUsers();
+      const user = users?.users?.find(u => u.email === customerEmail);
+      userId = user?.id || null;
+    } catch { /* ユーザーが見つからない場合はnull */ }
+  }
+
+  // プランIDからメニューセット名を生成
+  const planId = metadata?.plan_id || 'trial-6';
+  const menuSet = `ふとるめし お試し6食 × 1`;
+
+  // 注文をDBに保存
+  if (supabase) {
+    try {
+      const referralCode = metadata?.referral_code || '';
+      const { data: insertedOrder, error: dbError } = await (supabase.from('orders') as any)
+        .insert({
+          user_id: userId,
+          stripe_session_id: paymentIntent.id,
+          stripe_payment_intent_id: paymentIntent.id,
+          customer_name: customerName,
+          customer_name_kana: metadata?.customer_name_kana || '',
+          customer_email: customerEmail,
+          phone: metadata?.phone || '',
+          postal_code: metadata?.postal_code || '',
+          prefecture: metadata?.prefecture || '',
+          city: metadata?.city || '',
+          address_detail: metadata?.address_detail || '',
+          building: metadata?.building || '',
+          address: metadata?.address || '',
+          menu_set: menuSet,
+          quantity: 1,
+          amount,
+          currency: paymentIntent.currency || 'jpy',
+          status: 'pending',
+          referral_code: referralCode || null,
+          notes: metadata?.notes || null,
+        })
+        .select('id')
+        .single();
+
+      if (dbError) {
+        console.error('[PaymentIntent] Failed to save order:', dbError);
+      } else {
+        console.log('[PaymentIntent] Order saved successfully');
+
+        // アンケートを注文に紐付け
+        if (insertedOrder?.id) {
+          await (supabase.from('purchase_surveys') as any)
+            .update({ order_id: insertedOrder.id })
+            .eq('stripe_session_id', paymentIntent.id);
+        }
+
+        // 紹介コミッション
+        if (referralCode && INITIAL_COMMISSION[planId as keyof typeof INITIAL_COMMISSION]) {
+          await recordReferralCommission({
+            referralCode,
+            sourceType: 'order',
+            sourceId: paymentIntent.id,
+            planId,
+            commissionType: 'initial',
+            commissionAmount: INITIAL_COMMISSION[planId as keyof typeof INITIAL_COMMISSION],
+          });
+        }
+      }
+    } catch (error) {
+      console.error('[PaymentIntent] Error saving order:', error);
+    }
+  }
+
+  // メール送信
+  await sendOrderConfirmationEmail({
+    email: customerEmail,
+    name: customerName,
+    orderId: paymentIntent.id,
+    amount,
+    items: [{ description: menuSet, quantity: 1 } as Stripe.LineItem],
+  });
+
+  // Slack通知
+  await sendSlackNotification({
+    customerName,
+    customerEmail,
+    orderId: paymentIntent.id,
+    amount,
+    items: [{ description: menuSet, quantity: 1 } as Stripe.LineItem],
+  });
+
+  // 在庫削減（1セット）
+  await reduceInventorySets(1, `payment_intent: ${planId}`);
+
+  console.log('[PaymentIntent] One-time order processed successfully');
 }
 
 // 在庫を減らす関数（セット単位）

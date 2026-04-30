@@ -367,24 +367,7 @@ export async function GET(request: NextRequest) {
 
     // レポート送信成功後、注文ステータスを「連絡済み」に更新
     // order_received（注文受付）またはpending（旧ステータス）の注文のみ更新
-    if (orders && orders.length > 0) {
-      const orderIds = orders
-        .filter(order => order.status === 'order_received' || order.status === 'pending')
-        .map(order => order.id);
-
-      if (orderIds.length > 0) {
-        const { error: updateError } = await (supabase
-          .from('orders') as any)
-          .update({ status: 'notified', updated_at: new Date().toISOString() })
-          .in('id', orderIds);
-
-        if (updateError) {
-          console.error('[Cron Job] Failed to update order status:', updateError);
-        } else {
-          console.log(`[Cron Job] Updated ${orderIds.length} orders to 'notified' status`);
-        }
-      }
-    }
+    // ステータスは手動管理のため、cronでは変更しない
 
     return NextResponse.json({
       success: true,

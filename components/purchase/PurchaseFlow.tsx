@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { createBrowserClient } from '@/lib/supabase';
 import { MenuDetailModal } from '@/components/menu/MenuDetailModal';
 import { PlanSelectorCards, type PlanCardData } from '@/components/purchase/PlanSelectorCards';
+import { StripePaymentForm } from '@/components/purchase/StripePaymentForm';
 import type { MenuItem } from '@/types';
 
 export interface PurchaseFlowProps {
@@ -222,7 +223,12 @@ function formatDate(date: Date): string {
 const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [currentStep, setCurrentStep] = useState<'plan' | 'info' | 'confirm'>('plan');
+  const [currentStep, setCurrentStep] = useState<'plan' | 'info' | 'confirm' | 'payment'>('plan');
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState<number>(0);
+  const [isSetupFlow, setIsSetupFlow] = useState(false);
+  const [setupIntentId, setSetupIntentId] = useState<string | null>(null);
+  const [stripeCustomerId, setStripeCustomerId] = useState<string | null>(null);
   // 購入タイプ（一回購入 or サブスクリプション）- デフォルトはサブスクリプション
   const [purchaseType, setPurchaseType] = useState<'one-time' | 'subscription-monthly'>('subscription-monthly');
   // お試しプランモード（URLパラメータでplan=trial-6が指定された場合のみtrue）
@@ -278,13 +284,7 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
   const [openPlanId, setOpenPlanId] = useState<string>('subscription-monthly-12');
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
 
-  // 有効なクーポンコード
-  const validCoupons: { [key: string]: number } = {
-    'WELCOME1000': 1000,
-    'FUTORU1000': 1000,
-    'START1000': 1000,
-    'FUTORUMESHI1000': 1000,
-  };
+  const [couponValidating, setCouponValidating] = useState(false);
 
   // ログインユーザーとプロフィールを取得
   useEffect(() => {
@@ -503,14 +503,33 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
   const isCartEmpty = cart.every(item => item.quantity === 0);
 
   // クーポン適用
-  const applyCoupon = () => {
+  const applyCoupon = async () => {
     const code = couponCode.trim().toUpperCase();
-    if (validCoupons[code]) {
-      setAppliedCoupon({ code, discount: validCoupons[code] });
-      setCouponError('');
-    } else {
-      setCouponError('無効なクーポンコードです');
+    if (!code) {
+      setCouponError('クーポンコードを入力してください');
+      return;
+    }
+    setCouponValidating(true);
+    setCouponError('');
+    try {
+      const res = await fetch('/api/payment/validate-coupon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json();
+      if (data.valid) {
+        setAppliedCoupon({ code: data.code, discount: data.discount || 0 });
+        setCouponError('');
+      } else {
+        setCouponError(data.error || '無効なクーポンコードです');
+        setAppliedCoupon(null);
+      }
+    } catch {
+      setCouponError('検証に失敗しました');
       setAppliedCoupon(null);
+    } finally {
+      setCouponValidating(false);
     }
   };
 
@@ -822,14 +841,12 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
           localStorage.setItem('appliedCoupon', JSON.stringify(appliedCoupon));
         }
 
-        // Stripe Checkout Sessionを作成
-        const response = await fetch('/api/checkout', {
+        // Stripe Elements用 PaymentIntent / Subscription 作成
+        const response = await fetch('/api/payment/create-intent', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            purchaseType: purchaseType,
+            purchaseType,
             cart: cart.filter(item => item.quantity > 0),
             customerInfo: {
               lastName: customerInfo.lastName,
@@ -865,10 +882,18 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
           throw new Error(data.error || '決済の準備に失敗しました');
         }
 
-        window.location.href = data.url;
-      } catch (error: any) {
-        console.error('Checkout error:', error);
-        alert(error.message || '決済の準備に失敗しました。もう一度お試しください。');
+        // clientSecret を取得して決済フォームステップに遷移
+        setClientSecret(data.clientSecret);
+        setPaymentAmount(data.amount);
+        setIsSetupFlow(!!data.isSetup);
+        setSetupIntentId(data.setupIntentId || null);
+        setStripeCustomerId(data.customerId || null);
+        setCurrentStep('payment');
+        resetSheetScroll();
+      } catch (error: unknown) {
+        console.error('Payment intent error:', error);
+        alert(error instanceof Error ? error.message : '決済の準備に失敗しました。もう一度お試しください。');
+      } finally {
         setCheckoutLoading(false);
       }
     }
@@ -1471,10 +1496,10 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
               />
               <button
                 onClick={applyCoupon}
-                disabled={!couponCode.trim()}
+                disabled={!couponCode.trim() || couponValidating}
                 className="px-6 py-2 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap"
               >
-                適用
+                {couponValidating ? '確認中...' : '適用'}
               </button>
             </div>
           )}
@@ -1747,9 +1772,39 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
       else router.push('/');
     } else if (currentStep === 'info') {
       handleBackToPlan();
+    } else if (currentStep === 'payment') {
+      setCurrentStep('confirm');
+      setClientSecret(null);
+      resetSheetScroll();
     } else {
       handleBackToInfo();
     }
+  };
+
+  const handlePaymentSuccess = () => {
+    // 決済成功 → 完了ページへ（フルリロードでモーダルを確実に閉じる）
+    window.location.href = '/purchase/complete';
+  };
+
+  const renderPaymentForm = () => {
+    if (!clientSecret) return null;
+    return (
+      <div className="space-y-4">
+        <StripePaymentForm
+          clientSecret={clientSecret}
+          amount={paymentAmount}
+          isSetup={isSetupFlow}
+          setupIntentId={setupIntentId || undefined}
+          customerId={stripeCustomerId || undefined}
+          onSuccess={handlePaymentSuccess}
+          onBack={() => {
+            setCurrentStep('confirm');
+            setClientSecret(null);
+            resetSheetScroll();
+          }}
+        />
+      </div>
+    );
   };
 
   const stepContent = (
@@ -1757,6 +1812,7 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
       {currentStep === 'plan' && renderPlanSelection()}
       {currentStep === 'info' && renderCustomerInfoForm()}
       {currentStep === 'confirm' && renderConfirmation()}
+      {currentStep === 'payment' && renderPaymentForm()}
     </>
   );
 

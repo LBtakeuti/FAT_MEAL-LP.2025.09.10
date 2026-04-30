@@ -12,6 +12,8 @@
     "@google-analytics/data": "^5.2.1",
     "@splidejs/react-splide": "^0.7.12",
     "@splidejs/splide": "^4.1.4",
+    "@stripe/react-stripe-js": "^6.3.0",
+    "@stripe/stripe-js": "^9.3.1",
     "@supabase/supabase-js": "^2.57.4",
     "@tiptap/extension-link": "^3.22.3",
     "@tiptap/react": "^3.22.3",

@@ -1,0 +1,57 @@
+/**
+ * クーポンコード検証API
+ * クライアントからクーポンコードを受け取り、Stripe Promotion Codeで検証する
+ */
+import { NextRequest, NextResponse } from 'next/server';
+import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
+export async function POST(request: NextRequest) {
+  try {
+    const { code } = await request.json();
+
+    if (!code || typeof code !== 'string') {
+      return NextResponse.json({ valid: false, error: 'クーポンコードを入力してください' });
+    }
+
+    const trimmedCode = code.trim().toUpperCase();
+
+    // Stripe Promotion Codeで検証
+    const promotionCodes = await stripe.promotionCodes.list({
+      code: trimmedCode,
+      active: true,
+      limit: 1,
+    });
+
+    if (promotionCodes.data.length === 0) {
+      return NextResponse.json({ valid: false, error: '無効なクーポンコードです' });
+    }
+
+    const promo = promotionCodes.data[0] as any;
+    const coupon = promo.coupon;
+    let discount = 0;
+
+    if (coupon.percent_off) {
+      // パーセント割引は金額不明のため、percent_offを返す
+      discount = 0;
+      return NextResponse.json({
+        valid: true,
+        code: trimmedCode,
+        discount,
+        percentOff: coupon.percent_off,
+      });
+    } else if (coupon.amount_off) {
+      discount = coupon.amount_off;
+    }
+
+    return NextResponse.json({
+      valid: true,
+      code: trimmedCode,
+      discount,
+    });
+  } catch (error) {
+    console.error('Coupon validation error:', error);
+    return NextResponse.json({ valid: false, error: '検証に失敗しました' });
+  }
+}
