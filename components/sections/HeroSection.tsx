@@ -12,7 +12,7 @@ const HeroSection: React.FC = () => {
       {/* PC */}
       <div className="hidden sm:block relative w-full max-w-3xl mx-auto" style={{ aspectRatio: '9/16' }}>
         <Image
-          src="/images/hero/hero-main.webp"
+          src="/images/hero/hero-main.png"
           alt="ふとるめし"
           fill
           className="object-contain object-center"
@@ -25,7 +25,7 @@ const HeroSection: React.FC = () => {
       <div className="sm:hidden w-full">
         <div className="relative w-full" style={{ aspectRatio: '9/16' }}>
           <Image
-            src="/images/hero/hero-main.webp"
+            src="/images/hero/hero-main.png"
             alt="ふとるめし"
             fill
             className="object-contain object-center"
