@@ -29,16 +29,23 @@ export function PlanSelectorCards({ plans, selectedId, onSelect, onProceed }: Pl
       {plans.map((plan) => {
         const isSelected = selectedId === plan.id;
         return (
-          <div
-            key={plan.id}
-            className={`relative text-left rounded-2xl border-2 bg-white p-5 transition-all
-              ${isSelected ? 'border-[#E8593C] shadow-md ring-2 ring-[#E8593C]/20' : 'border-gray-200 hover:border-gray-300'}`}
-          >
+          <div key={plan.id} className="relative">
             {plan.badge && (
-              <span className="absolute -top-3 left-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+              <span className="absolute -top-3 left-4 z-10 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
                 {plan.badge}
               </span>
             )}
+          <div
+            className={`relative text-left rounded-2xl border-2 bg-white p-5 transition-all overflow-hidden
+              ${isSelected ? 'border-[#E8593C] shadow-md ring-2 ring-[#E8593C]/20' : 'border-gray-200 hover:border-gray-300'}`}
+          >
+            {/* プランバッジSVG */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={plan.isSubscription ? '/images/branding/plan-badge-subscription.svg' : '/images/branding/plan-badge-trial.svg'}
+              alt=""
+              className="absolute top-2 right-2 w-16 h-16 pointer-events-none"
+            />
             <div className="flex items-baseline gap-2 mb-1">
               <span className="text-4xl font-black text-[#1a1a1a]">{plan.mealCount}</span>
               <span className="text-base font-medium text-gray-600">食</span>
@@ -81,6 +88,7 @@ export function PlanSelectorCards({ plans, selectedId, onSelect, onProceed }: Pl
             >
               {isSelected ? '選択中' : 'このプランを選ぶ'}
             </button>
+          </div>
           </div>
         );
       })}

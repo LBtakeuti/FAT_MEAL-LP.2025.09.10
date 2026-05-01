@@ -794,7 +794,7 @@ button:hover {
   }
 
   .hss-sub {
-    font-size: 7px;
+    font-size: 8px;
     font-weight: 400;
     color: #aaaaaa;
     line-height: 1.2;
@@ -903,14 +903,16 @@ button:hover {
   }
 
   .menu-title {
-    font-size: 15px;
+    font-size: 16px;
     white-space: normal;
   }
 
   .menu-desc {
-    font-size: 12px;
+    font-size: 14px;
     line-height: 2;
     margin-bottom: 0;
+    word-break: keep-all;
+    overflow-wrap: break-word;
   }
 
   .menu-line1 {
@@ -957,7 +959,7 @@ button:hover {
   font-size: 15px;
   font-weight: 500;
   font-family: var(--font-noto-sans-jp), 'Noto Sans JP', sans-serif;
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 
 .label-futoru {
@@ -972,7 +974,7 @@ button:hover {
 
 .comparison-text-area {
   max-width: 880px;
-  margin: 52px auto 0;
+  margin: 16px auto 0;
   border-top: 0.5px solid #e8e0d8;
   padding-top: 48px;
   display: grid;
@@ -1043,19 +1045,19 @@ button:hover {
 
   .comparison-title {
     font-size: 22px;
-    margin-bottom: 36px;
+    margin-bottom: 16px;
   }
 
   .chart-grid {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 8px;
   }
 
   .comparison-text-area {
     grid-template-columns: 1fr;
     gap: 32px;
-    padding-top: 16px;
-    margin-top: 16px;
+    padding-top: 12px;
+    margin-top: 8px;
   }
 
   .text-main {

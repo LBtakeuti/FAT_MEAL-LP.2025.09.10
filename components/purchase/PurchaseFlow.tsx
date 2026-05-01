@@ -899,15 +899,15 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
           }
         }
 
-        // お客様情報をローカルストレージに保存
-        localStorage.setItem('customerInfo', JSON.stringify(customerInfo));
-        localStorage.setItem('cart', JSON.stringify(cart));
-        localStorage.setItem('subtotal', String(subtotal));
-        localStorage.setItem('shippingFee', String(shippingFee));
-        localStorage.setItem('discount', String(discount));
-        localStorage.setItem('totalAmount', String(totalAmount));
+        // お客様情報をsessionStorageに保存（PIIはlocalStorageに残さない）
+        sessionStorage.setItem('customerInfo', JSON.stringify(customerInfo));
+        sessionStorage.setItem('cart', JSON.stringify(cart));
+        sessionStorage.setItem('subtotal', String(subtotal));
+        sessionStorage.setItem('shippingFee', String(shippingFee));
+        sessionStorage.setItem('discount', String(discount));
+        sessionStorage.setItem('totalAmount', String(totalAmount));
         if (appliedCoupon) {
-          localStorage.setItem('appliedCoupon', JSON.stringify(appliedCoupon));
+          sessionStorage.setItem('appliedCoupon', JSON.stringify(appliedCoupon));
         }
 
         // Stripe Elements用 PaymentIntent / Subscription 作成

@@ -289,10 +289,10 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ url: session.url });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Checkout session error:', error);
     return NextResponse.json(
-      { error: error.message || 'チェックアウトセッションの作成に失敗しました' },
+      { error: '決済の準備に失敗しました。しばらくしてからお試しください。' },
       { status: 500 }
     );
   }

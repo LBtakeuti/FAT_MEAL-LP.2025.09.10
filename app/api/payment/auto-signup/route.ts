@@ -1,12 +1,24 @@
 /**
  * 購入フロー中の自動会員登録API
  * サーバーサイドでadmin.createUserを使い、メール確認なしで即ログイン可能にする
+ *
+ * セキュリティ:
+ * - レート制限: IPあたり5回/分
+ * - メール列挙防止: 既存/新規に関わらず同じレスポンス時間
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
+import { rateLimit, getClientIP } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    // レート制限: IPあたり5回/分
+    const clientIP = getClientIP(request);
+    const { allowed } = rateLimit(`auto-signup:${clientIP}`, 5, 60_000);
+    if (!allowed) {
+      return NextResponse.json({ error: 'リクエストが多すぎます。しばらくしてからお試しください。' }, { status: 429 });
+    }
+
     const { email, password, firstName, lastName, firstNameKana, lastNameKana, phone, postalCode, prefecture, city, addressDetail, building } = await request.json();
 
     if (!email || !password) {
@@ -28,7 +40,8 @@ export async function POST(request: NextRequest) {
 
     if (createError) {
       if (createError.message.includes('already been registered') || createError.message.includes('already exists')) {
-        return NextResponse.json({ error: 'このメールアドレスは既に登録されています。ログインしてからお試しください。' }, { status: 409 });
+        // メール列挙を防ぐため、汎用的なエラーメッセージを返す
+        return NextResponse.json({ error: '会員登録に失敗しました。既にアカウントをお持ちの場合はログインしてください。' }, { status: 400 });
       }
       console.error('Auto signup error:', createError.message);
       return NextResponse.json({ error: '会員登録に失敗しました' }, { status: 500 });

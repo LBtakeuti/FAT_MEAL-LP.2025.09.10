@@ -107,7 +107,7 @@ const MobileHeaderClient: React.FC = () => {
       {/* 背景オーバーレイ */}
       {isMenuOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-0 sm:hidden z-[9999]"
+          className="fixed inset-0 bg-black bg-opacity-20 sm:hidden z-[9999]"
           onClick={closeMenu}
           onTouchStart={closeMenu}
           aria-hidden="true"
@@ -116,12 +116,12 @@ const MobileHeaderClient: React.FC = () => {
 
       {/* Dropdown Menu */}
       <div
-        className={`fixed top-20 left-0 right-0 overflow-hidden transition-all duration-300 ease-in-out bg-white sm:hidden z-[10000] ${
-          isMenuOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
+        className={`fixed top-20 left-0 right-0 overflow-hidden transition-all duration-300 ease-in-out bg-white sm:hidden z-[10000] shadow-[0_8px_30px_rgba(0,0,0,0.12)] ${
+          isMenuOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0 shadow-none'
         }`}
         onClick={(e) => e.stopPropagation()}
       >
-        <nav className="border-t border-gray-200 shadow-lg">
+        <nav className="border-t border-gray-200">
           <div className="py-2">
             <Link
               href="/menu-list"

@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
   console.log('[Cron Job] Authorization header present:', !!authHeader);
   console.log('[Cron Job] CRON_SECRET set:', !!cronSecret);
   
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     console.error('[Cron Job] Unauthorized access attempt');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }

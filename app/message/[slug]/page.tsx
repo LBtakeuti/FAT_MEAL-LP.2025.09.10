@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { createServerClient } from '@/lib/supabase';
 import { MessageImageCarousel } from '@/components/message/MessageImageCarousel';
+import DOMPurify from 'isomorphic-dompurify';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -55,7 +56,7 @@ export default async function IndividualMessagePage({ params }: PageProps) {
       {/* 本文 */}
       <article
         className="message-body"
-        dangerouslySetInnerHTML={{ __html: m.body_html || '' }}
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(m.body_html || '') }}
       />
     </div>
   );

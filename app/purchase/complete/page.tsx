@@ -66,10 +66,10 @@ function PurchaseCompleteContent() {
       activateSubscription();
     }
 
-    // ローカルストレージから注文情報を取得
-    const customerInfo = localStorage.getItem('customerInfo');
-    const cart = localStorage.getItem('cart');
-    const totalAmount = localStorage.getItem('totalAmount');
+    // sessionStorageから注文情報を取得
+    const customerInfo = sessionStorage.getItem('customerInfo');
+    const cart = sessionStorage.getItem('cart');
+    const totalAmount = sessionStorage.getItem('totalAmount');
 
     if (customerInfo && cart && totalAmount) {
       setOrderInfo({
@@ -78,19 +78,20 @@ function PurchaseCompleteContent() {
         totalAmount: parseInt(totalAmount),
       });
 
-      // 注文完了後、ローカルストレージをクリア
-      localStorage.removeItem('customerInfo');
-      localStorage.removeItem('cart');
-      localStorage.removeItem('subtotal');
-      localStorage.removeItem('shippingFee');
-      localStorage.removeItem('discount');
-      localStorage.removeItem('totalAmount');
-      localStorage.removeItem('appliedCoupon');
+      // 注文完了後、sessionStorageをクリア
+      sessionStorage.removeItem('customerInfo');
+      sessionStorage.removeItem('cart');
+      sessionStorage.removeItem('subtotal');
+      sessionStorage.removeItem('shippingFee');
+      sessionStorage.removeItem('discount');
+      sessionStorage.removeItem('totalAmount');
+      sessionStorage.removeItem('appliedCoupon');
+      sessionStorage.removeItem('purchase_customerInfo');
     }
 
     // Meta Pixel Purchase イベント発火（3DSリダイレクト後用）
     if (redirectStatus === 'succeeded' && typeof window !== 'undefined' && typeof (window as any).fbq === 'function') {
-      const amount = localStorage.getItem('totalAmount');
+      const amount = sessionStorage.getItem('totalAmount');
       if (amount) {
         (window as any).fbq('track', 'Purchase', {
           value: parseInt(amount),

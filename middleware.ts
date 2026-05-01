@@ -3,12 +3,27 @@ import type { NextRequest } from 'next/server';
 import { verifyAdminToken, getAuthToken } from './lib/auth';
 
 export async function middleware(request: NextRequest) {
-  // 環境変数で認証の有効/無効を切り替え
-  const authEnabled = process.env.ENABLE_AUTH !== 'false';
+  // 認証は常に有効。無効化は開発環境でのみ ENABLE_AUTH=disabled_for_dev で可能
+  const authDisabled = process.env.ENABLE_AUTH === 'disabled_for_dev' && process.env.NODE_ENV === 'development';
 
-  if (!authEnabled) {
-    console.warn('認証が無効になっています。本番環境では必ずENABLE_AUTH環境変数を削除してください。');
+  if (authDisabled) {
+    console.warn('[DEV ONLY] 認証が無効になっています');
     return NextResponse.next();
+  }
+
+  // CSRF保護: POST/PATCH/DELETE リクエストのOrigin検証（Webhook除外）
+  if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(request.method)) {
+    const isWebhook = request.nextUrl.pathname.startsWith('/api/webhook/');
+    if (!isWebhook) {
+      const origin = request.headers.get('origin');
+      const host = request.headers.get('host');
+      if (origin && host) {
+        const originHost = new URL(origin).host;
+        if (originHost !== host) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+      }
+    }
   }
 
   // 管理画面・管理APIへのアクセスをチェック
@@ -77,5 +92,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/admin/:path*']
+  matcher: ['/admin/:path*', '/api/admin/:path*', '/api/payment/:path*', '/api/contact/:path*', '/api/checkout']
 };

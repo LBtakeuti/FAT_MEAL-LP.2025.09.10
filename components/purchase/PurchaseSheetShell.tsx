@@ -66,6 +66,13 @@ export function PurchaseSheetShell({ title = 'プランを選ぶ', children }: P
         <div className="bg-white rounded-t-2xl md:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 flex-shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/branding/logo-mini.svg"
+              alt="ふとるめし"
+              className="h-[44px] w-auto"
+            />
+            <h2 className="text-sm font-semibold text-[#E8593C]">{title}</h2>
             <button
               type="button"
               onClick={close}
@@ -77,8 +84,6 @@ export function PurchaseSheetShell({ title = 'プランを選ぶ', children }: P
                 <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
-            <h2 className="text-sm font-semibold text-[#E8593C]">{title}</h2>
-            <div className="w-9" />
           </div>
 
           {/* Body */}

@@ -16,7 +16,7 @@ const Footer: React.FC = () => {
                   alt="ふとるめし"
                   width={200}
                   height={100}
-                  className="h-auto w-auto max-h-20 sm:max-h-32"
+                  className="h-[88px] w-auto object-contain"
                 />
               </a>
             </div>

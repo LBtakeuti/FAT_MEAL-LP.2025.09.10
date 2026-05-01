@@ -4,11 +4,19 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { rateLimit, getClientIP } from '@/lib/rate-limit';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(request: NextRequest) {
   try {
+    // レート制限: IPあたり10回/分
+    const clientIP = getClientIP(request);
+    const { allowed } = rateLimit(`coupon:${clientIP}`, 10, 60_000);
+    if (!allowed) {
+      return NextResponse.json({ valid: false, error: 'リクエストが多すぎます。しばらくしてからお試しください。' });
+    }
+
     const { code } = await request.json();
 
     if (!code || typeof code !== 'string') {
