@@ -1043,7 +1043,7 @@ button:hover {
 @media (max-width: 768px) {
   .comparison-section,
   .normal-scroll section.comparison-section {
-    padding: 0 20px 40px;
+    padding: 0 20px 0;
   }
 
   .comparison-title {

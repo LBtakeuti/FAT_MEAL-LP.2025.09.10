@@ -48,7 +48,7 @@ const PurchaseFlowSection: React.FC = () => {
                 {step.number}
               </div>
               {/* 画像 */}
-              <div className="flex-shrink-0 w-20 h-20">
+              <div className="flex-shrink-0 w-36 h-36">
                 <Image
                   src={step.image}
                   alt={step.title}
