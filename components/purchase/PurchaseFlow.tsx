@@ -140,6 +140,7 @@ interface CustomerInfo {
   city: string;
   address: string;
   building: string;
+  password?: string;
   preferredDeliveryDate?: string;
   referralCode?: string;
   notes?: string;
@@ -243,21 +244,31 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
   // 在庫状況
   const [, setInventory] = useState<InventoryStatus | null>(null);
   const [, setInventoryLoading] = useState(true);
-  const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
-    lastName: '',
-    firstName: '',
-    lastNameKana: '',
-    firstNameKana: '',
-    email: '',
-    phone: '',
-    postalCode: '',
-    prefecture: '',
-    city: '',
-    address: '',
-    building: '',
-    preferredDeliveryDate: '',
-    referralCode: '',
-    notes: '',
+  const [customerInfo, setCustomerInfo] = useState<CustomerInfo>(() => {
+    const defaults: CustomerInfo = {
+      lastName: '',
+      firstName: '',
+      lastNameKana: '',
+      firstNameKana: '',
+      email: '',
+      phone: '',
+      postalCode: '',
+      prefecture: '',
+      city: '',
+      address: '',
+      building: '',
+      preferredDeliveryDate: '',
+      referralCode: '',
+      notes: '',
+    };
+    // sessionStorageから復元（パスワードは復元しない）
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = sessionStorage.getItem('purchase_customerInfo');
+        if (saved) return { ...defaults, ...JSON.parse(saved) };
+      } catch {}
+    }
+    return defaults;
   });
   const [errors, setErrors] = useState<Partial<CustomerInfo>>({});
 
@@ -285,6 +296,7 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
 
   const [couponValidating, setCouponValidating] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // ログインユーザーとプロフィールを取得
   useEffect(() => {
@@ -629,7 +641,14 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setCustomerInfo(prev => ({ ...prev, [name]: value }));
+    setCustomerInfo(prev => {
+      const updated = { ...prev, [name]: value };
+      // パスワード以外をsessionStorageに保存（再開時に復元用）
+      const toSave = { ...updated };
+      delete toSave.password;
+      try { sessionStorage.setItem('purchase_customerInfo', JSON.stringify(toSave)); } catch {}
+      return updated;
+    });
     if (errors[name as keyof CustomerInfo]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -750,6 +769,13 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
     if (!customerInfo.city.trim()) newErrors.city = '市区町村を入力してください';
     if (!customerInfo.address.trim()) newErrors.address = '番地を入力してください';
 
+    // サブスクリプションかつ未ログインの場合はパスワード必須
+    if (purchaseType === 'subscription-monthly' && !user) {
+      if (!customerInfo.password || customerInfo.password.trim().length < 6) {
+        newErrors.password = 'パスワードは6文字以上で入力してください';
+      }
+    }
+
     // サブスクリプションの場合の配送希望日チェック - 一時的に無効化
     // if (purchaseType === 'subscription-monthly') {
     //   const deliveryError = validateDeliveryDate(customerInfo.preferredDeliveryDate || '');
@@ -828,6 +854,49 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
         const selectedPlan = getSelectedPlan();
         if (!selectedPlan) {
           throw new Error('プランを選択してください');
+        }
+
+        // サブスクかつ未ログインの場合、自動会員登録
+        if (purchaseType === 'subscription-monthly' && !user && customerInfo.password) {
+          const signupRes = await fetch('/api/payment/auto-signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: customerInfo.email,
+              password: customerInfo.password,
+              firstName: customerInfo.firstName,
+              lastName: customerInfo.lastName,
+              firstNameKana: customerInfo.firstNameKana,
+              lastNameKana: customerInfo.lastNameKana,
+              phone: customerInfo.phone,
+              postalCode: customerInfo.postalCode,
+              prefecture: customerInfo.prefecture,
+              city: customerInfo.city,
+              addressDetail: customerInfo.address,
+              building: customerInfo.building,
+            }),
+          });
+
+          const signupData = await signupRes.json();
+
+          if (!signupRes.ok) {
+            throw new Error(signupData.error || '会員登録に失敗しました');
+          }
+
+          // ログインしてセッションを取得
+          const supabase = createBrowserClient();
+          const { error: loginError } = await supabase.auth.signInWithPassword({
+            email: customerInfo.email,
+            password: customerInfo.password,
+          });
+
+          if (loginError) {
+            console.error('Auto login error:', loginError.message);
+            // ログイン失敗してもユーザーは作成済みなので決済は続行
+          } else {
+            const { data: { user: loggedInUser } } = await supabase.auth.getUser();
+            if (loggedInUser) setUser(loggedInUser);
+          }
         }
 
         // お客様情報をローカルストレージに保存
@@ -929,31 +998,15 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
     );
     setPurchaseType(plan.isTrial ? 'one-time' : 'subscription-monthly');
     if (plan.isSubscription) setOpenPlanId(plan.id);
+    // プラン選択後、自動で次のステップに進む
+    setTimeout(() => {
+      setCurrentStep('info');
+      resetSheetScroll();
+    }, 150);
   };
 
   const renderPlanSelection = () => (
     <div className="space-y-6">
-      {!user && (
-        <div className="flex items-start gap-2 text-sm text-blue-600 bg-blue-50 rounded-lg p-3">
-          <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-          </svg>
-          <span className="flex-1">月額プランのご購入にはログインが必要です</span>
-          <button
-            onClick={() => {
-              const refCode = localStorage.getItem('referral_code');
-              const redirectUrl = refCode
-                ? `/purchase?type=subscription&ref=${refCode}`
-                : '/purchase?type=subscription';
-              router.push(`/login?redirect=${encodeURIComponent(redirectUrl)}`);
-            }}
-            className="underline hover:text-blue-700 flex-shrink-0"
-          >
-            ログインする
-          </button>
-        </div>
-      )}
-
       <PlanSelectorCards
         plans={planCardData}
         selectedId={currentSelectedId}
@@ -961,13 +1014,6 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
         onProceed={handleProceedToInfo}
       />
 
-      <button
-        onClick={handleProceedToInfo}
-        disabled={isCartEmpty}
-        className="w-full bg-[#E8593C] text-white py-3.5 rounded-full font-bold hover:bg-[#d64a2e] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-      >
-        お客様情報の入力へ進む
-      </button>
       <p className="text-xs text-gray-400 text-center">
         送料無料 ・ いつでも解約可能 ・ 管理栄養士監修
       </p>
@@ -1172,6 +1218,63 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
             />
             {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
           </div>
+
+          {/* パスワード（サブスクかつ未ログイン時のみ） */}
+          {purchaseType === 'subscription-monthly' && !user && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                パスワード <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  value={customerInfo.password || ''}
+                  onChange={handleInputChange}
+                  placeholder="6文字以上"
+                  className={`w-full px-4 py-2 pr-12 border-2 rounded-lg focus:outline-none ${errors.password ? 'border-red-500' : 'border-gray-300 focus:border-orange-600'}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" />
+                      <path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                  ) : (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
+              <p className="text-xs text-gray-400 mt-1">
+                マイページのログインに使用します。購入時に会員登録が自動で行われます。
+              </p>
+              <p className="text-xs text-gray-400 mt-2">
+                既にアカウントをお持ちの方は
+                <button
+                  type="button"
+                  onClick={() => {
+                    const refCode = localStorage.getItem('referral_code') || sessionStorage.getItem('referral_code');
+                    const redirectUrl = refCode
+                      ? `/purchase?type=subscription&step=confirm&ref=${refCode}`
+                      : '/purchase?type=subscription&step=confirm';
+                    window.location.href = `/login?redirect=${encodeURIComponent(redirectUrl)}`;
+                  }}
+                  className="text-orange-600 underline hover:text-orange-700 ml-1"
+                >
+                  ログイン
+                </button>
+              </p>
+            </div>
+          )}
 
           {/* 電話番号 */}
           <div>
@@ -1546,29 +1649,6 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
           </dl>
         </div>
 
-        {/* 特商法同意チェックボックス */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={agreedToTerms}
-              onChange={(e) => setAgreedToTerms(e.target.checked)}
-              className="w-5 h-5 text-orange-600 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
-            />
-            <span className="text-sm text-gray-700">
-              <a
-                href="/legal"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-orange-600 underline hover:text-orange-700"
-              >
-                特定商取引法に基づく表記
-              </a>
-              に同意する
-            </span>
-          </label>
-        </div>
-
         {/* 購入前アンケート（必須） */}
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h2 className="text-lg font-bold text-gray-900 mb-1">購入前に教えてください（必須）</h2>
@@ -1676,6 +1756,29 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
           </div>
         </div>
 
+        {/* 特商法同意チェックボックス */}
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={agreedToTerms}
+              onChange={(e) => setAgreedToTerms(e.target.checked)}
+              className="w-5 h-5 text-orange-600 border-gray-300 rounded focus:ring-orange-500 cursor-pointer"
+            />
+            <span className="text-sm text-gray-700">
+              <a
+                href="/legal"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-orange-600 underline hover:text-orange-700"
+              >
+                特定商取引法に基づく表記
+              </a>
+              に同意する
+            </span>
+          </label>
+        </div>
+
         {/* サブスクリプション解約に関する注意書き */}
         {purchaseType === 'subscription-monthly' && (
           <div className="rounded-lg px-4 py-3 [word-break:keep-all] [overflow-wrap:normal]">
@@ -1685,49 +1788,6 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
               <li>・お支払い済みの配送についてはキャンセルできかねます</li>
               <li>・ご不明点は<a href="/contact" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-700">お問い合わせ</a>よりご連絡ください</li>
             </ul>
-          </div>
-        )}
-
-        {/* サブスク未ログイン時：会員登録を促すセクション */}
-        {purchaseType === 'subscription-monthly' && !user && (
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-            <div className="flex items-start gap-3 mb-4">
-              <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-              <div>
-                <h3 className="font-bold text-blue-900 mb-1">定期購入には会員登録が必要です</h3>
-                <p className="text-sm text-blue-700">
-                  入力いただいたお客様情報は、会員情報として自動登録されます。次回以降のご購入がスムーズになります。
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={() => {
-                  const refCode = sessionStorage.getItem('referral_code');
-                  const redirectUrl = refCode
-                    ? `/purchase?type=subscription&step=confirm&ref=${refCode}`
-                    : '/purchase?type=subscription&step=confirm';
-                  router.push(`/login?redirect=${encodeURIComponent(redirectUrl)}`);
-                }}
-                className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-center"
-              >
-                会員登録する
-              </button>
-              <button
-                onClick={() => {
-                  const refCode = sessionStorage.getItem('referral_code');
-                  const redirectUrl = refCode
-                    ? `/purchase?type=subscription&step=confirm&ref=${refCode}`
-                    : '/purchase?type=subscription&step=confirm';
-                  router.push(`/login?redirect=${encodeURIComponent(redirectUrl)}`);
-                }}
-                className="flex-1 bg-white text-blue-600 border-2 border-blue-600 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors text-center"
-              >
-                既にお持ちの方はログイン
-              </button>
-            </div>
           </div>
         )}
 
@@ -1741,9 +1801,9 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
           </button>
           <button
             onClick={handleProceedToPayment}
-            disabled={checkoutLoading || !agreedToTerms || !isSurveyComplete || (purchaseType === 'subscription-monthly' && !user)}
+            disabled={checkoutLoading || !agreedToTerms || !isSurveyComplete}
             className={`flex-1 py-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 ${
-              checkoutLoading || !agreedToTerms || !isSurveyComplete || (purchaseType === 'subscription-monthly' && !user)
+              checkoutLoading || !agreedToTerms || !isSurveyComplete
                 ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
                 : 'bg-orange-500 text-white hover:bg-orange-600'
             }`}
@@ -1782,6 +1842,8 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
   };
 
   const handlePaymentSuccess = () => {
+    // 入力内容のキャッシュをクリア
+    try { sessionStorage.removeItem('purchase_customerInfo'); } catch {}
     // 決済成功 → 完了ページへ（フルリロードでモーダルを確実に閉じる）
     window.location.href = '/purchase/complete';
   };

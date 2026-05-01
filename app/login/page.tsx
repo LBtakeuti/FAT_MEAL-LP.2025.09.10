@@ -147,6 +147,12 @@ function LoginForm() {
         }
 
         if (data.user) {
+          // 既存ユーザーの場合、identitiesが空配列になる
+          if (data.user.identities && data.user.identities.length === 0) {
+            setError('このメールアドレスは既に登録されています。ログインしてください。');
+            setIsSignUp(false);
+            return;
+          }
           setSuccessMessage('登録が完了しました。確認メールを送信しましたので、メール内のリンクをクリックして認証を完了してください。');
         }
       } else {

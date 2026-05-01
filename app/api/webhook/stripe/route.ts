@@ -1490,7 +1490,32 @@ async function sendSubscriptionPurchaseConfirmationEmail(params: {
       <p style="background: #fff8e1; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 4px; margin: 20px 0;">
         ※ 2ヶ月目以降は価格が変更されます。詳しくはサイト内のプランページをご確認ください。
       </p>
+
+      <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 20px; border-radius: 8px; margin: 20px 0;">
+        <p style="margin-top: 0; font-weight: bold; color: #1e40af;">🔑 会員登録が完了しました</p>
+        <p style="color: #1e40af; font-size: 14px;">
+          ご購入時に会員アカウントが自動作成されました。
+        </p>
+        <p style="color: #374151; font-size: 14px; margin-bottom: 5px;">
+          <strong>メールアドレス:</strong> ${params.email}
+        </p>
+        <p style="color: #374151; font-size: 14px;">
+          <strong>パスワード:</strong> ご購入時に設定したパスワードをご利用ください
+        </p>
+        <p style="color: #6b7280; font-size: 13px; margin-top: 15px;">
+          マイページではご注文履歴やサブスクリプションの管理ができます。
+        </p>
+        <a href="https://www.futorumeshi.com/mypage" style="display: inline-block; background: #2563eb; color: #fff; padding: 10px 24px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px; margin-top: 10px;">
+          マイページへログイン
+        </a>
+      </div>
+
       <p>ご不明な点がございましたらご連絡ください。</p>
+
+      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e5e5;">
+        <p style="margin: 0; font-size: 14px;">LandBridge株式会社</p>
+        <p style="margin: 5px 0; font-size: 14px;"><a href="mailto:sales@landbridge.co.jp">sales@landbridge.co.jp</a></p>
+      </div>
     </div>
   </div>
 </body>
@@ -1502,7 +1527,7 @@ async function sendSubscriptionPurchaseConfirmationEmail(params: {
   const { error } = await resend.emails.send({
     from: fromEmail,
     to: params.email,
-    subject: '【ふとるめし】月額プランのご購入ありがとうございます',
+    subject: '【ふとるめし】月額プランのご購入・会員登録が完了しました',
     html: emailHtml,
   });
 
