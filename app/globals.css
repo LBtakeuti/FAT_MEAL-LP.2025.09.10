@@ -857,7 +857,7 @@ button:hover {
 
 .menu-inner {
   max-width: 880px;
-  width: fit-content;
+  width: 100%;
   margin: 0 auto;
 }
 
@@ -913,6 +913,11 @@ button:hover {
     margin-bottom: 0;
     word-break: keep-all;
     overflow-wrap: break-word;
+  }
+
+  .menu-img-wrap {
+    max-width: 100%;
+    overflow: hidden;
   }
 
   .menu-line1 {
