@@ -12,13 +12,8 @@ const MenuIntroSection: React.FC = () => {
         </h2>
 
         <p className="menu-desc">
-          <span className="menu-line1">
-            世の中の宅食はカロリーを抑えるものばかり。ふとるめしはその真逆の発想で作った。
-          </span>
-          <br />
-          太りたいアスリートに必要なのは、制限ではなく補給だ。
-          <br />
-          管理栄養士が設計した、増量のための弁当がここにある。
+          <span className="hidden sm:inline">世の中の宅食はカロリーを抑える。ふとるめしは逆だ。太りたいアスリートのために、管理栄養士が作った増量専用の弁当。</span>
+          <span className="sm:hidden">世の中の宅食はカロリーを抑える。<br />ふとるめしは逆だ。<br />太りたいアスリートのために、管理栄養士が作った増量専用の弁当。</span>
         </p>
 
         <div className="menu-img-wrap mt-4">
