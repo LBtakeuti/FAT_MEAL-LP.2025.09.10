@@ -674,12 +674,33 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
       throw new Error(`Invalid plan ID: ${planId}`);
     }
 
-    const customerEmail = checkoutSession?.customer_details?.email || 
-                          checkoutSession?.customer_email ||
-                          checkoutSession?.metadata?.email || '';
-    const customerName = checkoutSession?.metadata?.customer_name || 'お客様';
-    const preferredDeliveryDateStr = checkoutSession?.metadata?.preferred_delivery_date || 
-                                     subscription.metadata?.preferred_delivery_date || '';
+    // Stripe Elements 新フローでは Checkout Session が存在しないため、
+    // subscription.metadata（activate-subscription で書き込まれる）→ checkoutSession.metadata
+    // → Stripe Customer の順でフォールバック
+    let customerEmail = checkoutSession?.customer_details?.email ||
+                        checkoutSession?.customer_email ||
+                        subscription.metadata?.email ||
+                        checkoutSession?.metadata?.email || '';
+    let customerName = subscription.metadata?.customer_name ||
+                       checkoutSession?.metadata?.customer_name || '';
+
+    if (!customerEmail || !customerName) {
+      try {
+        const stripeCustomer = await stripe.customers.retrieve(subscription.customer as string);
+        if (stripeCustomer && !(stripeCustomer as any).deleted) {
+          const c = stripeCustomer as Stripe.Customer;
+          if (!customerEmail) customerEmail = c.email || '';
+          if (!customerName) customerName = c.name || '';
+        }
+      } catch (customerError) {
+        console.error('[Webhook] Failed to retrieve Stripe customer:', customerError);
+      }
+    }
+
+    if (!customerName) customerName = 'お客様';
+
+    const preferredDeliveryDateStr = subscription.metadata?.preferred_delivery_date ||
+                                     checkoutSession?.metadata?.preferred_delivery_date || '';
     
     console.log(`[Webhook] Customer: ${customerEmail}, ${customerName}`);
 
@@ -774,12 +795,12 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
         shipping_address: {
           name: customerName,
           email: customerEmail,
-          phone: checkoutSession?.metadata?.phone || subscription.metadata?.phone || '',
-          postal_code: checkoutSession?.metadata?.postal_code || '',
-          prefecture: checkoutSession?.metadata?.prefecture || '',
-          city: checkoutSession?.metadata?.city || '',
-          address_detail: checkoutSession?.metadata?.address_detail || '',
-          building: checkoutSession?.metadata?.building || '',
+          phone: subscription.metadata?.phone || checkoutSession?.metadata?.phone || '',
+          postal_code: subscription.metadata?.postal_code || checkoutSession?.metadata?.postal_code || '',
+          prefecture: subscription.metadata?.prefecture || checkoutSession?.metadata?.prefecture || '',
+          city: subscription.metadata?.city || checkoutSession?.metadata?.city || '',
+          address_detail: subscription.metadata?.address_detail || checkoutSession?.metadata?.address_detail || '',
+          building: subscription.metadata?.building || checkoutSession?.metadata?.building || '',
         },
         status: 'active',
         payment_status: 'active',
@@ -787,7 +808,7 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
         current_period_end: new Date(currentPeriodEnd * 1000).toISOString(),
         started_at: new Date(subscription.created * 1000).toISOString(),
         referral_code: referralCode || null,
-        notes: checkoutSession?.metadata?.notes || null,
+        notes: subscription.metadata?.notes || checkoutSession?.metadata?.notes || null,
       })
       .select()
       .single();
