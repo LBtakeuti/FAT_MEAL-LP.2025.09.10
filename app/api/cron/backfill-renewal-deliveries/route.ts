@@ -128,10 +128,11 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // Stripe から subscription_cycle invoice を取得
+      // Stripe から subscription_cycle invoice を取得（line items 含む）
       const invoices = await stripe.invoices.list({
         customer: sub.stripe_customer_id,
         limit: 100,
+        expand: ['data.lines'],
       });
 
       const cycleInvoices = invoices.data.filter(
@@ -159,14 +160,24 @@ export async function POST(request: NextRequest) {
       // 各 cycle invoice について、対応する delivery が無ければ補完
       for (const inv of cycleInvoices) {
         const invoiceId = inv.id;
-        const periodStart = (inv as any).period_start as number || inv.created;
+        // Stripe Invoice の period_start/end は「直前の使用期間」を指す。
+        // 実際の請求対象（次のサイクル）は line item の period に入っている。
+        // 商品 line item を優先（送料 line item は除外）。
+        const productLine = inv.lines?.data?.find((l: any) => {
+          const planNickname = (l as any).plan?.nickname || '';
+          // 送料 price を除外（"無料"や"送料"を含む nickname）
+          return !planNickname.includes('送料') && !planNickname.includes('無料');
+        }) || inv.lines?.data?.[0];
+
+        const linePeriodStart = (productLine as any)?.period?.start as number;
+        const billingPeriodStart = linePeriodStart || (inv as any).period_end || inv.created;
 
         // 既にこの invoice 由来の delivery がある場合はスキップ
         if (invoiceId && existingInvoiceIds.has(invoiceId)) {
           continue;
         }
 
-        const billingDate = new Date(periodStart * 1000);
+        const billingDate = new Date(billingPeriodStart * 1000);
         const billingDateStr = billingDate.toISOString().split('T')[0];
 
         // scheduled_date で重複チェック（前回のcreate前は invoice_id 未設定の可能性）
