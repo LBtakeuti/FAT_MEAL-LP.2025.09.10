@@ -134,6 +134,7 @@ interface CustomerInfo {
   lastNameKana: string;
   firstNameKana: string;
   email: string;
+  emailConfirm: string;
   phone: string;
   postalCode: string;
   prefecture: string;
@@ -251,6 +252,7 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
       lastNameKana: '',
       firstNameKana: '',
       email: '',
+      emailConfirm: '',
       phone: '',
       postalCode: '',
       prefecture: '',
@@ -599,6 +601,7 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
       lastNameKana: userProfile.last_name_kana || '',
       firstNameKana: userProfile.first_name_kana || '',
       email: userProfile.email || user?.email || '',
+      emailConfirm: userProfile.email || user?.email || '',
       phone: userProfile.phone || '',
       postalCode: userProfile.postal_code || '',
       prefecture: userProfile.prefecture || '',
@@ -643,9 +646,11 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
     const { name, value } = e.target;
     setCustomerInfo(prev => {
       const updated = { ...prev, [name]: value };
-      // パスワード以外をsessionStorageに保存（再開時に復元用）
-      const toSave = { ...updated };
+      // パスワードとemailConfirm以外をsessionStorageに保存（再開時に復元用）
+      // emailConfirmは復元しないことで、再訪問時に確認入力をやり直してもらう（typo検知のため）
+      const toSave: Partial<CustomerInfo> = { ...updated };
       delete toSave.password;
+      delete toSave.emailConfirm;
       try { sessionStorage.setItem('purchase_customerInfo', JSON.stringify(toSave)); } catch {}
       return updated;
     });
@@ -754,6 +759,14 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
       newErrors.email = 'メールアドレスを入力してください';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerInfo.email)) {
       newErrors.email = '正しいメールアドレスを入力してください';
+    }
+    // 未ログイン時のみメアド再入力チェック（既存ユーザーは email が user.email から自動入力されるため不要）
+    if (!user) {
+      if (!customerInfo.emailConfirm.trim()) {
+        newErrors.emailConfirm = '確認用のメールアドレスを入力してください';
+      } else if (customerInfo.email.trim() !== customerInfo.emailConfirm.trim()) {
+        newErrors.emailConfirm = 'メールアドレスが一致しません。入力ミスがないかご確認ください';
+      }
     }
     if (!customerInfo.phone.trim()) {
       newErrors.phone = '電話番号を入力してください';
@@ -1213,11 +1226,36 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
               name="email"
               value={customerInfo.email}
               onChange={handleInputChange}
+              onPaste={!user ? (e) => { e.preventDefault(); alert('入力ミス防止のためコピー＆ペーストはご利用いただけません。直接ご入力ください。'); } : undefined}
               placeholder="example@email.com"
+              autoComplete="email"
               className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none ${errors.email ? 'border-red-500' : 'border-gray-300 focus:border-orange-600'}`}
             />
             {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
           </div>
+
+          {/* メールアドレス（確認用） - 未ログイン時のみ */}
+          {!user && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                メールアドレス（確認用） <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="email"
+                name="emailConfirm"
+                value={customerInfo.emailConfirm}
+                onChange={handleInputChange}
+                onPaste={(e) => { e.preventDefault(); alert('入力ミス防止のためコピー＆ペーストはご利用いただけません。直接ご入力ください。'); }}
+                placeholder="同じメールアドレスをもう一度ご入力ください"
+                autoComplete="off"
+                className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none ${errors.emailConfirm ? 'border-red-500' : 'border-gray-300 focus:border-orange-600'}`}
+              />
+              {errors.emailConfirm && <p className="text-red-500 text-xs mt-1">{errors.emailConfirm}</p>}
+              <p className="text-xs text-gray-400 mt-1">
+                マイページのログインに使用しますので、入力ミスがないようご確認ください。
+              </p>
+            </div>
+          )}
 
           {/* パスワード（サブスクかつ未ログイン時のみ） */}
           {purchaseType === 'subscription-monthly' && !user && (

@@ -8,7 +8,7 @@ import Link from 'next/link';
 // Supabaseのエラーメッセージを日本語に変換
 const translateErrorMessage = (message: string): string => {
   const errorMap: { [key: string]: string } = {
-    'Invalid login credentials': 'メールアドレスまたはパスワードが正しくありません',
+    'Invalid login credentials': 'メールアドレスまたはパスワードが正しくありません。会員登録時に入力されたメールアドレスを再度ご確認ください',
     'Email not confirmed': 'メールアドレスが確認されていません。確認メールをご確認ください',
     'User already registered': 'このメールアドレスは既に登録されています',
     'Password should be at least 6 characters': 'パスワードは6文字以上で入力してください',
@@ -326,7 +326,30 @@ function LoginForm() {
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
-            {error}
+            <p>{error}</p>
+            {!isSignUp && (
+              <div className="mt-3 pt-3 border-t border-red-200 space-y-1">
+                <p className="text-xs text-red-600 font-medium">解決しない場合：</p>
+                <ul className="text-xs text-red-600 space-y-1 ml-4 list-disc">
+                  <li>
+                    <button
+                      type="button"
+                      onClick={handleGoogleLogin}
+                      className="underline hover:text-red-800"
+                    >
+                      Googleでログイン
+                    </button>
+                    （会員登録時にGoogleを使われた方）
+                  </li>
+                  <li>
+                    <Link href="/contact" className="underline hover:text-red-800">
+                      お問い合わせ
+                    </Link>
+                    （ログインできない・別メアドの可能性がある方）
+                  </li>
+                </ul>
+              </div>
+            )}
           </div>
         )}
 
