@@ -4,6 +4,9 @@
  * webhook の invoice.payment_succeeded ハンドラがスキップされていた期間に
  * 取りこぼした「月次更新の deliveries 作成 + Slack 更新通知 + 更新メール」を補完する。
  *
+ * アプローチ: Stripe Subscription の billing_cycle_anchor から月次サイクルを
+ * 直接生成し、各サイクル日について subscription_deliveries に対応行が無ければ補完する。
+ *
  * 認証: Authorization: Bearer ${CRON_SECRET}
  * ?dryRun=1 で副作用なしのプレビュー
  */
@@ -14,6 +17,7 @@ import {
   calculateMonthlyDeliverySchedule,
   getMenuSetNameWithDeliveryNumber,
   isValidPlanId,
+  getPlanConfig,
 } from '@/lib/subscription-schedule';
 
 export const maxDuration = 60;
@@ -26,6 +30,18 @@ function getInvoiceSubscriptionId(invoice: Stripe.Invoice): string | null {
   const sub = fromParent || fromLegacy;
   if (!sub) return null;
   return typeof sub === 'string' ? sub : sub.id;
+}
+
+// 同じ日（年月日）のN月後を返す（月末日対応：例 1/31 + 1month → 2/28 or 2/29）
+function addMonths(date: Date, months: number): Date {
+  const d = new Date(date);
+  const targetMonth = d.getMonth() + months;
+  d.setMonth(targetMonth);
+  // setMonth でズレた場合（例: 1/31 → 3/3）は月末日に戻す
+  if (d.getMonth() !== ((targetMonth % 12) + 12) % 12) {
+    d.setDate(0);
+  }
+  return d;
 }
 
 async function sendBackfillRenewalSlack(params: {
@@ -73,7 +89,7 @@ async function sendBackfillRenewalSlack(params: {
         elements: [
           {
             type: 'mrkdwn',
-            text: `📅 請求日: ${params.billingDate.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}（webhook取りこぼし分の補完通知）`,
+            text: `📅 請求日: ${params.billingDate.toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' })}（webhook取りこぼし分の補完通知）`,
           },
         ],
       },
@@ -99,7 +115,6 @@ export async function POST(request: NextRequest) {
   const dryRun = request.nextUrl.searchParams.get('dryRun') === '1';
   const supabase = createServerClient();
 
-  // active なサブスクのみ対象
   const { data: subs, error: fetchError } = await (supabase
     .from('subscriptions') as any)
     .select('id, stripe_subscription_id, stripe_customer_id, plan_id, plan_name, started_at, shipping_address')
@@ -110,6 +125,7 @@ export async function POST(request: NextRequest) {
   }
 
   const results: any[] = [];
+  const now = new Date();
 
   for (const sub of subs || []) {
     const subResult: any = {
@@ -127,14 +143,33 @@ export async function POST(request: NextRequest) {
         results.push(subResult);
         continue;
       }
+      const planConfig = getPlanConfig(planId);
 
-      // Stripe から subscription_cycle invoice を取得（line items 含む）
+      // Stripe Subscription を取得して billing_cycle_anchor を得る
+      const stripeSubscription = await stripe.subscriptions.retrieve(sub.stripe_subscription_id);
+      const anchor = (stripeSubscription as any).billing_cycle_anchor as number;
+      if (!anchor) {
+        subResult.error = 'No billing_cycle_anchor on Stripe subscription';
+        results.push(subResult);
+        continue;
+      }
+      const anchorDate = new Date(anchor * 1000);
+
+      // 既存の deliveries
+      const { data: existingDeliveries } = await (supabase
+        .from('subscription_deliveries') as any)
+        .select('scheduled_date, stripe_invoice_id')
+        .eq('subscription_id', sub.id);
+
+      const existingDates = new Set(
+        (existingDeliveries || []).map((d: any) => d.scheduled_date)
+      );
+
+      // Stripe invoices をまとめて取得（請求金額参照用）
       const invoices = await stripe.invoices.list({
         customer: sub.stripe_customer_id,
         limit: 100,
-        expand: ['data.lines'],
       });
-
       const cycleInvoices = invoices.data.filter(
         (inv) =>
           inv.billing_reason === 'subscription_cycle' &&
@@ -142,50 +177,29 @@ export async function POST(request: NextRequest) {
           inv.status === 'paid'
       );
 
-      // 既存の deliveries を取得（subscription_id で）
-      const { data: existingDeliveries } = await (supabase
-        .from('subscription_deliveries') as any)
-        .select('scheduled_date, stripe_invoice_id')
-        .eq('subscription_id', sub.id);
+      // anchor + 1ヶ月から today までの月次サイクルを走査
+      for (let m = 1; ; m++) {
+        const cycleStart = addMonths(anchorDate, m);
+        if (cycleStart > now) break;
+        const cycleStartStr = cycleStart.toISOString().split('T')[0];
 
-      const existingInvoiceIds = new Set(
-        (existingDeliveries || [])
-          .map((d: any) => d.stripe_invoice_id)
-          .filter((id: any) => !!id)
-      );
-      const existingDates = new Set(
-        (existingDeliveries || []).map((d: any) => d.scheduled_date)
-      );
-
-      // 各 cycle invoice について、対応する delivery が無ければ補完
-      for (const inv of cycleInvoices) {
-        const invoiceId = inv.id;
-        // Stripe Invoice の period_start/end は「直前の使用期間」を指す。
-        // 実際の請求対象（次のサイクル）は line item の period に入っている。
-        // 商品 line item を優先（送料 line item は除外）。
-        const productLine = inv.lines?.data?.find((l: any) => {
-          const planNickname = (l as any).plan?.nickname || '';
-          // 送料 price を除外（"無料"や"送料"を含む nickname）
-          return !planNickname.includes('送料') && !planNickname.includes('無料');
-        }) || inv.lines?.data?.[0];
-
-        const linePeriodStart = (productLine as any)?.period?.start as number;
-        const billingPeriodStart = linePeriodStart || (inv as any).period_end || inv.created;
-
-        // 既にこの invoice 由来の delivery がある場合はスキップ
-        if (invoiceId && existingInvoiceIds.has(invoiceId)) {
+        // 既に delivery がある場合はスキップ
+        if (existingDates.has(cycleStartStr)) {
           continue;
         }
 
-        const billingDate = new Date(billingPeriodStart * 1000);
-        const billingDateStr = billingDate.toISOString().split('T')[0];
+        // 該当月の cycle invoice を探す（同月のものを優先）
+        const matchedInvoice = cycleInvoices.find((inv) => {
+          // invoice.created がこの cycleStart の前 7 日 〜 後 30 日の範囲内
+          const created = new Date(inv.created * 1000);
+          const diffDays = (created.getTime() - cycleStart.getTime()) / (1000 * 60 * 60 * 24);
+          return diffDays >= -7 && diffDays <= 30;
+        });
 
-        // scheduled_date で重複チェック（前回のcreate前は invoice_id 未設定の可能性）
-        if (existingDates.has(billingDateStr)) {
-          continue;
-        }
+        const amountPaid = matchedInvoice?.amount_paid ?? planConfig.monthly_total;
+        const invoiceId = matchedInvoice?.id ?? null;
 
-        const schedules = calculateMonthlyDeliverySchedule(planId, billingDate);
+        const schedules = calculateMonthlyDeliverySchedule(planId, cycleStart);
         const deliveryRows = schedules.map((s) => ({
           subscription_id: sub.id,
           scheduled_date: s.scheduled_date.toISOString().split('T')[0],
@@ -197,18 +211,11 @@ export async function POST(request: NextRequest) {
           customer_email: sub.shipping_address?.email || '',
         }));
 
-        // 月数（経過月数）を計算
-        const startedAt = new Date(sub.started_at);
-        const monthNumber =
-          (billingDate.getFullYear() - startedAt.getFullYear()) * 12 +
-          (billingDate.getMonth() - startedAt.getMonth()) + 1;
-
         const cycleAction: any = {
+          month_number: m + 1, // 1ヶ月目=初月→ m=1 が 2ヶ月目
+          cycle_start: cycleStartStr,
           invoice_id: invoiceId,
-          billing_reason: inv.billing_reason,
-          billing_date: billingDateStr,
-          amount_paid: inv.amount_paid,
-          month_number: monthNumber,
+          amount_paid: amountPaid,
           deliveries_to_create: deliveryRows.map((r) => ({
             scheduled_date: r.scheduled_date,
             menu_set: r.menu_set,
@@ -216,7 +223,6 @@ export async function POST(request: NextRequest) {
         };
 
         if (!dryRun) {
-          // deliveries 一括作成
           const { error: insertError } = await (supabase
             .from('subscription_deliveries') as any)
             .insert(deliveryRows);
@@ -226,15 +232,14 @@ export async function POST(request: NextRequest) {
             cycleAction.inserted = deliveryRows.length;
           }
 
-          // Slack 更新通知
           if (sub.shipping_address?.email && sub.shipping_address?.name) {
             const slackResult = await sendBackfillRenewalSlack({
               customerName: sub.shipping_address.name,
               customerEmail: sub.shipping_address.email,
               planName: sub.plan_name,
-              monthNumber,
-              monthlyAmount: inv.amount_paid,
-              billingDate,
+              monthNumber: m + 1,
+              monthlyAmount: amountPaid,
+              billingDate: cycleStart,
             });
             cycleAction.slack = slackResult;
           } else {
@@ -243,7 +248,7 @@ export async function POST(request: NextRequest) {
         }
 
         subResult.actions.push(cycleAction);
-        subResult.missed_cycles.push(billingDateStr);
+        subResult.missed_cycles.push(cycleStartStr);
       }
     } catch (err: any) {
       subResult.error = err.message || String(err);
