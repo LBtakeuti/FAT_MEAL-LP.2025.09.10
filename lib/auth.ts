@@ -123,12 +123,22 @@ export async function checkIsAdminByEmail(email: string): Promise<AdminUser | nu
 }
 
 /**
- * Supabaseセッショントークンを取得
- * @param email メールアドレス
- * @param password パスワード
- * @returns セッショントークン
+ * Supabaseセッショントークン（access_token のみ）を取得（後方互換）
  */
 export async function getSessionToken(email: string, password: string): Promise<string | null> {
+  const tokens = await getSessionTokens(email, password);
+  return tokens?.accessToken ?? null;
+}
+
+/**
+ * Supabaseセッショントークン（access + refresh）を取得
+ */
+export interface SessionTokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export async function getSessionTokens(email: string, password: string): Promise<SessionTokens | null> {
   try {
     const supabase = createServerClient();
 
@@ -138,12 +148,43 @@ export async function getSessionToken(email: string, password: string): Promise<
     });
 
     if (error || !data.session) {
+      console.error('セッション取得エラー:', error?.message);
       return null;
     }
 
-    return data.session.access_token;
+    return {
+      accessToken: data.session.access_token,
+      refreshToken: data.session.refresh_token,
+    };
   } catch (error) {
     console.error('セッション取得エラー:', error);
+    return null;
+  }
+}
+
+/**
+ * リフレッシュトークンを使って access_token を更新
+ * Supabase はリフレッシュ時に refresh_token もローテーションする
+ */
+export async function refreshAccessToken(refreshToken: string): Promise<SessionTokens | null> {
+  try {
+    const supabase = createServerClient();
+
+    const { data, error } = await supabase.auth.refreshSession({
+      refresh_token: refreshToken,
+    });
+
+    if (error || !data.session) {
+      console.error('リフレッシュトークン更新エラー:', error?.message);
+      return null;
+    }
+
+    return {
+      accessToken: data.session.access_token,
+      refreshToken: data.session.refresh_token,
+    };
+  } catch (error) {
+    console.error('リフレッシュトークン更新エラー:', error);
     return null;
   }
 }
@@ -209,18 +250,21 @@ export async function verifyAdminToken(token: string): Promise<AdminUser | null>
 }
 
 /**
- * リクエストから認証トークンを取得
- * @param req NextRequest
- * @returns トークン
+ * リクエストから認証トークン（access_token）を取得
  */
 export function getAuthToken(req: NextRequest): string | undefined {
   return req.cookies.get('auth-token')?.value;
 }
 
 /**
- * レスポンスに認証Cookieをセット
- * @param res NextResponse
- * @param token トークン
+ * リクエストから refresh_token を取得
+ */
+export function getRefreshToken(req: NextRequest): string | undefined {
+  return req.cookies.get('auth-refresh-token')?.value;
+}
+
+/**
+ * レスポンスに認証Cookieをセット（access_token のみ・後方互換）
  */
 export function setAuthCookie(res: NextResponse, token: string): void {
   res.cookies.set('auth-token', token, {
@@ -233,11 +277,31 @@ export function setAuthCookie(res: NextResponse, token: string): void {
 }
 
 /**
- * 認証Cookieをクリア
- * @param res NextResponse
+ * 認証Cookie（access + refresh）両方をセット
+ */
+export function setAuthCookies(res: NextResponse, tokens: SessionTokens): void {
+  res.cookies.set('auth-token', tokens.accessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 60 * 60 * 24, // 24 hours
+    path: '/',
+  });
+  res.cookies.set('auth-refresh-token', tokens.refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 60 * 60 * 24 * 30, // 30 days
+    path: '/',
+  });
+}
+
+/**
+ * 認証Cookie（access + refresh）両方をクリア
  */
 export function clearAuthCookie(res: NextResponse): void {
   res.cookies.delete('auth-token');
+  res.cookies.delete('auth-refresh-token');
 }
 
 /**

@@ -1,6 +1,28 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { verifyAdminToken, getAuthToken } from './lib/auth';
+import {
+  verifyAdminToken,
+  getAuthToken,
+  getRefreshToken,
+  refreshAccessToken,
+  type SessionTokens,
+} from './lib/auth';
+
+const COOKIE_OPTIONS_ACCESS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'strict' as const,
+  maxAge: 60 * 60 * 24, // 24 hours
+  path: '/',
+};
+
+const COOKIE_OPTIONS_REFRESH = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'strict' as const,
+  maxAge: 60 * 60 * 24 * 30, // 30 days
+  path: '/',
+};
 
 export async function middleware(request: NextRequest) {
   // 認証は常に有効。無効化は開発環境でのみ ENABLE_AUTH=disabled_for_dev で可能
@@ -29,7 +51,7 @@ export async function middleware(request: NextRequest) {
   // 管理画面・管理APIへのアクセスをチェック
   const isAdminPage = request.nextUrl.pathname.startsWith('/admin');
   const isAdminApi = request.nextUrl.pathname.startsWith('/api/admin');
-  
+
   if (isAdminPage || isAdminApi) {
     // ログインページとログインAPIは除外
     if (request.nextUrl.pathname === '/admin/login' || request.nextUrl.pathname === '/api/admin/login') {
@@ -44,35 +66,44 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next();
     }
 
-    // 認証トークンの確認
-    const token = getAuthToken(request);
+    // access_token を取得
+    let token = getAuthToken(request);
+    let refreshedTokens: SessionTokens | null = null;
 
-    if (!token) {
-      // APIの場合は401を返す、ページの場合はリダイレクト
-      if (isAdminApi) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // access_token が存在し、admin として有効か検証
+    let adminUser = token ? await verifyAdminToken(token) : null;
+
+    // access_token が無効/期限切れの場合、refresh_token で更新を試みる
+    if (!adminUser) {
+      const refreshToken = getRefreshToken(request);
+      if (refreshToken) {
+        const newTokens = await refreshAccessToken(refreshToken);
+        if (newTokens) {
+          const refreshedAdminUser = await verifyAdminToken(newTokens.accessToken);
+          if (refreshedAdminUser) {
+            adminUser = refreshedAdminUser;
+            refreshedTokens = newTokens;
+            token = newTokens.accessToken;
+          }
+        }
       }
-      const loginUrl = new URL('/admin/login', request.url);
-      loginUrl.searchParams.set('redirect', request.nextUrl.pathname);
-      return NextResponse.redirect(loginUrl);
     }
 
-    // トークンを検証し、管理者テーブルも確認
-    const adminUser = await verifyAdminToken(token);
-
     if (!adminUser) {
-      // APIの場合は401を返す、ページの場合はリダイレクト
-      if (isAdminApi) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      const loginUrl = new URL('/admin/login', request.url);
-      loginUrl.searchParams.set('redirect', request.nextUrl.pathname);
-      loginUrl.searchParams.set('error', 'unauthorized');
-
-      // 無効なトークンのCookieを削除
-      const response = NextResponse.redirect(loginUrl);
-      response.cookies.delete('auth-token');
-      return response;
+      // 認証失敗 - APIは401、ページはログインへリダイレクト
+      const failureResponse = isAdminApi
+        ? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+        : NextResponse.redirect(
+            (() => {
+              const loginUrl = new URL('/admin/login', request.url);
+              loginUrl.searchParams.set('redirect', request.nextUrl.pathname);
+              return loginUrl;
+            })()
+          );
+      // 期限切れの可能性が高いので Cookie をクリア
+      failureResponse.cookies.delete('auth-token');
+      failureResponse.cookies.delete('auth-refresh-token');
+      return failureResponse;
     }
 
     // 管理者情報をヘッダーに追加（後続の処理で使用可能）
@@ -81,11 +112,43 @@ export async function middleware(request: NextRequest) {
     requestHeaders.set('x-admin-email', adminUser.email);
     requestHeaders.set('x-admin-role', adminUser.role || 'admin');
 
-    return NextResponse.next({
+    // refresh した場合、後続ハンドラーが新しい token を読めるよう Cookie ヘッダーも更新
+    if (refreshedTokens) {
+      const oldCookie = requestHeaders.get('cookie') || '';
+      let updatedCookie = oldCookie;
+      // auth-token を更新
+      if (/auth-token=[^;]+/.test(oldCookie)) {
+        updatedCookie = updatedCookie.replace(/auth-token=[^;]+/, `auth-token=${refreshedTokens.accessToken}`);
+      } else {
+        updatedCookie = updatedCookie
+          ? `${updatedCookie}; auth-token=${refreshedTokens.accessToken}`
+          : `auth-token=${refreshedTokens.accessToken}`;
+      }
+      // auth-refresh-token を更新
+      if (/auth-refresh-token=[^;]+/.test(updatedCookie)) {
+        updatedCookie = updatedCookie.replace(
+          /auth-refresh-token=[^;]+/,
+          `auth-refresh-token=${refreshedTokens.refreshToken}`
+        );
+      } else {
+        updatedCookie = `${updatedCookie}; auth-refresh-token=${refreshedTokens.refreshToken}`;
+      }
+      requestHeaders.set('cookie', updatedCookie);
+    }
+
+    const response = NextResponse.next({
       request: {
         headers: requestHeaders,
       },
     });
+
+    // refresh した場合、ブラウザにも新 Cookie を返す
+    if (refreshedTokens) {
+      response.cookies.set('auth-token', refreshedTokens.accessToken, COOKIE_OPTIONS_ACCESS);
+      response.cookies.set('auth-refresh-token', refreshedTokens.refreshToken, COOKIE_OPTIONS_REFRESH);
+    }
+
+    return response;
   }
 
   return NextResponse.next();

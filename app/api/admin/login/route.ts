@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   authenticateUser,
-  getSessionToken,
-  setAuthCookie,
+  getSessionTokens,
+  setAuthCookies,
   checkIsAdminByEmail,
 } from '@/lib/auth';
 
@@ -39,10 +39,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. セッショントークンを取得
-    const token = await getSessionToken(email, password);
+    // 3. セッショントークン（access + refresh）を取得
+    const tokens = await getSessionTokens(email, password);
 
-    if (!token) {
+    if (!tokens) {
       return NextResponse.json(
         { message: 'セッション作成に失敗しました' },
         { status: 500 }
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
 
-    setAuthCookie(response, token);
+    setAuthCookies(response, tokens);
     return response;
   } catch (error) {
     console.error('Login error:', error);
