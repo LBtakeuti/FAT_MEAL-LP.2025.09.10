@@ -51,6 +51,17 @@ function getStripeClient() {
   return new Stripe(process.env.STRIPE_SECRET_KEY);
 }
 
+// Stripe API バージョン 2024-09-30 以降は invoice.subscription が削除され、
+// invoice.parent.subscription_details.subscription に移動している。
+// 旧バージョン互換のため両方を見るヘルパー。
+function getInvoiceSubscriptionId(invoice: Stripe.Invoice): string | null {
+  const fromParent = (invoice as any).parent?.subscription_details?.subscription;
+  const fromLegacy = (invoice as any).subscription;
+  const sub = fromParent || fromLegacy;
+  if (!sub) return null;
+  return typeof sub === 'string' ? sub : sub.id;
+}
+
 // Stripeサブスクリプションから期間情報を安全に取得（APIバージョン差異対応）
 function getSubscriptionPeriod(subscription: Stripe.Subscription): {
   currentPeriodStart: number;
@@ -231,7 +242,7 @@ export async function POST(request: NextRequest) {
       // サブスクリプションの請求成功時（毎月の自動課金成功時）
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object as Stripe.Invoice;
-        if ((invoice as any).subscription) {
+        if (getInvoiceSubscriptionId(invoice)) {
           if (invoice.billing_reason === 'subscription_cycle') {
             await handleMonthlySubscriptionPayment(invoice, stripe);
           }
@@ -244,7 +255,7 @@ export async function POST(request: NextRequest) {
       // サブスクリプションの請求失敗時
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice;
-        if ((invoice as any).subscription) {
+        if (getInvoiceSubscriptionId(invoice)) {
           await handlePaymentFailed(invoice);
         }
         break;
@@ -960,7 +971,7 @@ async function handleMonthlySubscriptionPayment(invoice: Stripe.Invoice, stripe:
     return;
   }
 
-  const stripeSubscriptionId = (invoice as any).subscription as string;
+  const stripeSubscriptionId = getInvoiceSubscriptionId(invoice) as string;
   if (!stripeSubscriptionId) {
     console.error('No subscription ID in invoice');
     return;
@@ -1145,7 +1156,7 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
     return;
   }
 
-  const stripeSubscriptionId = (invoice as any).subscription as string;
+  const stripeSubscriptionId = getInvoiceSubscriptionId(invoice) as string;
   if (!stripeSubscriptionId) return;
 
   try {
