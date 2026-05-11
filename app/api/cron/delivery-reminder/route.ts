@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
+import { postSlack } from '@/lib/slack';
 
 export const maxDuration = 60;
 
@@ -85,9 +86,6 @@ async function sendSlackReminder({
   orderCount: number;
   totalCount: number;
 }) {
-  const webhookUrl = process.env.SLACK_WEBHOOK_URL;
-  if (!webhookUrl) return;
-
   const blocks: any[] = [
     {
       type: 'header',
@@ -142,16 +140,5 @@ async function sendSlackReminder({
     },
   });
 
-  try {
-    const res = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ blocks }),
-    });
-    if (!res.ok) {
-      console.error('[delivery-reminder] Slack webhook failed:', res.status);
-    }
-  } catch (err) {
-    console.error('[delivery-reminder] Slack webhook error:', err);
-  }
+  await postSlack('ops', blocks);
 }

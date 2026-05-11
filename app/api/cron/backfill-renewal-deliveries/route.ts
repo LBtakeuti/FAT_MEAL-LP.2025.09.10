@@ -19,6 +19,7 @@ import {
   isValidPlanId,
   getPlanConfig,
 } from '@/lib/subscription-schedule';
+import { postSlack } from '@/lib/slack';
 
 export const maxDuration = 60;
 
@@ -52,57 +53,45 @@ async function sendBackfillRenewalSlack(params: {
   monthlyAmount: number;
   billingDate: Date;
 }) {
-  const slackWebhookUrl = process.env.SLACK_WEBHOOK_URL;
-  if (!slackWebhookUrl) return { ok: false, reason: 'SLACK_WEBHOOK_URL not set' };
-
   const formattedAmount = new Intl.NumberFormat('ja-JP', {
     style: 'currency',
     currency: 'JPY',
   }).format(params.monthlyAmount);
 
-  const message = {
-    blocks: [
-      {
-        type: 'header',
-        text: { type: 'plain_text', text: '🔄 サブスクリプション更新（再送）', emoji: true },
-      },
-      {
-        type: 'section',
-        fields: [
-          { type: 'mrkdwn', text: `*お客様名:*\n${params.customerName}` },
-          { type: 'mrkdwn', text: `*メール:*\n${params.customerEmail}` },
-        ],
-      },
-      {
-        type: 'section',
-        fields: [
-          { type: 'mrkdwn', text: `*プラン:*\n${params.planName}` },
-          { type: 'mrkdwn', text: `*ヶ月目:*\n${params.monthNumber}ヶ月目` },
-        ],
-      },
-      {
-        type: 'section',
-        fields: [{ type: 'mrkdwn', text: `*今月の請求:*\n${formattedAmount}` }],
-      },
-      {
-        type: 'context',
-        elements: [
-          {
-            type: 'mrkdwn',
-            text: `📅 請求日: ${params.billingDate.toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' })}（webhook取りこぼし分の補完通知）`,
-          },
-        ],
-      },
-      { type: 'divider' },
-    ],
-  };
-
-  const res = await fetch(slackWebhookUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(message),
-  });
-  return { ok: res.ok, status: res.status };
+  return postSlack('alert', [
+    {
+      type: 'header',
+      text: { type: 'plain_text', text: '🔄 サブスクリプション更新（再送）', emoji: true },
+    },
+    {
+      type: 'section',
+      fields: [
+        { type: 'mrkdwn', text: `*お客様名:*\n${params.customerName}` },
+        { type: 'mrkdwn', text: `*メール:*\n${params.customerEmail}` },
+      ],
+    },
+    {
+      type: 'section',
+      fields: [
+        { type: 'mrkdwn', text: `*プラン:*\n${params.planName}` },
+        { type: 'mrkdwn', text: `*ヶ月目:*\n${params.monthNumber}ヶ月目` },
+      ],
+    },
+    {
+      type: 'section',
+      fields: [{ type: 'mrkdwn', text: `*今月の請求:*\n${formattedAmount}` }],
+    },
+    {
+      type: 'context',
+      elements: [
+        {
+          type: 'mrkdwn',
+          text: `📅 請求日: ${params.billingDate.toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo' })}（webhook取りこぼし分の補完通知）`,
+        },
+      ],
+    },
+    { type: 'divider' },
+  ]);
 }
 
 export async function POST(request: NextRequest) {

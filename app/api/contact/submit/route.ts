@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { createServerClient } from '@/lib/supabase';
+import { postSlackAttachments } from '@/lib/slack';
 
 function escapeHtml(str: string): string {
   return str
@@ -41,46 +42,22 @@ export async function POST(req: NextRequest) {
       console.log('Contact saved to database:', contactData?.id);
     }
 
-    // 2. Slack通知を送信（環境変数が設定されている場合のみ）
-    const webhookUrl = process.env.SLACK_WEBHOOK_URL;
-
-    if (webhookUrl) {
-      const payload = {
-        text: '【ふとるめし お問い合わせ】',
-        attachments: [
-          {
-            color: '#f97316',
-            fields: [
-              { title: '件名', value: body.title || '（なし）', short: false },
-              { title: '氏名', value: name, short: true },
-              { title: '氏名(カナ)', value: nameKana || '未入力', short: true },
-              { title: 'メール', value: body.email || '未入力', short: true },
-              { title: '電話番号', value: body.phone || '未入力', short: true },
-              { title: 'メッセージ', value: body.message || '（なし）', short: false },
-            ],
-            footer: 'ふとるめし LP 問い合わせフォーム',
-            ts: Math.floor(Date.now() / 1000),
-          },
+    // 2. Slack通知を送信
+    await postSlackAttachments('ops', '【ふとるめし お問い合わせ】', [
+      {
+        color: '#f97316',
+        fields: [
+          { title: '件名', value: body.title || '（なし）', short: false },
+          { title: '氏名', value: name, short: true },
+          { title: '氏名(カナ)', value: nameKana || '未入力', short: true },
+          { title: 'メール', value: body.email || '未入力', short: true },
+          { title: '電話番号', value: body.phone || '未入力', short: true },
+          { title: 'メッセージ', value: body.message || '（なし）', short: false },
         ],
-      };
-
-      try {
-        const slackRes = await fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-
-        if (!slackRes.ok) {
-          const text = await slackRes.text();
-          console.error('Slack response error:', slackRes.status, text);
-        }
-      } catch (slackError) {
-        console.error('Slack notification error:', slackError);
-      }
-    } else {
-      console.warn('Slack webhook URL not configured. Skipping Slack notification.');
-    }
+        footer: 'ふとるめし LP 問い合わせフォーム',
+        ts: Math.floor(Date.now() / 1000),
+      },
+    ]);
 
     // データベース保存が失敗した場合のみエラーを返す
     if (dbError) {

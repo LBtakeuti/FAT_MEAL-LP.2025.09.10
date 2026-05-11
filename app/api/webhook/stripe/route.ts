@@ -9,6 +9,7 @@ import {
   getMenuSetNameWithDeliveryNumber,
   isValidPlanId
 } from '@/lib/subscription-schedule';
+import { postSlack } from '@/lib/slack';
 
 // 紹介コミッション金額定義
 const INITIAL_COMMISSION: Record<string, number> = {
@@ -1405,12 +1406,6 @@ interface SlackNotificationParams {
 async function sendSlackNotification(params: SlackNotificationParams) {
   const { customerName, customerEmail, orderId, amount, items } = params;
 
-  const slackWebhookUrl = process.env.SLACK_WEBHOOK_URL;
-  if (!slackWebhookUrl) {
-    console.log('SLACK_WEBHOOK_URL is not set');
-    return;
-  }
-
   const formattedAmount = new Intl.NumberFormat('ja-JP', {
     style: 'currency',
     currency: 'JPY',
@@ -1420,53 +1415,41 @@ async function sendSlackNotification(params: SlackNotificationParams) {
     .map(item => `• ${item.description} × ${item.quantity}`)
     .join('\n');
 
-  const message = {
-    blocks: [
-      {
-        type: 'header',
-        text: {
-          type: 'plain_text',
-          text: '🎉 新規注文（お試しプラン）',
-          emoji: true,
-        },
+  await postSlack('sales', [
+    {
+      type: 'header',
+      text: {
+        type: 'plain_text',
+        text: '🎉 新規注文（お試しプラン）',
+        emoji: true,
       },
-      {
-        type: 'section',
-        fields: [
-          { type: 'mrkdwn', text: `*お客様名:*\n${customerName}` },
-          { type: 'mrkdwn', text: `*メール:*\n${customerEmail}` },
-        ],
-      },
-      {
-        type: 'section',
-        fields: [
-          { type: 'mrkdwn', text: `*注文番号:*\n${orderId.slice(-8).toUpperCase()}` },
-          { type: 'mrkdwn', text: `*合計金額:*\n${formattedAmount}` },
-        ],
-      },
-      {
-        type: 'section',
-        text: { type: 'mrkdwn', text: `*注文内容:*\n${itemsList}` },
-      },
-      { type: 'divider' },
-      {
-        type: 'context',
-        elements: [
-          { type: 'mrkdwn', text: `📅 ${new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}` },
-        ],
-      },
-    ],
-  };
-
-  try {
-    await fetch(slackWebhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(message),
-    });
-  } catch (error) {
-    console.error('Error sending Slack notification:', error);
-  }
+    },
+    {
+      type: 'section',
+      fields: [
+        { type: 'mrkdwn', text: `*お客様名:*\n${customerName}` },
+        { type: 'mrkdwn', text: `*メール:*\n${customerEmail}` },
+      ],
+    },
+    {
+      type: 'section',
+      fields: [
+        { type: 'mrkdwn', text: `*注文番号:*\n${orderId.slice(-8).toUpperCase()}` },
+        { type: 'mrkdwn', text: `*合計金額:*\n${formattedAmount}` },
+      ],
+    },
+    {
+      type: 'section',
+      text: { type: 'mrkdwn', text: `*注文内容:*\n${itemsList}` },
+    },
+    { type: 'divider' },
+    {
+      type: 'context',
+      elements: [
+        { type: 'mrkdwn', text: `📅 ${new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}` },
+      ],
+    },
+  ]);
 }
 
 // サブスクリプション購入完了メール
@@ -1647,58 +1630,38 @@ async function sendSubscriptionSlackNotification(params: {
   planName: string;
   monthlyAmount: number;
 }) {
-  const slackWebhookUrl = process.env.SLACK_WEBHOOK_URL;
-  if (!slackWebhookUrl) return;
-
   const formattedAmount = new Intl.NumberFormat('ja-JP', {
     style: 'currency',
     currency: 'JPY',
   }).format(params.monthlyAmount);
 
-  const message = {
-    blocks: [
-      {
-        type: 'header',
-        text: { type: 'plain_text', text: '🎉 新規サブスクリプション契約！', emoji: true },
-      },
-      {
-        type: 'section',
-        fields: [
-          { type: 'mrkdwn', text: `*お客様名:*\n${params.customerName}` },
-          { type: 'mrkdwn', text: `*メール:*\n${params.customerEmail}` },
-        ],
-      },
-      {
-        type: 'section',
-        fields: [
-          { type: 'mrkdwn', text: `*プラン:*\n${params.planName}` },
-          { type: 'mrkdwn', text: `*月額:*\n${formattedAmount}` },
-        ],
-      },
-      { type: 'divider' },
-      {
-        type: 'context',
-        elements: [
-          { type: 'mrkdwn', text: `📅 ${new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}` },
-        ],
-      },
-    ],
-  };
-
-  try {
-    const res = await fetch(slackWebhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(message),
-    });
-    if (!res.ok) {
-      console.error(`[Webhook] Slack notification failed: ${res.status} ${res.statusText}`);
-    } else {
-      console.log('[Webhook] Subscription Slack notification sent');
-    }
-  } catch (error) {
-    console.error('Error sending subscription Slack notification:', error);
-  }
+  await postSlack('sales', [
+    {
+      type: 'header',
+      text: { type: 'plain_text', text: '🎉 新規サブスクリプション契約！', emoji: true },
+    },
+    {
+      type: 'section',
+      fields: [
+        { type: 'mrkdwn', text: `*お客様名:*\n${params.customerName}` },
+        { type: 'mrkdwn', text: `*メール:*\n${params.customerEmail}` },
+      ],
+    },
+    {
+      type: 'section',
+      fields: [
+        { type: 'mrkdwn', text: `*プラン:*\n${params.planName}` },
+        { type: 'mrkdwn', text: `*月額:*\n${formattedAmount}` },
+      ],
+    },
+    { type: 'divider' },
+    {
+      type: 'context',
+      elements: [
+        { type: 'mrkdwn', text: `📅 ${new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}` },
+      ],
+    },
+  ]);
 }
 
 // サブスクリプション更新Slack通知
@@ -1709,64 +1672,44 @@ async function sendSubscriptionRenewalSlackNotification(params: {
   monthNumber: number;
   monthlyAmount: number;
 }) {
-  const slackWebhookUrl = process.env.SLACK_WEBHOOK_URL;
-  if (!slackWebhookUrl) return;
-
   const formattedAmount = new Intl.NumberFormat('ja-JP', {
     style: 'currency',
     currency: 'JPY',
   }).format(params.monthlyAmount);
 
-  const message = {
-    blocks: [
-      {
-        type: 'header',
-        text: { type: 'plain_text', text: '🔄 サブスクリプション更新', emoji: true },
-      },
-      {
-        type: 'section',
-        fields: [
-          { type: 'mrkdwn', text: `*お客様名:*\n${params.customerName}` },
-          { type: 'mrkdwn', text: `*メール:*\n${params.customerEmail}` },
-        ],
-      },
-      {
-        type: 'section',
-        fields: [
-          { type: 'mrkdwn', text: `*プラン:*\n${params.planName}` },
-          { type: 'mrkdwn', text: `*ヶ月目:*\n${params.monthNumber}ヶ月目` },
-        ],
-      },
-      {
-        type: 'section',
-        fields: [
-          { type: 'mrkdwn', text: `*今月の請求:*\n${formattedAmount}` },
-        ],
-      },
-      { type: 'divider' },
-      {
-        type: 'context',
-        elements: [
-          { type: 'mrkdwn', text: `📅 ${new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}` },
-        ],
-      },
-    ],
-  };
-
-  try {
-    const res = await fetch(slackWebhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(message),
-    });
-    if (!res.ok) {
-      console.error(`[Webhook] Slack renewal notification failed: ${res.status} ${res.statusText}`);
-    } else {
-      console.log('[Webhook] Subscription renewal Slack notification sent');
-    }
-  } catch (error) {
-    console.error('Error sending subscription renewal Slack notification:', error);
-  }
+  await postSlack('sales', [
+    {
+      type: 'header',
+      text: { type: 'plain_text', text: '🔄 サブスクリプション更新', emoji: true },
+    },
+    {
+      type: 'section',
+      fields: [
+        { type: 'mrkdwn', text: `*お客様名:*\n${params.customerName}` },
+        { type: 'mrkdwn', text: `*メール:*\n${params.customerEmail}` },
+      ],
+    },
+    {
+      type: 'section',
+      fields: [
+        { type: 'mrkdwn', text: `*プラン:*\n${params.planName}` },
+        { type: 'mrkdwn', text: `*ヶ月目:*\n${params.monthNumber}ヶ月目` },
+      ],
+    },
+    {
+      type: 'section',
+      fields: [
+        { type: 'mrkdwn', text: `*今月の請求:*\n${formattedAmount}` },
+      ],
+    },
+    { type: 'divider' },
+    {
+      type: 'context',
+      elements: [
+        { type: 'mrkdwn', text: `📅 ${new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}` },
+      ],
+    },
+  ]);
 }
 
 // 支払い失敗メール

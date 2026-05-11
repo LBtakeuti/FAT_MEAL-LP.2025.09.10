@@ -116,11 +116,11 @@ function IconCustomers() {
     </svg>
   );
 }
-function IconUsers() {
+function IconSettings() {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="10" cy="6" r="3" />
-      <path d="M3,18 c0,-4 3,-7 7,-7 s7,3 7,7" />
+      <circle cx="10" cy="10" r="3" />
+      <path d="M10,1 v3 M10,16 v3 M1,10 h3 M16,10 h3 M3.5,3.5 l2,2 M14.5,14.5 l2,2 M3.5,16.5 l2,-2 M14.5,5.5 l2,-2" />
     </svg>
   );
 }
@@ -213,26 +213,35 @@ type MenuGroup = {
 
 const menuGroups: MenuGroup[] = [
   {
-    key: 'overview',
-    label: '概要',
+    key: 'operations',
+    label: 'オペレーション',
     items: [
       { href: '/admin/analytics', label: 'アナリティクス', icon: IconAnalytics },
-      { href: '/admin/surveys', label: 'アンケート集計', icon: IconSurvey },
+      { href: '/admin/delivery', label: '配送管理', icon: IconDelivery },
+      { href: '/admin/inventory', label: '在庫管理', icon: IconInventory },
     ],
   },
   {
-    key: 'orders',
-    label: '注文・配送',
+    key: 'billing',
+    label: '販売・課金',
     items: [
       { href: '/admin/orders', label: '注文管理', icon: IconOrders },
-      { href: '/admin/delivery', label: '配送管理', icon: IconDelivery },
-      { href: '/admin/inventory', label: '在庫管理', icon: IconInventory },
       { href: '/admin/tiktok-shop', label: 'TikTok Shop', icon: IconTiktok },
     ],
   },
   {
-    key: 'products',
-    label: '商品・コンテンツ',
+    key: 'customers',
+    label: '顧客',
+    items: [
+      { href: '/admin/customers', label: '顧客管理', icon: IconCustomers },
+      { href: '/admin/referrers', label: '紹介者管理', icon: IconReferrers },
+      { href: '/admin/ambassadors', label: 'アンバサダー管理', icon: IconAmbassador },
+      { href: '/admin/feedbacks', label: 'お客様の声管理', icon: IconFeedback },
+    ],
+  },
+  {
+    key: 'content',
+    label: 'コンテンツ',
     items: [
       { href: '/admin/menu', label: '弁当管理', icon: IconBento },
       { href: '/admin/news', label: 'ニュース管理', icon: IconNews },
@@ -241,16 +250,19 @@ const menuGroups: MenuGroup[] = [
     ],
   },
   {
-    key: 'people',
-    label: '顧客・連携',
+    key: 'communication',
+    label: 'コミュニケーション',
     items: [
-      { href: '/admin/customers', label: '顧客管理', icon: IconCustomers },
-      { href: '/admin/users', label: 'ユーザー管理', icon: IconUsers },
-      { href: '/admin/referrers', label: '紹介者管理', icon: IconReferrers },
-      { href: '/admin/ambassadors', label: 'アンバサダー管理', icon: IconAmbassador },
-      { href: '/admin/feedbacks', label: 'お客様の声管理', icon: IconFeedback },
       { href: '/admin/contacts', label: 'お問い合わせ管理', icon: IconContact },
       { href: '/admin/promoter-pages', label: '個別メッセージ', icon: IconMessage },
+      { href: '/admin/surveys', label: 'アンケート集計', icon: IconSurvey },
+    ],
+  },
+  {
+    key: 'settings',
+    label: '設定',
+    items: [
+      { href: '/admin/settings', label: '管理設定', icon: IconSettings },
     ],
   },
 ];
@@ -266,12 +278,9 @@ export default function AdminLayout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   // 現在のパスに該当するグループを自動展開
   const getInitialOpenGroups = () => {
-    const groups: Record<string, boolean> = {
-      overview: false,
-      orders: false,
-      products: false,
-      people: false,
-    };
+    const groups: Record<string, boolean> = Object.fromEntries(
+      menuGroups.map((g) => [g.key, false]),
+    );
     for (const group of menuGroups) {
       if (group.items.some((item) => pathname.startsWith(item.href))) {
         groups[group.key] = true;

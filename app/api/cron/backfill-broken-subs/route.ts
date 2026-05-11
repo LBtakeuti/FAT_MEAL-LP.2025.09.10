@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 import Stripe from 'stripe';
+import { postSlack } from '@/lib/slack';
 
 export const maxDuration = 60;
 
@@ -31,53 +32,41 @@ async function sendBackfillSlackNotification(params: {
   monthlyAmount: number;
   startedAt: string;
 }) {
-  const slackWebhookUrl = process.env.SLACK_WEBHOOK_URL;
-  if (!slackWebhookUrl) return { ok: false, reason: 'SLACK_WEBHOOK_URL not set' };
-
   const formattedAmount = new Intl.NumberFormat('ja-JP', {
     style: 'currency',
     currency: 'JPY',
   }).format(params.monthlyAmount);
 
-  const message = {
-    blocks: [
-      {
-        type: 'header',
-        text: { type: 'plain_text', text: '🎉 新規サブスクリプション契約！（再送）', emoji: true },
-      },
-      {
-        type: 'section',
-        fields: [
-          { type: 'mrkdwn', text: `*お客様名:*\n${params.customerName}` },
-          { type: 'mrkdwn', text: `*メール:*\n${params.customerEmail}` },
-        ],
-      },
-      {
-        type: 'section',
-        fields: [
-          { type: 'mrkdwn', text: `*プラン:*\n${params.planName}` },
-          { type: 'mrkdwn', text: `*月額:*\n${formattedAmount}` },
-        ],
-      },
-      {
-        type: 'context',
-        elements: [
-          {
-            type: 'mrkdwn',
-            text: `📅 契約日時: ${new Date(params.startedAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}（5/1 リリース起因の通知欠落分の補完通知）`,
-          },
-        ],
-      },
-      { type: 'divider' },
-    ],
-  };
-
-  const res = await fetch(slackWebhookUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(message),
-  });
-  return { ok: res.ok, status: res.status };
+  return postSlack('alert', [
+    {
+      type: 'header',
+      text: { type: 'plain_text', text: '🎉 新規サブスクリプション契約！（再送）', emoji: true },
+    },
+    {
+      type: 'section',
+      fields: [
+        { type: 'mrkdwn', text: `*お客様名:*\n${params.customerName}` },
+        { type: 'mrkdwn', text: `*メール:*\n${params.customerEmail}` },
+      ],
+    },
+    {
+      type: 'section',
+      fields: [
+        { type: 'mrkdwn', text: `*プラン:*\n${params.planName}` },
+        { type: 'mrkdwn', text: `*月額:*\n${formattedAmount}` },
+      ],
+    },
+    {
+      type: 'context',
+      elements: [
+        {
+          type: 'mrkdwn',
+          text: `📅 契約日時: ${new Date(params.startedAt).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' })}（5/1 リリース起因の通知欠落分の補完通知）`,
+        },
+      ],
+    },
+    { type: 'divider' },
+  ]);
 }
 
 export async function POST(request: NextRequest) {

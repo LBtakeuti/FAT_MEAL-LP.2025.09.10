@@ -25,11 +25,13 @@ export const GET = withAuthDynamic(async (
 
     const email = profile.email;
 
-    const [ordersRes, subsRes, surveysRes, tiktokRes] = await Promise.all([
+    const [ordersRes, subsRes, surveysRes, tiktokRes, contactsRes, messagesRes] = await Promise.all([
       supabase.from('orders').select('*').eq('customer_email', email).order('created_at', { ascending: false }),
       supabase.from('subscriptions').select('*').eq('user_id', key).order('created_at', { ascending: false }),
       supabase.from('purchase_surveys').select('*').eq('customer_email', email),
       supabase.from('tiktok_shop_orders').select('*').eq('phone', profile.phone || '__none__').order('created_time', { ascending: false }),
+      supabase.from('contacts').select('*').eq('email', email).order('created_at', { ascending: false }),
+      supabase.from('individual_messages').select('*').eq('recipient_email', email).order('sent_at', { ascending: false }),
     ]);
 
     return jsonSuccess({
@@ -38,6 +40,8 @@ export const GET = withAuthDynamic(async (
       subscriptions: subsRes.data || [],
       surveys: surveysRes.data || [],
       tiktok_orders: tiktokRes.data || [],
+      contacts: contactsRes.data || [],
+      messages: messagesRes.data || [],
     });
   }
 
@@ -45,10 +49,12 @@ export const GET = withAuthDynamic(async (
     // ゲスト: emailで全データ取得
     const email = key;
 
-    const [ordersRes, subsRes, surveysRes] = await Promise.all([
+    const [ordersRes, subsRes, surveysRes, contactsRes, messagesRes] = await Promise.all([
       supabase.from('orders').select('*').eq('customer_email', email).order('created_at', { ascending: false }),
       supabase.from('subscriptions').select('*'),
       supabase.from('purchase_surveys').select('*').eq('customer_email', email),
+      supabase.from('contacts').select('*').eq('email', email).order('created_at', { ascending: false }),
+      supabase.from('individual_messages').select('*').eq('recipient_email', email).order('sent_at', { ascending: false }),
     ]);
 
     // subscriptionsはshipping_address.emailでフィルタ（クライアント側）
@@ -73,6 +79,8 @@ export const GET = withAuthDynamic(async (
       subscriptions: matchedSubs,
       surveys: surveysRes.data || [],
       tiktok_orders: [],
+      contacts: contactsRes.data || [],
+      messages: messagesRes.data || [],
     });
   }
 
@@ -112,6 +120,8 @@ export const GET = withAuthDynamic(async (
       subscriptions: [],
       surveys: [],
       tiktok_orders: tiktokOrders,
+      contacts: [],
+      messages: [],
     });
   }
 

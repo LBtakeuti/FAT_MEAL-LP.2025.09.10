@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 import Stripe from 'stripe';
+import { postSlack } from '@/lib/slack';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -29,9 +30,6 @@ async function sendCancellationSlackNotification(params: {
   reasons: string[];
   message?: string;
 }) {
-  const slackWebhookUrl = process.env.SLACK_WEBHOOK_URL;
-  if (!slackWebhookUrl) return;
-
   const reasonTexts = params.reasons
     .map(r => REASON_LABELS[r] || r)
     .map(r => `• ${r}`)
@@ -78,20 +76,7 @@ async function sendCancellationSlackNotification(params: {
     }
   );
 
-  try {
-    const res = await fetch(slackWebhookUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ blocks }),
-    });
-    if (!res.ok) {
-      console.error(`[Cancel API] Slack notification failed: ${res.status}`);
-    } else {
-      console.log('[Cancel API] Cancellation Slack notification sent');
-    }
-  } catch (error) {
-    console.error('Error sending cancellation Slack notification:', error);
-  }
+  await postSlack('sales', blocks);
 }
 
 export async function POST(request: NextRequest) {
