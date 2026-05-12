@@ -24,6 +24,21 @@
 .DS_Store
 *.pem
 
+# secrets / keys
+id_rsa
+id_ed25519
+*.ppk
+*.p12
+*.pfx
+*.key
+
+# local databases / backups
+*.sqlite
+*.sqlite3
+*.db
+backup/
+dump*.sql
+
 # debug
 npm-debug.log*
 yarn-debug.log*
