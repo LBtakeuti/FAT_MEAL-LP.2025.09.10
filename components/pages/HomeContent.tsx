@@ -13,6 +13,7 @@ import PurchaseFlowSection from '@/components/sections/PurchaseFlowSection';
 import TrialSection from '@/components/sections/TrialSection';
 import SubscriptionSection from '@/components/sections/SubscriptionSection';
 import MenuSection from '@/components/sections/MenuSection';
+import ReviewSection from '@/components/sections/ReviewSection';
 import AmbassadorSection from '@/components/sections/AmbassadorSection';
 import FeedbackSection from '@/components/sections/FeedbackSection';
 import NewsSection from '@/components/sections/NewsSection';
@@ -47,6 +48,7 @@ export default function HomeContent({ menuItems, promoterPage = null }: HomeCont
         {/* <AboutSection /> 一時非表示 */}
         <SportsScienceSection />
         <MenuSection initialMenuItems={menuItems} />
+        <ReviewSection />
         {/* <TrialSection /> SubscriptionSectionにお試しカード統合済み */}
         <SubscriptionSection />
         <AmbassadorSection />

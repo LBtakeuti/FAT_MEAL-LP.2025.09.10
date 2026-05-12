@@ -116,14 +116,6 @@ function IconCustomers() {
     </svg>
   );
 }
-function IconSettings() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="10" cy="10" r="3" />
-      <path d="M10,1 v3 M10,16 v3 M1,10 h3 M16,10 h3 M3.5,3.5 l2,2 M14.5,14.5 l2,2 M3.5,16.5 l2,-2 M14.5,5.5 l2,-2" />
-    </svg>
-  );
-}
 function IconReferrers() {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -149,6 +141,13 @@ function IconFeedback() {
       <path d="M2,3 h16 v11 h-10 l-4,3 v-3 h-2 z" />
       <line x1="6" y1="7" x2="14" y2="7" />
       <line x1="6" y1="10" x2="11" y2="10" />
+    </svg>
+  );
+}
+function IconReview() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="10,2 12.5,7.5 18,8 14,12 15,17.5 10,14.5 5,17.5 6,12 2,8 7.5,7.5" />
     </svg>
   );
 }
@@ -236,6 +235,7 @@ const menuGroups: MenuGroup[] = [
       { href: '/admin/customers', label: '顧客管理', icon: IconCustomers },
       { href: '/admin/referrers', label: '紹介者管理', icon: IconReferrers },
       { href: '/admin/ambassadors', label: 'アンバサダー管理', icon: IconAmbassador },
+      { href: '/admin/reviews', label: 'レビュー管理', icon: IconReview },
       { href: '/admin/feedbacks', label: 'お客様の声管理', icon: IconFeedback },
     ],
   },
@@ -256,13 +256,6 @@ const menuGroups: MenuGroup[] = [
       { href: '/admin/contacts', label: 'お問い合わせ管理', icon: IconContact },
       { href: '/admin/promoter-pages', label: '個別メッセージ', icon: IconMessage },
       { href: '/admin/surveys', label: 'アンケート集計', icon: IconSurvey },
-    ],
-  },
-  {
-    key: 'settings',
-    label: '設定',
-    items: [
-      { href: '/admin/settings', label: '管理設定', icon: IconSettings },
     ],
   },
 ];

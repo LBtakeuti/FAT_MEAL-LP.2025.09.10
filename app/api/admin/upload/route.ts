@@ -8,7 +8,7 @@ const ALLOWED_MIME_TYPES = [
 const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'];
 
 // 許可するバケット名
-const ALLOWED_BUCKETS = ['images', 'menu-images', 'news-images', 'ambassador-images', 'feedback-images', 'media-logos', 'banners'];
+const ALLOWED_BUCKETS = ['images', 'menu-images', 'news-images', 'ambassador-images', 'feedback-images', 'review-images', 'media-logos', 'banners'];
 
 export async function POST(request: NextRequest) {
   try {
