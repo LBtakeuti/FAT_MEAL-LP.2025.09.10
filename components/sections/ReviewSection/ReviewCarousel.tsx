@@ -8,9 +8,10 @@ import type { ReviewItem } from '@/types/review';
 
 interface Props {
   reviews: ReviewItem[];
+  onExpand: (item: ReviewItem) => void;
 }
 
-export function ReviewCarousel({ reviews }: Props) {
+export function ReviewCarousel({ reviews, onExpand }: Props) {
   return (
     <>
       <Splide
@@ -20,7 +21,7 @@ export function ReviewCarousel({ reviews }: Props) {
       >
         {reviews.map((item) => (
           <SplideSlide key={item.id}>
-            <ReviewCard item={item} />
+            <ReviewCard item={item} onExpand={onExpand} />
           </SplideSlide>
         ))}
       </Splide>

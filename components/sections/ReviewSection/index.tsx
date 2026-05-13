@@ -1,10 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import { useReviews } from './useReviews';
 import { ReviewCarousel } from './ReviewCarousel';
+import { ReviewModal } from './ReviewModal';
+import type { ReviewItem } from '@/types/review';
 
 export default function ReviewSection() {
   const { reviews, loading } = useReviews();
+  const [expanded, setExpanded] = useState<ReviewItem | null>(null);
 
   if (loading || reviews.length === 0) {
     return null;
@@ -17,8 +21,10 @@ export default function ReviewSection() {
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">お客様の声</h2>
           <p className="text-sm text-gray-500 mt-2">ふとるめしを選んでくださった方々の口コミ</p>
         </div>
-        <ReviewCarousel reviews={reviews} />
+        <ReviewCarousel reviews={reviews} onExpand={setExpanded} />
       </div>
+
+      <ReviewModal item={expanded} onClose={() => setExpanded(null)} />
     </section>
   );
 }
