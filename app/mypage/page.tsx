@@ -367,9 +367,7 @@ export default function MyPage() {
                           <div>
                             <h3 className="font-medium text-gray-900 text-lg">{sub.plan_name}</h3>
                             <p className="text-sm text-gray-500 mt-1">
-                              {sub.meals_per_delivery}食/回 × 
-                              {sub.deliveries_per_month === 1 ? '月1回' : 
-                               sub.deliveries_per_month === 2 ? '月2回' : '月4回'}配送
+                              {sub.meals_per_delivery}食/回 × 月{sub.deliveries_per_month}回配送
                             </p>
                           </div>
                           <span className={`px-3 py-1 text-sm font-medium rounded-full ${

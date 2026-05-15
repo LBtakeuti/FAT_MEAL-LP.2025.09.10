@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
         addr.address_detail || '',
         addr.building || '',
         getItemName(sub.plan_id, sub.plan_name),
-        getItemCount(),
+        getItemCount(sub.plan_id),
         getDeliveryFrequencyLabel(sub.deliveries_per_month),
         sub.monthly_total_amount || 0,
         formatDateJST(sub.preferred_delivery_date),
@@ -139,15 +139,22 @@ export async function GET(request: NextRequest) {
 
 function getItemName(planId: string, fallback: string): string {
   const itemNames: { [key: string]: string } = {
-    'subscription-monthly-12': 'ふとるめし12食セット',
-    'subscription-monthly-24': 'ふとるめし24食セット',
-    'subscription-monthly-48': 'ふとるめし48食セット',
+    'trial-6': 'ふとるめしお試し6食セット',
+    'sub-6': 'ふとるめし6食プラン',
+    'sub-12': 'ふとるめし12食プラン',
+    'subscription-monthly-12': 'ふとるめし12食プラン（旧価格）', // legacy
   };
   return itemNames[planId] || fallback;
 }
 
-function getItemCount(): number {
-  return 12;
+function getItemCount(planId: string): number {
+  const itemCounts: { [key: string]: number } = {
+    'trial-6': 6,
+    'sub-6': 6,
+    'sub-12': 12,
+    'subscription-monthly-12': 12, // legacy
+  };
+  return itemCounts[planId] || 12;
 }
 
 function escapeCSV(value: string): string {

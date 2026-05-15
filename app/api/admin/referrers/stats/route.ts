@@ -31,30 +31,28 @@ interface ReferrerStats {
   byProduct: { [key: string]: { count: number; commission: number } };
 }
 
-// プランIDからプラン表示名を取得
+// プランIDからプラン表示名を取得（新3プラン体系 + legacy）
 function getPlanTypeName(planId: string): string {
   const planNames: Record<string, string> = {
     'trial-6': 'お試しプラン',
-    'subscription-monthly-12': '6食定期プラン',
-    'subscription-monthly-24': '12食定期プラン',
-    'subscription-monthly-48': '24食定期プラン',
+    'sub-6': '6食プラン',
+    'sub-12': '12食プラン',
+    'subscription-monthly-12': '12食プラン（旧価格）', // legacy
   };
   return planNames[planId] || planId;
 }
 
-// 紹介料の計算（フォールバック用: referral_commissionsテーブルにデータがない過去データ向け）
+// 初回コミッションのフォールバック計算（referral_commissions テーブルに記録がない過去データ向け）。
+// webhook 側の INITIAL_COMMISSION と一致させる。
 function calculateCommission(planId: string, menuSet: string): { commission: number; planType: string } {
   if (planId === 'trial-6' || menuSet?.includes('お試し')) {
     return { commission: 500, planType: 'お試しプラン' };
   }
-  if (planId === 'subscription-monthly-48' || menuSet?.includes('24食セット') || menuSet?.includes('48食')) {
-    return { commission: 4000, planType: '24食定期プラン' };
+  if (planId === 'sub-12' || planId === 'subscription-monthly-12' || menuSet?.includes('12食')) {
+    return { commission: 1000, planType: '12食プラン' };
   }
-  if (planId === 'subscription-monthly-24' || menuSet?.includes('12食セット') || menuSet?.includes('24食')) {
-    return { commission: 2000, planType: '12食定期プラン' };
-  }
-  if (planId === 'subscription-monthly-12' || menuSet?.includes('6食セット') || menuSet?.includes('12食')) {
-    return { commission: 1000, planType: '6食定期プラン' };
+  if (planId === 'sub-6' || menuSet?.includes('6食')) {
+    return { commission: 500, planType: '6食プラン' };
   }
   return { commission: 0, planType: menuSet || '不明' };
 }
