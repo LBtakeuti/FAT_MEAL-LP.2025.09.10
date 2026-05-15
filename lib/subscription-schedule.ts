@@ -1,14 +1,14 @@
 /**
- * サブスクリプションプランの配送スケジュール計算（月額自動更新版）
+ * プラン定義と配送スケジュール計算（月1回配送・段階割引なし）
  *
- * プラン構成（月1回配送・段階割引なし）:
- * - sub-6: 月6食 ¥4,500/月（商品¥3,000 + 送料¥1,500）
- * - sub-12: 月12食 ¥7,500/月（商品¥6,000 + 送料¥1,500）
+ * プラン構成:
+ * - trial-6: お試しプラン（買い切り）6食 ¥5,700（商品¥4,200 + 送料¥1,500）
+ * - sub-6: 6食プラン（月額）¥4,500/月（商品¥3,000 + 送料¥1,500）
+ * - sub-12: 12食プラン（月額）¥7,500/月（商品¥6,000 + 送料¥1,500）
  *
  * Legacy（既存契約者のみ・新規発行なし）:
- * - subscription-monthly-12: 月12食 ¥9,150/月（Phase2価格・商品¥7,650 + 送料¥1,500）
- *   Stripe Subscription Schedule で Phase1 → Phase2 移行済みの既存契約用。
- *   新規購入は sub-12 を使用する。
+ * - subscription-monthly-12: 旧12食月額プラン。Stripe Subscription Schedule で
+ *   Phase1 → Phase2 に移行済みの既存契約用。新規購入は sub-12 を使用する。
  */
 
 export interface DeliverySchedule {
@@ -29,6 +29,15 @@ export interface PlanConfig {
 }
 
 export const PLAN_CONFIGS: { [key: string]: PlanConfig } = {
+  'trial-6': {
+    plan_id: 'trial-6',
+    meals_per_delivery: 6,
+    deliveries_per_month: 1,
+    product_price: 4200,
+    shipping_fee_per_delivery: 1500,
+    monthly_shipping_fee: 1500,
+    monthly_total: 5700,
+  },
   'sub-6': {
     plan_id: 'sub-6',
     meals_per_delivery: 6,
@@ -56,7 +65,6 @@ export const PLAN_CONFIGS: { [key: string]: PlanConfig } = {
     shipping_fee_per_delivery: 1500,
     monthly_shipping_fee: 1500,
     monthly_total: 9150,
-    anchor_price: 9000,
   },
 };
 
@@ -117,16 +125,16 @@ export function getPlanName(planId: string): string {
     'sub-12': '12食プラン',
     'subscription-monthly-12': '12食プラン（旧価格）',
   };
-  return planNames[planId] || 'ふとるめし月額プラン';
+  return planNames[planId] || 'ふとるめしプラン';
 }
 
 /** プランIDからメニューセット名を取得 */
 export function getMenuSetName(planId: string): string {
   const menuSetNames: { [key: string]: string } = {
-    'trial-6': 'お試しプラン',
+    'trial-6': 'お試しセット（6食）',
     'sub-6': '6食プラン',
     'sub-12': '12食プラン',
-    'subscription-monthly-12': '12食プラン（旧価格）',
+    'subscription-monthly-12': '12食プラン',
   };
   return menuSetNames[planId] || 'ふとるめしセット';
 }
