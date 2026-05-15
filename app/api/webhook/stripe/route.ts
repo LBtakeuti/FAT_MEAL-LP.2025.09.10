@@ -11,37 +11,24 @@ import {
 } from '@/lib/subscription-schedule';
 import { postSlack } from '@/lib/slack';
 
-// 紹介コミッション金額定義
+// 紹介コミッション金額定義（新プラン体系 + legacy）
 const INITIAL_COMMISSION: Record<string, number> = {
   'trial-6': 500,
-  'subscription-monthly-12': 1000,
-  'subscription-monthly-24': 2000,
-  'subscription-monthly-48': 4000,
+  'sub-6': 500,
+  'sub-12': 1000,
+  'subscription-monthly-12': 1000, // legacy
 };
 const RECURRING_COMMISSION: Record<string, number> = {
-  'subscription-monthly-12': 300,
-  'subscription-monthly-24': 500,
-  'subscription-monthly-48': 800,
+  'sub-6': 200,
+  'sub-12': 300,
+  'subscription-monthly-12': 300, // legacy
 };
 
-// サブスクリプションPhase1価格ID（初回30%OFF）を取得
-function getPhase1PriceId(planId: string): string {
-  const priceMap: { [key: string]: string } = {
-    'subscription-monthly-12': process.env.STRIPE_SUBSCRIPTION_PRICE_12_PHASE1 || '',
-    'subscription-monthly-24': process.env.STRIPE_SUBSCRIPTION_PRICE_24_PHASE1 || '',
-    'subscription-monthly-48': process.env.STRIPE_SUBSCRIPTION_PRICE_48_PHASE1 || '',
-  };
-  return priceMap[planId] || '';
-}
-
-// サブスクリプションPhase2価格ID（2ヶ月目〜15%OFF）を取得
-function getPhase2PriceId(planId: string): string {
-  const priceMap: { [key: string]: string } = {
-    'subscription-monthly-12': process.env.STRIPE_SUBSCRIPTION_PRICE_12_PHASE2 || '',
-    'subscription-monthly-24': process.env.STRIPE_SUBSCRIPTION_PRICE_24_PHASE2 || '',
-    'subscription-monthly-48': process.env.STRIPE_SUBSCRIPTION_PRICE_48_PHASE2 || '',
-  };
-  return priceMap[planId] || '';
+// 旧プランID（subscription-monthly-12 など）を新プランIDに正規化して扱う。
+// 既存契約者の plan_id は subscriptions テーブルに残存しているため、
+// PLAN_CONFIGS / コミッション参照では legacy ID をそのまま使う（互換ルックアップ）。
+function resolveLegacyPlanId(planId: string): string {
+  return planId;
 }
 
 // 遅延初期化（ビルド時にエラーを防ぐ）
@@ -80,21 +67,15 @@ function getSubscriptionPeriod(subscription: Stripe.Subscription): {
   return { currentPeriodStart, currentPeriodEnd };
 }
 
-// セット商品から必要なセット数を計算
+// セット商品の description から必要なセット数（1セット=6食換算）を計算。
+// 新体系は 6食 / 12食 のみ。description から食数を抽出して 6 で割る。
 function calculateSetsFromDescription(description: string): number {
-  // 18食セット = 3セット
-  if (description.includes('18食') || description.includes('18個')) {
-    return 3;
-  }
-  // 12食セット = 2セット
   if (description.includes('12食') || description.includes('12個')) {
     return 2;
   }
-  // 6食セット = 1セット
   if (description.includes('6食') || description.includes('6個')) {
     return 1;
   }
-  // 数字抽出を試みる
   const match = description.match(/(\d+)(?:食|個)/);
   if (match) {
     const meals = parseInt(match[1], 10);
@@ -161,6 +142,79 @@ async function recordReferralCommission(params: {
     }
   } catch (error) {
     console.error('[Commission] Error recording commission:', error);
+  }
+}
+
+// 個別メッセージ（promoter_pages）経由の購入コンバージョン記録
+// promoSlug: /p/<slug> から付いてくる識別子（無い時は何もしない）
+// recurring 時は subscription_id ベースで初回コンバージョンから promoter_page_id を引いて再利用するため
+// promoSlug が無くても sourceId 経由で解決可能。
+async function recordPromoterPageConversion(params: {
+  promoSlug?: string;
+  sourceType: 'order' | 'subscription_initial' | 'subscription_recurring';
+  sourceId: string;
+  stripeInvoiceId?: string;
+  planId: string;
+  amount: number;
+  customerEmail?: string;
+  customerName?: string;
+}) {
+  const baseSupabase = getSupabaseClient();
+  if (!baseSupabase) return;
+  const supabase = baseSupabase as any;
+
+  try {
+    let promoterPageId: string | null = null;
+
+    if (params.promoSlug) {
+      const { data: page } = await supabase
+        .from('promoter_pages')
+        .select('id')
+        .eq('slug', params.promoSlug)
+        .maybeSingle();
+      promoterPageId = page?.id || null;
+    }
+
+    // recurring の場合は同じ subscription の初回コンバージョンから promoter_page_id を引く
+    if (!promoterPageId && params.sourceType === 'subscription_recurring') {
+      const { data: prev } = await supabase
+        .from('promoter_page_conversions')
+        .select('promoter_page_id')
+        .eq('source_id', params.sourceId)
+        .eq('source_type', 'subscription_initial')
+        .maybeSingle();
+      promoterPageId = prev?.promoter_page_id || null;
+    }
+
+    if (!promoterPageId) {
+      // 紐付け不能（個別メッセージ経由ではない購入）
+      return;
+    }
+
+    const { error } = await supabase
+      .from('promoter_page_conversions')
+      .insert({
+        promoter_page_id: promoterPageId,
+        source_type: params.sourceType,
+        source_id: params.sourceId,
+        stripe_invoice_id: params.stripeInvoiceId || null,
+        plan_id: params.planId,
+        amount: params.amount,
+        customer_email: params.customerEmail || null,
+        customer_name: params.customerName || null,
+      });
+
+    if (error) {
+      // stripe_invoice_id UNIQUE 違反は無視（重複記録防止のための想定挙動）
+      const code = (error as { code?: string }).code;
+      if (code !== '23505') {
+        console.error('[PromoterConversion] Failed to record:', error);
+      }
+    } else {
+      console.log(`[PromoterConversion] Recorded ${params.sourceType} ¥${params.amount} for page ${promoterPageId}`);
+    }
+  } catch (error) {
+    console.error('[PromoterConversion] Error:', error);
   }
 }
 
@@ -393,6 +447,17 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe:
             commissionAmount: INITIAL_COMMISSION['trial-6'],
           });
         }
+
+        // 個別メッセージ(LP)経由の購入トラッキング
+        await recordPromoterPageConversion({
+          promoSlug: session.metadata?.promo_slug || undefined,
+          sourceType: 'order',
+          sourceId: session.id,
+          planId: 'trial-6',
+          amount: amountTotal || 0,
+          customerEmail,
+          customerName: customerName || undefined,
+        });
       }
     } catch (error) {
       console.error('Error saving order to database:', error);
@@ -516,6 +581,17 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent,
             commissionAmount: INITIAL_COMMISSION[planId as keyof typeof INITIAL_COMMISSION],
           });
         }
+
+        // 個別メッセージ(LP)経由の購入トラッキング
+        await recordPromoterPageConversion({
+          promoSlug: metadata?.promo_slug || undefined,
+          sourceType: 'order',
+          sourceId: paymentIntent.id,
+          planId,
+          amount,
+          customerEmail,
+          customerName,
+        });
       }
     } catch (error) {
       console.error('[PaymentIntent] Error saving order:', error);
@@ -674,11 +750,12 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
     console.log(`[Webhook] Checkout session found: ${checkoutSession?.id || 'none'}`);
 
     // plan_idをサブスクリプションメタデータまたはCheckout Sessionメタデータから取得
-    const planId = subscription.metadata?.plan_id || 
-                   checkoutSession?.metadata?.plan_id || '';
-    
+    const rawPlanId = subscription.metadata?.plan_id ||
+                      checkoutSession?.metadata?.plan_id || '';
+    const planId = resolveLegacyPlanId(rawPlanId);
+
     console.log(`[Webhook] Plan ID: ${planId}`);
-    
+
     if (!planId || !isValidPlanId(planId)) {
       console.error(`[Webhook] Invalid plan ID: ${planId}`);
       console.error(`[Webhook] subscription.metadata: ${JSON.stringify(subscription.metadata)}`);
@@ -853,6 +930,18 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
       });
     }
 
+    // 個別メッセージ(LP)経由の購入トラッキング（初回）
+    const initialPromoSlug = checkoutSession?.metadata?.promo_slug || subscription.metadata?.promo_slug || undefined;
+    await recordPromoterPageConversion({
+      promoSlug: initialPromoSlug,
+      sourceType: 'subscription_initial',
+      sourceId: (dbSubscription as any).id,
+      planId,
+      amount: planConfig.monthly_total,
+      customerEmail: customerEmail || undefined,
+      customerName,
+    });
+
     // subscription_deliveriesテーブルに初回配送予定を作成
     const deliveries = deliverySchedules.map((schedule) => ({
       subscription_id: (dbSubscription as any).id,
@@ -905,58 +994,9 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
       monthlyAmount: initialInvoiceAmount,
     });
 
-    // 在庫を減算（deliveries_per_month × 2セット）
-    const setsToReduce = planConfig.deliveries_per_month * 2;
+    // 在庫を減算（1セット=6食換算: sub-6=1セット, sub-12=2セット）
+    const setsToReduce = planConfig.meals_per_delivery / 6;
     await reduceInventorySets(setsToReduce, `subscription created: ${planName}`);
-
-    // サブスクリプションスケジュール作成（Phase1→Phase2 自動切り替え）
-    // Phase1（初回30%OFF・送料¥0）→ Phase2（2ヶ月目〜15%OFF・送料¥1,500）
-    const phase1PriceId = getPhase1PriceId(planId);
-    const phase2PriceId = getPhase2PriceId(planId);
-    const freeShippingPriceId = process.env.STRIPE_SHIPPING_PRICE_FREE || '';
-    const paidShippingPriceId = process.env.STRIPE_SHIPPING_PRICE || '';
-
-    if (phase1PriceId && phase2PriceId && freeShippingPriceId && paidShippingPriceId) {
-      try {
-        // Step1: 既存サブスクをスケジュールに変換（phasesは指定しない）
-        const schedule = await stripe.subscriptionSchedules.create({
-          from_subscription: subscription.id,
-        });
-
-        // Step2: Phase1(現在)→Phase2(2ヶ月目〜)を設定
-        await stripe.subscriptionSchedules.update(schedule.id, {
-          end_behavior: 'release',
-          phases: [
-            {
-              start_date: schedule.phases[0].start_date,
-              end_date: schedule.phases[0].end_date,
-              items: [
-                { price: phase1PriceId, quantity: 1 },
-                { price: freeShippingPriceId, quantity: 1 },
-              ],
-            },
-            {
-              items: [
-                { price: phase2PriceId, quantity: 1 },
-                { price: paidShippingPriceId, quantity: 1 },
-              ],
-              // iterations 未指定 = 無期限継続
-            },
-          ],
-        });
-        console.log(`[Webhook] Subscription schedule created for ${subscription.id}: Phase1(1 month) → Phase2(ongoing)`);
-      } catch (scheduleError) {
-        // スケジュール作成失敗はログのみ（DB登録は成功しているため致命的エラーにしない）
-        console.error('[Webhook] Failed to create subscription schedule:', scheduleError);
-      }
-    } else {
-      console.warn('[Webhook] Subscription schedule skipped: missing price IDs', {
-        phase1PriceId: !!phase1PriceId,
-        phase2PriceId: !!phase2PriceId,
-        freeShippingPriceId: !!freeShippingPriceId,
-        paidShippingPriceId: !!paidShippingPriceId,
-      });
-    }
 
   } catch (error) {
     console.error('Error creating subscription from Stripe:', error);
@@ -994,8 +1034,9 @@ async function handleMonthlySubscriptionPayment(invoice: Stripe.Invoice, stripe:
       return;
     }
 
-    // plan_id: Stripe metadata → DB の plan_id の順で取得
-    const planId = subscription.metadata?.plan_id || (dbSubscription as any).plan_id || '';
+    // plan_id: Stripe metadata → DB の plan_id の順で取得（legacy ID も許容）
+    const rawPlanId = subscription.metadata?.plan_id || (dbSubscription as any).plan_id || '';
+    const planId = resolveLegacyPlanId(rawPlanId);
 
     if (!planId || !isValidPlanId(planId)) {
       console.error(`Invalid plan ID: ${planId}`);
@@ -1044,9 +1085,9 @@ async function handleMonthlySubscriptionPayment(invoice: Stripe.Invoice, stripe:
       console.error('Failed to update subscription period:', updateError);
     }
 
-    // 在庫を減算（deliveries_per_month × 2セット）
+    // 在庫を減算（1セット=6食換算: sub-6=1セット, sub-12=2セット）
     const planConfig = getPlanConfig(planId);
-    const setsToReduce = planConfig.deliveries_per_month * 2;
+    const setsToReduce = planConfig.meals_per_delivery / 6;
     await reduceInventorySets(setsToReduce, `monthly payment: ${planId}`);
 
     // 継続コミッション記録
@@ -1064,6 +1105,18 @@ async function handleMonthlySubscriptionPayment(invoice: Stripe.Invoice, stripe:
         billingPeriodEnd: new Date(currentPeriodEnd * 1000).toISOString(),
       });
     }
+
+    // 個別メッセージ(LP)経由の購入トラッキング（継続）
+    // 初回コンバージョンから promoter_page_id を引いて記録（subscription metadata には promo_slug が無いため）
+    await recordPromoterPageConversion({
+      sourceType: 'subscription_recurring',
+      sourceId: (dbSubscription as any).id,
+      stripeInvoiceId: invoice.id,
+      planId,
+      amount: invoice.amount_paid || (dbSubscription as any).monthly_total_amount || 0,
+      customerEmail: (dbSubscription as any).shipping_address?.email,
+      customerName: (dbSubscription as any).shipping_address?.name,
+    });
 
     console.log(`Monthly payment processed for subscription: ${(dbSubscription as any).id}`);
 

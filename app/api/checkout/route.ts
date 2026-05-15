@@ -4,29 +4,12 @@ import { createServerClient } from '@/lib/supabase';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-// サブスクリプションPhase1価格ID（初回30%OFF）を取得
-function getSubscriptionPhase1PriceId(planId: string): string {
-  const priceMap: { [key: string]: string } = {
-    'subscription-monthly-12': process.env.STRIPE_SUBSCRIPTION_PRICE_12_PHASE1 || '',
-    'subscription-monthly-24': process.env.STRIPE_SUBSCRIPTION_PRICE_24_PHASE1 || '',
-    'subscription-monthly-48': process.env.STRIPE_SUBSCRIPTION_PRICE_48_PHASE1 || '',
-  };
-  return priceMap[planId] || '';
-}
-
-// サブスクリプション初回送料価格IDを取得（¥0 recurring price）
-// Webhookでスケジュール化するため、Checkoutでは¥0送料を使用
-function getSubscriptionShippingPriceId(_planId: string): string {
-  return process.env.STRIPE_SHIPPING_PRICE_FREE || '';
-}
-
 interface CartItem {
   planId: string;
   quantity: number;
 }
 
 interface CheckoutRequest {
-  purchaseType?: 'one-time' | 'subscription-monthly';
   cart: CartItem[];
   customerInfo: {
     lastName: string;
@@ -55,134 +38,19 @@ interface CheckoutRequest {
   };
 }
 
+// お試しプラン（trial-6）専用ルート。
+// サブスクリプション（sub-6 / sub-12）は /api/payment/* 経由で処理する。
 export async function POST(request: NextRequest) {
   try {
     const body: CheckoutRequest = await request.json();
-    const { cart, customerInfo, couponCode, purchaseType = 'one-time' } = body;
+    const { cart, customerInfo, couponCode } = body;
 
     console.log('[Checkout] Received referralCode:', customerInfo.referralCode);
     console.log('[Checkout] Full customerInfo:', JSON.stringify(customerInfo, null, 2));
 
-    // 配送先住所を構築
     const fullAddress = `${customerInfo.postalCode} ${customerInfo.prefecture}${customerInfo.city}${customerInfo.address}${customerInfo.building ? ' ' + customerInfo.building : ''}`;
-
-    // オリジンURLを取得
     const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
-    // サブスクリプション月額プランの場合
-    if (purchaseType === 'subscription-monthly') {
-      const subscriptionItem = cart.find(item => item.quantity > 0);
-      if (!subscriptionItem) {
-        return NextResponse.json(
-          { error: 'サブスクリプションプランを選択してください' },
-          { status: 400 }
-        );
-      }
-
-      const planId = subscriptionItem.planId;
-      const priceId = getSubscriptionPhase1PriceId(planId);
-      const shippingPriceId = getSubscriptionShippingPriceId(planId);
-
-      if (!priceId) {
-        console.error(`Price ID not found for plan: ${planId}`);
-        return NextResponse.json(
-          { error: `Price ID not configured for plan: ${planId}. Please set the environment variable.` },
-          { status: 400 }
-        );
-      }
-
-      // line_itemsを構築（商品 + 送料）
-      const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
-        { price: priceId, quantity: 1 },
-      ];
-
-      // 送料を追加
-      if (shippingPriceId) {
-        lineItems.push({ price: shippingPriceId, quantity: 1 });
-      }
-
-      // サブスクリプション用のCheckout Sessionを作成
-      const sessionParams: Stripe.Checkout.SessionCreateParams = {
-        payment_method_types: ['card'],
-        line_items: lineItems,
-        mode: 'subscription',
-        success_url: `${origin}/purchase/complete?session_id={CHECKOUT_SESSION_ID}&type=subscription`,
-        cancel_url: `${origin}/purchase?canceled=true`,
-        customer_email: customerInfo.email,
-        metadata: {
-          purchase_type: 'subscription-monthly',
-          plan_id: planId,
-          customer_name: `${customerInfo.lastName} ${customerInfo.firstName}`,
-          customer_name_kana: `${customerInfo.lastNameKana} ${customerInfo.firstNameKana}`,
-          phone: customerInfo.phone,
-          postal_code: customerInfo.postalCode,
-          prefecture: customerInfo.prefecture,
-          city: customerInfo.city,
-          address_detail: customerInfo.address,
-          building: customerInfo.building || '',
-          address: fullAddress,
-          preferred_delivery_date: customerInfo.preferredDeliveryDate || '',
-          coupon_code: couponCode || '',
-          referral_code: customerInfo.referralCode || '',
-          notes: customerInfo.notes || '',
-        },
-        subscription_data: {
-          metadata: {
-            plan_id: planId,
-            customer_name: `${customerInfo.lastName} ${customerInfo.firstName}`,
-            phone: customerInfo.phone,
-            address: fullAddress,
-            preferred_delivery_date: customerInfo.preferredDeliveryDate || '',
-            referral_code: customerInfo.referralCode || '',
-          },
-        },
-        locale: 'ja',
-      };
-
-      // クーポンがある場合は割引を適用
-      if (couponCode) {
-        try {
-          const promotionCodes = await stripe.promotionCodes.list({
-            code: couponCode,
-            active: true,
-            limit: 1,
-          });
-
-          if (promotionCodes.data.length > 0) {
-            sessionParams.discounts = [
-              { promotion_code: promotionCodes.data[0].id },
-            ];
-          }
-        } catch {
-          console.log('Promotion code not found in Stripe, skipping discount');
-        }
-      }
-
-      const session = await stripe.checkout.sessions.create(sessionParams);
-
-      // アンケートデータを保存
-      if (body.survey) {
-        try {
-          const supabase = createServerClient();
-          await (supabase.from('purchase_surveys') as any).insert({
-            stripe_session_id: session.id,
-            customer_email: customerInfo.email,
-            q1_answers: body.survey.q1_answers,
-            q1_other_text: body.survey.q1_other_text || null,
-            q2_answers: body.survey.q2_answers,
-            q2_other_text: body.survey.q2_other_text || null,
-            q3_answers: body.survey.q3_answers,
-            q3_other_text: body.survey.q3_other_text || null,
-          });
-        } catch (surveyError) {
-          console.error('Failed to save survey data:', surveyError);
-        }
-      }
-
-      return NextResponse.json({ url: session.url });
-    }
-
-    // お試しプラン（一回購入）の場合
     const trialItem = cart.find(item => item.quantity > 0);
     if (!trialItem) {
       return NextResponse.json(
@@ -191,7 +59,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // お試しプランのみ対応（trial-6）
     if (trialItem.planId !== 'trial-6') {
       return NextResponse.json(
         { error: `無効なプランID: ${trialItem.planId}` },
@@ -208,20 +75,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 送料価格IDを取得
     const shippingPriceId = process.env.STRIPE_SHIPPING_PRICE_TRIAL || '';
 
-    // line_itemsを構築（商品 + 送料）
     const trialLineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
       { price: priceId, quantity: trialItem.quantity },
     ];
 
-    // 送料を追加
     if (shippingPriceId) {
       trialLineItems.push({ price: shippingPriceId, quantity: trialItem.quantity });
     }
 
-    // 一回購入用のCheckout Sessionを作成
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       payment_method_types: ['card'],
       line_items: trialLineItems,
@@ -248,7 +111,6 @@ export async function POST(request: NextRequest) {
       locale: 'ja',
     };
 
-    // クーポンがある場合は割引を適用
     if (couponCode) {
       try {
         const promotionCodes = await stripe.promotionCodes.list({
@@ -269,7 +131,6 @@ export async function POST(request: NextRequest) {
 
     const session = await stripe.checkout.sessions.create(sessionParams);
 
-    // アンケートデータを保存
     if (body.survey) {
       try {
         const supabase = createServerClient();
