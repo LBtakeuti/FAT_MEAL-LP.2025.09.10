@@ -995,7 +995,7 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
     });
 
     // 在庫を減算（1セット=6食換算: sub-6=1セット, sub-12=2セット）
-    const setsToReduce = planConfig.meals_per_delivery / 6;
+    const setsToReduce = Math.max(1, Math.floor(planConfig.meals_per_delivery / 6));
     await reduceInventorySets(setsToReduce, `subscription created: ${planName}`);
 
   } catch (error) {
@@ -1087,7 +1087,7 @@ async function handleMonthlySubscriptionPayment(invoice: Stripe.Invoice, stripe:
 
     // 在庫を減算（1セット=6食換算: sub-6=1セット, sub-12=2セット）
     const planConfig = getPlanConfig(planId);
-    const setsToReduce = planConfig.meals_per_delivery / 6;
+    const setsToReduce = Math.max(1, Math.floor(planConfig.meals_per_delivery / 6));
     await reduceInventorySets(setsToReduce, `monthly payment: ${planId}`);
 
     // 継続コミッション記録
