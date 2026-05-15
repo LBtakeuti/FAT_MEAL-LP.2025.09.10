@@ -702,13 +702,13 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
       }
     }
 
-    // サブスクリプションの場合の配送希望日チェック - 一時的に無効化
-    // if (purchaseType === 'subscription-monthly') {
-    //   const deliveryError = validateDeliveryDate(customerInfo.preferredDeliveryDate || '');
-    //   if (deliveryError) {
-    //     newErrors.preferredDeliveryDate = deliveryError;
-    //   }
-    // }
+    // サブスク時は配送希望日を必須化（範囲チェック含む）
+    if (purchaseType === 'subscription-monthly') {
+      const deliveryError = validateDeliveryDate(customerInfo.preferredDeliveryDate || '');
+      if (deliveryError) {
+        newErrors.preferredDeliveryDate = deliveryError;
+      }
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -939,9 +939,8 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
     </div>
   );
 
-  // 配送希望日選択UI - 一時的に非表示のためコメントアウト
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _renderDeliveryDateSelection = () => {
+  // 配送希望日選択UI（サブスク時のみ表示・営業日4日後〜+6日の範囲で選択可能）
+  const renderDeliveryDateSelection = () => {
     if (purchaseType !== 'subscription-monthly') {
       return null;
     }
@@ -1023,8 +1022,8 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
         </div>
       )}
 
-      {/* 配送希望日選択（サブスクリプションのみ）- 一時的に非表示 */}
-      {/* {renderDeliveryDateSelection()} */}
+      {/* 配送希望日選択（サブスクリプションのみ） */}
+      {purchaseType === 'subscription-monthly' && renderDeliveryDateSelection()}
 
       {/* 登録情報を使用ボタン */}
       {user && hasProfileData && (
