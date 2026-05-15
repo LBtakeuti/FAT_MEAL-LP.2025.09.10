@@ -6,6 +6,7 @@ import { createBrowserClient } from '@/lib/supabase';
 import { MenuDetailModal } from '@/components/menu/MenuDetailModal';
 import { PlanSelectorCards, type PlanCardData } from '@/components/purchase/PlanSelectorCards';
 import { StripePaymentForm } from '@/components/purchase/StripePaymentForm';
+import { getDeliveryDateRange } from '@/lib/business-days';
 import type { MenuItem } from '@/types';
 
 export interface PurchaseFlowProps {
@@ -33,26 +34,19 @@ interface PlanOption {
   id: string;
   quantity: number;
   label: string;
-  price: number;             // 商品代金（サブスクはPhase1価格）
-  shippingFee: number;       // 送料（サブスクPhase1は¥0）
-  totalPrice: number;        // 合計（サブスクはPhase1合計）
+  price: number;
+  shippingFee: number;
+  totalPrice: number;
   description: string;
-  perMeal: number;           // 1食あたり（サブスクはPhase1ベース）
+  perMeal: number;
   isTrial: boolean;
   isSubscription: boolean;
   deliveriesPerMonth?: number;
   comingSoon: boolean;
-  // サブスクリプション用の追加フィールド
-  anchorPrice?: number;      // アンカー価格（打ち消し線表示用）
-  phase2Price?: number;      // Phase2商品価格（2ヶ月目〜・15%OFF）
-  phase2ShippingFee?: number;// Phase2送料（¥1,500）
-  phase2Total?: number;      // Phase2合計
-  phase2PerMeal?: number;    // Phase2 1食あたり
 }
 
-// 新しいプラン構成
+// 新3プラン体系（trial-6 / sub-6 / sub-12、月1回配送・段階割引なし）
 const planOptions: PlanOption[] = [
-  // お試しプラン（一回購入）
   {
     id: 'trial-6',
     quantity: 6,
@@ -66,66 +60,34 @@ const planOptions: PlanOption[] = [
     isSubscription: false,
     comingSoon: false,
   },
-  // サブスクリプションプラン
   {
-    id: 'subscription-monthly-12',
-    quantity: 12,
-    label: 'ふとるめし12食 月額プラン',
-    price: 4980,             // Phase1商品（初回送料無料特価）
-    shippingFee: 0,          // Phase1送料（初回無料）
-    totalPrice: 4980,        // Phase1合計
+    id: 'sub-6',
+    quantity: 6,
+    label: '6食プラン（月額）',
+    price: 3000,
+    shippingFee: 1500,
+    totalPrice: 4500,
     description: '月1回配送',
-    perMeal: 415,            // 4980 ÷ 12
+    perMeal: 750,
     isTrial: false,
     isSubscription: true,
     deliveriesPerMonth: 1,
     comingSoon: false,
-    anchorPrice: 9000,
-    phase2Price: 7650,       // Phase2商品（15%OFF）
-    phase2ShippingFee: 1500, // Phase2送料
-    phase2Total: 9150,       // Phase2合計
-    phase2PerMeal: 1525,     // 9150 ÷ 6
   },
-  /* 一時非表示
   {
-    id: 'subscription-monthly-24',
+    id: 'sub-12',
     quantity: 12,
-    label: 'ふとるめし12食 月額プラン',
-    price: 12600,            // Phase1商品（初回30%OFF）
-    shippingFee: 0,          // Phase1送料（初回無料）
-    totalPrice: 12600,       // Phase1合計
-    description: '月2回配送｜24個入り（1食2個×12食分）',
-    perMeal: 1050,           // 12600 ÷ 12
+    label: '12食プラン（月額）',
+    price: 6000,
+    shippingFee: 1500,
+    totalPrice: 7500,
+    description: '月1回配送',
+    perMeal: 625,
     isTrial: false,
     isSubscription: true,
-    deliveriesPerMonth: 2,
+    deliveriesPerMonth: 1,
     comingSoon: false,
-    anchorPrice: 18000,
-    phase2Price: 15300,      // Phase2商品（15%OFF）
-    phase2ShippingFee: 1500, // Phase2送料
-    phase2Total: 16800,      // Phase2合計
-    phase2PerMeal: 1400,     // 16800 ÷ 12
   },
-  {
-    id: 'subscription-monthly-48',
-    quantity: 24,
-    label: 'ふとるめし24食 月額プラン',
-    price: 25200,            // Phase1商品（初回30%OFF）
-    shippingFee: 0,          // Phase1送料（初回無料）
-    totalPrice: 25200,       // Phase1合計
-    description: '月4回配送｜48個入り（1食2個×24食分）',
-    perMeal: 1050,           // 25200 ÷ 24
-    isTrial: false,
-    isSubscription: true,
-    deliveriesPerMonth: 4,
-    comingSoon: false,
-    anchorPrice: 36000,
-    phase2Price: 30600,      // Phase2商品（15%OFF）
-    phase2ShippingFee: 1500, // Phase2送料
-    phase2Total: 32100,      // Phase2合計
-    phase2PerMeal: 1337,     // ~32100 ÷ 24
-  },
-  一時非表示 */
 ];
 
 interface CustomerInfo {
@@ -165,61 +127,13 @@ interface InventoryStatus {
   };
 }
 
-// 日本の祝日（2024-2026年）
-const JAPANESE_HOLIDAYS: string[] = [
-  // 2024年
-  '2024-01-01', '2024-01-08', '2024-02-11', '2024-02-12', '2024-02-23',
-  '2024-03-20', '2024-04-29', '2024-05-03', '2024-05-04', '2024-05-05',
-  '2024-05-06', '2024-07-15', '2024-08-11', '2024-08-12', '2024-09-16',
-  '2024-09-22', '2024-09-23', '2024-10-14', '2024-11-03', '2024-11-04',
-  '2024-11-23', '2024-12-23',
-  // 2025年
-  '2025-01-01', '2025-01-13', '2025-02-11', '2025-02-23', '2025-02-24',
-  '2025-03-20', '2025-04-29', '2025-05-03', '2025-05-04', '2025-05-05',
-  '2025-05-06', '2025-07-21', '2025-08-11', '2025-09-15', '2025-09-23',
-  '2025-10-13', '2025-11-03', '2025-11-23', '2025-11-24',
-  // 2026年
-  '2026-01-01', '2026-01-12', '2026-02-11', '2026-02-23', '2026-03-20',
-  '2026-04-29', '2026-05-03', '2026-05-04', '2026-05-05', '2026-05-06',
-  '2026-07-20', '2026-08-11', '2026-09-21', '2026-09-22', '2026-09-23',
-  '2026-10-12', '2026-11-03', '2026-11-23',
-];
-
-// 祝日かどうかをチェック
-function isHoliday(date: Date): boolean {
-  const dateStr = date.toISOString().split('T')[0];
-  return JAPANESE_HOLIDAYS.includes(dateStr);
-}
-
-// 週末かどうかをチェック
-function isWeekend(date: Date): boolean {
-  const day = date.getDay();
-  return day === 0 || day === 6; // 日曜日または土曜日
-}
-
-// 営業日かどうかをチェック（土日祝日以外）
-function isBusinessDay(date: Date): boolean {
-  return !isWeekend(date) && !isHoliday(date);
-}
-
-// 営業日を追加
-function addBusinessDays(startDate: Date, businessDays: number): Date {
-  const currentDate = new Date(startDate);
-  let addedDays = 0;
-
-  while (addedDays < businessDays) {
-    currentDate.setDate(currentDate.getDate() + 1);
-    if (isBusinessDay(currentDate)) {
-      addedDays++;
-    }
-  }
-
-  return currentDate;
-}
-
-// 日付をフォーマット
+// 営業日判定・営業日加算・配送可能範囲は lib/business-days.ts に集約。
+// ここでは入力 value 用の日付フォーマッタのみローカル保持する。
 function formatDate(date: Date): string {
-  return date.toISOString().split('T')[0];
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose }) => {
@@ -235,12 +149,11 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
   const [purchaseType, setPurchaseType] = useState<'one-time' | 'subscription-monthly'>('subscription-monthly');
   // お試しプランモード（URLパラメータでplan=trial-6が指定された場合のみtrue）
   const [isTrialMode, setIsTrialMode] = useState<boolean>(false);
-  // カート形式で複数セットを管理
+  // カート形式で複数セットを管理（新3プラン体系）
   const [cart, setCart] = useState<CartItem[]>([
     { planId: 'trial-6', quantity: 0 },
-    { planId: 'subscription-monthly-12', quantity: 0 },
-    { planId: 'subscription-monthly-24', quantity: 0 },
-    { planId: 'subscription-monthly-48', quantity: 0 },
+    { planId: 'sub-6', quantity: 0 },
+    { planId: 'sub-12', quantity: 0 },
   ]);
   // 在庫状況
   const [, setInventory] = useState<InventoryStatus | null>(null);
@@ -294,7 +207,7 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
 
   // メニュー一覧・アコーディオン開閉状態（排他制御、デフォルトで最初のサブスクプランを開く）
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [openPlanId, setOpenPlanId] = useState<string>('subscription-monthly-12');
+  const [openPlanId, setOpenPlanId] = useState<string>('sub-12');
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
 
   const [couponValidating, setCouponValidating] = useState(false);
@@ -361,7 +274,9 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
     // step=confirm で復元中の場合はプラン設定をスキップ（cart上書き防止）
     if (searchParams.get('step') === 'confirm') return;
 
-    const planParam = searchParams.get('plan');
+    const rawPlanParam = searchParams.get('plan');
+    // legacy URL（?plan=subscription-monthly-12）は新 sub-12 にマッピング
+    const planParam = rawPlanParam === 'subscription-monthly-12' ? 'sub-12' : rawPlanParam;
     const typeParam = searchParams.get('type');
 
     // ログイン後にサブスクリプション購入に戻ってきた場合
@@ -370,7 +285,6 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
       setIsTrialMode(false);
     }
 
-    // プランが指定された場合は選択状態にする
     if (planParam === 'trial-6') {
       setIsTrialMode(false);
       setPurchaseType('one-time');
@@ -387,7 +301,7 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
         ));
       }
     } else {
-      // パラメータなしの場合はサブスクリプションをデフォルト選択
+      // パラメータなしの場合はサブスクリプションをデフォルト選択（sub-12）
       setIsTrialMode(false);
       setPurchaseType('subscription-monthly');
     }
@@ -405,6 +319,18 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
       validateReferralCode(storedCode);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  // 個別メッセージ(LP)経由の attribution: ?promo=<slug> を sessionStorage に保持し、
+  // 決済時に Stripe metadata へ伝搬する
+  const [promoSlug, setPromoSlug] = useState<string>('');
+  useEffect(() => {
+    const promoParam = searchParams.get('promo');
+    if (promoParam) {
+      sessionStorage.setItem('promo_slug', promoParam);
+    }
+    const stored = sessionStorage.getItem('promo_slug');
+    if (stored) setPromoSlug(stored);
   }, [searchParams]);
 
   // シートからの遷移: ?step=info なら info ステップへ自動進行（プラン選択済みのとき）
@@ -698,42 +624,29 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
     }
   };
 
-  // 配送希望日の最小日付を取得（3営業日後）
+  // 配送希望日の最小日付（購入日 + 4営業日後）
   const getMinDeliveryDate = (): string => {
-    const today = new Date();
-    const minDate = addBusinessDays(today, 3);
-    return formatDate(minDate);
+    const { min } = getDeliveryDateRange(new Date());
+    return formatDate(min);
   };
 
-  // 配送希望日の最大日付を取得（60日後まで）
+  // 配送希望日の最大日付（min から1週間後・min含めて7日間）
   const getMaxDeliveryDate = (): string => {
-    const today = new Date();
-    const maxDate = new Date(today);
-    maxDate.setDate(maxDate.getDate() + 60);
-    return formatDate(maxDate);
+    const { max } = getDeliveryDateRange(new Date());
+    return formatDate(max);
   };
 
-  // 配送日の検証
+  // 配送日の検証（範囲内チェック・営業日は min 算出時にのみ考慮、範囲内の土日祝は許容）
   const validateDeliveryDate = (dateStr: string): string | null => {
     if (!dateStr) return '配送希望日を選択してください';
-
     const selectedDate = new Date(dateStr);
-    const minDate = new Date(getMinDeliveryDate());
-
-    if (selectedDate < minDate) {
-      return '注文日から3営業日後以降の日付を選択してください';
+    const { min, max } = getDeliveryDateRange(new Date());
+    if (selectedDate < min || selectedDate > max) {
+      return `配送希望日は ${formatDate(min)} 〜 ${formatDate(max)} の範囲で選択してください`;
     }
-
-    if (isWeekend(selectedDate)) {
-      return '土日は選択できません';
-    }
-
-    if (isHoliday(selectedDate)) {
-      return '祝日は選択できません';
-    }
-
     return null;
   };
+
 
   // 配送希望日の変更ハンドラー
   const handleDeliveryDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -946,6 +859,7 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
               referralCode: customerInfo.referralCode || undefined,
               notes: customerInfo.notes || undefined,
             },
+            promoSlug: promoSlug || undefined,
             couponCode: appliedCoupon?.code,
             survey: {
               q1_answers: surveyQ1,
@@ -986,18 +900,10 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
     mealCount: plan.quantity,
     title: plan.isTrial ? 'お試し6個セット' : `${plan.quantity}食 月額プラン`,
     subtitle: plan.description,
-    anchorPrice: plan.isSubscription && plan.anchorPrice
-      ? Math.round(((plan.anchorPrice || 0) + (plan.phase2ShippingFee || 0)) / plan.quantity)
-      : undefined,
     totalPrice: plan.totalPrice,
     perMeal: plan.perMeal,
     badge: plan.isTrial ? '初回限定' : undefined,
-    highlight: plan.isSubscription
-      ? plan.id === 'subscription-monthly-12'
-        ? 'ゆうさくスポーツキャンペーン 初回限定'
-        : '初回限定価格'
-      : undefined,
-    shippingNote: plan.isSubscription ? '送料無料' : undefined,
+    shippingNote: plan.isSubscription ? '送料込' : undefined,
     isSubscription: plan.isSubscription,
   }));
 
@@ -1492,60 +1398,27 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
                   {selectedPlan.description}
                 </p>
                 {purchaseType === 'subscription-monthly' && (
-                  <>
-                    <p className="text-xs text-green-600 font-medium mt-1">
-                      月額自動更新プラン（初回30%OFF・送料無料）
-                    </p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      2ヶ月目以降 ¥{selectedPlan.phase2Total?.toLocaleString()}/月（15%OFF）
-                    </p>
-                  </>
+                  <p className="text-xs text-green-600 font-medium mt-1">
+                    月額自動更新プラン（毎月一律）
+                  </p>
                 )}
               </div>
               <p className="text-lg text-gray-900">
-                ¥{(purchaseType === 'subscription-monthly'
-                  ? ((selectedPlan.anchorPrice || 0) + (selectedPlan.phase2ShippingFee || 0))
-                  : selectedPlan.totalPrice
-                ).toLocaleString()}
+                ¥{selectedPlan.totalPrice.toLocaleString()}
               </p>
             </div>
           )}
 
-          {/* 商品代金（定期以外のみ表示） */}
-          {purchaseType !== 'subscription-monthly' && (
-            <div className="flex justify-between items-center py-3 border-b border-gray-200">
-              <p className="text-gray-600">商品代金</p>
-              <p className="text-gray-900">¥{subtotal.toLocaleString()}</p>
-            </div>
-          )}
-
-          {/* キャンペーン割引 */}
-          {purchaseType === 'subscription-monthly' && selectedPlan?.anchorPrice && (
-            <div className="flex justify-between items-center py-3 border-b border-gray-200">
-              <div className="flex items-center gap-2">
-                <p className="text-red-600 font-medium">初回30%OFFキャンペーン</p>
-              </div>
-              <p className="text-red-600 font-medium">
-                -¥{(selectedPlan.anchorPrice - subtotal).toLocaleString()}
-              </p>
-            </div>
-          )}
+          {/* 商品代金 */}
+          <div className="flex justify-between items-center py-3 border-b border-gray-200">
+            <p className="text-gray-600">商品代金</p>
+            <p className="text-gray-900">¥{subtotal.toLocaleString()}</p>
+          </div>
 
           {/* 送料 */}
           <div className="flex justify-between items-center py-3 border-b border-gray-200">
-            <p className={purchaseType === 'subscription-monthly' && shippingFee === 0 ? 'text-red-600 font-medium' : 'text-gray-600'}>
-              送料
-              {purchaseType === 'subscription-monthly' && shippingFee === 0 && (
-                <span className="ml-1 text-xs">（初回無料）</span>
-              )}
-            </p>
-            {purchaseType === 'subscription-monthly' && shippingFee === 0 ? (
-              <p className="text-red-600 font-medium">
-                -¥{(selectedPlan?.phase2ShippingFee || 1500).toLocaleString()}
-              </p>
-            ) : (
-              <p className="text-gray-900">¥{shippingFee.toLocaleString()}</p>
-            )}
+            <p className="text-gray-600">送料</p>
+            <p className="text-gray-900">¥{shippingFee.toLocaleString()}</p>
           </div>
 
           {/* クーポン割引 */}
@@ -1562,7 +1435,7 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
           {/* 合計 */}
           <div className="flex justify-between items-center py-4 mt-2">
             <p className="font-bold text-gray-900 text-lg">
-              {purchaseType === 'subscription-monthly' ? '初回合計（税込）' : '合計（税込）'}
+              {purchaseType === 'subscription-monthly' ? '月額合計（税込）' : '合計（税込）'}
             </p>
             <p className="text-2xl font-bold text-orange-600">¥{totalAmount.toLocaleString()}</p>
           </div>

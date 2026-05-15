@@ -1,201 +1,94 @@
 'use client';
 
 import React from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+
+interface SubscriptionPlan {
+  id: 'sub-6' | 'sub-12';
+  meals: number;
+  title: string;
+  monthlyTotal: number;
+  pricePerMeal: number;
+  popular: boolean;
+}
+
+const subscriptionPlans: SubscriptionPlan[] = [
+  {
+    id: 'sub-6',
+    meals: 6,
+    title: '6食プラン',
+    monthlyTotal: 4500,
+    pricePerMeal: 750,
+    popular: false,
+  },
+  {
+    id: 'sub-12',
+    meals: 12,
+    title: '12食プラン',
+    monthlyTotal: 7500,
+    pricePerMeal: 625,
+    popular: true,
+  },
+];
 
 const SubscriptionSection: React.FC = () => {
   const router = useRouter();
 
-  const plans = [
-    {
-      id: 'subscription-monthly-12',
-      meals: 6,
-      title: '12食プラン',
-      popular: false,
-      anchorWithShipping: 10500,
-      phase1Price: 4980,
-      phase2Price: 7650,
-      phase2Total: 9150,
-      shippingFee: 1500,
-      deliveriesPerMonth: 1,
-      description: '月1回配送',
-      subtitle: '',
-      pricePerMeal: 1275,
-      campaignLabel: 'ゆうさくスポーツキャンペーン 初回限定',
-    },
-    {
-      id: 'subscription-monthly-24',
-      meals: 12,
-      title: '12食プラン',
-      popular: true,
-      anchorWithShipping: 19500,
-      phase1Price: 12600,
-      phase2Price: 15300,
-      phase2Total: 16800,
-      shippingFee: 1500,
-      deliveriesPerMonth: 2,
-      description: '月2回配送',
-      subtitle: '24個入り（1食2個×12食分）',
-      pricePerMeal: 1400,
-    },
-    {
-      id: 'subscription-monthly-48',
-      meals: 24,
-      title: '24食プラン',
-      popular: false,
-      anchorWithShipping: 37500,
-      phase1Price: 25200,
-      phase2Price: 30600,
-      phase2Total: 32100,
-      shippingFee: 1500,
-      deliveriesPerMonth: 4,
-      description: '月4回配送',
-      subtitle: '48個入り（1食2個×24食分）',
-      pricePerMeal: 1275,
-    },
-  ];
-
-  const handlePurchase = (planId: string) => {
+  const handlePurchase = (planId: SubscriptionPlan['id']) => {
     router.push(`/purchase?plan=${planId}`);
   };
 
   return (
     <section id="subscription" className="relative overflow-hidden bg-white py-12 sm:py-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* ヘッダー非表示 */}
-
-        {/* プランカード */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto">
-          {/* お試しプランカード */}
-          <div
-            onClick={() => router.push('/purchase?plan=trial-6')}
-            className="relative bg-white rounded-2xl p-6 sm:p-8 transition-all duration-300 border-2 flex flex-col cursor-pointer hover:shadow-xl hover:scale-[1.02] border-gray-200 hover:border-gray-500"
-          >
-            {/* プラン名 */}
-            <div className="text-center mb-6">
-              <span className="inline-block bg-gray-200 text-gray-700 text-xs font-bold px-3 py-1 rounded-full mb-3">
-                お試し
-              </span>
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 font-antique">
-                お試し6個セット
-              </h3>
-              <p className="text-sm text-gray-500">
-                6種類×1個ずつ / 1回限りの購入 / 定期契約なし
-              </p>
-            </div>
-
-            {/* 価格 */}
-            <div className="text-center mb-6 pb-6 border-b border-gray-200">
-              <div className="flex items-baseline justify-center gap-2">
-                <span className="text-5xl font-black text-gray-800">
-                  ¥950
-                </span>
-                <span className="text-sm text-gray-500">/食（税込・送料込）</span>
-              </div>
-              <p className="text-xs text-gray-400 mt-1">6個セット合計 ¥5,700</p>
-            </div>
-
-            {/* プラン詳細 */}
-            <ul className="space-y-2 mb-6 text-sm text-gray-600 flex-1">
-              <li className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>1回限りの購入</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>定期契約なし</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span>まずは味を試したい方に</span>
-              </li>
-            </ul>
-
-            {/* 購入ボタン */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                router.push('/purchase?plan=trial-6');
-              }}
-              className="mt-auto w-full h-14 rounded-xl font-bold text-lg transition-all duration-300 shadow-md bg-gray-700 text-white hover:bg-gray-800 hover:shadow-lg"
-            >
-              お試し購入する
-            </button>
-          </div>
-
-          {/* 定期プランカード */}
-          {plans.filter((plan) => plan.id === 'subscription-monthly-12').map((plan) => (
+          {/* サブスクプランカード（sub-6 / sub-12） */}
+          {subscriptionPlans.map((plan) => (
             <div
               key={plan.id}
               onClick={() => handlePurchase(plan.id)}
-              className="relative bg-white rounded-2xl p-6 sm:p-8 transition-all duration-300 border-2 flex flex-col cursor-pointer hover:shadow-xl hover:scale-[1.02] border-gray-200 hover:border-orange-500"
+              className={`relative bg-white rounded-2xl p-6 sm:p-8 transition-all duration-300 border-2 flex flex-col cursor-pointer hover:shadow-xl hover:scale-[1.02] ${
+                plan.popular ? 'border-orange-300 hover:border-orange-500' : 'border-gray-200 hover:border-orange-500'
+              }`}
             >
-              {/* 初回送料無料バッジ */}
-              <div className="absolute -top-1 -left-1 z-10">
-                <Image
-                  src="/images/branding/badge-free-shipping.png"
-                  alt="初回送料無料"
-                  width={80}
-                  height={80}
-                  className="w-16 sm:w-20 h-auto"
-                  unoptimized
-                />
-              </div>
+              {plan.popular && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <span className="bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm whitespace-nowrap">
+                    人気No.1
+                  </span>
+                </div>
+              )}
 
-              {/* プラン名 */}
               <div className="text-center mb-6">
+                <span className="inline-block bg-orange-100 text-orange-700 text-xs font-bold px-3 py-1 rounded-full mb-3">
+                  定期
+                </span>
                 <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 font-antique">
                   {plan.title}
                 </h3>
+                <p className="text-sm text-gray-500">
+                  月¥{plan.monthlyTotal.toLocaleString()}（送料込）／月1回お届け
+                </p>
               </div>
 
-              {/* 価格 */}
               <div className="text-center mb-6 pb-6 border-b border-gray-200">
-                {/* 通常価格（打ち消し線） */}
-                <div className="flex justify-center mb-2">
-                  <span className="text-xs text-gray-400">
-                    通常価格&nbsp;
-                    <span className="line-through">¥{Math.round(plan.anchorWithShipping / 12).toLocaleString()}/食</span>
+                <div className="flex items-baseline justify-center gap-2">
+                  <span className="text-5xl font-black text-[#E8593C]">
+                    ¥{plan.pricePerMeal.toLocaleString()}
                   </span>
+                  <span className="text-sm text-gray-500">/食（税込・送料込）</span>
                 </div>
-
-                {/* キャンペーンバッジ */}
-                <div className="mb-3">
-                  <span className="bg-gradient-to-b from-red-500 to-red-700 text-white text-xs font-bold py-1.5 px-3 rounded whitespace-nowrap shadow-md">
-                    {'campaignLabel' in plan && plan.campaignLabel ? plan.campaignLabel : '初回限定価格'}
-                  </span>
-                </div>
-
-                {/* Phase1価格（1食あたり） */}
-                <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-5xl font-black text-red-600">
-                    ¥{Math.round(plan.phase1Price / 12).toLocaleString()}
-                  </span>
-                  <span className="text-sm text-gray-500">/食</span>
-                </div>
-                <p className="text-xs text-gray-400 mt-1">12食合計 ¥{plan.phase1Price.toLocaleString()}</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  月額合計 ¥{plan.monthlyTotal.toLocaleString()}（{plan.meals}食）
+                </p>
               </div>
 
-              {/* プラン詳細 */}
               <ul className="space-y-2 mb-6 text-sm text-gray-600 flex-1">
                 <li className="flex items-center gap-2">
                   <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  <span>お弁当6種類×2個ずつ</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span>{plan.description}</span>
+                  <span>毎月{plan.meals}食お届け（月1回）</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -211,7 +104,6 @@ const SubscriptionSection: React.FC = () => {
                 </li>
               </ul>
 
-              {/* 購入ボタン */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -225,11 +117,9 @@ const SubscriptionSection: React.FC = () => {
           ))}
         </div>
 
-        {/* 注意事項 */}
         <div className="mt-8 sm:mt-12 text-center text-sm text-gray-500">
           <p className="mb-1">※ 価格は税込表示です</p>
-          <p className="mb-1">※ 定期購入はログインが必要です</p>
-          <p>※ ゆうさくスポーツキャンペーン中、２ヶ月目以降の商品の価格は15％OFFです。送料は別です。</p>
+          <p>※ 定期購入はログインが必要です</p>
         </div>
       </div>
     </section>

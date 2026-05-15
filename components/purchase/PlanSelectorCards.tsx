@@ -7,11 +7,9 @@ export interface PlanCardData {
   mealCount: number;
   title: string;
   subtitle: string;
-  anchorPrice?: number;
   totalPrice: number;
   perMeal: number;
   badge?: string;
-  highlight?: string;
   shippingNote?: string;
   isSubscription: boolean;
 }
@@ -53,18 +51,7 @@ export function PlanSelectorCards({ plans, selectedId, onSelect, onProceed }: Pl
             <h3 className="text-base font-semibold text-gray-900 mb-1">{plan.title}</h3>
             <p className="text-xs text-gray-500 mb-3">{plan.subtitle}</p>
 
-            {plan.highlight && (
-              <span className="inline-block bg-red-600 text-white text-[11px] font-bold px-2 py-0.5 rounded mb-2">
-                {plan.highlight}
-              </span>
-            )}
-
             <div className="mt-2">
-              {plan.anchorPrice && plan.anchorPrice > plan.perMeal && (
-                <span className="text-sm text-gray-400 line-through mr-2">
-                  ¥{plan.anchorPrice.toLocaleString()}
-                </span>
-              )}
               <span className="text-2xl font-black text-[#E8593C]">
                 ¥{plan.perMeal.toLocaleString()}
               </span>
