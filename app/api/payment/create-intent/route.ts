@@ -13,19 +13,25 @@ import { createServerClient } from '@/lib/supabase';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-// プラン金額定義（税込）
+// プラン金額定義（税込）— 表示用合計算出に使用。サブスクは月額固定で段階割引なし。
 const PLAN_PRICES: Record<string, { amount: number; shipping: number }> = {
-  'trial-6': { amount: 4200, shipping: 1500 }, // 合計5700円
+  'trial-6': { amount: 4200, shipping: 1500 }, // 合計5700円（買い切り）
+  'sub-6': { amount: 3000, shipping: 1500 },   // 月額4500円
+  'sub-12': { amount: 6000, shipping: 1500 },  // 月額7500円
 };
 
-// サブスクリプションPhase1価格ID
-function getSubscriptionPhase1PriceId(planId: string): string {
-  const priceMap: Record<string, string> = {
-    'subscription-monthly-12': process.env.STRIPE_SUBSCRIPTION_PRICE_12_PHASE1 || '',
-    'subscription-monthly-24': process.env.STRIPE_SUBSCRIPTION_PRICE_24_PHASE1 || '',
-    'subscription-monthly-48': process.env.STRIPE_SUBSCRIPTION_PRICE_48_PHASE1 || '',
+// サブスクリプション用 Stripe Price ID を新プラン体系で取得。
+// 商品 Price と送料 Price の2本を Subscription に積む構成。
+function getSubscriptionPriceIds(planId: string): { productPriceId: string; shippingPriceId: string } {
+  const productPriceMap: Record<string, string> = {
+    'sub-6': process.env.STRIPE_PRICE_SUB6_PRODUCT || '',
+    'sub-12': process.env.STRIPE_PRICE_SUB12_PRODUCT || '',
   };
-  return priceMap[planId] || '';
+  const shippingPriceId = process.env.STRIPE_PRICE_SUB_SHIPPING || '';
+  return {
+    productPriceId: productPriceMap[planId] || '',
+    shippingPriceId,
+  };
 }
 
 interface CreateIntentRequest {
@@ -47,6 +53,7 @@ interface CreateIntentRequest {
     referralCode?: string;
     notes?: string;
   };
+  promoSlug?: string;
   couponCode?: string;
   survey?: {
     q1_answers: string[];
@@ -86,6 +93,7 @@ export async function POST(request: NextRequest) {
       address: fullAddress,
       coupon_code: couponCode || '',
       referral_code: customerInfo.referralCode || '',
+      promo_slug: body.promoSlug || '',
       notes: customerInfo.notes || '',
       preferred_delivery_date: customerInfo.preferredDeliveryDate || '',
     };
@@ -166,14 +174,21 @@ export async function POST(request: NextRequest) {
       });
 
     } else {
-      // === サブスクリプション: SetupIntent → カード登録後にSubscription作成 ===
+      // === サブスクリプション: SetupIntent → カード登録後にSubscription作成（新プラン体系・月額一律） ===
       const planId = activeItem.planId;
-      const priceId = getSubscriptionPhase1PriceId(planId);
-      if (!priceId) {
-        return NextResponse.json({ error: 'サブスクリプション価格が設定されていません' }, { status: 400 });
+      if (planId !== 'sub-6' && planId !== 'sub-12') {
+        return NextResponse.json({ error: '無効なプランIDです' }, { status: 400 });
       }
 
-      // Stripeカスタマーを取得 or 作成
+      const { productPriceId, shippingPriceId } = getSubscriptionPriceIds(planId);
+      if (!productPriceId || !shippingPriceId) {
+        console.error(`[create-intent] Missing Stripe Price IDs for ${planId}`, {
+          productPriceId: !!productPriceId,
+          shippingPriceId: !!shippingPriceId,
+        });
+        return NextResponse.json({ error: 'サブスクリプション価格が設定されていません' }, { status: 500 });
+      }
+
       const existingCustomers = await stripe.customers.list({
         email: customerInfo.email,
         limit: 1,
@@ -190,22 +205,22 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      // SetupIntentを作成（カード登録用）
-      // メタデータにサブスク情報を保存し、カード登録成功後にサーバー側でSubscription作成
+      // SetupIntent: カード登録用。商品/送料の Price ID を metadata に積み、
+      // activate-subscription で2本の Price で Subscription を作成する。
       const setupIntent = await stripe.setupIntents.create({
         customer: customer.id,
         automatic_payment_methods: { enabled: true },
         metadata: {
           ...metadata,
           plan_id: planId,
-          price_id: priceId,
+          product_price_id: productPriceId,
+          shipping_price_id: shippingPriceId,
           flow: 'subscription_setup',
         },
       });
 
       surveySessionKey = setupIntent.id;
 
-      // アンケート保存
       if (body.survey) {
         try {
           const supabase = createServerClient();
@@ -224,9 +239,9 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Phase1金額を取得して表示用に返す
-      const price = await stripe.prices.retrieve(priceId);
-      const amount = price.unit_amount || 0;
+      // 表示用の月額合計（商品 + 送料）
+      const planPrice = PLAN_PRICES[planId];
+      const amount = planPrice ? planPrice.amount + planPrice.shipping : 0;
 
       return NextResponse.json({
         clientSecret: setupIntent.client_secret,

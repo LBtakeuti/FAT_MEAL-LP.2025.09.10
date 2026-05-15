@@ -51,10 +51,11 @@ export async function POST(request: NextRequest) {
 
     const paymentMethodId = setupIntent.payment_method as string;
     const meta = setupIntent.metadata || {};
-    const priceId = meta.price_id;
+    const productPriceId = meta.product_price_id;
+    const shippingPriceId = meta.shipping_price_id;
     const planId = meta.plan_id;
 
-    if (!priceId || !planId) {
+    if (!productPriceId || !shippingPriceId || !planId) {
       return NextResponse.json({ error: 'プラン情報が見つかりません' }, { status: 400 });
     }
 
@@ -65,15 +66,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // 送料（初回無料）
-    const shippingPriceId = process.env.STRIPE_SHIPPING_PRICE_FREE || '';
-    const items: Stripe.SubscriptionCreateParams.Item[] = [{ price: priceId }];
-    if (shippingPriceId) items.push({ price: shippingPriceId });
-
-    // Subscription作成（カード紐づけ済みなので即座に課金）
+    // Subscription 作成（商品 + 送料 の2 Price で月額一律請求）
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
-      items,
+      items: [
+        { price: productPriceId },
+        { price: shippingPriceId },
+      ],
       default_payment_method: paymentMethodId,
       metadata: {
         setup_intent_id: setupIntentId,
@@ -89,6 +88,7 @@ export async function POST(request: NextRequest) {
         address: meta.address || '',
         preferred_delivery_date: meta.preferred_delivery_date || '',
         referral_code: meta.referral_code || '',
+        promo_slug: meta.promo_slug || '',
         notes: meta.notes || '',
         email: meta.email || '',
       },
