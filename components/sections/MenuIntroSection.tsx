@@ -19,9 +19,9 @@ const MenuIntroSection: React.FC = () => {
           />
 
           {/* テキストオーバーレイ */}
-          <div className="absolute inset-0 flex items-center justify-center p-4 sm:p-8 pointer-events-none">
+          <div className="absolute inset-0 flex items-center justify-center p-2 sm:p-4 pointer-events-none">
             <p
-              className="text-lg sm:text-2xl md:text-3xl leading-[3.0] tracking-wide text-center max-w-[95%] sm:max-w-lg md:max-w-xl"
+              className="text-2xl sm:text-3xl md:text-4xl leading-[2.4] tracking-wide text-center"
               style={{
                 color: '#1a1a1a',
                 fontWeight: 700,
@@ -37,15 +37,10 @@ const MenuIntroSection: React.FC = () => {
               }}
             >
               ふとるめしは、見た目に投資しません。
-              <br className="hidden sm:inline" />
-              パッケージにかけるお金は、
-              <br className="sm:hidden" />
-              すべて素材・量・栄養に使います。
-              アスリートに必要なのは、
-              <br className="sm:hidden" />
-              映える弁当ではなく、
-              <br className="hidden md:inline" />
-              体が変わる弁当だからです。
+              <br />
+              パッケージにかけるお金は、すべて素材・量・栄養に使います。
+              <br />
+              アスリートに必要なのは、映える弁当ではなく、体が変わる弁当だからです。
             </p>
           </div>
         </div>
