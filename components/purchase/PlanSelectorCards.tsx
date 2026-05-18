@@ -57,7 +57,7 @@ export function PlanSelectorCards({ plans, selectedId, onSelect, onProceed }: Pl
               </span>
               <span className="text-xs font-bold text-gray-600 ml-1">/食</span>
               {plan.shippingNote && (
-                <span className={`text-xs font-bold ml-2 ${plan.shippingNote === '料別' ? 'text-gray-500' : 'text-green-600'}`}>{plan.shippingNote}</span>
+                <span className={`text-xs font-bold ml-2 ${plan.shippingNote === '送料込' ? 'text-green-600' : 'text-gray-500'}`}>{plan.shippingNote}</span>
               )}
             </div>
 
