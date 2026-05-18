@@ -1,7 +1,7 @@
 import type { Options } from '@splidejs/splide';
 
 /**
- * モバイル: 2カラム / タブレット: 2 / PC: 3〜4
+ * モバイル: 1カラム(スナップ) / タブレット: 2 / PC: 3〜4
  */
 export function getReviewCarouselOptions(count: number): Options {
   return {
@@ -35,12 +35,13 @@ export function getReviewCarouselOptions(count: number): Options {
         autoplay: count > 2,
       },
       640: {
-        perPage: 2,
+        perPage: 1,
         gap: '0.75rem',
-        padding: { left: '1rem', right: '1rem' },
+        // 次カードがちらっと見えるよう左右に余白を残してスナップさせる
+        padding: { left: '1.5rem', right: '1.5rem' },
         arrows: false,
-        pagination: count > 2,
-        autoplay: count > 2,
+        pagination: count > 1,
+        autoplay: count > 1,
       },
     },
   };
