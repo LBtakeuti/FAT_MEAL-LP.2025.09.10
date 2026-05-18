@@ -21,7 +21,7 @@ const MenuIntroSection: React.FC = () => {
           {/* テキストオーバーレイ */}
           <div className="absolute inset-0 flex items-center justify-center p-2 sm:p-4 pointer-events-none">
             <p
-              className="text-2xl sm:text-3xl md:text-4xl leading-[2.4] tracking-wide text-center"
+              className="text-2xl sm:text-3xl md:text-4xl leading-[2.4] tracking-wide text-center whitespace-nowrap"
               style={{
                 color: '#1a1a1a',
                 fontWeight: 700,
