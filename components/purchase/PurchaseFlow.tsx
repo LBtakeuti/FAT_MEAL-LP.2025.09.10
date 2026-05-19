@@ -321,6 +321,18 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
+  // share-link(個別メッセージ) 経由のアトリビューション: 着地時に保存された
+  // sessionStorage('share_slug') を読み、決済時に Stripe metadata に伝搬する
+  const [shareSlug, setShareSlug] = useState<string>('');
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem('share_slug');
+      if (stored) setShareSlug(stored);
+    } catch {
+      // SSR/プライベートモードなど
+    }
+  }, []);
+
   // シートからの遷移: ?step=info なら info ステップへ自動進行（プラン選択済みのとき）
   useEffect(() => {
     const stepParam = searchParams.get('step');
@@ -855,6 +867,7 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
               notes: customerInfo.notes || undefined,
             },
             couponCode: appliedCoupon?.code,
+            shareSlug: shareSlug || undefined,
             survey: {
               q1_answers: surveyQ1,
               q1_other_text: surveyQ1.includes('other') ? surveyQ1Other : undefined,

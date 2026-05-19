@@ -37,11 +37,17 @@ export function ShareContentSection({ link, photos }: Props) {
   const [notice, setNotice] = useState<Notice | null>(null);
   const accessLoggedRef = useRef(false);
 
-  // ページ着地時に1回だけアクセスログを送る
+  // ページ着地時に1回だけアクセスログを送る + 購入アトリビューション用に
+  // share_slug を sessionStorage に保存（PurchaseFlow が決済時に拾って Stripe metadata に伝搬）
   useEffect(() => {
     if (accessLoggedRef.current) return;
     accessLoggedRef.current = true;
     fetch(`/api/share-links/${link.slug}/log-access`, { method: 'POST' }).catch(() => {});
+    try {
+      sessionStorage.setItem('share_slug', link.slug);
+    } catch {
+      // SSR / プライベートモード等で失敗してもアトリビューションのみ落ちるだけで他は動く
+    }
   }, [link.slug]);
 
   useEffect(() => {

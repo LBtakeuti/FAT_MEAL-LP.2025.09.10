@@ -15,6 +15,7 @@ interface ShareLinkRow {
   access_count: number;
   unique_access_count: number;
   download_count: number;
+  conversion_count: number;
 }
 
 export default function AdminShareLinksPage() {
@@ -134,6 +135,7 @@ export default function AdminShareLinksPage() {
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">流入数</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">ユニークアクセス</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">DL</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">購入</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
               </tr>
             </thead>
@@ -181,6 +183,11 @@ export default function AdminShareLinksPage() {
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm tabular-nums">{row.access_count}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm tabular-nums">{row.unique_access_count}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm tabular-nums">{row.download_count}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm tabular-nums">
+                      <span className={row.conversion_count > 0 ? 'font-bold text-orange-600' : 'text-gray-700'}>
+                        {row.conversion_count}
+                      </span>
+                    </td>
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium space-x-2">
                       <Link href={`/admin/share-links/${row.slug}`}>
                         <Button size="sm" variant="secondary">編集</Button>

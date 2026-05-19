@@ -32,10 +32,16 @@ export const GET = withAuth(async () => {
 
   const linkIds = linksList.map((l) => l.id);
 
-  const [photosRes, accessesRes, downloadsRes] = await Promise.all([
+  const [photosRes, accessesRes, downloadsRes, conversionsRes] = await Promise.all([
     supabase.from('photos').select('share_link_id').in('share_link_id', linkIds),
     supabase.from('share_access_logs').select('share_link_id, ip_address').in('share_link_id', linkIds),
     supabase.from('share_download_logs').select('share_link_id').in('share_link_id', linkIds),
+    // 初回購入のみカウント（recurring は重複扱い）
+    supabase
+      .from('share_link_conversions')
+      .select('share_link_id')
+      .in('share_link_id', linkIds)
+      .in('source_type', ['order', 'subscription_initial']),
   ]);
 
   const photoCounts = new Map<string, number>();
@@ -59,6 +65,11 @@ export const GET = withAuth(async () => {
     downloadCounts.set(d.share_link_id, (downloadCounts.get(d.share_link_id) || 0) + 1);
   }
 
+  const conversionCounts = new Map<string, number>();
+  for (const c of (conversionsRes.data || []) as Array<{ share_link_id: string }>) {
+    conversionCounts.set(c.share_link_id, (conversionCounts.get(c.share_link_id) || 0) + 1);
+  }
+
   const enriched = linksList.map((link) => {
     const acc = accessByLink.get(link.id);
     return {
@@ -67,6 +78,7 @@ export const GET = withAuth(async () => {
       access_count: acc?.total || 0,
       unique_access_count: acc?.ips.size || 0,
       download_count: downloadCounts.get(link.id) || 0,
+      conversion_count: conversionCounts.get(link.id) || 0,
     };
   });
 

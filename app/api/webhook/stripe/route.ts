@@ -145,6 +145,70 @@ async function recordReferralCommission(params: {
   }
 }
 
+// 個別メッセージ(share-link) 経由の購入コンバージョン記録
+// shareSlug: /share/<slug> から sessionStorage 経由で Stripe metadata に載った識別子
+// recurring 時は subscription_id ベースで初回 conversion を引いて再利用するため、
+// shareSlug が空でも sourceId 経由で解決可能。
+async function recordShareLinkConversion(params: {
+  shareSlug?: string;
+  sourceType: 'order' | 'subscription_initial' | 'subscription_recurring';
+  sourceId: string;
+  stripeInvoiceId?: string;
+  planId: string;
+}) {
+  const baseSupabase = getSupabaseClient();
+  if (!baseSupabase) return;
+  const supabase = baseSupabase as any;
+
+  try {
+    let shareLinkId: string | null = null;
+
+    if (params.shareSlug) {
+      const { data: link } = await supabase
+        .from('share_links')
+        .select('id')
+        .eq('slug', params.shareSlug)
+        .maybeSingle();
+      shareLinkId = link?.id || null;
+    }
+
+    // recurring の場合は subscription の初回 conversion から share_link_id を引く
+    if (!shareLinkId && params.sourceType === 'subscription_recurring') {
+      const { data: prev } = await supabase
+        .from('share_link_conversions')
+        .select('share_link_id')
+        .eq('source_id', params.sourceId)
+        .eq('source_type', 'subscription_initial')
+        .maybeSingle();
+      shareLinkId = prev?.share_link_id || null;
+    }
+
+    if (!shareLinkId) return; // share-link 経由じゃない購入は無視
+
+    const { error } = await supabase
+      .from('share_link_conversions')
+      .insert({
+        share_link_id: shareLinkId,
+        source_type: params.sourceType,
+        source_id: params.sourceId,
+        stripe_invoice_id: params.stripeInvoiceId || null,
+        plan_id: params.planId,
+      });
+
+    if (error) {
+      // stripe_invoice_id UNIQUE 違反は重複記録防止のための想定挙動なので無視
+      const code = (error as { code?: string }).code;
+      if (code !== '23505') {
+        console.error('[ShareLinkConversion] Failed to record:', error);
+      }
+    } else {
+      console.log(`[ShareLinkConversion] Recorded ${params.sourceType} for share_link ${shareLinkId} (plan ${params.planId})`);
+    }
+  } catch (error) {
+    console.error('[ShareLinkConversion] Error:', error);
+  }
+}
+
 export async function POST(request: NextRequest) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -375,6 +439,14 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe:
           });
         }
 
+        // share-link(個別メッセージ) 経由のコンバージョン記録
+        await recordShareLinkConversion({
+          shareSlug: session.metadata?.share_slug || undefined,
+          sourceType: 'order',
+          sourceId: session.id,
+          planId: 'trial-6',
+        });
+
       }
     } catch (error) {
       console.error('Error saving order to database:', error);
@@ -498,6 +570,14 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent,
             commissionAmount: INITIAL_COMMISSION[planId as keyof typeof INITIAL_COMMISSION],
           });
         }
+
+        // share-link(個別メッセージ) 経由のコンバージョン記録
+        await recordShareLinkConversion({
+          shareSlug: metadata?.share_slug || undefined,
+          sourceType: 'order',
+          sourceId: paymentIntent.id,
+          planId,
+        });
 
       }
     } catch (error) {
@@ -837,6 +917,15 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
       });
     }
 
+    // share-link(個別メッセージ) 経由のコンバージョン記録（初回）
+    const initialShareSlug = checkoutSession?.metadata?.share_slug || subscription.metadata?.share_slug || undefined;
+    await recordShareLinkConversion({
+      shareSlug: initialShareSlug,
+      sourceType: 'subscription_initial',
+      sourceId: (dbSubscription as any).id,
+      planId,
+    });
+
     // subscription_deliveriesテーブルに初回配送予定を作成
     const deliveries = deliverySchedules.map((schedule) => ({
       subscription_id: (dbSubscription as any).id,
@@ -1001,7 +1090,15 @@ async function handleMonthlySubscriptionPayment(invoice: Stripe.Invoice, stripe:
       });
     }
 
-    // 個別メッセージ(LP)経由の購入トラッキング（継続）
+    // share-link(個別メッセージ) 経由のコンバージョン記録（継続）
+    // shareSlug は subscription metadata に無いので、初回 conversion から引いてくる
+    await recordShareLinkConversion({
+      sourceType: 'subscription_recurring',
+      sourceId: (dbSubscription as any).id,
+      stripeInvoiceId: invoice.id,
+      planId,
+    });
+
     console.log(`Monthly payment processed for subscription: ${(dbSubscription as any).id}`);
 
     // Slack通知（月次更新）
