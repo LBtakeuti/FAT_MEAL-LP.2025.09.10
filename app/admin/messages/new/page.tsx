@@ -1,18 +1,5 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import { IndividualMessageForm } from '@/components/admin/IndividualMessageForm';
-
-export default function NewMessagePage() {
-  return (
-    <IndividualMessageForm
-      mode="create"
-      initial={{
-        slug: '',
-        title: '',
-        body_html: '',
-        images: [],
-        is_active: true,
-      }}
-    />
-  );
+export default function AdminMessagesNewDeprecatedPage() {
+  redirect('/admin/share-links');
 }

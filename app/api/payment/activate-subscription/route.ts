@@ -88,7 +88,6 @@ export async function POST(request: NextRequest) {
         address: meta.address || '',
         preferred_delivery_date: meta.preferred_delivery_date || '',
         referral_code: meta.referral_code || '',
-        promo_slug: meta.promo_slug || '',
         notes: meta.notes || '',
         email: meta.email || '',
       },

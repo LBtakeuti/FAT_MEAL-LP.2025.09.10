@@ -56,7 +56,6 @@ interface CreateIntentRequest {
     referralCode?: string;
     notes?: string;
   };
-  promoSlug?: string;
   couponCode?: string;
   survey?: {
     q1_answers: string[];
@@ -96,7 +95,6 @@ export async function POST(request: NextRequest) {
       address: fullAddress,
       coupon_code: couponCode || '',
       referral_code: customerInfo.referralCode || '',
-      promo_slug: body.promoSlug || '',
       notes: customerInfo.notes || '',
       preferred_delivery_date: customerInfo.preferredDeliveryDate || '',
     };

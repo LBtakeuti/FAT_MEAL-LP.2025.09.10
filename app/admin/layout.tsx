@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
+import { ToastProvider } from '@/components/admin/ui';
 
 // --- Inline SVG Icons (20x20, no external dependency) ---
 function IconDashboard() {
@@ -49,6 +50,17 @@ function IconDelivery() {
       <path d="M12,9 h4 l3,4 v1 h-7" />
       <circle cx="5" cy="16" r="2" />
       <circle cx="15" cy="16" r="2" />
+    </svg>
+  );
+}
+function IconCalendar() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="4" width="16" height="14" rx="2" />
+      <line x1="2" y1="8" x2="18" y2="8" />
+      <line x1="6" y1="2" x2="6" y2="6" />
+      <line x1="14" y1="2" x2="14" y2="6" />
+      <rect x="5" y="11" width="3" height="3" />
     </svg>
   );
 }
@@ -169,6 +181,17 @@ function IconMessage() {
     </svg>
   );
 }
+function IconShare() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="5" cy="10" r="2.5" />
+      <circle cx="15" cy="5" r="2.5" />
+      <circle cx="15" cy="15" r="2.5" />
+      <line x1="7" y1="9" x2="13" y2="6" />
+      <line x1="7" y1="11" x2="13" y2="14" />
+    </svg>
+  );
+}
 function IconLogout() {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -217,6 +240,7 @@ const menuGroups: MenuGroup[] = [
     items: [
       { href: '/admin/analytics', label: 'アナリティクス', icon: IconAnalytics },
       { href: '/admin/delivery', label: '配送管理', icon: IconDelivery },
+      { href: '/admin/calendar', label: 'カレンダー', icon: IconCalendar },
       { href: '/admin/inventory', label: '在庫管理', icon: IconInventory },
     ],
   },
@@ -254,7 +278,7 @@ const menuGroups: MenuGroup[] = [
     label: 'コミュニケーション',
     items: [
       { href: '/admin/contacts', label: 'お問い合わせ管理', icon: IconContact },
-      { href: '/admin/promoter-pages', label: '個別メッセージ', icon: IconMessage },
+      { href: '/admin/share-links', label: '個別メッセージ', icon: IconShare },
       { href: '/admin/surveys', label: 'アンケート集計', icon: IconSurvey },
     ],
   },
@@ -283,6 +307,19 @@ export default function AdminLayout({
   };
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(getInitialOpenGroups);
+  const [todayDeliveryCount, setTodayDeliveryCount] = useState<number>(0);
+
+  // 本日件数を1回だけ取得（軽量・サイドバー全体に共有）
+  useEffect(() => {
+    if (pathname === '/admin/login') return;
+    const todayJST = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    fetch(`/api/admin/delivery?from=${todayJST}&to=${todayJST}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        if (d && Array.isArray(d.items)) setTodayDeliveryCount(d.items.length);
+      })
+      .catch(() => {});
+  }, [pathname]);
 
   // ページ遷移時に該当グループを自動展開
   useEffect(() => {
@@ -354,6 +391,7 @@ export default function AdminLayout({
                 group.items.map((item) => {
                   const active = isActive(item);
                   const Icon = item.icon;
+                  const showTodayBadge = item.href === '/admin/delivery' && todayDeliveryCount > 0;
                   return (
                     <Link
                       key={item.href}
@@ -368,10 +406,24 @@ export default function AdminLayout({
                       {active && (
                         <span className="absolute left-0 top-0 bottom-0 w-1 bg-orange-400 rounded-l" />
                       )}
-                      <span className="flex-shrink-0">
+                      <span className="flex-shrink-0 relative">
                         <Icon />
+                        {!isSidebarOpen && showTodayBadge && (
+                          <span className="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold bg-red-500 text-white">
+                            {todayDeliveryCount}
+                          </span>
+                        )}
                       </span>
-                      {isSidebarOpen && <span>{item.label}</span>}
+                      {isSidebarOpen && (
+                        <span className="flex-1 flex items-center justify-between">
+                          <span>{item.label}</span>
+                          {showTodayBadge && (
+                            <span className="ml-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs font-bold bg-red-500 text-white">
+                              本日 {todayDeliveryCount}
+                            </span>
+                          )}
+                        </span>
+                      )}
                     </Link>
                   );
                 })}
@@ -404,7 +456,9 @@ export default function AdminLayout({
           isSidebarOpen ? 'ml-64' : 'ml-16'
         }`}
       >
-        <div className="p-8">{children}</div>
+        <div className="p-8">
+          <ToastProvider>{children}</ToastProvider>
+        </div>
       </main>
     </div>
   );

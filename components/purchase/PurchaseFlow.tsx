@@ -321,18 +321,6 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  // 個別メッセージ(LP)経由の attribution: ?promo=<slug> を sessionStorage に保持し、
-  // 決済時に Stripe metadata へ伝搬する
-  const [promoSlug, setPromoSlug] = useState<string>('');
-  useEffect(() => {
-    const promoParam = searchParams.get('promo');
-    if (promoParam) {
-      sessionStorage.setItem('promo_slug', promoParam);
-    }
-    const stored = sessionStorage.getItem('promo_slug');
-    if (stored) setPromoSlug(stored);
-  }, [searchParams]);
-
   // シートからの遷移: ?step=info なら info ステップへ自動進行（プラン選択済みのとき）
   useEffect(() => {
     const stepParam = searchParams.get('step');
@@ -859,7 +847,6 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
               referralCode: customerInfo.referralCode || undefined,
               notes: customerInfo.notes || undefined,
             },
-            promoSlug: promoSlug || undefined,
             couponCode: appliedCoupon?.code,
             survey: {
               q1_answers: surveyQ1,

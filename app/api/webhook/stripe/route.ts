@@ -145,79 +145,6 @@ async function recordReferralCommission(params: {
   }
 }
 
-// 個別メッセージ（promoter_pages）経由の購入コンバージョン記録
-// promoSlug: /p/<slug> から付いてくる識別子（無い時は何もしない）
-// recurring 時は subscription_id ベースで初回コンバージョンから promoter_page_id を引いて再利用するため
-// promoSlug が無くても sourceId 経由で解決可能。
-async function recordPromoterPageConversion(params: {
-  promoSlug?: string;
-  sourceType: 'order' | 'subscription_initial' | 'subscription_recurring';
-  sourceId: string;
-  stripeInvoiceId?: string;
-  planId: string;
-  amount: number;
-  customerEmail?: string;
-  customerName?: string;
-}) {
-  const baseSupabase = getSupabaseClient();
-  if (!baseSupabase) return;
-  const supabase = baseSupabase as any;
-
-  try {
-    let promoterPageId: string | null = null;
-
-    if (params.promoSlug) {
-      const { data: page } = await supabase
-        .from('promoter_pages')
-        .select('id')
-        .eq('slug', params.promoSlug)
-        .maybeSingle();
-      promoterPageId = page?.id || null;
-    }
-
-    // recurring の場合は同じ subscription の初回コンバージョンから promoter_page_id を引く
-    if (!promoterPageId && params.sourceType === 'subscription_recurring') {
-      const { data: prev } = await supabase
-        .from('promoter_page_conversions')
-        .select('promoter_page_id')
-        .eq('source_id', params.sourceId)
-        .eq('source_type', 'subscription_initial')
-        .maybeSingle();
-      promoterPageId = prev?.promoter_page_id || null;
-    }
-
-    if (!promoterPageId) {
-      // 紐付け不能（個別メッセージ経由ではない購入）
-      return;
-    }
-
-    const { error } = await supabase
-      .from('promoter_page_conversions')
-      .insert({
-        promoter_page_id: promoterPageId,
-        source_type: params.sourceType,
-        source_id: params.sourceId,
-        stripe_invoice_id: params.stripeInvoiceId || null,
-        plan_id: params.planId,
-        amount: params.amount,
-        customer_email: params.customerEmail || null,
-        customer_name: params.customerName || null,
-      });
-
-    if (error) {
-      // stripe_invoice_id UNIQUE 違反は無視（重複記録防止のための想定挙動）
-      const code = (error as { code?: string }).code;
-      if (code !== '23505') {
-        console.error('[PromoterConversion] Failed to record:', error);
-      }
-    } else {
-      console.log(`[PromoterConversion] Recorded ${params.sourceType} ¥${params.amount} for page ${promoterPageId}`);
-    }
-  } catch (error) {
-    console.error('[PromoterConversion] Error:', error);
-  }
-}
-
 export async function POST(request: NextRequest) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -448,16 +375,6 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe:
           });
         }
 
-        // 個別メッセージ(LP)経由の購入トラッキング
-        await recordPromoterPageConversion({
-          promoSlug: session.metadata?.promo_slug || undefined,
-          sourceType: 'order',
-          sourceId: session.id,
-          planId: 'trial-6',
-          amount: amountTotal || 0,
-          customerEmail,
-          customerName: customerName || undefined,
-        });
       }
     } catch (error) {
       console.error('Error saving order to database:', error);
@@ -582,16 +499,6 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent,
           });
         }
 
-        // 個別メッセージ(LP)経由の購入トラッキング
-        await recordPromoterPageConversion({
-          promoSlug: metadata?.promo_slug || undefined,
-          sourceType: 'order',
-          sourceId: paymentIntent.id,
-          planId,
-          amount,
-          customerEmail,
-          customerName,
-        });
       }
     } catch (error) {
       console.error('[PaymentIntent] Error saving order:', error);
@@ -930,18 +837,6 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
       });
     }
 
-    // 個別メッセージ(LP)経由の購入トラッキング（初回）
-    const initialPromoSlug = checkoutSession?.metadata?.promo_slug || subscription.metadata?.promo_slug || undefined;
-    await recordPromoterPageConversion({
-      promoSlug: initialPromoSlug,
-      sourceType: 'subscription_initial',
-      sourceId: (dbSubscription as any).id,
-      planId,
-      amount: planConfig.monthly_total,
-      customerEmail: customerEmail || undefined,
-      customerName,
-    });
-
     // subscription_deliveriesテーブルに初回配送予定を作成
     const deliveries = deliverySchedules.map((schedule) => ({
       subscription_id: (dbSubscription as any).id,
@@ -1107,17 +1002,6 @@ async function handleMonthlySubscriptionPayment(invoice: Stripe.Invoice, stripe:
     }
 
     // 個別メッセージ(LP)経由の購入トラッキング（継続）
-    // 初回コンバージョンから promoter_page_id を引いて記録（subscription metadata には promo_slug が無いため）
-    await recordPromoterPageConversion({
-      sourceType: 'subscription_recurring',
-      sourceId: (dbSubscription as any).id,
-      stripeInvoiceId: invoice.id,
-      planId,
-      amount: invoice.amount_paid || (dbSubscription as any).monthly_total_amount || 0,
-      customerEmail: (dbSubscription as any).shipping_address?.email,
-      customerName: (dbSubscription as any).shipping_address?.name,
-    });
-
     console.log(`Monthly payment processed for subscription: ${(dbSubscription as any).id}`);
 
     // Slack通知（月次更新）
