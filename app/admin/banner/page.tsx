@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useToast } from '@/components/admin/ui';
 
 interface BannerSettings {
   is_active: boolean;
@@ -12,6 +13,7 @@ interface BannerSettings {
 type TabType = 'pc' | 'mobile';
 
 export default function BannerManagementPage() {
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState<TabType>('pc');
   const [pcSettings, setPcSettings] = useState<BannerSettings | null>(null);
   const [mobileSettings, setMobileSettings] = useState<BannerSettings | null>(null);
@@ -103,11 +105,11 @@ export default function BannerManagementPage() {
         const data = await res.json();
         setCurrentSettings(prev => prev ? { ...prev, image_url: data.url } : null);
       } else {
-        alert('画像のアップロードに失敗しました');
+        toast.error('画像のアップロードに失敗しました');
       }
     } catch (error) {
       console.error('Upload error:', error);
-      alert('エラーが発生しました');
+      toast.error('エラーが発生しました');
     } finally {
       setUploading(false);
     }
@@ -124,7 +126,7 @@ export default function BannerManagementPage() {
       if (file.type.startsWith('image/')) {
         handleFileUpload(file);
       } else {
-        alert('画像ファイルを選択してください');
+        toast.error('画像ファイルを選択してください');
       }
     }
   };
@@ -147,7 +149,7 @@ export default function BannerManagementPage() {
       if (file.type.startsWith('image/')) {
         handleFileUpload(file);
       } else {
-        alert('画像ファイルを選択してください');
+        toast.error('画像ファイルを選択してください');
       }
     }
   };

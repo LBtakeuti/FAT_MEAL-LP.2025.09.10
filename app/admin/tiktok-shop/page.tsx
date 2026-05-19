@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { ConfirmDialog, useToast } from '@/components/admin/ui';
 
 interface TikTokOrder {
   id: string;
@@ -25,6 +26,9 @@ interface TikTokOrder {
 }
 
 export default function AdminTikTokShopPage() {
+  const toast = useToast();
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [orders, setOrders] = useState<TikTokOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -52,14 +56,14 @@ export default function AdminTikTokShopPage() {
       const res = await fetch('/api/admin/tiktok-shop/import', { method: 'POST', body: fd });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.message || '取込に失敗しました');
+        toast.error(data.message || '取込に失敗しました');
         return;
       }
       setUploadResult(data);
       fetchOrders();
     } catch (e) {
       console.error(e);
-      alert('取込エラー');
+      toast.error('取込エラー');
     } finally {
       setUploading(false);
     }
@@ -79,19 +83,34 @@ export default function AdminTikTokShopPage() {
         setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
       } else {
         const data = await res.json();
-        alert(data.message || 'ステータス更新に失敗しました');
+        toast.error(data.message || 'ステータス更新に失敗しました');
       }
     } catch {
-      alert('ステータス更新に失敗しました');
+      toast.error('ステータス更新に失敗しました');
     } finally {
       setUpdatingId(null);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('この注文を削除しますか？')) return;
-    await fetch(`/api/admin/tiktok-shop/${id}`, { method: 'DELETE' });
-    fetchOrders();
+  const handleDelete = (id: string) => setDeleteId(id);
+
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    setDeleteLoading(true);
+    try {
+      const res = await fetch(`/api/admin/tiktok-shop/${deleteId}`, { method: 'DELETE' });
+      if (res.ok) {
+        toast.success('削除しました');
+        fetchOrders();
+      } else {
+        toast.error('削除に失敗しました');
+      }
+    } catch {
+      toast.error('削除に失敗しました');
+    } finally {
+      setDeleteLoading(false);
+      setDeleteId(null);
+    }
   };
 
   const formatAddress = (o: TikTokOrder) =>
@@ -206,6 +225,17 @@ export default function AdminTikTokShopPage() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!deleteId}
+        title="この注文を削除しますか？"
+        description="この操作は取り消せません。"
+        confirmLabel="削除する"
+        variant="danger"
+        loading={deleteLoading}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteId(null)}
+      />
     </div>
   );
 }

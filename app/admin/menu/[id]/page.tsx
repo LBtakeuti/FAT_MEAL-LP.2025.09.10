@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, use } from 'react';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/admin/ui';
 import Image from 'next/image';
 
 interface MenuItem {
@@ -22,6 +23,7 @@ interface MenuItem {
 }
 
 export default function EditMenuPage({ params: promiseParams }: { params: Promise<{ id: string }> }) {
+  const toast = useToast();
   const params = use(promiseParams);
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -76,7 +78,7 @@ export default function EditMenuPage({ params: promiseParams }: { params: Promis
         setIngredientsText((data.ingredients || []).join('、'));
         setAllergensText((data.allergens || []).join('、'));
       } else {
-        alert('メニューの取得に失敗しました');
+        toast.error('メニューの取得に失敗しました');
         router.push('/admin/menu');
       }
     } catch (error) {
@@ -111,11 +113,11 @@ export default function EditMenuPage({ params: promiseParams }: { params: Promis
         router.push('/admin/menu');
       } else {
         const error = await response.json();
-        alert(`更新に失敗しました: ${error.message}`);
+        toast.error(`更新に失敗しました: ${error.message}`);
       }
     } catch (error) {
       console.error('Failed to update menu:', error);
-      alert('エラーが発生しました');
+      toast.error('エラーが発生しました');
     } finally {
       setSubmitting(false);
     }
@@ -186,11 +188,11 @@ export default function EditMenuPage({ params: promiseParams }: { params: Promis
           setFormData(prev => ({ ...prev, main_image: data.url }));
         }
       } else {
-        alert('画像のアップロードに失敗しました');
+        toast.error('画像のアップロードに失敗しました');
       }
     } catch (error) {
       console.error('Upload error:', error);
-      alert('エラーが発生しました');
+      toast.error('エラーが発生しました');
     } finally {
       if (isSubImage && subIndex !== undefined) {
         setUploadingSub(null);
@@ -233,7 +235,7 @@ export default function EditMenuPage({ params: promiseParams }: { params: Promis
       if (file.type.startsWith('image/')) {
         handleFileUpload(file, isSubImage, subIndex);
       } else {
-        alert('画像ファイルを選択してください');
+        toast.error('画像ファイルを選択してください');
       }
     }
   };

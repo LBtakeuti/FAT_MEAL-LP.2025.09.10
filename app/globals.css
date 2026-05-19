@@ -851,7 +851,7 @@ button:hover {
 /* ===== メニュー紹介セクション ===== */
 .menu-section {
   background: #ffffff;
-  padding: 64px 48px;
+  padding: 0;
   font-family: var(--font-noto-sans-jp), 'Noto Sans JP', sans-serif;
 }
 
@@ -899,7 +899,7 @@ button:hover {
 
 @media (max-width: 768px) {
   .menu-section {
-    padding: 0 20px 8px;
+    padding: 0;
   }
 
   .menu-title {

@@ -2,8 +2,10 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/admin/ui';
 
 export default function NewFeedbackPage() {
+  const toast = useToast();
   const router = useRouter();
   const [formData, setFormData] = useState({
     thumbnail_image: '',
@@ -47,11 +49,11 @@ export default function NewFeedbackPage() {
         const { url } = await response.json();
         setFormData((prev) => ({ ...prev, [field]: url }));
       } else {
-        alert('画像のアップロードに失敗しました');
+        toast.error('画像のアップロードに失敗しました');
       }
     } catch (error) {
       console.error('Upload error:', error);
-      alert('画像のアップロードに失敗しました');
+      toast.error('画像のアップロードに失敗しました');
     } finally {
       setUploading(false);
     }
@@ -72,11 +74,11 @@ export default function NewFeedbackPage() {
         router.push('/admin/feedbacks');
       } else {
         const data = await response.json();
-        alert(data.message || '作成に失敗しました');
+        toast.error(data.message || '作成に失敗しました');
       }
     } catch (error) {
       console.error('Failed to create feedback:', error);
-      alert('エラーが発生しました');
+      toast.error('エラーが発生しました');
     } finally {
       setSubmitting(false);
     }

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { ConfirmDialog, useToast } from '@/components/admin/ui';
 
 interface PurchaseSurvey {
   q1_answers: string[];
@@ -119,6 +120,7 @@ const getJSTToday = () => {
 };
 
 export default function AdminOrdersPage() {
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState<'one-time' | 'subscription'>('one-time');
 
   // 買い切り
@@ -198,11 +200,11 @@ export default function AdminOrdersPage() {
           order.id === orderId ? { ...order, status: newStatus } : order
         ));
       } else {
-        alert('ステータスの更新に失敗しました');
+        toast.error('ステータスの更新に失敗しました');
       }
     } catch (error) {
       console.error('Failed to update status:', error);
-      alert('ステータスの更新に失敗しました');
+      toast.error('ステータスの更新に失敗しました');
     } finally {
       setUpdatingId(null);
     }
@@ -216,10 +218,10 @@ export default function AdminOrdersPage() {
         setCancelConfirmSubId(null);
         await fetchSubscriptions();
       } else {
-        alert('解約処理に失敗しました');
+        toast.error('解約処理に失敗しました');
       }
     } catch {
-      alert('解約処理に失敗しました');
+      toast.error('解約処理に失敗しました');
     } finally {
       setCancellingSubId(null);
     }
@@ -234,11 +236,11 @@ export default function AdminOrdersPage() {
         setExpandedOrderId(null);
         await fetchOrders();
       } else {
-        alert('注文の削除に失敗しました');
+        toast.error('注文の削除に失敗しました');
       }
     } catch (error) {
       console.error('Failed to delete order:', error);
-      alert('注文の削除に失敗しました');
+      toast.error('注文の削除に失敗しました');
     } finally {
       setDeletingId(null);
     }

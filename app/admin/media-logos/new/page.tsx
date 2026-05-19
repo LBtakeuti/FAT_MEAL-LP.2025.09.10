@@ -2,8 +2,10 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/admin/ui';
 
 export default function NewMediaLogoPage() {
+  const toast = useToast();
   const router = useRouter();
   const [formData, setFormData] = useState({
     name: '',
@@ -29,11 +31,11 @@ export default function NewMediaLogoPage() {
         const { url } = await response.json();
         setFormData((prev) => ({ ...prev, image_url: url }));
       } else {
-        alert('画像のアップロードに失敗しました');
+        toast.error('画像のアップロードに失敗しました');
       }
     } catch (error) {
       console.error('Upload error:', error);
-      alert('画像のアップロードに失敗しました');
+      toast.error('画像のアップロードに失敗しました');
     } finally {
       setUploading(false);
     }
@@ -52,11 +54,11 @@ export default function NewMediaLogoPage() {
         router.push('/admin/media-logos');
       } else {
         const data = await response.json();
-        alert(data.message || '作成に失敗しました');
+        toast.error(data.message || '作成に失敗しました');
       }
     } catch (error) {
       console.error('Failed to create:', error);
-      alert('エラーが発生しました');
+      toast.error('エラーが発生しました');
     } finally {
       setSubmitting(false);
     }

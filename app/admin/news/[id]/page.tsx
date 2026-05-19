@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect, useCallback, use } from 'react';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/admin/ui';
 
 export default function EditNewsPage({ params: promiseParams }: { params: Promise<{ id: string }> }) {
+  const toast = useToast();
   const params = use(promiseParams);
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -36,7 +38,7 @@ export default function EditNewsPage({ params: promiseParams }: { params: Promis
           image: data.image || '',
         });
       } else {
-        alert('ニュースの取得に失敗しました');
+        toast.error('ニュースの取得に失敗しました');
         router.push('/admin/news');
       }
     } catch (error) {
@@ -57,7 +59,7 @@ export default function EditNewsPage({ params: promiseParams }: { params: Promis
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > MAX_IMAGE_SIZE) {
-      alert(`画像サイズが大きすぎます。4MB以下のファイルを選択してください（現在: ${(file.size / 1024 / 1024).toFixed(1)}MB）`);
+      toast.error(`画像サイズが大きすぎます。4MB以下のファイルを選択してください（現在: ${(file.size / 1024 / 1024).toFixed(1)}MB）`);
       e.target.value = '';
       return;
     }
@@ -88,7 +90,7 @@ export default function EditNewsPage({ params: promiseParams }: { params: Promis
         let message = text;
         try { message = JSON.parse(text)?.message ?? text; } catch { /* plain text */ }
         if (response.status === 413) {
-          alert('画像サイズが大きすぎます。4MB以下の画像を使用してください。');
+          toast.error('画像サイズが大きすぎます。4MB以下の画像を使用してください。');
         } else {
           console.error('アップロードエラー:', message);
         }
@@ -112,7 +114,7 @@ export default function EditNewsPage({ params: promiseParams }: { params: Promis
       if (imageFile) {
         const uploadedUrl = await uploadImageToStorage(imageFile);
         if (!uploadedUrl) {
-          alert('画像のアップロードに失敗しました');
+          toast.error('画像のアップロードに失敗しました');
           setSubmitting(false);
           return;
         }
@@ -130,11 +132,11 @@ export default function EditNewsPage({ params: promiseParams }: { params: Promis
       if (response.ok) {
         router.push('/admin/news');
       } else {
-        alert('更新に失敗しました');
+        toast.error('更新に失敗しました');
       }
     } catch (error) {
       console.error('Failed to update news:', error);
-      alert('エラーが発生しました');
+      toast.error('エラーが発生しました');
     } finally {
       setSubmitting(false);
     }

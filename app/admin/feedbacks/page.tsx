@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { ConfirmDialog, LoadingSpinner, useToast } from '@/components/admin/ui';
 
 interface FeedbackItem {
   id: string;
@@ -19,6 +20,9 @@ interface FeedbackItem {
 export default function AdminFeedbacksPage() {
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     fetchFeedbacks();
@@ -38,19 +42,25 @@ export default function AdminFeedbacksPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('このフィードバックを削除してもよろしいですか？')) return;
+  const handleDelete = (id: string) => setDeleteId(id);
 
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    setDeleteLoading(true);
     try {
-      const response = await fetch(`/api/admin/feedbacks/${id}`, {
-        method: 'DELETE',
-      });
-
+      const response = await fetch(`/api/admin/feedbacks/${deleteId}`, { method: 'DELETE' });
       if (response.ok) {
+        toast.success('削除しました');
         fetchFeedbacks();
+      } else {
+        toast.error('削除に失敗しました');
       }
     } catch (error) {
       console.error('Failed to delete feedback:', error);
+      toast.error('削除に失敗しました');
+    } finally {
+      setDeleteLoading(false);
+      setDeleteId(null);
     }
   };
 
@@ -74,14 +84,7 @@ export default function AdminFeedbacksPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">読み込み中...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (
@@ -178,6 +181,17 @@ export default function AdminFeedbacksPage() {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={!!deleteId}
+        title="フィードバックを削除しますか？"
+        description="この操作は取り消せません。"
+        confirmLabel="削除する"
+        variant="danger"
+        loading={deleteLoading}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteId(null)}
+      />
     </div>
   );
 }

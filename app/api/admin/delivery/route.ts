@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 import { withAuth, jsonSuccess, jsonBadRequest, jsonError } from '@/lib/api-helpers';
+import { predictDeliveries } from '@/lib/delivery-prediction';
 
 export type DeliveryItem = {
   id: string;
@@ -32,6 +33,7 @@ export async function GET(request: NextRequest) {
     const to = searchParams.get('to');
     const statusFilter = searchParams.get('status');
     const sourceFilter = searchParams.get('source');
+    const includePredictions = searchParams.get('include_predictions') === 'true';
 
     const items: DeliveryItem[] = [];
 
@@ -221,6 +223,58 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // 未来配送予測（オプション）
+    if (includePredictions && from && to && (!sourceFilter || sourceFilter === 'subscription')) {
+      try {
+        const sb = supabase as any;
+        const { data: activeSubs } = await sb
+          .from('subscriptions')
+          .select('id, stripe_subscription_id, plan_id, plan_name, current_period_end, shipping_address')
+          .eq('status', 'active');
+
+        // 既存の subscription_deliveries の日付を subscription_id ごとに集約
+        const subIds = (activeSubs || []).map((s: { id: string }) => s.id);
+        const existingByPid = new Map<string, Set<string>>();
+        if (subIds.length > 0) {
+          const { data: existingDeliveries } = await sb
+            .from('subscription_deliveries')
+            .select('subscription_id, scheduled_date')
+            .in('subscription_id', subIds);
+          for (const d of existingDeliveries || []) {
+            const key = d.subscription_id as string;
+            if (!existingByPid.has(key)) existingByPid.set(key, new Set());
+            existingByPid.get(key)!.add(d.scheduled_date as string);
+          }
+        }
+
+        const predicted = predictDeliveries(activeSubs || [], existingByPid, from, to);
+        // 既存 items に追加（予測フラグを判別できるように id を prefix）
+        for (const p of predicted) {
+          items.push({
+            id: `predicted:${p.subscription_id}:${p.date}`,
+            source: 'subscription',
+            date: p.date,
+            customer_name: p.customer_name,
+            customer_email: p.customer_email,
+            phone: p.phone,
+            postal_code: p.postal_code,
+            prefecture: p.prefecture,
+            city: p.city,
+            address_detail: p.address_detail,
+            building: p.building,
+            plan_name: p.plan_name,
+            menu_set: p.menu_set,
+            meals_per_delivery: p.meals_per_delivery,
+            quantity: p.quantity,
+            status: 'predicted',
+            subscription_id: p.subscription_id,
+          });
+        }
+      } catch (e) {
+        console.error('Prediction failed:', e);
+      }
+    }
+
     // date 昇順でソート
     items.sort((a, b) => a.date.localeCompare(b.date));
 
@@ -230,7 +284,53 @@ export async function GET(request: NextRequest) {
       (item) => item.date <= todayJST && item.status !== 'shipped'
     ).length;
 
-    return NextResponse.json({ items, overdueCount });
+    // 在庫健康度サマリ（今後30日の必要セット数 vs 物理在庫）
+    let stockSummary: {
+      currentSets: number;
+      itemsPerSet: number;
+      requiredSets30d: number;
+      requiredMeals30d: number;
+      level: 'ok' | 'warn' | 'danger';
+    } | null = null;
+    try {
+      const sb = supabase as any;
+      const { data: stockRow } = await sb
+        .from('inventory_settings')
+        .select('stock_sets, items_per_set')
+        .eq('set_type', '6-set')
+        .maybeSingle();
+      const currentSets = stockRow?.stock_sets ?? 0;
+      const itemsPerSet = stockRow?.items_per_set ?? 6;
+
+      const horizon = new Date(Date.now() + 9 * 60 * 60 * 1000);
+      horizon.setDate(horizon.getDate() + 30);
+      const horizonStr = horizon.toISOString().slice(0, 10);
+
+      // 今後30日の未発送 subscription_deliveries の必要食数
+      const { data: future } = await sb
+        .from('subscription_deliveries')
+        .select('meals_per_delivery, quantity')
+        .gte('scheduled_date', todayJST)
+        .lte('scheduled_date', horizonStr)
+        .neq('status', 'shipped');
+
+      const requiredMeals30d = (future || []).reduce(
+        (sum: number, d: { meals_per_delivery?: number; quantity?: number }) =>
+          sum + (d.meals_per_delivery || 12) * (d.quantity || 1),
+        0,
+      );
+      const requiredSets30d = Math.ceil(requiredMeals30d / itemsPerSet);
+
+      let level: 'ok' | 'warn' | 'danger' = 'ok';
+      if (currentSets < requiredSets30d) level = 'danger';
+      else if (currentSets < requiredSets30d * 1.5) level = 'warn';
+
+      stockSummary = { currentSets, itemsPerSet, requiredSets30d, requiredMeals30d, level };
+    } catch (e) {
+      console.error('Failed to compute stockSummary:', e);
+    }
+
+    return NextResponse.json({ items, overdueCount, stockSummary });
   } catch (error) {
     console.error('Delivery API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

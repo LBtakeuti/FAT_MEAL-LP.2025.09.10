@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { ConfirmDialog, LoadingSpinner, useToast } from '@/components/admin/ui';
 
 interface MediaLogo {
   id: string;
@@ -15,6 +16,9 @@ interface MediaLogo {
 export default function AdminMediaLogosPage() {
   const [logos, setLogos] = useState<MediaLogo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     fetchLogos();
@@ -34,13 +38,25 @@ export default function AdminMediaLogosPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('このメディアロゴを削除してもよろしいですか？')) return;
+  const handleDelete = (id: string) => setDeleteId(id);
+
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    setDeleteLoading(true);
     try {
-      const response = await fetch(`/api/admin/media-logos/${id}`, { method: 'DELETE' });
-      if (response.ok) fetchLogos();
+      const response = await fetch(`/api/admin/media-logos/${deleteId}`, { method: 'DELETE' });
+      if (response.ok) {
+        toast.success('削除しました');
+        fetchLogos();
+      } else {
+        toast.error('削除に失敗しました');
+      }
     } catch (error) {
       console.error('Failed to delete:', error);
+      toast.error('削除に失敗しました');
+    } finally {
+      setDeleteLoading(false);
+      setDeleteId(null);
     }
   };
 
@@ -58,14 +74,7 @@ export default function AdminMediaLogosPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">読み込み中...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (
@@ -142,6 +151,17 @@ export default function AdminMediaLogosPage() {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={!!deleteId}
+        title="メディアロゴを削除しますか？"
+        description="この操作は取り消せません。"
+        confirmLabel="削除する"
+        variant="danger"
+        loading={deleteLoading}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteId(null)}
+      />
     </div>
   );
 }

@@ -2,8 +2,10 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/admin/ui';
 
 export default function NewNewsPage() {
+  const toast = useToast();
   const router = useRouter();
   const [formData, setFormData] = useState({
     title: '',
@@ -25,7 +27,7 @@ export default function NewNewsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > MAX_IMAGE_SIZE) {
-      alert(`画像サイズが大きすぎます。4MB以下のファイルを選択してください（現在: ${(file.size / 1024 / 1024).toFixed(1)}MB）`);
+      toast.error(`画像サイズが大きすぎます。4MB以下のファイルを選択してください（現在: ${(file.size / 1024 / 1024).toFixed(1)}MB）`);
       e.target.value = '';
       return;
     }
@@ -56,7 +58,7 @@ export default function NewNewsPage() {
         let message = text;
         try { message = JSON.parse(text)?.message ?? text; } catch { /* plain text */ }
         if (response.status === 413) {
-          alert('画像サイズが大きすぎます。4MB以下の画像を使用してください。');
+          toast.error('画像サイズが大きすぎます。4MB以下の画像を使用してください。');
         } else {
           console.error('アップロードエラー:', message);
         }
@@ -80,7 +82,7 @@ export default function NewNewsPage() {
       if (imageFile) {
         const uploadedUrl = await uploadImageToStorage(imageFile);
         if (!uploadedUrl) {
-          alert('画像のアップロードに失敗しました');
+          toast.error('画像のアップロードに失敗しました');
           setSubmitting(false);
           return;
         }
@@ -98,11 +100,11 @@ export default function NewNewsPage() {
       if (response.ok) {
         router.push('/admin/news');
       } else {
-        alert('作成に失敗しました');
+        toast.error('作成に失敗しました');
       }
     } catch (error) {
       console.error('Failed to create news:', error);
-      alert('エラーが発生しました');
+      toast.error('エラーが発生しました');
     } finally {
       setSubmitting(false);
     }

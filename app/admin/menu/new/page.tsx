@@ -2,9 +2,11 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/admin/ui';
 import Image from 'next/image';
 
 export default function NewMenuPage() {
+  const toast = useToast();
   const router = useRouter();
   const [formData, setFormData] = useState({
     name: '',
@@ -49,11 +51,11 @@ export default function NewMenuPage() {
         router.push('/admin/menu');
       } else {
         const error = await response.json();
-        alert(`作成に失敗しました: ${error.message}`);
+        toast.error(`作成に失敗しました: ${error.message}`);
       }
     } catch (error) {
       console.error('Failed to create menu:', error);
-      alert('エラーが発生しました');
+      toast.error('エラーが発生しました');
     } finally {
       setSubmitting(false);
     }
@@ -124,11 +126,11 @@ export default function NewMenuPage() {
           setFormData(prev => ({ ...prev, main_image: data.url }));
         }
       } else {
-        alert('画像のアップロードに失敗しました');
+        toast.error('画像のアップロードに失敗しました');
       }
     } catch (error) {
       console.error('Upload error:', error);
-      alert('エラーが発生しました');
+      toast.error('エラーが発生しました');
     } finally {
       if (isSubImage && subIndex !== undefined) {
         setUploadingSub(null);
@@ -171,7 +173,7 @@ export default function NewMenuPage() {
       if (file.type.startsWith('image/')) {
         handleFileUpload(file, isSubImage, subIndex);
       } else {
-        alert('画像ファイルを選択してください');
+        toast.error('画像ファイルを選択してください');
       }
     }
   };

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { REVIEW_ICON_PRESETS, presetToUrl, type ReviewIconPreset, type ReviewItemAdmin } from '@/types/review';
+import { ConfirmDialog, useToast } from '@/components/admin/ui';
 
 const PRESET_LABEL: Record<ReviewIconPreset, string> = {
   woman_1blue: '女性 1（ブルー）',
@@ -41,6 +42,7 @@ const EMPTY_FORM: FormState = {
 };
 
 export default function AdminReviewsPage() {
+  const toast = useToast();
   const [reviews, setReviews] = useState<ReviewItemAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -48,6 +50,8 @@ export default function AdminReviewsPage() {
   const [saving, setSaving] = useState(false);
   const [uploadingIcon, setUploadingIcon] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ReviewItemAdmin | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const fetchReviews = useCallback(async () => {
     setLoading(true);
@@ -104,14 +108,14 @@ export default function AdminReviewsPage() {
       const res = await fetch('/api/admin/upload', { method: 'POST', body: formData });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        alert(err.message || 'アップロードに失敗しました');
+        toast.error(err.message || 'アップロードに失敗しました');
         return;
       }
       const data = await res.json();
       setForm((prev) => ({ ...prev, icon_url: data.url, iconMode: 'upload' }));
     } catch (err) {
       console.error('Upload error:', err);
-      alert('アップロードに失敗しました');
+      toast.error('アップロードに失敗しました');
     } finally {
       setUploadingIcon(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -120,11 +124,11 @@ export default function AdminReviewsPage() {
 
   const handleSave = async () => {
     if (!form.name.trim() || !form.comment.trim()) {
-      alert('名前とコメントは必須です');
+      toast.error('名前とコメントは必須です');
       return;
     }
     if (form.iconMode === 'upload' && !form.icon_url) {
-      alert('画像をアップロードしてください');
+      toast.error('画像をアップロードしてください');
       return;
     }
 
@@ -150,7 +154,7 @@ export default function AdminReviewsPage() {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        alert(err.message || '保存に失敗しました');
+        toast.error(err.message || '保存に失敗しました');
         return;
       }
 
@@ -158,19 +162,30 @@ export default function AdminReviewsPage() {
       setModalOpen(false);
     } catch (err) {
       console.error('Save error:', err);
-      alert('保存に失敗しました');
+      toast.error('保存に失敗しました');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (item: ReviewItemAdmin) => {
-    if (!confirm(`「${item.name}」のレビューを削除しますか？`)) return;
-    const res = await fetch(`/api/admin/reviews/${item.id}`, { method: 'DELETE' });
-    if (res.ok) {
-      fetchReviews();
-    } else {
-      alert('削除に失敗しました');
+  const handleDelete = (item: ReviewItemAdmin) => setDeleteTarget(item);
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      const res = await fetch(`/api/admin/reviews/${deleteTarget.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        toast.success('削除しました');
+        fetchReviews();
+      } else {
+        toast.error('削除に失敗しました');
+      }
+    } catch {
+      toast.error('削除に失敗しました');
+    } finally {
+      setDeleteLoading(false);
+      setDeleteTarget(null);
     }
   };
 
@@ -393,6 +408,17 @@ export default function AdminReviewsPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="レビューを削除しますか？"
+        description={deleteTarget ? `「${deleteTarget.name}」のレビューを削除します。この操作は取り消せません。` : undefined}
+        confirmLabel="削除する"
+        variant="danger"
+        loading={deleteLoading}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

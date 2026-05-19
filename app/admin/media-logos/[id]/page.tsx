@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect, useCallback, use } from 'react';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/admin/ui';
 
 export default function EditMediaLogoPage({ params: promiseParams }: { params: Promise<{ id: string }> }) {
+  const toast = useToast();
   const params = use(promiseParams);
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -28,7 +30,7 @@ export default function EditMediaLogoPage({ params: promiseParams }: { params: P
           is_active: data.is_active ?? true,
         });
       } else {
-        alert('データの取得に失敗しました');
+        toast.error('データの取得に失敗しました');
         router.push('/admin/media-logos');
       }
     } catch (error) {
@@ -58,11 +60,11 @@ export default function EditMediaLogoPage({ params: promiseParams }: { params: P
         const { url } = await response.json();
         setFormData((prev) => ({ ...prev, image_url: url }));
       } else {
-        alert('画像のアップロードに失敗しました');
+        toast.error('画像のアップロードに失敗しました');
       }
     } catch (error) {
       console.error('Upload error:', error);
-      alert('画像のアップロードに失敗しました');
+      toast.error('画像のアップロードに失敗しました');
     } finally {
       setUploading(false);
     }
@@ -81,11 +83,11 @@ export default function EditMediaLogoPage({ params: promiseParams }: { params: P
         router.push('/admin/media-logos');
       } else {
         const data = await response.json();
-        alert(data.message || '更新に失敗しました');
+        toast.error(data.message || '更新に失敗しました');
       }
     } catch (error) {
       console.error('Failed to update:', error);
-      alert('エラーが発生しました');
+      toast.error('エラーが発生しました');
     } finally {
       setSubmitting(false);
     }

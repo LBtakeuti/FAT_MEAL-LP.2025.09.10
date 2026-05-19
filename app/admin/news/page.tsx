@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { ConfirmDialog, LoadingSpinner, useToast } from '@/components/admin/ui';
 
 interface NewsItem {
   id: string;
@@ -19,6 +20,9 @@ interface NewsItem {
 export default function AdminNewsPage() {
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     fetchNewsItems();
@@ -38,31 +42,30 @@ export default function AdminNewsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('このニュースを削除してもよろしいですか？')) return;
+  const handleDelete = (id: string) => setDeleteId(id);
 
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    setDeleteLoading(true);
     try {
-      const response = await fetch(`/api/admin/news/${id}`, {
-        method: 'DELETE',
-      });
-      
+      const response = await fetch(`/api/admin/news/${deleteId}`, { method: 'DELETE' });
       if (response.ok) {
+        toast.success('削除しました');
         fetchNewsItems();
+      } else {
+        toast.error('削除に失敗しました');
       }
     } catch (error) {
       console.error('Failed to delete news:', error);
+      toast.error('削除に失敗しました');
+    } finally {
+      setDeleteLoading(false);
+      setDeleteId(null);
     }
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">読み込み中...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (
@@ -148,6 +151,17 @@ export default function AdminNewsPage() {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={!!deleteId}
+        title="ニュースを削除しますか？"
+        description="この操作は取り消せません。"
+        confirmLabel="削除する"
+        variant="danger"
+        loading={deleteLoading}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteId(null)}
+      />
     </div>
   );
 }
