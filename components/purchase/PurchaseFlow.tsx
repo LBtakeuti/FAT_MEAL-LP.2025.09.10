@@ -416,8 +416,9 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
       return { subtotal, shippingFee, totalAmount: Math.max(0, totalAmount) };
     }
 
-    // サブスクリプションプランの場合、totalPriceは商品代金のみ
-    const subtotal = selectedPlan.totalPrice;
+    // サブスクリプションプランは price=商品代金 / shippingFee=送料 / totalPrice=送料込み合計
+    // 「商品代金 + 送料 = 合計」になるよう price をサブトータルに使う
+    const subtotal = selectedPlan.price;
     const shippingFee = selectedPlan.shippingFee;
     const totalAmount = subtotal + shippingFee - discount;
 
