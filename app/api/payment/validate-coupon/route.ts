@@ -23,9 +23,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ valid: false, error: 'クーポンコードを入力してください' });
     }
 
-    const trimmedCode = code.trim().toUpperCase();
+    // Stripe Promotion Code は大文字小文字を区別する。入力をそのまま使う
+    const trimmedCode = code.trim();
 
-    // Stripe Promotion Codeで検証
     const promotionCodes = await stripe.promotionCodes.list({
       code: trimmedCode,
       active: true,

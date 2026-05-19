@@ -445,7 +445,8 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
 
   // クーポン適用
   const applyCoupon = async () => {
-    const code = couponCode.trim().toUpperCase();
+    // Stripe Promotion Code は大文字小文字を区別するので入力をそのまま送る
+    const code = couponCode.trim();
     if (!code) {
       setCouponError('クーポンコードを入力してください');
       return;
