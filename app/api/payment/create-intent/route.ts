@@ -206,6 +206,24 @@ export async function POST(request: NextRequest) {
         });
       }
 
+      // クーポン検証（サブスク用）。有効な Promotion Code があればその id を
+      // metadata に積み、activate-subscription 時に discounts へ適用する。
+      let promotionCodeId = '';
+      if (couponCode) {
+        try {
+          const promotionCodes = await stripe.promotionCodes.list({
+            code: couponCode,
+            active: true,
+            limit: 1,
+          });
+          if (promotionCodes.data.length > 0) {
+            promotionCodeId = promotionCodes.data[0].id;
+          }
+        } catch {
+          console.log('[create-intent/sub] Promotion code not found, skipping discount');
+        }
+      }
+
       // SetupIntent: カード登録用。商品/送料の Price ID を metadata に積み、
       // activate-subscription で2本の Price で Subscription を作成する。
       const setupIntent = await stripe.setupIntents.create({
@@ -216,6 +234,7 @@ export async function POST(request: NextRequest) {
           plan_id: planId,
           product_price_id: productPriceId,
           shipping_price_id: shippingPriceId,
+          promotion_code_id: promotionCodeId,
           flow: 'subscription_setup',
         },
       });

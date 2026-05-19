@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
     const productPriceId = meta.product_price_id;
     const shippingPriceId = meta.shipping_price_id;
     const planId = meta.plan_id;
+    const promotionCodeId = meta.promotion_code_id || '';
 
     if (!productPriceId || !shippingPriceId || !planId) {
       return NextResponse.json({ error: 'プラン情報が見つかりません' }, { status: 400 });
@@ -73,6 +74,8 @@ export async function POST(request: NextRequest) {
         { price: productPriceId },
         { price: shippingPriceId },
       ],
+      // 有効な Promotion Code があれば Stripe 請求にクーポンを反映
+      ...(promotionCodeId ? { discounts: [{ promotion_code: promotionCodeId }] } : {}),
       default_payment_method: paymentMethodId,
       metadata: {
         setup_intent_id: setupIntentId,
