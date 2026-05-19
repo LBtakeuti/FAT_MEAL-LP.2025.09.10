@@ -131,6 +131,7 @@ export default function AdminShareLinksPage() {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">作成日</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">有効期限</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">写真</th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">流入数</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">ユニークアクセス</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">DL</th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
@@ -177,10 +178,8 @@ export default function AdminShareLinksPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm tabular-nums">{row.photo_count}</td>
-                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm tabular-nums">
-                      {row.unique_access_count}
-                      <span className="text-xs text-gray-500"> / {row.access_count}</span>
-                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm tabular-nums">{row.access_count}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-right text-sm tabular-nums">{row.unique_access_count}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm tabular-nums">{row.download_count}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium space-x-2">
                       <Link href={`/admin/share-links/${row.slug}`}>
