@@ -48,8 +48,8 @@ export default function HomeContent({ menuItems, shareData = null }: HomeContent
         ) : (
           <MenuIntroSection />
         )}
-        <ComparisonSection />
         <MediaLogosSection />
+        <ComparisonSection />
         <SportsScienceSection />
         <MenuSection initialMenuItems={menuItems} />
         <ReviewSection />

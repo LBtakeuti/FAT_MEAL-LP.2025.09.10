@@ -52,20 +52,10 @@ export default function MediaLogosSection() {
   return (
     <section
       ref={sectionRef}
-      className="bg-white border-y border-gray-100 py-5 overflow-hidden"
+      className="bg-white py-5 overflow-hidden"
       aria-label="メディア掲載実績"
     >
-      <div className="max-w-6xl mx-auto px-4 mb-3">
-        <p className="text-center text-[11px] font-medium tracking-widest text-gray-400 uppercase">
-          メディア掲載実績
-        </p>
-      </div>
-
       <div className="relative">
-        {/* 左右フェードマスク */}
-        <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
-
         <div
           ref={trackRef}
           className="media-logos-track flex items-center gap-10"
@@ -77,7 +67,7 @@ export default function MediaLogosSection() {
                 src={logo.image_url}
                 alt={logo.name}
                 loading="lazy"
-                className="h-8 w-auto object-contain opacity-60 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-300"
+                className="h-14 sm:h-[60px] w-auto object-contain"
               />
             </div>
           ))}

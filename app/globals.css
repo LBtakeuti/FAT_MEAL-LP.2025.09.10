@@ -657,9 +657,11 @@ button:hover {
 /* ============================================
    Hero Stats Section（ヒーロー下 3カード）
 ============================================ */
+.normal-scroll .hero-stats-section,
 .hero-stats-section {
   background: #ffffff;
-  padding: 40px 48px;
+  /* 下は0、上と左右だけ確保（次セクション TVロゴと隙間を作らない） */
+  padding: 40px 48px 0;
   font-family: 'Noto Sans JP', sans-serif;
 }
 
@@ -736,7 +738,7 @@ button:hover {
 /* モバイル版（768px以下）：1枠を3分割 */
 @media (max-width: 768px) {
   .hero-stats-section {
-    padding: 16px 16px !important;
+    padding: 16px 16px 0 !important;
   }
 
   .hero-stats-pc {
@@ -848,7 +850,11 @@ button:hover {
   }
 }
 
-/* ===== メニュー紹介セクション ===== */
+/* ===== メニュー紹介セクション =====
+ * .normal-scroll section { padding: clamp(...) 24px } の特異度を上回るため
+ * .normal-scroll を含む2クラスセレクタで上書きする
+ */
+.normal-scroll .menu-section,
 .menu-section {
   background: #ffffff;
   padding: 0;
@@ -898,6 +904,7 @@ button:hover {
 }
 
 @media (max-width: 768px) {
+  .normal-scroll .menu-section,
   .menu-section {
     padding: 0;
   }
