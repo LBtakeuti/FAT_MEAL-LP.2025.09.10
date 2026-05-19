@@ -6,7 +6,7 @@ import { createBrowserClient } from '@/lib/supabase';
 import { MenuDetailModal } from '@/components/menu/MenuDetailModal';
 import { PlanSelectorCards, type PlanCardData } from '@/components/purchase/PlanSelectorCards';
 import { StripePaymentForm } from '@/components/purchase/StripePaymentForm';
-import { getDeliveryDateRange } from '@/lib/business-days';
+import { getDeliveryDateRange, listDeliveryBusinessDays, isBusinessDay, formatDateKey } from '@/lib/business-days';
 import type { MenuItem } from '@/types';
 
 export interface PurchaseFlowProps {
@@ -624,14 +624,20 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
     return formatDate(max);
   };
 
-  // 配送日の検証（範囲内チェック・営業日は min 算出時にのみ考慮、範囲内の土日祝は許容）
+  // 配送日の検証。
+  // 日付の文字列(YYYY-MM-DD) 同士の比較で時刻比較によるオフバイワンを回避。
+  // 営業日（土日祝日）チェックも合わせて行う。
   const validateDeliveryDate = (dateStr: string): string | null => {
     if (!dateStr) return '配送希望日を選択してください';
-    const selectedDate = new Date(dateStr);
     const { min, max } = getDeliveryDateRange(new Date());
-    if (selectedDate < min || selectedDate > max) {
+    const minKey = formatDateKey(min);
+    const maxKey = formatDateKey(max);
+    if (dateStr < minKey || dateStr > maxKey) {
       return `配送希望日は ${formatDate(min)} 〜 ${formatDate(max)} の範囲で選択してください`;
     }
+    const selected = new Date(`${dateStr}T00:00:00`);
+    if (Number.isNaN(selected.getTime())) return '配送希望日の形式が不正です';
+    if (!isBusinessDay(selected)) return '土日・祝日は配送できません。営業日を選択してください';
     return null;
   };
 
@@ -934,6 +940,8 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
 
     const minDate = getMinDeliveryDate();
     const maxDate = getMaxDeliveryDate();
+    const businessDays = listDeliveryBusinessDays(new Date());
+    const WEEKDAY_LABEL = ['日', '月', '火', '水', '木', '金', '土'];
 
     return (
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
@@ -944,26 +952,33 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
           <label className="block text-sm font-medium text-gray-700 mb-2">
             配送希望日 <span className="text-red-500">*</span>
           </label>
-          <input
-            type="date"
+          <select
             name="preferredDeliveryDate"
             value={customerInfo.preferredDeliveryDate || ''}
-            onChange={handleDeliveryDateChange}
-            min={minDate}
-            max={maxDate}
-            className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none ${
+            onChange={(e) => handleDeliveryDateChange(e as unknown as React.ChangeEvent<HTMLInputElement>)}
+            className={`w-full px-4 py-2 border-2 rounded-lg focus:outline-none bg-white ${
               errors.preferredDeliveryDate
                 ? 'border-red-500'
                 : 'border-gray-300 focus:border-orange-600'
             }`}
-          />
+          >
+            <option value="">配送希望日を選択してください</option>
+            {businessDays.map((d) => {
+              const key = formatDateKey(d);
+              const label = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日（${WEEKDAY_LABEL[d.getDay()]}）`;
+              return (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              );
+            })}
+          </select>
           {errors.preferredDeliveryDate && (
             <p className="text-red-500 text-xs mt-1">{errors.preferredDeliveryDate}</p>
           )}
           <div className="text-xs text-gray-500 mt-2 space-y-1">
-            <p>• 注文日から3営業日後以降の日付を選択してください</p>
-            <p>• 土日祝日は選択できません</p>
-            <p>• 選択可能期間: {minDate} ～ {maxDate}</p>
+            <p>• 注文日から4営業日後以降の営業日のみ選択できます</p>
+            <p>• 表示中: {minDate} ～ {maxDate}（うち営業日 {businessDays.length} 日）</p>
           </div>
         </div>
         {customerInfo.preferredDeliveryDate && !errors.preferredDeliveryDate && (
