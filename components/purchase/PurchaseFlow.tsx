@@ -197,8 +197,14 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
 
   // クーポン
   const [couponCode, setCouponCode] = useState('');
-  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount: number } | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discount: number;
+    percentOff?: number;
+  } | null>(null);
   const [couponError, setCouponError] = useState('');
+  // 適用直後の盛り上がり演出フラグ（紙吹雪・バウンス）
+  const [couponJustApplied, setCouponJustApplied] = useState(false);
 
   // 紹介コードのバリデーション状態
   const [referralCodeError, setReferralCodeError] = useState('');
@@ -461,8 +467,28 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
       });
       const data = await res.json();
       if (data.valid) {
-        setAppliedCoupon({ code: data.code, discount: data.discount || 0 });
+        setAppliedCoupon({
+          code: data.code,
+          discount: data.discount || 0,
+          percentOff: data.percentOff,
+        });
         setCouponError('');
+        // 紙吹雪 + バウンス演出
+        setCouponJustApplied(true);
+        try {
+          const confetti = (await import('canvas-confetti')).default;
+          confetti({
+            particleCount: 90,
+            spread: 75,
+            origin: { y: 0.6 },
+            colors: ['#ea580c', '#fb923c', '#fbbf24', '#f97316', '#fde68a'],
+            zIndex: 9999,
+          });
+        } catch {
+          // confetti が読み込めなくても本機能は動く
+        }
+        // 1.2秒後にバウンスを止める
+        setTimeout(() => setCouponJustApplied(false), 1200);
       } else {
         setCouponError(data.error || '無効なクーポンコードです');
         setAppliedCoupon(null);
@@ -1495,22 +1521,45 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
             クーポンコード
           </h2>
           {appliedCoupon ? (
-            <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                <span className="text-green-700 font-medium">{appliedCoupon.code}</span>
-                <span className="text-green-600 text-sm">（¥{appliedCoupon.discount.toLocaleString()}割引）</span>
+            <div
+              className={`relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500 via-orange-400 to-amber-300 p-5 shadow-lg text-white ${
+                couponJustApplied ? 'animate-coupon-pop' : ''
+              }`}
+            >
+              {/* 飾りの円（背景ブラー） */}
+              <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+              <div className="absolute -bottom-10 -left-10 w-28 h-28 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+
+              <div className="relative flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-1.5 text-xs font-bold tracking-wide uppercase text-white/90">
+                    <span className="text-base leading-none">🎉</span>
+                    クーポンが適用されました
+                  </div>
+                  <div className={`mt-2 font-extrabold leading-none tabular-nums ${couponJustApplied ? 'animate-coupon-bounce' : ''}`}>
+                    <span className="text-4xl sm:text-5xl">
+                      {appliedCoupon.percentOff
+                        ? `${appliedCoupon.percentOff}% `
+                        : `-¥${appliedCoupon.discount.toLocaleString()} `}
+                    </span>
+                    <span className="text-lg sm:text-xl font-bold align-baseline">OFF</span>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2 text-sm">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded bg-white/20 backdrop-blur font-mono text-xs">
+                      {appliedCoupon.code}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={removeCoupon}
+                  className="text-white/70 hover:text-white transition-colors flex-shrink-0"
+                  aria-label="クーポンを外す"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              <button
-                onClick={removeCoupon}
-                className="text-gray-500 hover:text-red-500 transition-colors"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
             </div>
           ) : (
             <div className="flex flex-col sm:flex-row gap-2">
