@@ -37,11 +37,29 @@ export async function POST(request: NextRequest) {
     }
 
     const promo = promotionCodes.data[0] as any;
-    const coupon = promo.coupon;
+
+    // Stripe API の構造変更対応:
+    // - 旧: promo.coupon が Coupon オブジェクト
+    // - 新: promo.promotion.coupon が coupon ID（文字列）。coupons.retrieve で詳細取得が必要
+    let coupon: any = null;
+    if (promo.coupon && typeof promo.coupon === 'object') {
+      coupon = promo.coupon;
+    } else {
+      const couponId =
+        (typeof promo.coupon === 'string' ? promo.coupon : null) ||
+        (typeof promo.promotion?.coupon === 'string' ? promo.promotion.coupon : null);
+      if (couponId) {
+        coupon = await stripe.coupons.retrieve(couponId);
+      }
+    }
+
+    if (!coupon) {
+      return NextResponse.json({ valid: false, error: 'クーポン情報を取得できませんでした' });
+    }
+
     let discount = 0;
 
     if (coupon.percent_off) {
-      // パーセント割引は金額不明のため、percent_offを返す
       discount = 0;
       return NextResponse.json({
         valid: true,
@@ -60,12 +78,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Coupon validation error:', error);
-    const detail = error instanceof Error ? error.message : String(error);
-    // デバッグ用：実エラーをレスポンスに含める（本番でも一時的に有効。落ち着いたら削除）
-    return NextResponse.json({
-      valid: false,
-      error: '検証に失敗しました',
-      debug: detail,
-    });
+    return NextResponse.json({ valid: false, error: '検証に失敗しました' });
   }
 }

@@ -118,6 +118,8 @@ export async function POST(request: NextRequest) {
       let amount = (planPrice.amount + planPrice.shipping) * activeItem.quantity;
 
       // クーポン適用（Stripe Promotion Code経由）
+      // 新旧 Stripe API 両対応: 旧は promo.coupon が Coupon オブジェクト、
+      // 新は promo.promotion.coupon が coupon ID
       let appliedCouponId: string | undefined;
       if (couponCode) {
         try {
@@ -128,16 +130,27 @@ export async function POST(request: NextRequest) {
           });
           if (promotionCodes.data.length > 0) {
             const promo = promotionCodes.data[0] as any;
-            const coupon = promo.coupon;
-            appliedCouponId = coupon.id;
-            if (coupon.percent_off) {
-              amount = Math.round(amount * (1 - coupon.percent_off / 100));
-            } else if (coupon.amount_off) {
-              amount = Math.max(0, amount - coupon.amount_off);
+            let coupon: any = null;
+            if (promo.coupon && typeof promo.coupon === 'object') {
+              coupon = promo.coupon;
+            } else {
+              const couponId =
+                (typeof promo.coupon === 'string' ? promo.coupon : null) ||
+                (typeof promo.promotion?.coupon === 'string' ? promo.promotion.coupon : null);
+              if (couponId) coupon = await stripe.coupons.retrieve(couponId);
+            }
+
+            if (coupon) {
+              appliedCouponId = coupon.id;
+              if (coupon.percent_off) {
+                amount = Math.round(amount * (1 - coupon.percent_off / 100));
+              } else if (coupon.amount_off) {
+                amount = Math.max(0, amount - coupon.amount_off);
+              }
             }
           }
-        } catch {
-          console.log('Promotion code not found, skipping discount');
+        } catch (e) {
+          console.log('Promotion code resolve failed, skipping discount:', e);
         }
       }
 
