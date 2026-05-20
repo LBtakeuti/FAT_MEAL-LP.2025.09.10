@@ -221,7 +221,9 @@ export async function POST(request: NextRequest) {
 
       // クーポン検証（サブスク用）。有効な Promotion Code があればその id を
       // metadata に積み、activate-subscription 時に discounts へ適用する。
+      // さらに表示用 amount からも割引を引いて画面と実請求を一致させる。
       let promotionCodeId = '';
+      let subscriptionDiscount = 0; // 表示用：商品+送料から引く金額
       if (couponCode) {
         try {
           const promotionCodes = await stripe.promotionCodes.list({
@@ -230,10 +232,29 @@ export async function POST(request: NextRequest) {
             limit: 1,
           });
           if (promotionCodes.data.length > 0) {
-            promotionCodeId = promotionCodes.data[0].id;
+            const promo = promotionCodes.data[0] as any;
+            promotionCodeId = promo.id;
+
+            // 新旧 Stripe API 両対応で coupon 詳細を取得
+            let coupon: any = null;
+            if (promo.coupon && typeof promo.coupon === 'object') {
+              coupon = promo.coupon;
+            } else {
+              const couponId =
+                (typeof promo.coupon === 'string' ? promo.coupon : null) ||
+                (typeof promo.promotion?.coupon === 'string' ? promo.promotion.coupon : null);
+              if (couponId) coupon = await stripe.coupons.retrieve(couponId);
+            }
+
+            const monthlyTotal = SUBSCRIPTION_MONTHLY_TOTAL[planId] || 0;
+            if (coupon?.percent_off) {
+              subscriptionDiscount = Math.round(monthlyTotal * (coupon.percent_off / 100));
+            } else if (coupon?.amount_off) {
+              subscriptionDiscount = coupon.amount_off;
+            }
           }
-        } catch {
-          console.log('[create-intent/sub] Promotion code not found, skipping discount');
+        } catch (e) {
+          console.log('[create-intent/sub] Promotion code resolve failed, skipping discount:', e);
         }
       }
 
@@ -272,8 +293,9 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // 表示用の月額合計（商品 + 送料）
-      const amount = SUBSCRIPTION_MONTHLY_TOTAL[planId] || 0;
+      // 表示用の月額合計（商品 + 送料 - クーポン割引）
+      const monthlyBase = SUBSCRIPTION_MONTHLY_TOTAL[planId] || 0;
+      const amount = Math.max(0, monthlyBase - subscriptionDiscount);
 
       return NextResponse.json({
         clientSecret: setupIntent.client_secret,
