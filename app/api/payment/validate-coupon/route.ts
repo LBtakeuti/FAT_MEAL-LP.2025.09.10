@@ -60,6 +60,12 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Coupon validation error:', error);
-    return NextResponse.json({ valid: false, error: '検証に失敗しました' });
+    const detail = error instanceof Error ? error.message : String(error);
+    // デバッグ用：実エラーをレスポンスに含める（本番でも一時的に有効。落ち着いたら削除）
+    return NextResponse.json({
+      valid: false,
+      error: '検証に失敗しました',
+      debug: detail,
+    });
   }
 }
