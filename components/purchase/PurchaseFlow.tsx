@@ -1532,11 +1532,7 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
 
               <div className="relative flex items-start justify-between gap-3">
                 <div className="flex-1">
-                  <div className="flex items-center gap-1.5 text-xs font-bold tracking-wide uppercase text-white/90">
-                    <span className="text-base leading-none">🎉</span>
-                    クーポンが適用されました
-                  </div>
-                  <div className={`mt-2 font-extrabold leading-none tabular-nums ${couponJustApplied ? 'animate-coupon-bounce' : ''}`}>
+                  <div className={`font-extrabold leading-none tabular-nums ${couponJustApplied ? 'animate-coupon-bounce' : ''}`}>
                     <span className="text-4xl sm:text-5xl">
                       {appliedCoupon.percentOff
                         ? `${appliedCoupon.percentOff}% `
