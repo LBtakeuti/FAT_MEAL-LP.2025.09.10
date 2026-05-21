@@ -43,8 +43,8 @@ export default function FaqSection() {
     <section className="bg-white py-12 sm:py-16" id="faq" aria-label="よくあるご質問">
       <div className="max-w-3xl mx-auto px-4 sm:px-6">
         <div className="text-center">
-          <p className="text-gray-500 tracking-widest font-medium text-base sm:text-lg">FAQ</p>
-          <h2 className="text-gray-900 font-bold text-2xl sm:text-3xl mt-2">よくあるご質問</h2>
+          <p className="text-orange-500 tracking-widest font-medium text-base sm:text-lg">FAQ</p>
+          <h2 className="text-orange-600 font-bold text-2xl sm:text-3xl mt-2">よくあるご質問</h2>
         </div>
 
         <div className="mt-10 border-t border-gray-200">
