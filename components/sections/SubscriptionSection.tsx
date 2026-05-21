@@ -33,7 +33,7 @@ const plans: PlanCard[] = [
     totalPrice: 4500,
     pricePerMeal: 500, // 商品代のみ(3000/6)、送料を含めない
     isTrial: false,
-    popular: false,
+    popular: true,
   },
   {
     id: 'sub-12',
@@ -42,7 +42,7 @@ const plans: PlanCard[] = [
     totalPrice: 7500,
     pricePerMeal: 500, // 商品代のみ(6000/12)、送料を含めない
     isTrial: false,
-    popular: true,
+    popular: false,
   },
 ];
 
