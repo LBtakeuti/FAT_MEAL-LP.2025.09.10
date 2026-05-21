@@ -79,7 +79,7 @@ export default function FaqSection() {
                 >
                   <div className="overflow-hidden">
                     <div className="pb-6">
-                      <p className="text-emerald-700 font-bold text-base sm:text-lg">
+                      <p className="text-orange-600 font-bold text-base sm:text-lg">
                         {faq.answer_title}
                       </p>
                       {faq.answer_detail && (
