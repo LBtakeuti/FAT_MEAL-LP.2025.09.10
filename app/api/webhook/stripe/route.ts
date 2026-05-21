@@ -1178,6 +1178,28 @@ async function updateSubscriptionFromStripe(subscription: Stripe.Subscription) {
       console.log(`Subscription ${subscription.id} updated to status: ${status}`);
     }
 
+    if (status === 'canceled') {
+      const { data: dbSubscription } = await (supabase
+        .from('subscriptions') as any)
+        .select('id')
+        .eq('stripe_subscription_id', subscription.id)
+        .single();
+
+      if (dbSubscription) {
+        const { error: deliveryError } = await (supabase
+          .from('subscription_deliveries') as any)
+          .update({ status: 'cancelled' })
+          .eq('subscription_id', (dbSubscription as any).id)
+          .eq('status', 'pending');
+
+        if (deliveryError) {
+          console.error('[Webhook] Failed to cancel pending deliveries on update:', deliveryError);
+        } else {
+          console.log(`[Webhook] Pending deliveries cancelled for subscription ${subscription.id} (canceled via update)`);
+        }
+      }
+    }
+
   } catch (error) {
     console.error('Error updating subscription from Stripe:', error);
   }
