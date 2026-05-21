@@ -936,7 +936,7 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
     subtitle: plan.description,
     totalPrice: plan.totalPrice,
     perMeal: plan.perMeal,
-    badge: plan.isTrial ? '初回限定' : undefined,
+    badge: undefined,
     shippingNote: '送料別',
     isSubscription: plan.isSubscription,
   }));

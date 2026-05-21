@@ -76,14 +76,6 @@ const SubscriptionSection: React.FC = () => {
                   </span>
                 </div>
               )}
-              {plan.isTrial && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm whitespace-nowrap">
-                    初回限定
-                  </span>
-                </div>
-              )}
-
               <div className="text-center mb-6">
                 <span
                   className={`inline-block text-xs font-bold px-3 py-1 rounded-full mb-3 ${
