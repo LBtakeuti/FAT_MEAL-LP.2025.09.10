@@ -40,59 +40,42 @@ export default function FaqSection() {
   if (faqs.length === 0) return null;
 
   return (
-    <section className="bg-orange-50 py-10 sm:py-14" id="faq" aria-label="よくあるご質問">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 flex flex-col gap-5">
-        {/* 見出し画像プレースホルダ（管理者が後で画像を用意して差し替える） */}
-        <div className="flex justify-center">
-          <span className="inline-block text-base sm:text-lg font-bold text-orange-600 tracking-wider">
-            教えて！
-          </span>
+    <section className="bg-white py-12 sm:py-16" id="faq" aria-label="よくあるご質問">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6">
+        <div className="text-center">
+          <p className="text-gray-500 tracking-widest font-medium text-base sm:text-lg">FAQ</p>
+          <h2 className="text-gray-900 font-bold text-2xl sm:text-3xl mt-2">よくあるご質問</h2>
         </div>
 
-        <div className="flex flex-col gap-3 sm:gap-4">
+        <div className="mt-10 border-t border-gray-200">
           {faqs.map((faq) => {
             const isOpen = openId === faq.id;
             return (
-              <div
-                key={faq.id}
-                className="bg-white rounded-lg shadow-[0_0_3px_rgba(160,192,212,0.4)] overflow-hidden"
-              >
+              <div key={faq.id} className="border-b border-gray-200">
                 <button
                   type="button"
                   onClick={() => toggle(faq.id)}
                   aria-expanded={isOpen}
-                  className="w-full flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-3 sm:py-4 text-left hover:bg-orange-50/50 transition-colors"
+                  className="w-full flex items-center gap-4 py-5 sm:py-6 text-left hover:bg-gray-50/50 transition-colors"
                 >
-                  <span className="flex-shrink-0 w-8 h-8 rounded-full bg-orange-600 text-white font-bold text-lg leading-none flex items-center justify-center">
-                    Q
-                  </span>
-                  <span className="flex-1 text-[15px] sm:text-base font-bold text-gray-900 tracking-wide">
+                  <span className="flex-1 font-bold text-gray-900 text-base sm:text-lg">
                     {faq.question}
                   </span>
-                  <svg
-                    className={`flex-shrink-0 w-5 h-5 text-orange-600 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                  <span
+                    className="flex-shrink-0 text-gray-400 text-2xl font-light leading-none"
                     aria-hidden="true"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                  </svg>
+                    {isOpen ? '−' : '+'}
+                  </span>
                 </button>
 
                 {isOpen && (
-                  <div className="px-3 sm:px-5 pb-4 sm:pb-5 flex flex-col gap-2">
-                    <div className="h-px bg-gray-200" />
-                    <div className="flex items-center gap-2 sm:gap-3 pt-1">
-                      <span className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-500 text-white font-bold text-lg leading-none flex items-center justify-center">
-                        A
-                      </span>
-                      <p className="flex-1 text-[15px] sm:text-base font-bold text-amber-600 tracking-wide">
-                        {faq.answer_title}
-                      </p>
-                    </div>
+                  <div className="pb-6">
+                    <p className="text-emerald-700 font-bold text-base sm:text-lg mt-1">
+                      {faq.answer_title}
+                    </p>
                     {faq.answer_detail && (
-                      <p className="pl-10 sm:pl-11 text-sm sm:text-[15px] text-gray-700 leading-relaxed whitespace-pre-line tracking-wide">
+                      <p className="text-gray-700 text-sm sm:text-base leading-relaxed whitespace-pre-line mt-2">
                         {faq.answer_detail}
                       </p>
                     )}
