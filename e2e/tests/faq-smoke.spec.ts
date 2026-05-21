@@ -59,11 +59,11 @@ test.describe('FAQセクション スモークテスト', () => {
     await expect(answerArea).not.toHaveAttribute('aria-hidden', 'true');
   });
 
-  test('答えタイトルがエメラルド（emerald-700）で表示される', async ({ page }) => {
+  test('答えタイトルがオレンジ（orange-600）で表示される', async ({ page }) => {
     const firstButton = page.locator('#faq button[aria-expanded]').first();
     await firstButton.click();
 
-    const answerTitle = page.locator('#faq p.text-emerald-700').first();
+    const answerTitle = page.locator('#faq p.text-orange-600').first();
     await expect(answerTitle).toBeVisible();
   });
 
