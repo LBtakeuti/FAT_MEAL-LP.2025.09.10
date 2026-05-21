@@ -43,7 +43,7 @@ export default function HomeContent({ menuItems, shareData = null }: HomeContent
     <>
       <main className="normal-scroll">
         <HeroSection />
-        <HeroStatsSection />
+        <HeroStatsSection hideCta />
         {isShare && shareData ? (
           <ShareContentSection link={shareData.link} photos={shareData.photos} />
         ) : (
