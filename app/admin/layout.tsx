@@ -181,6 +181,15 @@ function IconMessage() {
     </svg>
   );
 }
+function IconFaq() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="10" cy="10" r="8" />
+      <path d="M7.5 7.5 a2.5 2.5 0 0 1 5 0 c0 1.5-2.5 2-2.5 3.5" />
+      <line x1="10" y1="14" x2="10" y2="14.5" />
+    </svg>
+  );
+}
 function IconShare() {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -271,6 +280,7 @@ const menuGroups: MenuGroup[] = [
       { href: '/admin/news', label: 'ニュース管理', icon: IconNews },
       { href: '/admin/banner', label: 'バナー管理', icon: IconBanner },
       { href: '/admin/media-logos', label: 'メディアロゴ管理', icon: IconMedia },
+      { href: '/admin/faqs', label: 'FAQ管理', icon: IconFaq },
     ],
   },
   {

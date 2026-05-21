@@ -14,6 +14,7 @@ import ReviewSection from '@/components/sections/ReviewSection';
 import AmbassadorSection from '@/components/sections/AmbassadorSection';
 import FeedbackSection from '@/components/sections/FeedbackSection';
 import NewsSection from '@/components/sections/NewsSection';
+import FaqSection from '@/components/sections/FaqSection';
 import { ShareContentSection } from '@/components/sections/ShareContentSection';
 import LineFloatingButton from '@/components/ui/LineFloatingButton';
 import PurchaseCircleButton from '@/components/ui/PurchaseCircleButton';
@@ -58,6 +59,7 @@ export default function HomeContent({ menuItems, shareData = null }: HomeContent
         <FeedbackSection />
         <PurchaseFlowSection />
         <NewsSection />
+        <FaqSection />
       </main>
       <LineFloatingButton />
       <PurchaseCircleButton />
