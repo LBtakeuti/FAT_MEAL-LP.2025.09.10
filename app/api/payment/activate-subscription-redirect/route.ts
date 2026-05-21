@@ -64,28 +64,33 @@ export async function POST(request: NextRequest) {
     const items: Stripe.SubscriptionCreateParams.Item[] = [{ price: priceId }];
     if (shippingPriceId) items.push({ price: shippingPriceId });
 
-    const subscription = await stripe.subscriptions.create({
-      customer: customerId,
-      items,
-      default_payment_method: paymentMethodId,
-      metadata: {
-        setup_intent_id: setupIntentId,
-        plan_id: planId,
-        customer_name: meta.customer_name || '',
-        customer_name_kana: meta.customer_name_kana || '',
-        phone: meta.phone || '',
-        postal_code: meta.postal_code || '',
-        prefecture: meta.prefecture || '',
-        city: meta.city || '',
-        address_detail: meta.address_detail || '',
-        building: meta.building || '',
-        address: meta.address || '',
-        preferred_delivery_date: meta.preferred_delivery_date || '',
-        referral_code: meta.referral_code || '',
-        notes: meta.notes || '',
-        email: meta.email || '',
+    const subscription = await stripe.subscriptions.create(
+      {
+        customer: customerId,
+        items,
+        default_payment_method: paymentMethodId,
+        metadata: {
+          setup_intent_id: setupIntentId,
+          plan_id: planId,
+          customer_name: meta.customer_name || '',
+          customer_name_kana: meta.customer_name_kana || '',
+          phone: meta.phone || '',
+          postal_code: meta.postal_code || '',
+          prefecture: meta.prefecture || '',
+          city: meta.city || '',
+          address_detail: meta.address_detail || '',
+          building: meta.building || '',
+          address: meta.address || '',
+          preferred_delivery_date: meta.preferred_delivery_date || '',
+          referral_code: meta.referral_code || '',
+          notes: meta.notes || '',
+          email: meta.email || '',
+        },
       },
-    });
+      {
+        idempotencyKey: `subscription_create_${setupIntentId}`,
+      }
+    );
 
     return NextResponse.json({
       subscriptionId: subscription.id,

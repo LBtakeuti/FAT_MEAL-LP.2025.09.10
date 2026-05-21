@@ -68,34 +68,39 @@ export async function POST(request: NextRequest) {
     });
 
     // Subscription 作成（商品 + 送料 の2 Price で月額一律請求）
-    const subscription = await stripe.subscriptions.create({
-      customer: customerId,
-      items: [
-        { price: productPriceId },
-        { price: shippingPriceId },
-      ],
-      // 有効な Promotion Code があれば Stripe 請求にクーポンを反映
-      ...(promotionCodeId ? { discounts: [{ promotion_code: promotionCodeId }] } : {}),
-      default_payment_method: paymentMethodId,
-      metadata: {
-        setup_intent_id: setupIntentId,
-        plan_id: planId,
-        customer_name: meta.customer_name || '',
-        customer_name_kana: meta.customer_name_kana || '',
-        phone: meta.phone || '',
-        postal_code: meta.postal_code || '',
-        prefecture: meta.prefecture || '',
-        city: meta.city || '',
-        address_detail: meta.address_detail || '',
-        building: meta.building || '',
-        address: meta.address || '',
-        preferred_delivery_date: meta.preferred_delivery_date || '',
-        referral_code: meta.referral_code || '',
-        share_slug: meta.share_slug || '',
-        notes: meta.notes || '',
-        email: meta.email || '',
+    const subscription = await stripe.subscriptions.create(
+      {
+        customer: customerId,
+        items: [
+          { price: productPriceId },
+          { price: shippingPriceId },
+        ],
+        // 有効な Promotion Code があれば Stripe 請求にクーポンを反映
+        ...(promotionCodeId ? { discounts: [{ promotion_code: promotionCodeId }] } : {}),
+        default_payment_method: paymentMethodId,
+        metadata: {
+          setup_intent_id: setupIntentId,
+          plan_id: planId,
+          customer_name: meta.customer_name || '',
+          customer_name_kana: meta.customer_name_kana || '',
+          phone: meta.phone || '',
+          postal_code: meta.postal_code || '',
+          prefecture: meta.prefecture || '',
+          city: meta.city || '',
+          address_detail: meta.address_detail || '',
+          building: meta.building || '',
+          address: meta.address || '',
+          preferred_delivery_date: meta.preferred_delivery_date || '',
+          referral_code: meta.referral_code || '',
+          share_slug: meta.share_slug || '',
+          notes: meta.notes || '',
+          email: meta.email || '',
+        },
       },
-    });
+      {
+        idempotencyKey: `subscription_create_${setupIntentId}`,
+      }
+    );
 
     return NextResponse.json({
       subscriptionId: subscription.id,
