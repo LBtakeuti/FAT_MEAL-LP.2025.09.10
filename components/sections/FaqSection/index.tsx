@@ -62,25 +62,34 @@ export default function FaqSection() {
                     {faq.question}
                   </span>
                   <span
-                    className="flex-shrink-0 text-gray-400 text-2xl font-light leading-none"
+                    className={`flex-shrink-0 text-gray-400 text-2xl font-light leading-none transition-transform duration-300 ease-in-out ${
+                      isOpen ? 'rotate-45' : 'rotate-0'
+                    }`}
                     aria-hidden="true"
                   >
-                    {isOpen ? '−' : '+'}
+                    +
                   </span>
                 </button>
 
-                {isOpen && (
-                  <div className="pb-6">
-                    <p className="text-emerald-700 font-bold text-base sm:text-lg mt-1">
-                      {faq.answer_title}
-                    </p>
-                    {faq.answer_detail && (
-                      <p className="text-gray-700 text-sm sm:text-base leading-relaxed whitespace-pre-line mt-2">
-                        {faq.answer_detail}
+                <div
+                  className={`grid transition-all duration-300 ease-in-out ${
+                    isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                  }`}
+                  aria-hidden={!isOpen}
+                >
+                  <div className="overflow-hidden">
+                    <div className="pb-6">
+                      <p className="text-emerald-700 font-bold text-base sm:text-lg">
+                        {faq.answer_title}
                       </p>
-                    )}
+                      {faq.answer_detail && (
+                        <p className="text-gray-700 text-sm sm:text-base leading-relaxed whitespace-pre-line mt-2">
+                          {faq.answer_detail}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
             );
           })}
