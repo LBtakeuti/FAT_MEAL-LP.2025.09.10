@@ -59,52 +59,6 @@ export interface MenuItem {
   stock?: number;
 }
 
-/** DB形式からフロントエンド形式への変換 */
-export function toMenuItem(db: MenuItemDB): MenuItem {
-  // sub_imagesとmain_imageを統合してimages配列を作成
-  const images: string[] = [];
-  if (db.main_image) images.push(db.main_image);
-  if (db.sub_images) images.push(...db.sub_images);
-
-  return {
-    id: db.id,
-    name: db.name,
-    description: db.description || '',
-    price: String(db.price || 0),
-    calories: String(db.calories),
-    protein: String(db.protein),
-    fat: String(db.fat),
-    carbs: String(db.carbs),
-    weight: String(db.weight ?? ''),
-    image: db.main_image || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="600" height="400"%3E%3Crect width="600" height="400" fill="%23ddd"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999" font-size="20"%3E画像準備中%3C/text%3E%3C/svg%3E',
-    images: images.length > 0 ? images : undefined,
-    features: [], // データベースにfeaturesカラムがないため空配列
-    ingredients: db.ingredients || [],
-    allergens: db.allergens || [],
-    stock: db.stock ?? undefined,
-  };
-}
-
-/** フロントエンド形式からDB形式への変換 */
-export function toMenuItemDB(item: MenuItem): Partial<MenuItemDB> {
-  const allImages = item.images || [item.image];
-  return {
-    id: item.id,
-    name: item.name,
-    description: item.description,
-    price: Number(item.price) || 0,
-    calories: Number(item.calories) || 0,
-    protein: Number(item.protein) || 0,
-    fat: Number(item.fat) || 0,
-    carbs: Number(item.carbs) || 0,
-    main_image: allImages[0] || null,
-    sub_images: allImages.slice(1).length > 0 ? allImages.slice(1) : null,
-    ingredients: item.ingredients,
-    allergens: item.allergens,
-    stock: item.stock || 0,
-  };
-}
-
 // ============================================
 // ニュース
 // ============================================
@@ -141,20 +95,6 @@ export interface NewsItem {
   summary?: string;
 }
 
-/** DB形式からフロントエンド形式への変換 */
-export function toNewsItem(db: NewsItemDB): NewsItem {
-  return {
-    id: db.id,
-    title: db.title,
-    content: db.content,
-    date: db.date || '',
-    category: db.category || undefined,
-    image: db.image || undefined,
-    excerpt: db.excerpt || undefined,
-    summary: db.summary || undefined,
-  };
-}
-
 // ============================================
 // お問い合わせ
 // ============================================
@@ -189,21 +129,6 @@ export interface Contact {
   message: string;
   status: ContactStatus;
   createdAt: string;
-}
-
-/** DB形式からフロントエンド形式への変換 */
-export function toContact(db: ContactDB): Contact {
-  return {
-    id: db.id,
-    name: db.name,
-    nameKana: db.name_kana || undefined,
-    email: db.email,
-    phone: db.phone || undefined,
-    title: db.title || undefined,
-    message: db.message,
-    status: (db.status as ContactStatus) || 'pending',
-    createdAt: db.created_at || '',
-  };
 }
 
 // ============================================
@@ -256,21 +181,6 @@ export interface ApiErrorResponse {
 
 /** API レスポンス */
 export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
-
-// ============================================
-// 認証
-// ============================================
-
-/** 認証結果 */
-export interface AuthResult {
-  authenticated: boolean;
-  user?: {
-    id: string;
-    email: string;
-    role?: string;
-  };
-  error?: string;
-}
 
 // ============================================
 // ページネーション
@@ -329,13 +239,3 @@ export interface InventoryCheckResult {
   };
 }
 
-/** DB形式からフロントエンド形式への変換 */
-export function toInventorySettings(db: InventorySettingsDB): InventorySettings {
-  return {
-    id: db.id,
-    setType: db.set_type,
-    stockSets: db.stock_sets,
-    itemsPerSet: db.items_per_set,
-    updatedAt: db.updated_at,
-  };
-}

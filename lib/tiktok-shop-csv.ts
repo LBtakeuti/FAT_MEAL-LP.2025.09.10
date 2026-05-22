@@ -135,10 +135,3 @@ export function parseTikTokShopCsv(csvText: string): ParseResult {
   return { rows, errors };
 }
 
-/** Seller SKU からシステム内プラン名を推定 */
-export function guessMenuSet(sellerSku: string | null | undefined, productName?: string | null): string {
-  const sku = (sellerSku || '').toUpperCase();
-  if (sku.includes('TRIAL6') || sku.includes('TRIAL-6')) return 'お試し6個セット';
-  if (sku.includes('MONTHLY-12') || sku.includes('SUB-12')) return 'ふとるめし12食 月額プラン';
-  return productName || sku || 'TikTok注文';
-}

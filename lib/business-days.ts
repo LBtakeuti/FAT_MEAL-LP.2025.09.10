@@ -3,7 +3,7 @@
  * 土日・日本の祝日を除いた平日を「営業日」として扱う。
  */
 
-export const JAPANESE_HOLIDAYS: string[] = [
+const JAPANESE_HOLIDAYS: string[] = [
   // 2024年
   '2024-01-01', '2024-01-08', '2024-02-11', '2024-02-12', '2024-02-23',
   '2024-03-20', '2024-04-29', '2024-05-03', '2024-05-04', '2024-05-05',
@@ -37,7 +37,7 @@ export function isBusinessDay(date: Date): boolean {
 }
 
 /** `date` から n 営業日後の日付を返す。n=0 のときは date 自身を返す。 */
-export function addBusinessDays(date: Date, n: number): Date {
+function addBusinessDays(date: Date, n: number): Date {
   const result = new Date(date);
   if (n <= 0) return result;
   let remaining = n;

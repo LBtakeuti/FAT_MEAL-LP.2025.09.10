@@ -49,39 +49,6 @@ export async function authenticateUser(email: string, password: string): Promise
 }
 
 /**
- * ユーザーが管理者かどうかをapp_metadataで確認
- * @param userId Supabase Auth のユーザーID
- * @returns 管理者情報またはnull
- */
-export async function checkIsAdmin(userId: string): Promise<AdminUser | null> {
-  try {
-    const supabase = createServerClient();
-
-    const { data, error } = await supabase.auth.admin.getUserById(userId);
-
-    if (error || !data.user) {
-      return null;
-    }
-
-    const role = data.user.app_metadata?.role;
-
-    // ロールが管理者でない場合はnull
-    if (!role || !ADMIN_ROLES.includes(role)) {
-      return null;
-    }
-
-    return {
-      id: data.user.id,
-      email: data.user.email || '',
-      role: role,
-    };
-  } catch (error) {
-    console.error('管理者チェックエラー:', error);
-    return null;
-  }
-}
-
-/**
  * メールアドレスで管理者かどうかを確認
  * @param email メールアドレス
  * @returns 管理者情報またはnull
@@ -120,14 +87,6 @@ export async function checkIsAdminByEmail(email: string): Promise<AdminUser | nu
     console.error('管理者チェックエラー:', error);
     return null;
   }
-}
-
-/**
- * Supabaseセッショントークン（access_token のみ）を取得（後方互換）
- */
-export async function getSessionToken(email: string, password: string): Promise<string | null> {
-  const tokens = await getSessionTokens(email, password);
-  return tokens?.accessToken ?? null;
 }
 
 /**
@@ -190,11 +149,11 @@ export async function refreshAccessToken(refreshToken: string): Promise<SessionT
 }
 
 /**
- * トークンを検証してユーザー情報を取得
+ * トークンを検証してユーザー情報を取得（内部利用）
  * @param token アクセストークン
  * @returns ユーザー情報
  */
-export async function verifyToken(token: string): Promise<AdminUser | null> {
+async function verifyToken(token: string): Promise<AdminUser | null> {
   try {
     const supabase = createServerClient();
 
@@ -261,19 +220,6 @@ export function getAuthToken(req: NextRequest): string | undefined {
  */
 export function getRefreshToken(req: NextRequest): string | undefined {
   return req.cookies.get('auth-refresh-token')?.value;
-}
-
-/**
- * レスポンスに認証Cookieをセット（access_token のみ・後方互換）
- */
-export function setAuthCookie(res: NextResponse, token: string): void {
-  res.cookies.set('auth-token', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
-    maxAge: 60 * 60 * 24, // 24 hours
-    path: '/',
-  });
 }
 
 /**

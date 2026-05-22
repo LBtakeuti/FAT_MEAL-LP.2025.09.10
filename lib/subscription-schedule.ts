@@ -128,8 +128,8 @@ export function getPlanName(planId: string): string {
   return planNames[planId] || 'ふとるめしプラン';
 }
 
-/** プランIDからメニューセット名を取得 */
-export function getMenuSetName(planId: string): string {
+/** プランIDからメニューセット名を取得（内部利用） */
+function getMenuSetName(planId: string): string {
   const menuSetNames: { [key: string]: string } = {
     'trial-6': 'お試しセット（6食）',
     'sub-6': '6食プラン',
