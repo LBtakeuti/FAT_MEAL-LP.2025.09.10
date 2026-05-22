@@ -13,7 +13,7 @@ const MenuIntroSection: React.FC = () => {
         height={96}
         priority
         sizes="100vw"
-        className="block w-full h-auto sm:-mt-8"
+        className="block w-full h-auto"
       />
     </section>
   );
