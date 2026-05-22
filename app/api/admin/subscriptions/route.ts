@@ -108,7 +108,7 @@ export async function GET(_request: NextRequest) {
     const formattedSubscriptions = subscriptions?.map(sub => {
       const deliveries = deliveriesMap[sub.id] || [];
       const totalDeliveries = deliveries.length;
-      const completedDeliveries = deliveries.filter((d: any) => d.status === 'shipped').length;
+      const completedDeliveries = deliveries.filter((d: any) => d.status === 'shipped' || d.status === 'delivered').length;
       const pendingDeliveries = deliveries.filter((d: any) => d.status === 'pending');
       const nextDelivery = pendingDeliveries.sort((a: any, b: any) =>
         new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime()
