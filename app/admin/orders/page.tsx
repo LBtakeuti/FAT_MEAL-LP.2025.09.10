@@ -658,7 +658,7 @@ export default function AdminOrdersPage() {
                   >
                     リセット
                   </button>
-                  <span className="text-sm text-gray-500 ml-2">
+                  <span className={`text-sm ml-2 ${filteredSubscriptions.length === 0 && subscriptions.length > 0 ? 'text-orange-500 font-medium' : 'text-gray-500'}`}>
                     表示中: {filteredSubscriptions.length} 件 / 全 {subscriptions.length} 件
                   </span>
                 </div>
