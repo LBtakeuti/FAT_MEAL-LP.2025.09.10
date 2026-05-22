@@ -47,3 +47,19 @@ FBや変更後に再発防止として追加されたリグレッションシナ
 - StatsSection/（6ファイル）
 - IndividualMessageForm.tsx
 - MobileFooterNav.tsx
+
+---
+
+## SC-REG-007: /message/[slug] 500エラー修正後のスモークテスト
+
+- **対象コミット**: bfa8e89, b03938c
+- **変更概要**: isomorphic-dompurify → sanitize-html 置換（DOMPurify.sanitize → sanitizeShareLinkBody）、isomorphic-dompurify 依存削除
+- **テストファイル**: `e2e/tests/smoke-message-slug.spec.ts`
+
+### シナリオ一覧
+
+| シナリオID | テスト名 | 種別 | 確認内容 |
+|-----------|---------|------|---------|
+| SC-REG-007-01 | 実在slugでページが200を返しHTML本文が描画される | スモーク | /message/a-school が200・article.message-body が表示 |
+| SC-REG-007-02 | h1タイトルが表示される | スモーク | h1が可視かつテキスト1文字以上 |
+| SC-REG-007-03 | 存在しないslugは404ページが表示される | スモーク | notFound()発火後に404コンテンツが描画される |
