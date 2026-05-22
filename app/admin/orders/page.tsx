@@ -142,6 +142,18 @@ export default function AdminOrdersPage() {
   const [cancelConfirmSubId, setCancelConfirmSubId] = useState<string | null>(null);
   const [cancellingSubId, setCancellingSubId] = useState<string | null>(null);
   const [expandedSubId, setExpandedSubId] = useState<string | null>(null);
+  const [subStatusFilter, setSubStatusFilter] = useState<'all' | 'active' | 'canceled' | 'past_due' | 'paused'>('all');
+  const [subSearchName, setSubSearchName] = useState('');
+  const [subDateFrom, setSubDateFrom] = useState('');
+  const [subDateTo, setSubDateTo] = useState('');
+
+  const filteredSubscriptions = subscriptions.filter((sub) => {
+    if (subStatusFilter !== 'all' && sub.status !== subStatusFilter) return false;
+    if (subSearchName && !sub.customer_name?.toLowerCase().includes(subSearchName.toLowerCase())) return false;
+    if (subDateFrom && sub.started_at < subDateFrom) return false;
+    if (subDateTo && sub.started_at > subDateTo + 'T23:59:59') return false;
+    return true;
+  });
 
   useEffect(() => {
     fetchOrders();
@@ -313,11 +325,18 @@ export default function AdminOrdersPage() {
   };
 
   const toggleAllSubs = () => {
-    if (selectedSubIds.size === subscriptions.length) {
+    if (selectedSubIds.size === filteredSubscriptions.length) {
       setSelectedSubIds(new Set());
     } else {
-      setSelectedSubIds(new Set(subscriptions.map(s => s.id)));
+      setSelectedSubIds(new Set(filteredSubscriptions.map(s => s.id)));
     }
+  };
+
+  const resetSubFilters = () => {
+    setSubStatusFilter('all');
+    setSubSearchName('');
+    setSubDateFrom('');
+    setSubDateTo('');
   };
 
   return (
@@ -588,6 +607,62 @@ export default function AdminOrdersPage() {
             </div>
           ) : (
             <>
+              <div className="flex flex-col gap-3 mb-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button onClick={() => setSubStatusFilter('all')} className={`px-4 py-2 rounded-lg text-sm ${subStatusFilter === 'all' ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                    すべて ({subscriptions.length})
+                  </button>
+                  <button onClick={() => setSubStatusFilter('active')} className={`px-4 py-2 rounded-lg text-sm ${subStatusFilter === 'active' ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                    アクティブ ({subscriptions.filter(s => s.status === 'active').length})
+                  </button>
+                  <button onClick={() => setSubStatusFilter('canceled')} className={`px-4 py-2 rounded-lg text-sm ${subStatusFilter === 'canceled' ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                    解約済み ({subscriptions.filter(s => s.status === 'canceled').length})
+                  </button>
+                  <button onClick={() => setSubStatusFilter('past_due')} className={`px-4 py-2 rounded-lg text-sm ${subStatusFilter === 'past_due' ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                    支払い遅延 ({subscriptions.filter(s => s.status === 'past_due').length})
+                  </button>
+                  <button onClick={() => setSubStatusFilter('paused')} className={`px-4 py-2 rounded-lg text-sm ${subStatusFilter === 'paused' ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                    一時停止 ({subscriptions.filter(s => s.status === 'paused').length})
+                  </button>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="text"
+                    value={subSearchName}
+                    onChange={(e) => setSubSearchName(e.target.value)}
+                    placeholder="顧客名で検索"
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  />
+                  <label className="flex items-center gap-1 text-sm text-gray-600">
+                    開始日
+                    <input
+                      type="date"
+                      value={subDateFrom}
+                      onChange={(e) => setSubDateFrom(e.target.value)}
+                      className="px-2 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                  </label>
+                  <span className="text-gray-500">〜</span>
+                  <label className="flex items-center gap-1 text-sm text-gray-600">
+                    終了日
+                    <input
+                      type="date"
+                      value={subDateTo}
+                      onChange={(e) => setSubDateTo(e.target.value)}
+                      className="px-2 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                  </label>
+                  <button
+                    onClick={resetSubFilters}
+                    className="px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    リセット
+                  </button>
+                  <span className="text-sm text-gray-500 ml-2">
+                    表示中: {filteredSubscriptions.length} 件 / 全 {subscriptions.length} 件
+                  </span>
+                </div>
+              </div>
               <div className="flex justify-end items-center mb-4 gap-2">
                 <button
                   onClick={() => { window.location.href = `/api/admin/subscriptions/export-csv?date=${getJSTToday()}`; }}
@@ -625,7 +700,7 @@ export default function AdminOrdersPage() {
                         <th className="px-3 py-3 text-left">
                           <input
                             type="checkbox"
-                            checked={subscriptions.length > 0 && selectedSubIds.size === subscriptions.length}
+                            checked={filteredSubscriptions.length > 0 && selectedSubIds.size === filteredSubscriptions.length}
                             onChange={toggleAllSubs}
                             className="rounded border-gray-300"
                           />
@@ -639,12 +714,14 @@ export default function AdminOrdersPage() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {subscriptions.length === 0 ? (
+                      {filteredSubscriptions.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="px-6 py-12 text-center text-gray-500">サブスクリプションがありません</td>
+                          <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                            {subscriptions.length === 0 ? 'サブスクリプションがありません' : '条件に一致するサブスクリプションがありません'}
+                          </td>
                         </tr>
                       ) : (
-                        subscriptions.map((sub) => (
+                        filteredSubscriptions.map((sub) => (
                           <React.Fragment key={sub.id}>
                             <tr
                               className="hover:bg-gray-50 cursor-pointer"
