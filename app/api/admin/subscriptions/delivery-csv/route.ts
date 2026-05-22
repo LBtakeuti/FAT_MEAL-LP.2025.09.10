@@ -65,7 +65,9 @@ export async function GET(request: NextRequest) {
 
     const rows = subscriptions?.map((sub) => {
       const addr = sub.shipping_address || {};
-      const completedCount = (sub.subscription_deliveries || []).filter(d => d.status === 'shipped').length;
+      const completedCount = (sub.subscription_deliveries || []).filter(
+        d => d.status === 'shipped' || d.status === 'delivered'
+      ).length;
       const deliveryNumber = completedCount + 1;
       return [
         '0',
@@ -80,7 +82,7 @@ export async function GET(request: NextRequest) {
         process.env.SENDER_POSTAL_CODE || '',
         process.env.SENDER_ADDRESS || '',
         process.env.SENDER_COMPANY || '',
-        getItemName(sub.plan_name, sub.meals_per_delivery, deliveryNumber),
+        getItemName(sub.plan_id, deliveryNumber),
       ];
     }) || [];
 
@@ -104,8 +106,14 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function getItemName(planName: string, mealsPerDelivery: number, deliveryNumber: number): string {
-  return `${planName}（${mealsPerDelivery}個）${deliveryNumber}回目`;
+function getItemName(planId: string, deliveryNumber: number): string {
+  const planLabels: Record<string, string> = {
+    'sub-6': '【定期】ふとるめし6食プラン',
+    'sub-12': '【定期】ふとるめし12食プラン',
+    'subscription-monthly-12': '【定期】ふとるめし12食プラン',
+  };
+  const label = planLabels[planId] || '【定期】ふとるめしプラン';
+  return `${label} ${deliveryNumber}回目`;
 }
 
 function formatDateJST(dateString: string | null): string {

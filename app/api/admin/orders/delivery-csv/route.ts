@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
       process.env.SENDER_POSTAL_CODE || '',
       process.env.SENDER_ADDRESS || '',
       process.env.SENDER_COMPANY || '',
-      order.menu_set || '',
+      getOrderItemName(order.menu_set),
     ]) || [];
 
     const bom = '\uFEFF';
@@ -114,4 +114,11 @@ function getJSTDateString(): string {
   const jstOffset = 9 * 60 * 60 * 1000;
   const jstDate = new Date(now.getTime() + jstOffset);
   return `${jstDate.getUTCFullYear()}-${String(jstDate.getUTCMonth() + 1).padStart(2, '0')}-${String(jstDate.getUTCDate()).padStart(2, '0')}`;
+}
+
+function getOrderItemName(menuSet: string): string {
+  if (menuSet && menuSet.includes('お試し')) {
+    return 'ふとるめしお試し6個セット';
+  }
+  return menuSet || '';
 }
