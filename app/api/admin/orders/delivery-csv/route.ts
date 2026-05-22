@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     const rows = orders?.map((order) => [
       '0',
       '1',
-      formatNextDayJST(order.created_at),
+      formatTodayJST(),
       order.phone || '',
       (order.postal_code || '').replace(/-/g, ''),
       (order.prefecture || '') + (order.city || '') + (order.address_detail || ''),
@@ -94,10 +94,9 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function formatNextDayJST(dateStr: string): string {
-  const date = new Date(dateStr);
-  const jst = new Date(date.getTime() + 9 * 60 * 60 * 1000);
-  jst.setDate(jst.getDate() + 1);
+function formatTodayJST(): string {
+  const now = new Date();
+  const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
   return `${jst.getUTCFullYear()}/${String(jst.getUTCMonth() + 1).padStart(2, '0')}/${String(jst.getUTCDate()).padStart(2, '0')}`;
 }
 

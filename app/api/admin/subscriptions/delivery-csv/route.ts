@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
       return [
         '0',
         '1',
-        formatDateJST(sub.next_delivery_date),
+        formatTodayJST(),
         addr.phone || '',
         (addr.postal_code || '').replace(/-/g, ''),
         (addr.prefecture || '') + (addr.city || '') + (addr.address_detail || ''),
@@ -116,12 +116,10 @@ function getItemName(planId: string, deliveryNumber: number): string {
   return `${label} ${deliveryNumber}回目`;
 }
 
-function formatDateJST(dateString: string | null): string {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  const jstOffset = 9 * 60 * 60 * 1000;
-  const jstDate = new Date(date.getTime() + jstOffset);
-  return `${jstDate.getUTCFullYear()}/${String(jstDate.getUTCMonth() + 1).padStart(2, '0')}/${String(jstDate.getUTCDate()).padStart(2, '0')}`;
+function formatTodayJST(): string {
+  const now = new Date();
+  const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  return `${jst.getUTCFullYear()}/${String(jst.getUTCMonth() + 1).padStart(2, '0')}/${String(jst.getUTCDate()).padStart(2, '0')}`;
 }
 
 function escapeCSV(value: string): string {
