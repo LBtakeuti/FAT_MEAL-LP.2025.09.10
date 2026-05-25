@@ -10,6 +10,28 @@ interface DayItem {
   plan_name: string;
   status: string;
   predicted: boolean;
+  preferred_delivery_date: string | null;
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  pending: '未発送',
+  confirmed: '確定',
+  shipped: '発送済',
+  delivered: '配達済',
+  cancelled: 'キャンセル',
+  predicted: '予測',
+};
+
+// "YYYY-MM-DD" → "M/D(曜)" 表示用
+function formatPreferredDate(dateStr: string | null): string {
+  if (!dateStr) return '';
+  const m = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return dateStr;
+  const month = parseInt(m[2], 10);
+  const day = parseInt(m[3], 10);
+  const dow = new Date(`${dateStr}T00:00:00`).getDay();
+  const dowLabel = ['日', '月', '火', '水', '木', '金', '土'][dow];
+  return `${month}/${day}(${dowLabel})`;
 }
 
 interface DayCount {
@@ -145,25 +167,40 @@ export default function AdminCalendarPage() {
                   </div>
 
                   {visibleItems.length > 0 && (
-                    <div className="flex-1 space-y-0.5 overflow-hidden">
-                      {visibleItems.map((it, i) => (
-                        <div
-                          key={i}
-                          className={`text-[11px] leading-tight px-1.5 py-0.5 rounded truncate ${
-                            it.predicted
-                              ? 'bg-gray-100 text-gray-500 italic'
-                              : it.source === 'subscription'
-                                ? 'bg-purple-100 text-purple-800'
-                                : it.source === 'tiktok'
-                                  ? 'bg-pink-100 text-pink-800'
-                                  : 'bg-orange-100 text-orange-800'
-                          }`}
-                          title={`${it.customer_name} / ${it.plan_name}`}
-                        >
-                          <span className="font-medium">{it.customer_name}</span>
-                          {it.plan_name && <span className="opacity-75"> · {it.plan_name}</span>}
-                        </div>
-                      ))}
+                    <div className="flex-1 space-y-1 overflow-hidden">
+                      {visibleItems.map((it, i) => {
+                        const preferredLabel = formatPreferredDate(it.preferred_delivery_date);
+                        return (
+                          <div
+                            key={i}
+                            className={`text-[11px] leading-tight px-1.5 py-1 rounded ${
+                              it.predicted
+                                ? 'bg-gray-100 text-gray-500 italic'
+                                : it.source === 'subscription'
+                                  ? 'bg-purple-50 text-purple-900'
+                                  : it.source === 'tiktok'
+                                    ? 'bg-pink-50 text-pink-900'
+                                    : 'bg-orange-50 text-orange-900'
+                            }`}
+                            title={`${it.customer_name} / ${it.plan_name}${preferredLabel ? ` / 配送希望日 ${preferredLabel}` : ''}`}
+                          >
+                            {preferredLabel && (
+                              <div className="font-bold text-[13px] text-orange-700 truncate">
+                                希望 {preferredLabel}
+                              </div>
+                            )}
+                            <div className="truncate">
+                              <span className="font-medium">{it.customer_name}</span>
+                              {it.plan_name && <span className="opacity-75"> · {it.plan_name}</span>}
+                            </div>
+                            {it.status && (
+                              <div className="text-[10px] opacity-75 truncate">
+                                {STATUS_LABEL[it.status] ?? it.status}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                       {hiddenCount > 0 && (
                         <div className="text-[10px] text-gray-500 px-1.5">+{hiddenCount}件</div>
                       )}

@@ -8,6 +8,15 @@ interface DayItem {
   plan_name: string;
   status: string;
   predicted: boolean;
+  // F2: 各 item に「配送希望日」を持たせ、UI で最も目立つように表示する
+  preferred_delivery_date: string | null;
+}
+
+// JST 日付（YYYY-MM-DD）に変換
+function toJstYmd(isoLike: string): string {
+  const d = new Date(isoLike);
+  const jst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+  return jst.toISOString().slice(0, 10);
 }
 
 interface DayCount {
@@ -61,18 +70,19 @@ export async function GET(request: NextRequest) {
       return cells.get(date)!;
     };
 
-    // 1. subscription_deliveries（顧客名・プラン名を含めて取得）
-    // F1: preferred_delivery_date を最優先で参照。NULL なら scheduled_date にフォールバック
+    // 1. subscription_deliveries
+    // F2: セル配置基準は「注文日（created_at の JST 日付）」、各 item は preferred_delivery_date を保持
     const { data: subDeliveries } = await supabase
       .from('subscription_deliveries')
-      .select('scheduled_date, preferred_delivery_date, status, subscriptions(plan_name, shipping_address)')
-      .gte('scheduled_date', from)
-      .lte('scheduled_date', to);
+      .select('created_at, scheduled_date, preferred_delivery_date, status, subscriptions(plan_name, shipping_address)')
+      .gte('created_at', `${from}T00:00:00`)
+      .lte('created_at', `${to}T23:59:59`);
     for (const d of subDeliveries || []) {
-      const displayDate = d.preferred_delivery_date ?? d.scheduled_date;
-      const cell = ensure(displayDate);
+      const orderDate = toJstYmd(d.created_at);
+      const cell = ensure(orderDate);
       cell.actual += 1;
-      if (displayDate <= todayJST && d.status !== 'shipped') cell.pendingPast = true;
+      const preferred = d.preferred_delivery_date ?? d.scheduled_date;
+      if (preferred <= todayJST && d.status !== 'shipped') cell.pendingPast = true;
       const sub = d.subscriptions || {};
       const addr = sub.shipping_address || {};
       cell.items.push({
@@ -81,11 +91,12 @@ export async function GET(request: NextRequest) {
         plan_name: planLabel(sub.plan_name, 'subscription'),
         status: d.status,
         predicted: false,
+        preferred_delivery_date: preferred,
       });
     }
 
     // 2. orders
-    // F1: preferred_delivery_date を最優先で参照。NULL なら created_at の日付にフォールバック
+    // F2: セル配置は created_at（JST）基準のまま。preferred_delivery_date は item に持たせて UI で強調
     const { data: orders } = await supabase
       .from('orders')
       .select('created_at, preferred_delivery_date, status, stripe_session_id, customer_name, menu_set')
@@ -93,20 +104,22 @@ export async function GET(request: NextRequest) {
       .lte('created_at', `${to}T23:59:59`);
     for (const o of orders || []) {
       if (typeof o.stripe_session_id === 'string' && o.stripe_session_id.startsWith('sub_delivery_')) continue;
-      const date = o.preferred_delivery_date ?? String(o.created_at).slice(0, 10);
-      const cell = ensure(date);
+      const orderDate = toJstYmd(o.created_at);
+      const cell = ensure(orderDate);
       cell.actual += 1;
-      if (date <= todayJST && o.status !== 'shipped' && o.status !== 'delivered') cell.pendingPast = true;
+      const preferred = o.preferred_delivery_date ?? orderDate;
+      if (preferred <= todayJST && o.status !== 'shipped' && o.status !== 'delivered') cell.pendingPast = true;
       cell.items.push({
         source: 'order',
         customer_name: o.customer_name || 'お客様',
         plan_name: planLabel(o.menu_set, 'order'),
         status: o.status || 'pending',
         predicted: false,
+        preferred_delivery_date: preferred,
       });
     }
 
-    // 3. tiktok_shop_orders
+    // 3. tiktok_shop_orders（preferred_delivery_date 概念なし。注文日基準のみ）
     const { data: tiktok } = await supabase
       .from('tiktok_shop_orders')
       .select('created_time, status, recipient, last_name, first_name, product_name')
@@ -124,6 +137,7 @@ export async function GET(request: NextRequest) {
         plan_name: planLabel(t.product_name, 'tiktok'),
         status: t.status || 'pending',
         predicted: false,
+        preferred_delivery_date: null,
       });
     }
 
@@ -155,6 +169,8 @@ export async function GET(request: NextRequest) {
         plan_name: planLabel(p.plan_name, 'subscription'),
         status: 'predicted',
         predicted: true,
+        // 予測は予測日 = 配送希望日として扱う
+        preferred_delivery_date: p.date,
       });
     }
 
