@@ -6,7 +6,7 @@ import { createBrowserClient } from '@/lib/supabase';
 import { MenuDetailModal } from '@/components/menu/MenuDetailModal';
 import { PlanSelectorCards, type PlanCardData } from '@/components/purchase/PlanSelectorCards';
 import { StripePaymentForm } from '@/components/purchase/StripePaymentForm';
-import { getDeliveryDateRange, listDeliveryBusinessDays, isBusinessDay, formatDateKey } from '@/lib/business-days';
+import { getDeliveryDateRange, listDeliveryDateOptions, formatDateKey } from '@/lib/business-days';
 import type { MenuItem } from '@/types';
 
 export interface PurchaseFlowProps {
@@ -666,7 +666,7 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
 
   // 配送日の検証。
   // 日付の文字列(YYYY-MM-DD) 同士の比較で時刻比較によるオフバイワンを回避。
-  // 営業日（土日祝日）チェックも合わせて行う。
+  // 4営業日後以降の最低日数チェックのみ。土日・祝日も希望日として選択可能。
   const validateDeliveryDate = (dateStr: string): string | null => {
     if (!dateStr) return '配送希望日を選択してください';
     const { min, max } = getDeliveryDateRange(new Date());
@@ -677,7 +677,6 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
     }
     const selected = new Date(`${dateStr}T00:00:00`);
     if (Number.isNaN(selected.getTime())) return '配送希望日の形式が不正です';
-    if (!isBusinessDay(selected)) return '土日・祝日は配送できません。営業日を選択してください';
     return null;
   };
 
@@ -973,7 +972,7 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
     </div>
   );
 
-  // 配送希望日選択UI（サブスク時のみ表示・営業日4日後〜+6日の範囲で選択可能）
+  // 配送希望日選択UI（サブスク時のみ表示・4営業日後〜+6日の連続する日付を選択可能。土日含む）
   const renderDeliveryDateSelection = () => {
     if (purchaseType !== 'subscription-monthly') {
       return null;
@@ -981,7 +980,7 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
 
     const minDate = getMinDeliveryDate();
     const maxDate = getMaxDeliveryDate();
-    const businessDays = listDeliveryBusinessDays(new Date());
+    const dateOptions = listDeliveryDateOptions(new Date());
     const WEEKDAY_LABEL = ['日', '月', '火', '水', '木', '金', '土'];
 
     return (
@@ -1004,7 +1003,7 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
             }`}
           >
             <option value="">配送希望日を選択してください</option>
-            {businessDays.map((d) => {
+            {dateOptions.map((d) => {
               const key = formatDateKey(d);
               const label = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日（${WEEKDAY_LABEL[d.getDay()]}）`;
               return (
@@ -1018,8 +1017,8 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
             <p className="text-red-500 text-xs mt-1">{errors.preferredDeliveryDate}</p>
           )}
           <div className="text-xs text-gray-500 mt-2 space-y-1">
-            <p>• 注文日から4営業日後以降の営業日のみ選択できます</p>
-            <p>• 表示中: {minDate} ～ {maxDate}（うち営業日 {businessDays.length} 日）</p>
+            <p>• 注文日から4営業日後以降の日付を選択できます（土日もご指定いただけます）</p>
+            <p>• 表示中: {minDate} ～ {maxDate}（{dateOptions.length}日間）</p>
           </div>
         </div>
         {customerInfo.preferredDeliveryDate && !errors.preferredDeliveryDate && (

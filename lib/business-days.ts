@@ -60,15 +60,15 @@ export function getDeliveryDateRange(purchaseDate: Date): { min: Date; max: Date
 }
 
 /**
- * 配送可能範囲のうち、営業日（土日・祝日を除く）だけを列挙して返す。
- * 配送日プルダウン用。
+ * 配送可能範囲（4営業日後〜+6日）の連続する日付を、土日・祝日を含めてすべて列挙して返す。
+ * 配送日プルダウン用。ユーザー画面では土日も配送希望日として選択可能。
  */
-export function listDeliveryBusinessDays(purchaseDate: Date): Date[] {
+export function listDeliveryDateOptions(purchaseDate: Date): Date[] {
   const { min, max } = getDeliveryDateRange(purchaseDate);
   const days: Date[] = [];
   const cursor = new Date(min);
   while (cursor <= max) {
-    if (isBusinessDay(cursor)) days.push(new Date(cursor));
+    days.push(new Date(cursor));
     cursor.setDate(cursor.getDate() + 1);
   }
   return days;
