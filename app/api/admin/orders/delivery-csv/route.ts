@@ -12,6 +12,7 @@ interface Order {
   building: string;
   menu_set: string;
   created_at: string;
+  preferred_delivery_date: string | null;
 }
 
 export async function GET(request: NextRequest) {
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
     const dateParam = searchParams.get('date');
 
     let query = (supabase.from('orders') as any)
-      .select('id, customer_name, phone, postal_code, prefecture, city, address_detail, building, menu_set, created_at')
+      .select('id, customer_name, phone, postal_code, prefecture, city, address_detail, building, menu_set, created_at, preferred_delivery_date')
       .not('stripe_session_id', 'like', 'sub_delivery_%')
       .order('order_number', { ascending: true });
 
@@ -58,10 +59,13 @@ export async function GET(request: NextRequest) {
       '品名１',
     ];
 
-    const rows = orders?.map((order) => [
+    const rows = orders?.map((order) => {
+      // F2: 出荷予定日は preferred_delivery_date 最優先、無ければ created_at の JST 日付
+      const preferred = order.preferred_delivery_date ?? toJstYmd(order.created_at);
+      return [
       '0',
       '1',
-      formatTodayJST(),
+      formatYmdSlash(preferred),
       order.phone || '',
       (order.postal_code || '').replace(/-/g, ''),
       (order.prefecture || '') + (order.city || '') + (order.address_detail || ''),
@@ -72,7 +76,8 @@ export async function GET(request: NextRequest) {
       process.env.SENDER_ADDRESS || '',
       process.env.SENDER_COMPANY || '',
       getOrderItemName(order.menu_set),
-    ]) || [];
+      ];
+    }) || [];
 
     const bom = '\uFEFF';
     const csvContent = [
@@ -94,10 +99,18 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function formatTodayJST(): string {
-  const now = new Date();
-  const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-  return `${jst.getUTCFullYear()}/${String(jst.getUTCMonth() + 1).padStart(2, '0')}/${String(jst.getUTCDate()).padStart(2, '0')}`;
+// ISO 8601 → JST "YYYY-MM-DD"
+function toJstYmd(iso: string): string {
+  const d = new Date(iso);
+  const jst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
+  return jst.toISOString().slice(0, 10);
+}
+
+// "YYYY-MM-DD" → "YYYY/MM/DD"（CSV 出荷予定日カラム用）
+function formatYmdSlash(ymd: string): string {
+  const m = ymd.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return ymd;
+  return `${m[1]}/${m[2]}/${m[3]}`;
 }
 
 function escapeCSV(value: string): string {

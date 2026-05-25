@@ -80,6 +80,9 @@ function DeliveryPageContent() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  // F2: 配送希望日の編集中アイテム
+  const [editingDateId, setEditingDateId] = useState<string | null>(null);
+  const [editingDateValue, setEditingDateValue] = useState<string>('');
 
   const tabRange = useCallback((): { from: string; to: string } => {
     if (activeTab === 'today') return { from: today, to: today };
@@ -152,6 +155,35 @@ function DeliveryPageContent() {
     if (orderIds) params.set('order_ids', orderIds);
     if (tiktokIds) params.set('tiktok_ids', tiktokIds);
     window.location.href = `/api/admin/delivery/export-csv?${params}`;
+  };
+
+  // F2: 配送希望日を PATCH で更新
+  const handlePreferredDateSave = async (item: DeliveryItem) => {
+    if (item.source === 'tiktok') return; // TikTok は対象外
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(editingDateValue)) {
+      toast.error('YYYY-MM-DD 形式で入力してください');
+      return;
+    }
+    setUpdatingId(item.id);
+    try {
+      const res = await fetch(`/api/admin/delivery/${item.id}/preferred-date`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source: item.source, preferred_delivery_date: editingDateValue }),
+      });
+      if (res.ok) {
+        setItems(prev => prev.map(i => i.id === item.id ? { ...i, date: editingDateValue } : i));
+        toast.success('配送希望日を更新しました');
+        setEditingDateId(null);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        toast.error(data.message || '配送希望日の更新に失敗しました');
+      }
+    } catch {
+      toast.error('配送希望日の更新に失敗しました');
+    } finally {
+      setUpdatingId(null);
+    }
   };
 
   const handleStatusChange = async (item: DeliveryItem, newStatus: string) => {
@@ -358,8 +390,46 @@ function DeliveryPageContent() {
                           />
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {item.date}
-                          {isOverdue && <span className="ml-1 text-red-500 text-xs">⚠</span>}
+                          {editingDateId === item.id ? (
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="date"
+                                value={editingDateValue}
+                                onChange={(e) => setEditingDateValue(e.target.value)}
+                                className="text-sm px-2 py-1 border border-gray-300 rounded"
+                                disabled={updatingId === item.id}
+                              />
+                              <button
+                                onClick={() => handlePreferredDateSave(item)}
+                                disabled={updatingId === item.id}
+                                className="text-xs px-2 py-1 bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50"
+                              >
+                                保存
+                              </button>
+                              <button
+                                onClick={() => setEditingDateId(null)}
+                                disabled={updatingId === item.id}
+                                className="text-xs px-2 py-1 text-gray-600 hover:text-gray-900"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5">
+                              <span>{item.date}</span>
+                              {isOverdue && <span className="text-red-500 text-xs">⚠</span>}
+                              {item.source !== 'tiktok' && (
+                                <button
+                                  onClick={() => { setEditingDateId(item.id); setEditingDateValue(item.date); }}
+                                  className="text-xs text-gray-400 hover:text-orange-600"
+                                  title="配送希望日を編集"
+                                  aria-label="配送希望日を編集"
+                                >
+                                  ✎
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
                           <Badge variant={item.source === 'subscription' ? 'success' : item.source === 'tiktok' ? 'warning' : 'neutral'}>

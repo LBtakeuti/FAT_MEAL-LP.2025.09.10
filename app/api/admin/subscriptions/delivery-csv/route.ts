@@ -7,6 +7,7 @@ interface Subscription {
   plan_name: string;
   meals_per_delivery: number;
   next_delivery_date: string | null;
+  preferred_delivery_date: string | null;
   shipping_address: {
     name?: string;
     phone?: string;
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('subscriptions')
-      .select('id, plan_id, plan_name, meals_per_delivery, next_delivery_date, shipping_address, subscription_deliveries(status)')
+      .select('id, plan_id, plan_name, meals_per_delivery, next_delivery_date, preferred_delivery_date, shipping_address, subscription_deliveries(status)')
       .order('started_at', { ascending: false });
 
     if (idsParam) {
@@ -69,10 +70,13 @@ export async function GET(request: NextRequest) {
         d => d.status === 'shipped' || d.status === 'delivered'
       ).length;
       const deliveryNumber = completedCount + 1;
+      // F2: 出荷予定日は preferred_delivery_date を最優先、無ければ next_delivery_date、最終フォールバックで今日(JST)
+      const preferred = sub.preferred_delivery_date ?? sub.next_delivery_date;
+      const shipDate = preferred ? formatYmdSlash(preferred) : formatTodayJST();
       return [
         '0',
         '1',
-        formatTodayJST(),
+        shipDate,
         addr.phone || '',
         (addr.postal_code || '').replace(/-/g, ''),
         (addr.prefecture || '') + (addr.city || '') + (addr.address_detail || ''),
@@ -114,6 +118,13 @@ function getItemName(planId: string, deliveryNumber: number): string {
   };
   const label = planLabels[planId] || '【定期】ふとるめしプラン';
   return `${label} ${deliveryNumber}回目`;
+}
+
+// "YYYY-MM-DD" → "YYYY/MM/DD" 形式変換（CSV 出荷予定日カラム用）
+function formatYmdSlash(ymd: string): string {
+  const m = ymd.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return ymd;
+  return `${m[1]}/${m[2]}/${m[3]}`;
 }
 
 function formatTodayJST(): string {
