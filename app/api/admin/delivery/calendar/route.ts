@@ -53,8 +53,14 @@ export async function GET(request: NextRequest) {
 
     const fromDate = new Date(year, month - 1, 1);
     const toDate = new Date(year, month, 0); // 月末
-    const from = ymd(fromDate);
-    const to = ymd(toDate);
+    const monthFrom = ymd(fromDate);
+    const monthTo = ymd(toDate);
+    // F4-3: クエリ範囲は表示月の前後1日まで拡張。
+    //   resolveDeliveryWorkDate により注文がスライドして翌月初日や前月末日のセルに入る可能性があり、
+    //   表示月ぴったりでクエリすると「月境界をまたいでスライドする注文」が拾えないため。
+    //   日数配列は最終的に表示月のみで構築するので、余分に取得しても UI には影響しない。
+    const from = ymd(new Date(year, month - 1, 0)); // 前月末日
+    const to = ymd(new Date(year, month, 1)); // 翌月1日
 
     const todayJST = ymd(new Date(Date.now() + 9 * 60 * 60 * 1000));
 
@@ -154,7 +160,8 @@ export async function GET(request: NextRequest) {
         existingByPid.get(key)!.add(d.scheduled_date as string);
       }
     }
-    const predicted = predictDeliveries(activeSubs || [], existingByPid, from, to);
+    // 予測は表示月の範囲で生成（クエリ範囲を広げた from/to ではなく monthFrom/monthTo を使う）
+    const predicted = predictDeliveries(activeSubs || [], existingByPid, monthFrom, monthTo);
     for (const p of predicted) {
       const cell = ensure(p.date);
       cell.predicted += 1;
