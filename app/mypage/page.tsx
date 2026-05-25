@@ -128,6 +128,12 @@ export default function MyPage() {
   const [cancelLoading, setCancelLoading] = useState(false);
   const [cancelSuccess, setCancelSuccess] = useState(false);
 
+  // F3: 配送希望日変更モーダル
+  const [preferredDateModalSub, setPreferredDateModalSub] = useState<Subscription | null>(null);
+  const [preferredDateValue, setPreferredDateValue] = useState<string>('');
+  const [preferredDateSaving, setPreferredDateSaving] = useState(false);
+  const [preferredDateMessage, setPreferredDateMessage] = useState<string | null>(null);
+
   useEffect(() => {
     const supabase = createBrowserClient();
 
@@ -230,6 +236,47 @@ export default function MyPage() {
     setSelectedReasons(prev =>
       prev.includes(key) ? prev.filter(r => r !== key) : [...prev, key]
     );
+  };
+
+  // F3: 配送希望日の変更を確定送信
+  const handlePreferredDateSave = async () => {
+    if (!preferredDateModalSub || !user?.id) return;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(preferredDateValue)) {
+      setPreferredDateMessage('日付の形式が正しくありません');
+      return;
+    }
+    setPreferredDateSaving(true);
+    setPreferredDateMessage(null);
+    try {
+      const res = await fetch(`/api/users/subscriptions/${preferredDateModalSub.id}/preferred-date`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          preferred_delivery_date: preferredDateValue,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPreferredDateMessage(data.error || '変更に失敗しました');
+        return;
+      }
+      // ローカル state 更新（next_delivery_date を変更後の値で上書き表示）
+      setSubscriptions(prev => prev.map(s =>
+        s.id === preferredDateModalSub.id
+          ? { ...s, preferred_delivery_date: preferredDateValue, next_delivery_date: preferredDateValue }
+          : s
+      ));
+      setPreferredDateMessage('変更しました。確認メールをお送りしました。');
+      setTimeout(() => {
+        setPreferredDateModalSub(null);
+        setPreferredDateMessage(null);
+      }, 1500);
+    } catch {
+      setPreferredDateMessage('変更に失敗しました');
+    } finally {
+      setPreferredDateSaving(false);
+    }
   };
 
   const handleCancelSubscription = async () => {
@@ -398,9 +445,21 @@ export default function MyPage() {
                             <span>{new Date(sub.started_at).toLocaleDateString('ja-JP')}</span>
                           </div>
                           {sub.next_delivery_date && sub.status === 'active' && (
-                            <div className="flex justify-between">
+                            <div className="flex justify-between items-center">
                               <span>次回配送予定</span>
-                              <span className="text-orange-600 font-medium">{new Date(sub.next_delivery_date).toLocaleDateString('ja-JP')}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-orange-600 font-medium">{new Date(sub.next_delivery_date).toLocaleDateString('ja-JP')}</span>
+                                <button
+                                  onClick={() => {
+                                    setPreferredDateModalSub(sub);
+                                    setPreferredDateValue(sub.preferred_delivery_date || sub.next_delivery_date || '');
+                                    setPreferredDateMessage(null);
+                                  }}
+                                  className="text-xs px-2 py-1 border border-orange-300 text-orange-700 rounded hover:bg-orange-50"
+                                >
+                                  変更
+                                </button>
+                              </div>
                             </div>
                           )}
                           {sub.current_period_end && sub.status === 'active' && (
@@ -442,6 +501,49 @@ export default function MyPage() {
                   解約後も課金済みの期間分は通常通り配送されます。
                   ご不明点は<a href="/contact" className="text-orange-600 hover:underline">お問い合わせ</a>よりご連絡ください。
                 </p>
+              </div>
+            </div>
+          )}
+
+          {/* F3: 配送希望日変更モーダル */}
+          {preferredDateModalSub && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-xl max-w-md w-full p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-3">配送希望日を変更</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  次回お届け予定の配送希望日を選び直してください。
+                  <br />
+                  <span className="text-xs text-gray-500">※ 発送準備に入った配送は変更できません。</span>
+                </p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">配送希望日</label>
+                <input
+                  type="date"
+                  value={preferredDateValue}
+                  onChange={(e) => setPreferredDateValue(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  disabled={preferredDateSaving}
+                />
+                {preferredDateMessage && (
+                  <p className={`mt-3 text-sm ${preferredDateMessage.includes('変更しました') ? 'text-green-600' : 'text-red-600'}`}>
+                    {preferredDateMessage}
+                  </p>
+                )}
+                <div className="flex gap-2 justify-end mt-5">
+                  <button
+                    onClick={() => setPreferredDateModalSub(null)}
+                    disabled={preferredDateSaving}
+                    className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50"
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    onClick={handlePreferredDateSave}
+                    disabled={preferredDateSaving}
+                    className="px-4 py-2 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+                  >
+                    {preferredDateSaving ? '保存中...' : '変更を確定'}
+                  </button>
+                </div>
               </div>
             </div>
           )}
