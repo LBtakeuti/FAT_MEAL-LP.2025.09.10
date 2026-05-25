@@ -78,3 +78,39 @@ export function listDeliveryDateOptions(purchaseDate: Date): Date[] {
 export function formatDateKey(date: Date): string {
   return toDateKey(date);
 }
+
+/**
+ * 注文確定時刻（created_at）から「配送作業日」を算出する。
+ * 管理画面の配送カレンダーで、各注文をどの営業日のマスに配置するかを決めるためのロジック。
+ *
+ * ルール:
+ *   - JST に変換した時刻が 10:00 未満なら当日を起点、10:00 以降なら翌日を起点とする
+ *   - 起点が土日・祝日なら次の営業日まで進める
+ *
+ * 戻り値は JST の "YYYY-MM-DD"。
+ */
+export function resolveDeliveryWorkDate(createdAt: Date): string {
+  const jst = new Date(createdAt.getTime() + 9 * 60 * 60 * 1000);
+  const baseHours = jst.getUTCHours();
+
+  const candidate = new Date(Date.UTC(
+    jst.getUTCFullYear(),
+    jst.getUTCMonth(),
+    jst.getUTCDate(),
+  ));
+  if (baseHours >= 10) {
+    candidate.setUTCDate(candidate.getUTCDate() + 1);
+  }
+
+  while (true) {
+    const y = candidate.getUTCFullYear();
+    const m = String(candidate.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(candidate.getUTCDate()).padStart(2, '0');
+    const dow = candidate.getUTCDay();
+    const ymd = `${y}-${m}-${d}`;
+    const isWeekend = dow === 0 || dow === 6;
+    const isHoliday = JAPANESE_HOLIDAYS.includes(ymd);
+    if (!isWeekend && !isHoliday) return ymd;
+    candidate.setUTCDate(candidate.getUTCDate() + 1);
+  }
+}
