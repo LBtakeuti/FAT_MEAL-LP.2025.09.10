@@ -195,6 +195,8 @@ async function createOrderFromDelivery(
   ].filter(Boolean).join(' ');
 
   // ordersテーブルに注文を作成
+  // F1: subscription_deliveries.scheduled_date を preferred_delivery_date として継承
+  // （F3 でユーザー指定値があれば、delivery 側の preferred_delivery_date を流用するよう差し替え）
   const { data: order, error } = await (supabase
     .from('orders') as any)
     .insert({
@@ -212,6 +214,7 @@ async function createOrderFromDelivery(
       quantity: delivery.quantity,
       amount: 0, // サブスクは別途Stripe決済済み
       status: 'pending', // 注文受付（管理画面で confirmed→shippedに変更）
+      preferred_delivery_date: delivery.scheduled_date,
     })
     .select()
     .single();

@@ -62,15 +62,17 @@ export async function GET(request: NextRequest) {
     };
 
     // 1. subscription_deliveries（顧客名・プラン名を含めて取得）
+    // F1: preferred_delivery_date を最優先で参照。NULL なら scheduled_date にフォールバック
     const { data: subDeliveries } = await supabase
       .from('subscription_deliveries')
-      .select('scheduled_date, status, subscriptions(plan_name, shipping_address)')
+      .select('scheduled_date, preferred_delivery_date, status, subscriptions(plan_name, shipping_address)')
       .gte('scheduled_date', from)
       .lte('scheduled_date', to);
     for (const d of subDeliveries || []) {
-      const cell = ensure(d.scheduled_date);
+      const displayDate = d.preferred_delivery_date ?? d.scheduled_date;
+      const cell = ensure(displayDate);
       cell.actual += 1;
-      if (d.scheduled_date <= todayJST && d.status !== 'shipped') cell.pendingPast = true;
+      if (displayDate <= todayJST && d.status !== 'shipped') cell.pendingPast = true;
       const sub = d.subscriptions || {};
       const addr = sub.shipping_address || {};
       cell.items.push({
@@ -83,14 +85,15 @@ export async function GET(request: NextRequest) {
     }
 
     // 2. orders
+    // F1: preferred_delivery_date を最優先で参照。NULL なら created_at の日付にフォールバック
     const { data: orders } = await supabase
       .from('orders')
-      .select('created_at, status, stripe_session_id, customer_name, menu_set')
+      .select('created_at, preferred_delivery_date, status, stripe_session_id, customer_name, menu_set')
       .gte('created_at', `${from}T00:00:00`)
       .lte('created_at', `${to}T23:59:59`);
     for (const o of orders || []) {
       if (typeof o.stripe_session_id === 'string' && o.stripe_session_id.startsWith('sub_delivery_')) continue;
-      const date = String(o.created_at).slice(0, 10);
+      const date = o.preferred_delivery_date ?? String(o.created_at).slice(0, 10);
       const cell = ensure(date);
       cell.actual += 1;
       if (date <= todayJST && o.status !== 'shipped' && o.status !== 'delivered') cell.pendingPast = true;

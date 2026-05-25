@@ -189,16 +189,21 @@ export async function POST(request: NextRequest) {
         const invoiceId = matchedInvoice?.id ?? null;
 
         const schedules = calculateMonthlyDeliverySchedule(planId, cycleStart);
-        const deliveryRows = schedules.map((s) => ({
-          subscription_id: sub.id,
-          scheduled_date: s.scheduled_date.toISOString().split('T')[0],
-          menu_set: getMenuSetNameWithDeliveryNumber(planId, s.delivery_number),
-          meals_per_delivery: s.meals_per_delivery,
-          quantity: 1,
-          status: 'pending',
-          stripe_invoice_id: invoiceId,
-          customer_email: sub.shipping_address?.email || '',
-        }));
+        const deliveryRows = schedules.map((s) => {
+          const scheduledDateStr = s.scheduled_date.toISOString().split('T')[0];
+          return {
+            subscription_id: sub.id,
+            scheduled_date: scheduledDateStr,
+            // F1: 初期は scheduled_date と同値（F3 でユーザー指定値に差し替え）
+            preferred_delivery_date: scheduledDateStr,
+            menu_set: getMenuSetNameWithDeliveryNumber(planId, s.delivery_number),
+            meals_per_delivery: s.meals_per_delivery,
+            quantity: 1,
+            status: 'pending',
+            stripe_invoice_id: invoiceId,
+            customer_email: sub.shipping_address?.email || '',
+          };
+        });
 
         const cycleAction: any = {
           month_number: m + 1, // 1ヶ月目=初月→ m=1 が 2ヶ月目

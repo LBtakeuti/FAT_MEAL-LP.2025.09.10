@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       const { data: deliveries, error } = await (supabase as any)
         .from('subscription_deliveries')
         .select(`
-          id, scheduled_date, status, meals_per_delivery,
+          id, scheduled_date, preferred_delivery_date, status, meals_per_delivery,
           subscriptions(id, plan_name, shipping_address)
         `)
         .in('id', subIds);
@@ -55,6 +55,8 @@ export async function GET(request: NextRequest) {
         for (const d of deliveries) {
           const sub = d.subscriptions;
           const addr = sub?.shipping_address || {};
+          // F1: preferred_delivery_date 優先、NULL なら scheduled_date
+          const displayDate = d.preferred_delivery_date ?? d.scheduled_date;
           // 自分より前の日付に shipped 済みの件数 = 自分の配送番号 - 1
           const prevShipped = (allDeliveriesMap[sub?.id] || []).filter(
             (x) => x.scheduled_date < d.scheduled_date && x.status === 'shipped'
@@ -65,7 +67,7 @@ export async function GET(request: NextRequest) {
           rows.push([
             '0',
             '1',
-            formatDateJST(d.scheduled_date),
+            formatDateJST(displayDate),
             addr.phone || '',
             (addr.postal_code || '').replace(/-/g, ''),
             (addr.prefecture || '') + (addr.city || '') + (addr.address_detail || ''),
@@ -85,7 +87,7 @@ export async function GET(request: NextRequest) {
     if (orderIds.length > 0) {
       const { data: orders, error } = await (supabase as any)
         .from('orders')
-        .select('id, customer_name, phone, postal_code, prefecture, city, address_detail, building, menu_set, quantity, created_at')
+        .select('id, customer_name, phone, postal_code, prefecture, city, address_detail, building, menu_set, quantity, created_at, preferred_delivery_date')
         .in('id', orderIds);
 
       if (error) {
@@ -93,10 +95,14 @@ export async function GET(request: NextRequest) {
       } else if (orders) {
         for (const o of orders) {
           const itemName = `${o.menu_set || ''}（${o.quantity || 6}個）`;
+          // F1: preferred_delivery_date があれば優先、NULL なら従来の created_at+1日（出荷日）
+          const shipDate = o.preferred_delivery_date
+            ? formatDateJST(o.preferred_delivery_date)
+            : formatNextDayJST(o.created_at);
           rows.push([
             '0',
             '1',
-            formatNextDayJST(o.created_at),
+            shipDate,
             o.phone || '',
             (o.postal_code || '').replace(/-/g, ''),
             (o.prefecture || '') + (o.city || '') + (o.address_detail || ''),

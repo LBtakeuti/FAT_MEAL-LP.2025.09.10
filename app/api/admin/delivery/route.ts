@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       let subQuery = (supabase as any)
         .from('subscription_deliveries')
         .select(`
-          id, scheduled_date, status, menu_set, meals_per_delivery, quantity,
+          id, scheduled_date, preferred_delivery_date, status, menu_set, meals_per_delivery, quantity,
           subscriptions(id, plan_name, shipping_address, deliveries_per_month)
         `)
         .order('scheduled_date', { ascending: true });
@@ -108,10 +108,11 @@ export async function GET(request: NextRequest) {
         for (const d of deliveries) {
           const sub = d.subscriptions;
           const addr = sub?.shipping_address || {};
+          // F1: preferred_delivery_date 優先、NULL なら scheduled_date
           items.push({
             id: d.id,
             source: 'subscription',
-            date: d.scheduled_date,
+            date: d.preferred_delivery_date ?? d.scheduled_date,
             customer_name: addr.name || '',
             customer_email: addr.email || '',
             phone: addr.phone || '',
@@ -137,7 +138,7 @@ export async function GET(request: NextRequest) {
       let orderQuery = (supabase as any)
         .from('orders')
         .select(`
-          id, created_at, status, menu_set, quantity, customer_name, customer_email,
+          id, created_at, preferred_delivery_date, status, menu_set, quantity, customer_name, customer_email,
           phone, postal_code, prefecture, city, address_detail, address, building, order_number
         `)
         .not('stripe_session_id', 'like', 'sub_delivery_%')
@@ -153,7 +154,8 @@ export async function GET(request: NextRequest) {
         console.error('Failed to fetch orders:', orderError);
       } else if (orders) {
         for (const o of orders) {
-          const dateStr = o.created_at ? o.created_at.slice(0, 10) : '';
+          // F1: preferred_delivery_date 優先、NULL なら created_at の日付
+          const dateStr = o.preferred_delivery_date ?? (o.created_at ? o.created_at.slice(0, 10) : '');
           items.push({
             id: o.id,
             source: 'order',

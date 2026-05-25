@@ -388,6 +388,8 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe:
   if (supabase) {
     try {
       const referralCode = session.metadata?.referral_code || '';
+      // F1: 暫定で今日(JST)を preferred_delivery_date に入れる（F3 でユーザー指定値に差し替え）
+      const todayJST = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split('T')[0];
       const { data: insertedOrder, error: dbError } = await (supabase
         .from('orders') as any)
         .insert({
@@ -411,6 +413,7 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe:
           status: 'pending',
           referral_code: referralCode || null,
           notes: session.metadata?.notes || null,
+          preferred_delivery_date: todayJST,
         })
         .select('id')
         .single();
@@ -521,6 +524,8 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent,
   if (supabase) {
     try {
       const referralCode = metadata?.referral_code || '';
+      // F1: 暫定で今日(JST)を preferred_delivery_date に入れる（F3 でユーザー指定値に差し替え）
+      const todayJST = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().split('T')[0];
       const { data: insertedOrder, error: dbError } = await (supabase.from('orders') as any)
         .insert({
           user_id: userId,
@@ -543,6 +548,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent,
           status: 'pending',
           referral_code: referralCode || null,
           notes: metadata?.notes || null,
+          preferred_delivery_date: todayJST,
         })
         .select('id')
         .single();
@@ -927,15 +933,20 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
     });
 
     // subscription_deliveriesテーブルに初回配送予定を作成
-    const deliveries = deliverySchedules.map((schedule) => ({
-      subscription_id: (dbSubscription as any).id,
-      scheduled_date: schedule.scheduled_date.toISOString().split('T')[0],
-      menu_set: getMenuSetNameWithDeliveryNumber(planId, schedule.delivery_number),
-      meals_per_delivery: schedule.meals_per_delivery,
-      quantity: 1,
-      status: 'pending',
-      customer_email: customerEmail,
-    }));
+    const deliveries = deliverySchedules.map((schedule) => {
+      const scheduledDateStr = schedule.scheduled_date.toISOString().split('T')[0];
+      return {
+        subscription_id: (dbSubscription as any).id,
+        scheduled_date: scheduledDateStr,
+        // F1: 初期は scheduled_date と同値（F3 でユーザー指定値に差し替え）
+        preferred_delivery_date: scheduledDateStr,
+        menu_set: getMenuSetNameWithDeliveryNumber(planId, schedule.delivery_number),
+        meals_per_delivery: schedule.meals_per_delivery,
+        quantity: 1,
+        status: 'pending',
+        customer_email: customerEmail,
+      };
+    });
 
     const { error: deliveryError } = await (supabase
       .from('subscription_deliveries') as any)
@@ -1034,16 +1045,21 @@ async function handleMonthlySubscriptionPayment(invoice: Stripe.Invoice, stripe:
     const customerEmail = (dbSubscription as any).shipping_address?.email || '';
 
     // 新しい配送予定を作成
-    const deliveries = deliverySchedules.map(schedule => ({
-      subscription_id: (dbSubscription as any).id,
-      scheduled_date: schedule.scheduled_date.toISOString().split('T')[0],
-      menu_set: getMenuSetNameWithDeliveryNumber(planId, schedule.delivery_number),
-      meals_per_delivery: schedule.meals_per_delivery,
-      quantity: 1,
-      status: 'pending',
-      stripe_invoice_id: invoice.id,
-      customer_email: customerEmail,
-    }));
+    const deliveries = deliverySchedules.map(schedule => {
+      const scheduledDateStr = schedule.scheduled_date.toISOString().split('T')[0];
+      return {
+        subscription_id: (dbSubscription as any).id,
+        scheduled_date: scheduledDateStr,
+        // F1: 初期は scheduled_date と同値（F3 でユーザー指定値に差し替え）
+        preferred_delivery_date: scheduledDateStr,
+        menu_set: getMenuSetNameWithDeliveryNumber(planId, schedule.delivery_number),
+        meals_per_delivery: schedule.meals_per_delivery,
+        quantity: 1,
+        status: 'pending',
+        stripe_invoice_id: invoice.id,
+        customer_email: customerEmail,
+      };
+    });
 
     const { error: deliveryError } = await (supabase
       .from('subscription_deliveries') as any)
