@@ -9,7 +9,7 @@ export default function BentoTvSection() {
     <section className="bg-white py-6 sm:py-10" aria-label="ふとるめしのメニュー">
       <div className="max-w-6xl mx-auto px-4">
         <Image
-          src="/images/sections/futorumeshi-tv.png"
+          src="/images/sections/futorumeshi-tv.webp"
           alt="ふとるめしの弁当メニュー：開封ショットと6個並びの紹介"
           width={8492}
           height={2454}
