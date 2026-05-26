@@ -50,9 +50,9 @@ export default function HomeContent({ menuItems, shareData = null }: HomeContent
         ) : (
           <MenuIntroSection />
         )}
-        <MediaLogosSection />
-        {/* F8: TV取材風の弁当画像。share モードでは出さない */}
+        {/* F8: TV取材風の弁当画像。share モードでは出さない（メディアロゴの直前） */}
         {!isShare && <BentoTvSection />}
+        <MediaLogosSection />
         <ComparisonSection />
         <SportsScienceSection />
         <MenuSection initialMenuItems={menuItems} />
