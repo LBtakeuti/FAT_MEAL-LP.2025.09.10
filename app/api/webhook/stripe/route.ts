@@ -1328,7 +1328,7 @@ async function cancelSubscription(subscription: Stripe.Subscription) {
         await sendSubscriptionCancellationEmail({
           email: shippingAddress.email,
           name: shippingAddress.name || 'お客様',
-          planName: (dbSubscription as any).plan_name || 'ふとるめし月額プラン',
+          planName: (dbSubscription as any).plan_name || 'ふとるめし定期プラン',
         });
       }
     }
@@ -1382,7 +1382,7 @@ async function sendSubscriptionCancellationEmail(params: {
   const { error } = await resend.emails.send({
     from: fromEmail,
     to: params.email,
-    subject: '【ふとるめし】月額プランの解約が完了しました',
+    subject: '【ふとるめし】定期プランの解約が完了しました',
     html: emailHtml,
   });
 
@@ -1575,7 +1575,7 @@ async function sendSubscriptionPurchaseConfirmationEmail(params: {
     </div>
     <div class="content">
       <p>${params.name}様</p>
-      <p>この度は「ふとるめし」月額プランをご購入いただき、誠にありがとうございます。</p>
+      <p>この度は「ふとるめし」定期プランをご購入いただき、誠にありがとうございます。</p>
       
       <div class="delivery-schedule">
         <p style="margin-top: 0;"><strong>${params.planName}</strong></p>
@@ -1626,7 +1626,7 @@ async function sendSubscriptionPurchaseConfirmationEmail(params: {
   const { error } = await resend.emails.send({
     from: fromEmail,
     to: params.email,
-    subject: '【ふとるめし】月額プランのご購入・会員登録が完了しました',
+    subject: '【ふとるめし】定期プランのご購入・会員登録が完了しました',
     html: emailHtml,
   });
 

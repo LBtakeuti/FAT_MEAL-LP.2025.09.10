@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
     await sendCancellationSlackNotification({
       customerName,
       customerEmail,
-      planName: subscription.plan_name || 'ふとるめし月額プラン',
+      planName: subscription.plan_name || 'ふとるめし定期プラン',
       reasons,
       message: message || undefined,
     });

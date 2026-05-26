@@ -31,28 +31,24 @@ interface ReferrerStats {
   byProduct: { [key: string]: { count: number; commission: number } };
 }
 
-// プランIDからプラン表示名を取得（新3プラン体系 + legacy）
+import { getPlanDisplayName } from '@/lib/plan-labels';
+
+// プランIDからプラン表示名を取得（F11: 共通ヘルパーに統一）
 function getPlanTypeName(planId: string): string {
-  const planNames: Record<string, string> = {
-    'trial-6': 'お試しプラン',
-    'sub-6': '6食プラン',
-    'sub-12': '12食プラン',
-    'subscription-monthly-12': '12食プラン（旧価格）', // legacy
-  };
-  return planNames[planId] || planId;
+  return getPlanDisplayName(planId, planId);
 }
 
 // 初回コミッションのフォールバック計算（referral_commissions テーブルに記録がない過去データ向け）。
 // webhook 側の INITIAL_COMMISSION と一致させる。
 function calculateCommission(planId: string, menuSet: string): { commission: number; planType: string } {
   if (planId === 'trial-6' || menuSet?.includes('お試し')) {
-    return { commission: 500, planType: 'お試しプラン' };
+    return { commission: 500, planType: getPlanDisplayName('trial-6') };
   }
   if (planId === 'sub-12' || planId === 'subscription-monthly-12' || menuSet?.includes('12食')) {
-    return { commission: 1000, planType: '12食プラン' };
+    return { commission: 1000, planType: getPlanDisplayName('sub-12') };
   }
   if (planId === 'sub-6' || menuSet?.includes('6食')) {
-    return { commission: 500, planType: '6食プラン' };
+    return { commission: 500, planType: getPlanDisplayName('sub-6') };
   }
   return { commission: 0, planType: menuSet || '不明' };
 }
