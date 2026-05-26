@@ -3,6 +3,8 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import {
   downloadSelectedPhotos,
+  downloadSelectedPhotosViaShare,
+  shouldUseShareApi,
   type SharePhotoLike,
   type SequentialDownloadProgress,
 } from '@/lib/share-download';
@@ -82,10 +84,44 @@ export function ShareContentSection({ link, photos }: Props) {
     if (selectedPhotos.length === 0) return;
     setDownloading(true);
     setNotice({ type: 'info', message: `ダウンロード中... (0/${selectedPhotos.length})` });
-    const result = await downloadSelectedPhotos(selectedPhotos, link.slug, (p) => {
+
+    const onProgress = (p: SequentialDownloadProgress) => {
       setProgress(p);
       setNotice({ type: 'info', message: `ダウンロード中... (${p.current}/${p.total}) ${p.filename}` });
-    });
+    };
+
+    // モバイル（Web Share API 対応端末）は共有シート経由で一括共有
+    // iOS Safari の「1ジェスチャー = 1ダウンロード」制約を回避するため
+    if (shouldUseShareApi()) {
+      try {
+        const result = await downloadSelectedPhotosViaShare(selectedPhotos, link.slug, onProgress);
+        setDownloading(false);
+        setProgress(null);
+
+        if (result.canceled) {
+          // 共有シートのキャンセルは沈黙（エラー表示しない）
+          setNotice(null);
+        } else if (result.failedFilenames.length === 0) {
+          setNotice({ type: 'success', message: `${result.sharedCount}枚を共有しました` });
+        } else if (result.sharedCount > 0) {
+          setNotice({
+            type: 'error',
+            message: `${result.sharedCount}枚成功 / ${result.failedFilenames.length}枚失敗: ${result.failedFilenames.join(', ')}`,
+          });
+        } else {
+          setNotice({ type: 'error', message: 'ダウンロードに失敗しました。時間を空けて再度お試しください' });
+        }
+      } catch (e) {
+        console.error('share download failed', e);
+        setDownloading(false);
+        setProgress(null);
+        setNotice({ type: 'error', message: 'ダウンロードに失敗しました。時間を空けて再度お試しください' });
+      }
+      return;
+    }
+
+    // PC（デスクトップ）は従来通り file-saver で順次保存
+    const result = await downloadSelectedPhotos(selectedPhotos, link.slug, onProgress);
     setDownloading(false);
     setProgress(null);
 
