@@ -102,7 +102,7 @@ export function ShareContentSection({ link, photos }: Props) {
           // 共有シートのキャンセルは沈黙（エラー表示しない）
           setNotice(null);
         } else if (result.failedFilenames.length === 0) {
-          setNotice({ type: 'success', message: `${result.sharedCount}枚を共有しました` });
+          setNotice({ type: 'success', message: '画像を保存しました' });
         } else if (result.sharedCount > 0) {
           setNotice({
             type: 'error',

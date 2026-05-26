@@ -150,8 +150,12 @@ export async function downloadSelectedPhotosViaShare(
   for (let i = 0; i < photos.length; i++) {
     const photo = photos[i];
     onProgress?.({ current: i + 1, total: photos.length, filename: photo.filename });
+    // F12: 各 fetch に 10s タイムアウトを設定。9枚 fetch 全体で時間が膨らみ
+    //      iOS Safari の共有シートが拒否されるシナリオを回避する。
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10_000);
     try {
-      const res = await fetch(photo.url);
+      const res = await fetch(photo.url, { signal: controller.signal });
       if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
       const blob = await res.blob();
       const type = blob.type || guessMimeType(photo.filename);
@@ -159,6 +163,8 @@ export async function downloadSelectedPhotosViaShare(
     } catch (e) {
       console.error('share fetch/convert failed', e);
       failed.push(photo.filename);
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
