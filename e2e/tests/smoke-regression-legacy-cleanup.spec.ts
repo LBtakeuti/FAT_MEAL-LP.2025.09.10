@@ -80,4 +80,11 @@ test.describe('削除APIルート リグレッションテスト（404確認）'
     const response = await request.get('/api/menu/test-id');
     expect(response.status()).toBe(404);
   });
+
+  test('PATCH /api/users/subscriptions/[id]/preferred-date が404を返す（F9-2削除済み）', async ({ request }) => {
+    const response = await request.patch('/api/users/subscriptions/test-id/preferred-date', {
+      data: { preferredDate: '2026-06-01' },
+    });
+    expect(response.status()).toBe(404);
+  });
 });
