@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { shouldUseShareApi, downloadSelectedPhotosViaShare } from '../share-download';
 
 afterEach(() => {
@@ -77,5 +77,87 @@ describe('downloadSelectedPhotosViaShare - AbortError ハンドリング', () =>
     });
 
     await expect(downloadSelectedPhotosViaShare(photos, slug)).rejects.toThrow('network error');
+  });
+});
+
+describe('downloadSelectedPhotosViaShare - fetch タイムアウト（F12）', () => {
+  const slug = 'test-slug';
+  const photos = [
+    { id: 'p1', filename: 'photo1.jpg', url: 'https://example.com/photo1.jpg' },
+  ];
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  it('fetch が 10秒でタイムアウト → failedFilenames に積まれ navigator.share は呼ばれない', async () => {
+    // signal を受け取り、abort イベントで reject する fetch モック
+    vi.stubGlobal('fetch', vi.fn().mockImplementation((_url: string, opts?: { signal?: AbortSignal }) => {
+      return new Promise((_resolve, reject) => {
+        opts?.signal?.addEventListener('abort', () => {
+          reject(new DOMException('The operation was aborted.', 'AbortError'));
+        });
+        // 11秒後に resolve するが、10秒でタイムアウトするため到達しない
+        setTimeout(() => _resolve({ ok: true, blob: () => Promise.resolve(new Blob()) }), 11_000);
+      });
+    }));
+    const shareMock = vi.fn();
+    vi.stubGlobal('navigator', { share: shareMock });
+
+    const promise = downloadSelectedPhotosViaShare(photos, slug);
+    // 10秒経過させてタイムアウトを発火
+    await vi.advanceTimersByTimeAsync(10_000);
+    const result = await promise;
+
+    expect(result.failedFilenames).toContain('photo1.jpg');
+    expect(result.sharedCount).toBe(0);
+    expect(result.canceled).toBe(false);
+    expect(shareMock).not.toHaveBeenCalled();
+  });
+
+  it('fetch が 10秒以内に成功 → navigator.share が呼ばれる', async () => {
+    // 5秒で resolve する fetch モック
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(() => {
+      return new Promise((resolve) => {
+        setTimeout(() => resolve({
+          ok: true,
+          blob: () => Promise.resolve(new Blob(['data'], { type: 'image/jpeg' })),
+        }), 5_000);
+      });
+    }));
+    const shareMock = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal('navigator', { share: shareMock });
+
+    const promise = downloadSelectedPhotosViaShare(photos, slug);
+    // 5秒経過で fetch が resolve
+    await vi.advanceTimersByTimeAsync(5_000);
+    await promise;
+
+    expect(shareMock).toHaveBeenCalledOnce();
+  });
+
+  it('fetch 成功時も clearTimeout が呼ばれる（タイマーリーク防止）', async () => {
+    const clearTimeoutSpy = vi.spyOn(global, 'clearTimeout');
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(() => {
+      return new Promise((resolve) => {
+        setTimeout(() => resolve({
+          ok: true,
+          blob: () => Promise.resolve(new Blob(['data'], { type: 'image/jpeg' })),
+        }), 1_000);
+      });
+    }));
+    vi.stubGlobal('navigator', { share: vi.fn().mockResolvedValue(undefined) });
+
+    const promise = downloadSelectedPhotosViaShare(photos, slug);
+    await vi.advanceTimersByTimeAsync(1_000);
+    await promise;
+
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+    clearTimeoutSpy.mockRestore();
   });
 });
