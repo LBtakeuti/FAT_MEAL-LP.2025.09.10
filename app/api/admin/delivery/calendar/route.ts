@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 import { predictDeliveries } from '@/lib/delivery-prediction';
 import { resolveDeliveryWorkDate } from '@/lib/business-days';
+import { getPlanDisplayName } from '@/lib/plan-labels';
 
 interface DayItem {
   source: 'subscription' | 'order' | 'tiktok';
@@ -27,19 +28,16 @@ function ymd(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
-function planLabel(planName: string | null | undefined, source: 'subscription' | 'order' | 'tiktok'): string {
-  if (planName) {
-    const map: Record<string, string> = {
-      'trial-6': 'お試しプラン',
-      'sub-6': '6食プラン',
-      'sub-12': '12食プラン',
-      'subscription-monthly-12': '12食プラン（旧価格）', // legacy
-    };
-    return map[planName] || planName;
+// F11: subscription は plan_id から表示名を引く。order は trial-6 固定、tiktok は商品名（外部由来）をそのまま。
+function planLabel(planIdOrName: string | null | undefined, source: 'subscription' | 'order' | 'tiktok'): string {
+  if (source === 'subscription') {
+    return getPlanDisplayName(planIdOrName, '');
   }
-  if (source === 'order') return 'お試し';
-  if (source === 'tiktok') return 'TikTok';
-  return '';
+  if (source === 'order') {
+    return getPlanDisplayName('trial-6');
+  }
+  // tiktok: 商品名は外部由来のため統一対象外
+  return planIdOrName || 'TikTok';
 }
 
 export async function GET(request: NextRequest) {
@@ -77,7 +75,7 @@ export async function GET(request: NextRequest) {
     //     各 item は preferred_delivery_date（ユーザー希望日）を保持し、UI で目立つように表示する。
     const { data: subDeliveries } = await supabase
       .from('subscription_deliveries')
-      .select('created_at, scheduled_date, preferred_delivery_date, status, subscriptions(plan_name, shipping_address)')
+      .select('created_at, scheduled_date, preferred_delivery_date, status, subscriptions(plan_id, plan_name, shipping_address)')
       .gte('created_at', `${from}T00:00:00`)
       .lte('created_at', `${to}T23:59:59`);
     for (const d of subDeliveries || []) {
@@ -91,7 +89,7 @@ export async function GET(request: NextRequest) {
       cell.items.push({
         source: 'subscription',
         customer_name: addr.name || 'お客様',
-        plan_name: planLabel(sub.plan_name, 'subscription'),
+        plan_name: planLabel(sub.plan_id, 'subscription'),
         status: d.status,
         predicted: false,
         preferred_delivery_date: preferred,
@@ -174,7 +172,7 @@ export async function GET(request: NextRequest) {
       cell.items.push({
         source: 'subscription',
         customer_name: p.customer_name,
-        plan_name: planLabel(p.plan_name, 'subscription'),
+        plan_name: planLabel(p.plan_id, 'subscription'),
         status: 'predicted',
         predicted: true,
         // 予測は予測日 = 配送希望日として扱う

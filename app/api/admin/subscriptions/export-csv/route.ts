@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
+import { getPlanDisplayName } from '@/lib/plan-labels';
 
 interface Subscription {
   id: string;
@@ -97,7 +98,7 @@ export async function GET(request: NextRequest) {
         (addr.prefecture || '') + (addr.city || ''),
         addr.address_detail || '',
         addr.building || '',
-        getItemName(sub.plan_id, sub.plan_name),
+        getPlanDisplayName(sub.plan_id, sub.plan_name),
         getItemCount(sub.plan_id),
         getDeliveryFrequencyLabel(sub.deliveries_per_month),
         sub.monthly_total_amount || 0,
@@ -137,15 +138,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-function getItemName(planId: string, fallback: string): string {
-  const itemNames: { [key: string]: string } = {
-    'trial-6': 'ふとるめしお試し6食セット',
-    'sub-6': 'ふとるめし6食プラン',
-    'sub-12': 'ふとるめし12食プラン',
-    'subscription-monthly-12': 'ふとるめし12食プラン（旧価格）', // legacy
-  };
-  return itemNames[planId] || fallback;
-}
 
 function getItemCount(planId: string): number {
   const itemCounts: { [key: string]: number } = {

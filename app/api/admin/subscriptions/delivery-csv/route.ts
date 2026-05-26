@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
+import { getPlanDisplayName } from '@/lib/plan-labels';
 
 interface Subscription {
   id: string;
@@ -66,10 +67,6 @@ export async function GET(request: NextRequest) {
 
     const rows = subscriptions?.map((sub) => {
       const addr = sub.shipping_address || {};
-      const completedCount = (sub.subscription_deliveries || []).filter(
-        d => d.status === 'shipped' || d.status === 'delivered'
-      ).length;
-      const deliveryNumber = completedCount + 1;
       // F2: 出荷予定日は preferred_delivery_date を最優先、無ければ next_delivery_date、最終フォールバックで今日(JST)
       const preferred = sub.preferred_delivery_date ?? sub.next_delivery_date;
       const shipDate = preferred ? formatYmdSlash(preferred) : formatTodayJST();
@@ -86,7 +83,7 @@ export async function GET(request: NextRequest) {
         process.env.SENDER_POSTAL_CODE || '',
         process.env.SENDER_ADDRESS || '',
         process.env.SENDER_COMPANY || '',
-        getItemName(sub.plan_id, deliveryNumber),
+        getPlanDisplayName(sub.plan_id),
       ];
     }) || [];
 
@@ -108,16 +105,6 @@ export async function GET(request: NextRequest) {
     console.error('CSV export error:', error);
     return NextResponse.json({ error: 'Failed to export CSV' }, { status: 500 });
   }
-}
-
-function getItemName(planId: string, deliveryNumber: number): string {
-  const planLabels: Record<string, string> = {
-    'sub-6': '【定期】ふとるめし6食プラン',
-    'sub-12': '【定期】ふとるめし12食プラン',
-    'subscription-monthly-12': '【定期】ふとるめし12食プラン',
-  };
-  const label = planLabels[planId] || '【定期】ふとるめしプラン';
-  return `${label} ${deliveryNumber}回目`;
 }
 
 // "YYYY-MM-DD" → "YYYY/MM/DD" 形式変換（CSV 出荷予定日カラム用）

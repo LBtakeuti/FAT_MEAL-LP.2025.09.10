@@ -10,6 +10,7 @@ import {
   isValidPlanId,
   inheritPreferredDateForBilling,
 } from '@/lib/subscription-schedule';
+import { getPlanDisplayName } from '@/lib/plan-labels';
 import { postSlack } from '@/lib/slack';
 
 // 紹介コミッション金額定義（新プラン体系 + legacy）
@@ -517,9 +518,9 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent,
     } catch { /* ユーザーが見つからない場合はnull */ }
   }
 
-  // プランIDからメニューセット名を生成
+  // プランIDからメニューセット名を生成（F11: 統一ヘルパー、数量・回数表記なし）
   const planId = metadata?.plan_id || 'trial-6';
-  const menuSet = `ふとるめし お試し6食 × 1`;
+  const menuSet = getPlanDisplayName(planId);
 
   // 注文をDBに保存
   if (supabase) {

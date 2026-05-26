@@ -18,6 +18,7 @@ export interface PredictedDelivery {
   city: string;
   address_detail: string;
   building: string;
+  plan_id: string;
   plan_name: string;
   menu_set: string;
   meals_per_delivery: number;
@@ -108,6 +109,7 @@ export function predictDeliveries(
           city: addr.city || '',
           address_detail: addr.address_detail || '',
           building: addr.building || '',
+          plan_id: sub.plan_id,
           plan_name: sub.plan_name,
           menu_set: getMenuSetNameWithDeliveryNumber(sub.plan_id, s.delivery_number),
           meals_per_delivery: s.meals_per_delivery,

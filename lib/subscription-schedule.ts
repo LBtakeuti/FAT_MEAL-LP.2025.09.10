@@ -11,6 +11,8 @@
  *   Phase1 → Phase2 に移行済みの既存契約用。新規購入は sub-12 を使用する。
  */
 
+import { getPlanDisplayName } from './plan-labels';
+
 export interface DeliverySchedule {
   delivery_number: number;
   scheduled_date: Date;
@@ -117,35 +119,23 @@ export function getPlanConfig(planId: string): PlanConfig {
   return config;
 }
 
-/** プランIDからプラン名を取得（legacy ID も含む） */
+/**
+ * プランIDからユーザー向け表示名を取得（F11 で plan-labels ヘルパーに統一）。
+ *
+ * 旧シグネチャを残しているのは Stripe Webhook / メール本文の呼び出し元の互換性のため。
+ * 内部実装は lib/plan-labels.ts の getPlanDisplayName に委譲する。
+ */
 export function getPlanName(planId: string): string {
-  const planNames: { [key: string]: string } = {
-    'trial-6': 'お試しプラン',
-    'sub-6': '6食プラン',
-    'sub-12': '12食プラン',
-    'subscription-monthly-12': '12食プラン（旧価格）',
-  };
-  return planNames[planId] || 'ふとるめしプラン';
-}
-
-/** プランIDからメニューセット名を取得（内部利用） */
-function getMenuSetName(planId: string): string {
-  const menuSetNames: { [key: string]: string } = {
-    'trial-6': 'お試しセット（6食）',
-    'sub-6': '6食プラン',
-    'sub-12': '12食プラン',
-    'subscription-monthly-12': '12食プラン',
-  };
-  return menuSetNames[planId] || 'ふとるめしセット';
+  return getPlanDisplayName(planId);
 }
 
 /**
  * メニューセット名（配送回数付き）を取得。
- * 月1回配送固定のため deliveryNumber は表示せず、プラン名のみを返す。
- * 引数は呼び出し側互換維持のため残置。
+ * F11 で「N回目」表記を撤廃し、プラン名のみを返す。
+ * 引数 _deliveryNumber は呼び出し側互換維持のため残置（未使用）。
  */
 export function getMenuSetNameWithDeliveryNumber(planId: string, _deliveryNumber: number): string {
-  return getMenuSetName(planId);
+  return getPlanDisplayName(planId);
 }
 
 /** プランIDが有効かどうかを確認（legacy ID も valid 扱い） */

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
+import { getPlanDisplayName } from '@/lib/plan-labels';
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,43 +27,20 @@ export async function GET(request: NextRequest) {
         .from('subscription_deliveries')
         .select(`
           id, scheduled_date, preferred_delivery_date, status, meals_per_delivery,
-          subscriptions(id, plan_name, shipping_address)
+          subscriptions(id, plan_id, plan_name, shipping_address)
         `)
         .in('id', subIds);
 
       if (error) {
         console.error('Failed to fetch subscription_deliveries:', error);
       } else if (deliveries) {
-        // 各 subscription の全配送履歴を取得して配送番号を算出
-        const subscriptionIds = [...new Set(deliveries.map((d: any) => d.subscriptions?.id).filter(Boolean))];
-        // subscription_id -> [{scheduled_date, status}] のマップ
-        const allDeliveriesMap: Record<string, Array<{ scheduled_date: string; status: string }>> = {};
-
-        if (subscriptionIds.length > 0) {
-          const { data: allData } = await (supabase as any)
-            .from('subscription_deliveries')
-            .select('subscription_id, scheduled_date, status')
-            .in('subscription_id', subscriptionIds);
-
-          if (allData) {
-            for (const d of allData) {
-              if (!allDeliveriesMap[d.subscription_id]) allDeliveriesMap[d.subscription_id] = [];
-              allDeliveriesMap[d.subscription_id].push({ scheduled_date: d.scheduled_date, status: d.status });
-            }
-          }
-        }
-
         for (const d of deliveries) {
           const sub = d.subscriptions;
           const addr = sub?.shipping_address || {};
           // F1: preferred_delivery_date 優先、NULL なら scheduled_date
           const displayDate = d.preferred_delivery_date ?? d.scheduled_date;
-          // 自分より前の日付に shipped 済みの件数 = 自分の配送番号 - 1
-          const prevShipped = (allDeliveriesMap[sub?.id] || []).filter(
-            (x) => x.scheduled_date < d.scheduled_date && x.status === 'shipped'
-          ).length;
-          const deliveryNumber = prevShipped + 1;
-          const itemName = `${sub?.plan_name || ''}（${d.meals_per_delivery || 12}個）${deliveryNumber}回目`;
+          // F11: plan_id から表示名を引く（「N回目」「（X個）」は付けない）
+          const itemName = getPlanDisplayName(sub?.plan_id, sub?.plan_name || '');
 
           rows.push([
             '0',
@@ -94,7 +72,8 @@ export async function GET(request: NextRequest) {
         console.error('Failed to fetch orders:', error);
       } else if (orders) {
         for (const o of orders) {
-          const itemName = `${o.menu_set || ''}（${o.quantity || 6}個）`;
+          // F11: orders は現役の単発購入 = trial-6（お試し6食セット）として表示統一
+          const itemName = getPlanDisplayName('trial-6');
           // F1: preferred_delivery_date があれば優先、NULL なら従来の created_at+1日（出荷日）
           const shipDate = o.preferred_delivery_date
             ? formatDateJST(o.preferred_delivery_date)
@@ -135,7 +114,8 @@ export async function GET(request: NextRequest) {
           const addr = [t.prefecture, t.county, t.city_ward, t.address_line_1]
             .filter(Boolean)
             .join('');
-          const itemName = `${t.product_name || t.seller_sku || 'TikTok注文'}（${t.quantity || 1}個）`;
+          // F11: TikTok 商品名は外部由来のため統一対象外、数量表記のみ削除
+          const itemName = t.product_name || t.seller_sku || 'TikTok注文';
           rows.push([
             '0',
             '1',

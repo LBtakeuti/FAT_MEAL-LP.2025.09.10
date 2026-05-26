@@ -315,7 +315,8 @@ export default function CalendarDayDetailPage({ params }: { params: Promise<{ da
                           </select>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
-                          {item.source === 'subscription' && item.delivery_number != null ? `${item.delivery_number}回目` : '-'}
+                          {/* F11: 「N回目」表記は撤廃 */}
+                          -
                         </td>
                       </tr>
                     );

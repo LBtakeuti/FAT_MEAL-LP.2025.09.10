@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
+import { getPlanDisplayName } from '@/lib/plan-labels';
 
 interface Order {
   id: string;
@@ -75,7 +76,7 @@ export async function GET(request: NextRequest) {
       process.env.SENDER_POSTAL_CODE || '',
       process.env.SENDER_ADDRESS || '',
       process.env.SENDER_COMPANY || '',
-      getOrderItemName(order.menu_set),
+      getPlanDisplayName('trial-6'),
       ];
     }) || [];
 
@@ -128,9 +129,3 @@ function getJSTDateString(): string {
   return `${jstDate.getUTCFullYear()}-${String(jstDate.getUTCMonth() + 1).padStart(2, '0')}-${String(jstDate.getUTCDate()).padStart(2, '0')}`;
 }
 
-function getOrderItemName(menuSet: string): string {
-  if (menuSet && menuSet.includes('お試し')) {
-    return 'ふとるめしお試し6個セット';
-  }
-  return menuSet || '';
-}
