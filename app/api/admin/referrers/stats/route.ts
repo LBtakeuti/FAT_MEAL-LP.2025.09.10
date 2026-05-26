@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
+import { getPlanDisplayName } from '@/lib/plan-labels';
 
 interface UsageRecord {
   referral_code: string;
@@ -30,8 +31,6 @@ interface ReferrerStats {
   monthlyStats: MonthlyStats[];
   byProduct: { [key: string]: { count: number; commission: number } };
 }
-
-import { getPlanDisplayName } from '@/lib/plan-labels';
 
 // プランIDからプラン表示名を取得（F11: 共通ヘルパーに統一）
 function getPlanTypeName(planId: string): string {
