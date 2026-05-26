@@ -7,7 +7,8 @@ import {
   getPlanConfig,
   getPlanName,
   getMenuSetNameWithDeliveryNumber,
-  isValidPlanId
+  isValidPlanId,
+  inheritPreferredDateForBilling,
 } from '@/lib/subscription-schedule';
 import { postSlack } from '@/lib/slack';
 
@@ -1044,13 +1045,22 @@ async function handleMonthlySubscriptionPayment(invoice: Stripe.Invoice, stripe:
     const deliverySchedules = calculateMonthlyDeliverySchedule(planId, billingDate);
     const customerEmail = (dbSubscription as any).shipping_address?.email || '';
 
+    // F9-1: 初回購入時の preferred_delivery_date を 2回目以降の配送日にも継承する。
+    //   - preferred_delivery_date が存在する場合: 「billingDate の年月」+「初回希望日の日（day-of-month）」で算出
+    //   - 翌月にその日が無い場合（例: 1/31 → 2月）は月末日へフォールバック
+    //   - preferred_delivery_date が null（旧プラン体系の既存契約者）: 従来通り calculateMonthlyDeliverySchedule の billingDate ベース
+    const preferredAnchor = (dbSubscription as any).preferred_delivery_date as string | null | undefined;
+    const inheritedScheduledDate = preferredAnchor
+      ? inheritPreferredDateForBilling(preferredAnchor, billingDate)
+      : null;
+
     // 新しい配送予定を作成
     const deliveries = deliverySchedules.map(schedule => {
-      const scheduledDateStr = schedule.scheduled_date.toISOString().split('T')[0];
+      const scheduledDateStr = inheritedScheduledDate ?? schedule.scheduled_date.toISOString().split('T')[0];
       return {
         subscription_id: (dbSubscription as any).id,
         scheduled_date: scheduledDateStr,
-        // F1: 初期は scheduled_date と同値（F3 でユーザー指定値に差し替え）
+        // F9-1: scheduled_date と preferred_delivery_date は同じ値で揃える
         preferred_delivery_date: scheduledDateStr,
         menu_set: getMenuSetNameWithDeliveryNumber(planId, schedule.delivery_number),
         meals_per_delivery: schedule.meals_per_delivery,
@@ -1075,7 +1085,8 @@ async function handleMonthlySubscriptionPayment(invoice: Stripe.Invoice, stripe:
       .update({
         current_period_start: new Date(currentPeriodStart * 1000).toISOString(),
         current_period_end: new Date(currentPeriodEnd * 1000).toISOString(),
-        next_delivery_date: deliverySchedules[0]?.scheduled_date.toISOString().split('T')[0] || null,
+        // F9-1: 継承後の日付があればそれを next_delivery_date に
+        next_delivery_date: inheritedScheduledDate ?? deliverySchedules[0]?.scheduled_date.toISOString().split('T')[0] ?? null,
         payment_status: 'active',
         updated_at: new Date().toISOString(),
       })
