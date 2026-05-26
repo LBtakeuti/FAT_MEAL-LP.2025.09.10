@@ -11,6 +11,8 @@ interface DayItem {
   predicted: boolean;
   // F2: 各 item に「配送希望日」を持たせ、UI で最も目立つように表示する
   preferred_delivery_date: string | null;
+  // F7-3: cell.items の安定した昇順ソート用。予測アイテムは created_at を持たないため null
+  created_at: string | null;
 }
 
 interface DayCount {
@@ -93,6 +95,7 @@ export async function GET(request: NextRequest) {
         status: d.status,
         predicted: false,
         preferred_delivery_date: preferred,
+        created_at: d.created_at,
       });
     }
 
@@ -113,10 +116,12 @@ export async function GET(request: NextRequest) {
       cell.items.push({
         source: 'order',
         customer_name: o.customer_name || 'お客様',
+        // F7-1: お試しは preferred_delivery_date を UI 表示しないため、API レスポンスでも null を返す
         plan_name: planLabel(o.menu_set, 'order'),
         status: o.status || 'pending',
         predicted: false,
-        preferred_delivery_date: preferred,
+        preferred_delivery_date: null,
+        created_at: o.created_at,
       });
     }
 
@@ -139,6 +144,7 @@ export async function GET(request: NextRequest) {
         status: t.status || 'pending',
         predicted: false,
         preferred_delivery_date: null,
+        created_at: t.created_time ? String(t.created_time) : null,
       });
     }
 
@@ -173,22 +179,29 @@ export async function GET(request: NextRequest) {
         predicted: true,
         // 予測は予測日 = 配送希望日として扱う
         preferred_delivery_date: p.date,
+        created_at: null,
       });
     }
 
     // days 配列を date 順に作成
+    // F7-3: cell.items は created_at 昇順（早く注文が入った順）でソートして返す。
+    //       予測（created_at = null）は最後尾に置き、UI 側でも先頭3件＋「他N件」の出し分けに使う。
     const days: DayCount[] = [];
     for (let day = 1; day <= toDate.getDate(); day++) {
       const dateStr = ymd(new Date(year, month - 1, day));
       const c = cells.get(dateStr) || { actual: 0, predicted: 0, pendingPast: false, items: [] };
-      // 1日あたり最大8件まで（多すぎる時はカレンダー UI で「+N件」表示）
-      const items = c.items.slice(0, 8);
+      const sorted = [...c.items].sort((a, b) => {
+        if (a.created_at && b.created_at) return a.created_at.localeCompare(b.created_at);
+        if (a.created_at) return -1;
+        if (b.created_at) return 1;
+        return 0;
+      });
       days.push({
         date: dateStr,
         actual_count: c.actual,
         predicted_count: c.predicted,
         has_overdue: c.pendingPast,
-        items,
+        items: sorted,
       });
     }
 

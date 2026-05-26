@@ -11,16 +11,8 @@ interface DayItem {
   status: string;
   predicted: boolean;
   preferred_delivery_date: string | null;
+  created_at: string | null;
 }
-
-const STATUS_LABEL: Record<string, string> = {
-  pending: '未発送',
-  confirmed: '確定',
-  shipped: '発送済',
-  delivered: '配達済',
-  cancelled: 'キャンセル',
-  predicted: '予測',
-};
 
 // "YYYY-MM-DD" → "M/D(曜)" 表示用
 function formatPreferredDate(dateStr: string | null): string {
@@ -139,9 +131,10 @@ export default function AdminCalendarPage() {
               const isPast = cell.date < today;
               const dayNum = parseInt(cell.date.slice(-2), 10);
               const dow = new Date(cell.date + 'T00:00:00').getDay();
-              const total = cell.actual_count + cell.predicted_count;
-              const visibleItems = cell.items.slice(0, 4);
-              const hiddenCount = total - visibleItems.length;
+              // F7-3: セル内は created_at 昇順で最大3件、残りは「他N件」テキストのみ
+              const MAX_VISIBLE = 3;
+              const visibleItems = cell.items.slice(0, MAX_VISIBLE);
+              const hiddenCount = Math.max(0, cell.items.length - visibleItems.length);
 
               const goToDayDetail = () => router.push(`/admin/calendar/${cell.date}`);
 
@@ -169,40 +162,54 @@ export default function AdminCalendarPage() {
                   {visibleItems.length > 0 && (
                     <div className="flex-1 space-y-1 overflow-hidden">
                       {visibleItems.map((it, i) => {
-                        const preferredLabel = formatPreferredDate(it.preferred_delivery_date);
+                        // F7-1/F7-2: source 別に表示項目を出し分け
+                        //   subscription（定期）: 希望日 + コース名 + 顧客名
+                        //   order（お試し）: 「お試し」バッジ + 顧客名
+                        //   tiktok: 「TikTok」バッジ + 顧客名（案A）
+                        const preferredLabel = it.source === 'subscription'
+                          ? formatPreferredDate(it.preferred_delivery_date)
+                          : '';
+                        const containerClass = it.predicted
+                          ? 'bg-gray-100 text-gray-500 italic'
+                          : it.source === 'subscription'
+                            ? 'bg-purple-50 text-purple-900'
+                            : it.source === 'tiktok'
+                              ? 'bg-pink-50 text-pink-900'
+                              : 'bg-orange-50 text-orange-900';
+                        const titleText = it.source === 'subscription'
+                          ? `${it.customer_name} / ${it.plan_name}${preferredLabel ? ` / 配送希望日 ${preferredLabel}` : ''}`
+                          : `${it.customer_name}`;
                         return (
                           <div
                             key={i}
-                            className={`text-[11px] leading-tight px-1.5 py-1 rounded ${
-                              it.predicted
-                                ? 'bg-gray-100 text-gray-500 italic'
-                                : it.source === 'subscription'
-                                  ? 'bg-purple-50 text-purple-900'
-                                  : it.source === 'tiktok'
-                                    ? 'bg-pink-50 text-pink-900'
-                                    : 'bg-orange-50 text-orange-900'
-                            }`}
-                            title={`${it.customer_name} / ${it.plan_name}${preferredLabel ? ` / 配送希望日 ${preferredLabel}` : ''}`}
+                            className={`text-[11px] leading-tight px-1.5 py-1 rounded ${containerClass}`}
+                            title={titleText}
                           >
-                            {preferredLabel && (
-                              <div className="font-bold text-[13px] text-orange-700 truncate">
-                                希望 {preferredLabel}
-                              </div>
-                            )}
-                            <div className="truncate">
-                              <span className="font-medium">{it.customer_name}</span>
-                              {it.plan_name && <span className="opacity-75"> · {it.plan_name}</span>}
-                            </div>
-                            {it.status && (
-                              <div className="text-[10px] opacity-75 truncate">
-                                {STATUS_LABEL[it.status] ?? it.status}
-                              </div>
+                            {it.source === 'subscription' ? (
+                              <>
+                                {preferredLabel && (
+                                  <div className="font-bold text-[13px] text-orange-700 truncate">
+                                    希望 {preferredLabel}
+                                  </div>
+                                )}
+                                {it.plan_name && (
+                                  <div className="font-medium truncate">{it.plan_name}</div>
+                                )}
+                                <div className="truncate opacity-90">{it.customer_name}</div>
+                              </>
+                            ) : (
+                              <>
+                                <div className="text-[10px] font-bold tracking-wide opacity-80 truncate">
+                                  {it.source === 'order' ? 'お試し' : 'TikTok'}
+                                </div>
+                                <div className="truncate font-medium">{it.customer_name}</div>
+                              </>
                             )}
                           </div>
                         );
                       })}
                       {hiddenCount > 0 && (
-                        <div className="text-[10px] text-gray-500 px-1.5">+{hiddenCount}件</div>
+                        <div className="text-[10px] text-gray-500 px-1.5">他{hiddenCount}件</div>
                       )}
                     </div>
                   )}
