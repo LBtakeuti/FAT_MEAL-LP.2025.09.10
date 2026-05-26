@@ -2,6 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 import { withAuth, jsonSuccess, jsonBadRequest, jsonError } from '@/lib/api-helpers';
 import { predictDeliveries } from '@/lib/delivery-prediction';
+import { resolveDeliveryWorkDate } from '@/lib/business-days';
+
+// F4-4: クエリ範囲を「配送作業日」軸でフィルタするための JS 側拡張範囲。
+//   resolveDeliveryWorkDate は土日祝で次の営業日にスライドするため、
+//   created_at ベースの SQL クエリではターゲット日付の前後数日を含めて取得し、
+//   後段で resolveDeliveryWorkDate(created_at) === target_date 等で絞り込む。
+//   連続祝日最大4日 + 週末2日 + 余裕分でバッファを取る。
+const WORK_DATE_BUFFER_DAYS = 7;
+
+function shiftYmd(ymd: string, days: number): string {
+  const d = new Date(`${ymd}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
 
 export type DeliveryItem = {
   id: string;
@@ -37,21 +51,35 @@ export async function GET(request: NextRequest) {
 
     const items: DeliveryItem[] = [];
 
+    // F4-4: from/to を「配送作業日」軸として解釈するため、SQL は created_at の前後拡張範囲で取得し
+    //       後段で resolveDeliveryWorkDate(created_at) が target 範囲に含まれるものだけを残す。
+    const workFromYmd = from ? shiftYmd(from, -WORK_DATE_BUFFER_DAYS) : null;
+    const workToYmd = to ? shiftYmd(to, WORK_DATE_BUFFER_DAYS) : null;
+    const inWorkDateRange = (workDate: string): boolean => {
+      if (from && workDate < from) return false;
+      if (to && workDate > to) return false;
+      return true;
+    };
+
     // subscription_deliveries の取得
     if (!sourceFilter || sourceFilter === 'subscription') {
       let subQuery = (supabase as any)
         .from('subscription_deliveries')
         .select(`
-          id, scheduled_date, preferred_delivery_date, status, menu_set, meals_per_delivery, quantity,
+          id, created_at, scheduled_date, preferred_delivery_date, status, menu_set, meals_per_delivery, quantity,
           subscriptions(id, plan_name, shipping_address, deliveries_per_month)
         `)
-        .order('scheduled_date', { ascending: true });
+        .order('created_at', { ascending: true });
 
-      if (from) subQuery = subQuery.gte('scheduled_date', from);
-      if (to) subQuery = subQuery.lte('scheduled_date', to);
+      if (workFromYmd) subQuery = subQuery.gte('created_at', `${workFromYmd}T00:00:00+09:00`);
+      if (workToYmd) subQuery = subQuery.lte('created_at', `${workToYmd}T23:59:59+09:00`);
       if (statusFilter) subQuery = subQuery.eq('status', statusFilter);
 
-      const { data: deliveries, error: subError } = await subQuery;
+      const { data: rawDeliveries, error: subError } = await subQuery;
+      // F4-4: created_at から算出した配送作業日が target 範囲に入るものだけ残す
+      const deliveries = (rawDeliveries || []).filter((d: { created_at?: string }) =>
+        !d.created_at || inWorkDateRange(resolveDeliveryWorkDate(new Date(d.created_at)))
+      );
 
       if (subError) {
         console.error('Failed to fetch subscription_deliveries:', subError);
@@ -144,11 +172,15 @@ export async function GET(request: NextRequest) {
         .not('stripe_session_id', 'like', 'sub_delivery_%')
         .order('created_at', { ascending: true });
 
-      if (from) orderQuery = orderQuery.gte('created_at', `${from}T00:00:00+09:00`);
-      if (to) orderQuery = orderQuery.lte('created_at', `${to}T23:59:59+09:00`);
+      if (workFromYmd) orderQuery = orderQuery.gte('created_at', `${workFromYmd}T00:00:00+09:00`);
+      if (workToYmd) orderQuery = orderQuery.lte('created_at', `${workToYmd}T23:59:59+09:00`);
       if (statusFilter) orderQuery = orderQuery.eq('status', statusFilter);
 
-      const { data: orders, error: orderError } = await orderQuery;
+      const { data: rawOrders, error: orderError } = await orderQuery;
+      // F4-4: created_at から算出した配送作業日が target 範囲に入るものだけ残す
+      const orders = (rawOrders || []).filter((o: { created_at?: string }) =>
+        !o.created_at || inWorkDateRange(resolveDeliveryWorkDate(new Date(o.created_at)))
+      );
 
       if (orderError) {
         console.error('Failed to fetch orders:', orderError);
@@ -185,11 +217,15 @@ export async function GET(request: NextRequest) {
         .select('*')
         .order('created_time', { ascending: true });
 
-      if (from) tkQuery = tkQuery.gte('created_time', `${from}T00:00:00+09:00`);
-      if (to) tkQuery = tkQuery.lte('created_time', `${to}T23:59:59+09:00`);
+      if (workFromYmd) tkQuery = tkQuery.gte('created_time', `${workFromYmd}T00:00:00+09:00`);
+      if (workToYmd) tkQuery = tkQuery.lte('created_time', `${workToYmd}T23:59:59+09:00`);
       if (statusFilter) tkQuery = tkQuery.eq('status', statusFilter);
 
-      const { data: tikTokOrders, error: tkError } = await tkQuery;
+      const { data: rawTikTokOrders, error: tkError } = await tkQuery;
+      // F4-4: created_time から算出した配送作業日が target 範囲に入るものだけ残す
+      const tikTokOrders = (rawTikTokOrders || []).filter((t: { created_time?: string }) =>
+        !t.created_time || inWorkDateRange(resolveDeliveryWorkDate(new Date(String(t.created_time))))
+      );
       if (tkError) {
         console.error('Failed to fetch tiktok_shop_orders:', tkError);
       } else if (tikTokOrders) {
