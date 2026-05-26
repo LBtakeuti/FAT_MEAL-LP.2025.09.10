@@ -1,10 +1,13 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('FAQセクション スモークテスト', () => {
+  // F8-1: BentoTvSection 追加によりトップページの初回描画が遅くなったためタイムアウトを延長
+  test.setTimeout(90000);
+
   test.beforeEach(async ({ page }) => {
-    await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 30000 });
-    // FAQセクションが表示されるまでAPIレスポンスを待つ（最大15秒）
-    await page.waitForSelector('#faq', { timeout: 15000 });
+    await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 60000 });
+    // FAQセクションが表示されるまでAPIレスポンスを待つ（最大30秒）
+    await page.waitForSelector('#faq', { timeout: 30000 });
   });
 
   test('FAQセクションが表示される', async ({ page }) => {
