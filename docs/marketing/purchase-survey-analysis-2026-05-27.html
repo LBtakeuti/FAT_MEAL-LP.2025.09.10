@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ふとるめし｜購入後アンケート分析レポート（2026-05-27時点）</title>
+<style>
+  :root {
+    --primary: #ea580c;
+    --primary-light: #fed7aa;
+    --bg: #fafaf9;
+    --text: #1c1917;
+    --text-muted: #57534e;
+    --border: #e7e5e4;
+    --accent: #fff7ed;
+    --success: #16a34a;
+    --warning: #d97706;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 24px 16px;
+    line-height: 1.7;
+  }
+  .container { max-width: 880px; margin: 0 auto; }
+  header {
+    background: linear-gradient(135deg, var(--primary) 0%, #f97316 100%);
+    color: white;
+    padding: 32px 24px;
+    border-radius: 12px;
+    margin-bottom: 32px;
+    box-shadow: 0 4px 12px rgba(234, 88, 12, 0.15);
+  }
+  header h1 { margin: 0 0 8px; font-size: 24px; }
+  header .meta { font-size: 13px; opacity: 0.9; }
+  h2 {
+    color: var(--primary);
+    border-left: 4px solid var(--primary);
+    padding-left: 12px;
+    margin-top: 40px;
+    margin-bottom: 16px;
+    font-size: 20px;
+  }
+  h3 { margin-top: 24px; font-size: 16px; }
+  section {
+    background: white;
+    padding: 24px;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 14px;
+  }
+  th, td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  th { background: var(--accent); color: var(--text); font-weight: 600; }
+  tr:hover td { background: #fafafa; }
+  .rank { font-weight: 700; }
+  .bar-wrapper {
+    display: inline-block;
+    width: 200px;
+    height: 14px;
+    background: #f3f4f6;
+    border-radius: 7px;
+    overflow: hidden;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  .bar { height: 100%; background: var(--primary); border-radius: 7px; }
+  .pct { font-size: 12px; color: var(--text-muted); }
+  .insight {
+    background: var(--accent);
+    border-left: 4px solid var(--primary);
+    padding: 16px 20px;
+    margin: 16px 0;
+    border-radius: 6px;
+  }
+  .insight strong { color: var(--primary); font-size: 15px; }
+  .warning {
+    background: #fef3c7;
+    border-left: 4px solid var(--warning);
+    padding: 16px 20px;
+    margin: 16px 0;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  .persona {
+    background: #f0fdfa;
+    border: 1px solid #5eead4;
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin: 12px 0;
+  }
+  .persona h4 {
+    margin: 0 0 8px;
+    color: #0f766e;
+    font-size: 15px;
+  }
+  .persona ul { margin: 8px 0 0; padding-left: 20px; font-size: 14px; }
+  .action {
+    display: grid;
+    grid-template-columns: 50px 1fr 120px;
+    gap: 12px;
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    font-size: 14px;
+  }
+  .action:last-child { border-bottom: none; }
+  .priority-high { background: #fef2f2; }
+  .priority-mid { background: #fffbeb; }
+  .priority-low { background: #f9fafb; }
+  .pri-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    color: white;
+    text-align: center;
+  }
+  .pri-high { background: #dc2626; }
+  .pri-mid { background: #d97706; }
+  .pri-low { background: #6b7280; }
+  .summary-card {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 20px 0;
+  }
+  .stat {
+    background: white;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    text-align: center;
+  }
+  .stat .num { font-size: 28px; font-weight: 700; color: var(--primary); }
+  .stat .label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  footer {
+    margin-top: 40px;
+    padding: 16px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+  @media (max-width: 600px) {
+    .summary-card { grid-template-columns: 1fr; }
+    .bar-wrapper { width: 120px; }
+    .action { grid-template-columns: 40px 1fr 80px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>🍱 ふとるめし｜購入後アンケート分析レポート</h1>
+  <div class="meta">対象期間：〜 2026-05-27 ／ データソース：purchase_surveys テーブル</div>
+</header>
+
+<section>
+  <h2>📊 データ概要</h2>
+  <div class="summary-card">
+    <div class="stat">
+      <div class="num">66</div>
+      <div class="label">全アンケート件数</div>
+    </div>
+    <div class="stat">
+      <div class="num">35</div>
+      <div class="label">実顧客の有効回答</div>
+    </div>
+    <div class="stat">
+      <div class="num">31</div>
+      <div class="label">社内テスト回答（除外済み）</div>
+    </div>
+  </div>
+  <p style="font-size: 14px; color: var(--text-muted);">
+    本分析は社内テストデータを除いた <strong>純粋なお客様 35件</strong> を対象としています。
+  </p>
+</section>
+
+<section>
+  <h2>① 流入元（どこで知ったか）</h2>
+  <table>
+    <thead>
+      <tr><th>順位</th><th>流入元</th><th>件数</th><th>シェア</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="rank">🥇 1</td><td><strong>Instagram</strong></td><td>18</td>
+        <td><span class="bar-wrapper"><span class="bar" style="width:100%"></span></span><span class="pct">51%</span></td></tr>
+      <tr><td class="rank">🥈 2</td><td>TikTok</td><td>7</td>
+        <td><span class="bar-wrapper"><span class="bar" style="width:39%"></span></span><span class="pct">20%</span></td></tr>
+      <tr><td class="rank">🥉 3</td><td>YouTube</td><td>4</td>
+        <td><span class="bar-wrapper"><span class="bar" style="width:22%"></span></span><span class="pct">11%</span></td></tr>
+      <tr><td>4</td><td>Google検索</td><td>3</td>
+        <td><span class="bar-wrapper"><span class="bar" style="width:17%"></span></span><span class="pct">8.5%</span></td></tr>
+      <tr><td>5</td><td>部活・学校</td><td>3</td>
+        <td><span class="bar-wrapper"><span class="bar" style="width:17%"></span></span><span class="pct">8.5%</span></td></tr>
+      <tr><td>6</td><td>知人紹介</td><td>2</td>
+        <td><span class="bar-wrapper"><span class="bar" style="width:11%"></span></span><span class="pct">5.7%</span></td></tr>
+      <tr><td>7</td><td>その他</td><td>1</td>
+        <td><span class="bar-wrapper"><span class="bar" style="width:6%"></span></span><span class="pct">2.8%</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="insight">
+    <strong>💡 気づき：SNSが主戦場、検索からは弱い</strong><br>
+    Instagram + TikTok だけで <strong>全体の71%</strong>を占める。
+    一方で Google検索からは 8.5% しかなく、SEO は伸び代が大きい。
+  </div>
+</section>
+
+<section>
+  <h2>② 誰のために買っているか</h2>
+  <table>
+    <thead>
+      <tr><th>順位</th><th>対象者</th><th>件数</th><th>シェア</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="rank">🥇 1</td><td><strong>子供のため</strong></td><td>18</td>
+        <td><span class="bar-wrapper"><span class="bar" style="width:100%"></span></span><span class="pct">51%</span></td></tr>
+      <tr><td class="rank">🥈 2</td><td>自分のため</td><td>14</td>
+        <td><span class="bar-wrapper"><span class="bar" style="width:78%"></span></span><span class="pct">40%</span></td></tr>
+      <tr><td class="rank">🥉 3</td><td>パートナーのため</td><td>2</td>
+        <td><span class="bar-wrapper"><span class="bar" style="width:11%"></span></span><span class="pct">5.7%</span></td></tr>
+      <tr><td>4</td><td>その他</td><td>1</td>
+        <td><span class="bar-wrapper"><span class="bar" style="width:6%"></span></span><span class="pct">2.8%</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="insight">
+    <strong>💡 気づき：2つの顧客層がはっきり見える</strong><br>
+    半数は <strong>「親が子供のために購入」</strong>（部活少年・少女向け想定）、
+    4割は <strong>「自分のために購入」</strong>。
+    広告クリエイティブも「親向け」「自分向け」の2軸で展開すべき。
+  </div>
+</section>
+
+<section>
+  <h2>③ なぜ買ったか（購入理由）</h2>
+  <table>
+    <thead>
+      <tr><th>順位</th><th>理由</th><th>件数</th><th>シェア（複数選択可）</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="rank">🥇 1</td><td><strong>太りたい（体重増加）</strong></td><td>26</td>
+        <td><span class="bar-wrapper"><span class="bar" style="width:100%"></span></span><span class="pct">74%</span></td></tr>
+      <tr><td class="rank">🥈 2</td><td>筋肉をつけたい</td><td>12</td>
+        <td><span class="bar-wrapper"><span class="bar" style="width:46%"></span></span><span class="pct">34%</span></td></tr>
+      <tr><td class="rank">🥉 3</td><td>便利だから</td><td>10</td>
+        <td><span class="bar-wrapper"><span class="bar" style="width:38%"></span></span><span class="pct">28%</span></td></tr>
+      <tr><td>4</td><td>栄養バランス</td><td>10</td>
+        <td><span class="bar-wrapper"><span class="bar" style="width:38%"></span></span><span class="pct">28%</span></td></tr>
+      <tr><td>5</td><td>大会・試合のため</td><td>8</td>
+        <td><span class="bar-wrapper"><span class="bar" style="width:31%"></span></span><span class="pct">22%</span></td></tr>
+      <tr><td>6</td><td>その他</td><td>2</td>
+        <td><span class="bar-wrapper"><span class="bar" style="width:8%"></span></span><span class="pct">5.7%</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="insight">
+    <strong>💡 気づき：「太りたい」というニーズが圧倒的</strong><br>
+    4人に3人が「太りたい」を選択。ブランド名「ふとるめし」がそのまま顧客ニーズに刺さっており、
+    ポジショニングは完全に正解。あとは認知拡大の問題。
+  </div>
+</section>
+
+<section>
+  <h2>👥 想定される顧客像（ペルソナ）</h2>
+
+  <div class="persona">
+    <h4>ペルソナA：部活少年の親（51%）</h4>
+    <ul>
+      <li>中高生の部活少年・少女の親（おそらく母親）</li>
+      <li>「痩せ細る我が子に体重を増やしてほしい」</li>
+      <li>自炊する時間がない／献立に困っている</li>
+      <li>主な流入：Instagram、部活コミュニティ</li>
+    </ul>
+  </div>
+
+  <div class="persona">
+    <h4>ペルソナB：太りたい成人男性（40%）</h4>
+    <ul>
+      <li>20〜40代男性、痩せ型コンプレックス</li>
+      <li>ジム通い・筋トレ後の栄養補給目的</li>
+      <li>仕事忙しく自炊できない</li>
+      <li>主な流入：Instagram、TikTok、YouTube</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>🎯 マーケアクション提案（優先度順）</h2>
+
+  <div class="action priority-high">
+    <span class="pri-badge pri-high">🥇 高</span>
+    <div>
+      <strong>Instagram 広告強化</strong><br>
+      <span style="color: var(--text-muted); font-size: 13px;">既に1位の流入。クリエイティブを「親向け」「自分向け」の2パターンでA/Bテスト</span>
+    </div>
+    <span style="font-size: 12px; color: var(--text-muted);">CV増加</span>
+  </div>
+
+  <div class="action priority-high">
+    <span class="pri-badge pri-high">🥇 高</span>
+    <div>
+      <strong>ペルソナ別LP/広告クリエイティブ</strong><br>
+      <span style="color: var(--text-muted); font-size: 13px;">「親向け」「自分向け」の2軸で別物を作る</span>
+    </div>
+    <span style="font-size: 12px; color: var(--text-muted);">CVR改善</span>
+  </div>
+
+  <div class="action priority-mid">
+    <span class="pri-badge pri-mid">🥈 中</span>
+    <div>
+      <strong>TikTok 強化</strong><br>
+      <span style="color: var(--text-muted); font-size: 13px;">2位流入、まだ伸び代あり。インフルエンサー連携も視野</span>
+    </div>
+    <span style="font-size: 12px; color: var(--text-muted);">新規CV</span>
+  </div>
+
+  <div class="action priority-mid">
+    <span class="pri-badge pri-mid">🥈 中</span>
+    <div>
+      <strong>SEO記事の執筆</strong><br>
+      <span style="color: var(--text-muted); font-size: 13px;">「太りたい 食事」「増量 弁当」等のキーワード。Google流入を改善</span>
+    </div>
+    <span style="font-size: 12px; color: var(--text-muted);">中長期</span>
+  </div>
+
+  <div class="action priority-low">
+    <span class="pri-badge pri-low">🥉 低</span>
+    <div>
+      <strong>YouTube インフルエンサー連携</strong><br>
+      <span style="color: var(--text-muted); font-size: 13px;">ブランディング目的。トレーニング系YouTuberとのコラボ</span>
+    </div>
+    <span style="font-size: 12px; color: var(--text-muted);">認知拡大</span>
+  </div>
+</section>
+
+<section>
+  <h2>⚠ データの限界と改善提案</h2>
+  <div class="warning">
+    <strong>注意点：</strong>
+    <ul style="margin: 8px 0 0; padding-left: 20px;">
+      <li>有効回答は <strong>35件のみ</strong>。100件超えると統計的信頼性が高まる</li>
+      <li>自由記述欄が無いため、定性的な声（「味」「配送」等）が拾えていない</li>
+      <li>購入後の継続率・解約理由とのクロス分析は未実施</li>
+    </ul>
+  </div>
+  <div class="insight">
+    <strong>💡 アンケート設計の改善案</strong>
+    <ul style="margin: 8px 0 0; padding-left: 20px;">
+      <li>自由記述欄を1問追加（「ご感想・改善要望」）</li>
+      <li>「年齢層」「職業」設問の追加でペルソナ精度UP</li>
+      <li>3ヶ月後の継続率と紐付けて分析</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>📋 次のステップ案</h2>
+  <table>
+    <thead>
+      <tr><th>段階</th><th>内容</th><th>所要</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td>GA4 / Clarity を見ながら相談会（流入導線の改善ポイント特定）</td><td>30分〜1時間</td></tr>
+      <tr><td>2</td><td>解約者の行動パターン分析</td><td>1時間</td></tr>
+      <tr><td>3</td><td>アンケートに自由記述欄を追加</td><td>実装：半日</td></tr>
+      <tr><td>4</td><td>四半期ごとのレポート定期化</td><td>運用化</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<footer>
+  作成：設計メート（リード）／ 分析日：2026-05-27<br>
+  集計クエリ：Supabase（purchase_surveys）／ 社内テスト31件除外済み
+</footer>
+
+</div>
+</body>
+</html>
