@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { createServerClient } from '@/lib/supabase';
 import type { ArticleDetail, ArticleListItem } from '@/types/article';
@@ -28,19 +29,17 @@ async function fetchArticle(slug: string): Promise<ArticleDetail | null> {
   return (data as ArticleDetail | null) ?? null;
 }
 
-async function fetchRelated(slug: string, tags: string[]): Promise<ArticleListItem[]> {
-  if (!tags || tags.length === 0) return [];
+async function fetchLatestExcluding(slug: string, limit = 5): Promise<ArticleListItem[]> {
   const supabase = createServerClient() as any;
   const { data, error } = await supabase
     .from('articles')
     .select('id, slug, title, excerpt, thumbnail_url, tags, author, published_at')
     .eq('is_published', true)
     .neq('slug', slug)
-    .overlaps('tags', tags)
     .order('published_at', { ascending: false })
-    .limit(3);
+    .limit(limit);
   if (error) {
-    console.error('[blog/[slug]] related fetch error', error);
+    console.error('[blog/[slug]] latest fetch error', error);
     return [];
   }
   return (data as ArticleListItem[]) ?? [];
@@ -85,9 +84,8 @@ export default async function BlogDetailPage({ params }: PageProps) {
   const article = await fetchArticle(slug);
   if (!article) notFound();
 
-  const related = await fetchRelated(article.slug, article.tags ?? []);
+  const pickUp = await fetchLatestExcluding(article.slug, 5);
 
-  // view_count を 1 増やす（fire-and-forget）
   const supabase = createServerClient() as any;
   void supabase
     .from('articles')
@@ -99,8 +97,7 @@ export default async function BlogDetailPage({ params }: PageProps) {
 
   return (
     <main className="min-h-screen bg-[#F9F8F3] pt-24 sm:pt-28 pb-16">
-      <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[800px] mx-auto">
-        {/* パンくず */}
+      <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto">
         <nav className="text-xs sm:text-sm text-gray-500 mb-6" aria-label="パンくず">
           <ol className="flex items-center gap-1 flex-wrap">
             <li>
@@ -115,92 +112,99 @@ export default async function BlogDetailPage({ params }: PageProps) {
           </ol>
         </nav>
 
-        <article className="bg-white rounded-2xl shadow-sm overflow-hidden">
-          {article.thumbnail_url && (
-            <div className="aspect-[16/9] w-full overflow-hidden bg-gray-100">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={article.thumbnail_url}
-                alt={article.title}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
-
-          <div className="px-5 py-8 sm:px-10 sm:py-12">
-            <header className="mb-8">
-              <div className="flex items-center gap-3 text-xs sm:text-sm text-gray-500 mb-3">
-                <time>{formatDate(article.published_at)}</time>
-                <span>·</span>
-                <span>{article.author}</span>
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,8fr)_minmax(0,4fr)] gap-8 lg:gap-10">
+          <article className="bg-white rounded-2xl shadow-sm overflow-hidden min-w-0">
+            {article.thumbnail_url && (
+              <div className="relative aspect-[16/9] w-full overflow-hidden bg-gray-100">
+                <Image
+                  src={article.thumbnail_url}
+                  alt={article.title}
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 800px"
+                  className="object-cover"
+                  priority
+                />
               </div>
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 leading-snug">
-                {article.title}
-              </h1>
-              {article.tags && article.tags.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {article.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="text-xs px-2.5 py-1 rounded-full bg-orange-50 text-orange-700"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
+            )}
+
+            <div className="px-5 py-8 sm:px-10 sm:py-12">
+              <header className="mb-8">
+                <div className="flex items-center gap-3 text-xs sm:text-sm text-gray-500 mb-3">
+                  <time>{formatDate(article.published_at)}</time>
+                  <span>·</span>
+                  <span>{article.author}</span>
                 </div>
-              )}
-            </header>
-
-            <ArticleContent content={article.content} />
-
-            {/* CTA */}
-            <div className="mt-12 p-6 sm:p-8 bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl text-center">
-              <p className="text-sm sm:text-base text-gray-700 mb-4">
-                ふとるための栄養設計を、毎月お届け
-              </p>
-              <Link
-                href="/purchase?type=subscription"
-                className="inline-block bg-orange-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-orange-700 transition-colors"
-              >
-                ふとるめしを試す
-              </Link>
-            </div>
-          </div>
-        </article>
-
-        {/* 関連記事 */}
-        {related.length > 0 && (
-          <section className="mt-12">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 text-center">
-              関連コラム
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-              {related.map((item) => (
-                <Link
-                  key={item.id}
-                  href={`/blog/${item.slug}`}
-                  className="block bg-white rounded-xl shadow-sm hover:shadow-lg transition-shadow group overflow-hidden"
-                >
-                  {item.thumbnail_url && (
-                    <div className="aspect-[16/9] w-full overflow-hidden bg-gray-100">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={item.thumbnail_url}
-                        alt={item.title}
-                        loading="lazy"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                  )}
-                  <div className="p-4">
-                    <p className="text-xs text-gray-500 mb-1">{formatDate(item.published_at)}</p>
-                    <h3 className="text-sm font-bold text-gray-900 line-clamp-2">{item.title}</h3>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 leading-snug">
+                  {article.title}
+                </h1>
+                {article.tags && article.tags.length > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {article.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="text-xs px-2.5 py-1 rounded-full bg-orange-50 text-orange-700"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
                   </div>
+                )}
+              </header>
+
+              <ArticleContent content={article.content} />
+
+              <div className="mt-12 p-6 sm:p-8 bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl text-center">
+                <p className="text-sm sm:text-base text-gray-700 mb-4">
+                  ふとるための栄養設計を、毎月お届け
+                </p>
+                <Link
+                  href="/purchase?type=subscription"
+                  className="inline-block bg-orange-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-orange-700 transition-colors"
+                >
+                  ふとるめしを試す
                 </Link>
-              ))}
+              </div>
             </div>
-          </section>
-        )}
+          </article>
+
+          {pickUp.length > 0 && (
+            <aside className="lg:sticky lg:top-28 self-start">
+              <div className="bg-white rounded-2xl shadow-sm p-5 sm:p-6">
+                <h2 className="text-xl sm:text-2xl font-bold text-orange-600 mb-5 border-b-2 border-orange-600 pb-2">
+                  Pick Up
+                </h2>
+                <ul className="space-y-4">
+                  {pickUp.map((item) => (
+                    <li key={item.id}>
+                      <Link
+                        href={`/blog/${item.slug}`}
+                        className="flex gap-3 group"
+                      >
+                        <div className="relative w-20 h-20 shrink-0 overflow-hidden rounded bg-gray-100">
+                          {item.thumbnail_url ? (
+                            <Image
+                              src={item.thumbnail_url}
+                              alt={item.title}
+                              fill
+                              sizes="80px"
+                              className="object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                          ) : null}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm font-bold text-gray-900 line-clamp-2 group-hover:text-orange-600 transition-colors">
+                            {item.title}
+                          </h3>
+                          <p className="mt-1 text-xs text-gray-500">{formatDate(item.published_at)}</p>
+                        </div>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </aside>
+          )}
+        </div>
 
         <div className="mt-10 text-center">
           <Link href="/blog" className="text-sm text-orange-600 hover:underline">

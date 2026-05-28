@@ -2,23 +2,72 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { Splide, SplideSlide } from '@splidejs/react-splide';
+import type { Options } from '@splidejs/splide';
+import '@splidejs/react-splide/css';
 import type { ArticleListItem } from '@/types/article';
 
-/**
- * F14-1: トップページに最新コラム3件を表示するセクション。
- * 既存の NewsSection と同じカードスタイルで揃える。
- */
+const DISPLAY_LIMIT = 10;
+
+function getBlogCarouselOptions(count: number): Options {
+  return {
+    type: 'slide',
+    perPage: 4,
+    perMove: 1,
+    gap: '1.25rem',
+    pagination: count > 4,
+    arrows: count > 4,
+    breakpoints: {
+      1280: {
+        perPage: 4,
+        arrows: count > 4,
+        pagination: count > 4,
+      },
+      1024: {
+        perPage: 3,
+        arrows: count > 3,
+        pagination: count > 3,
+      },
+      768: {
+        perPage: 2,
+        arrows: count > 2,
+        pagination: count > 2,
+      },
+      640: {
+        perPage: 1,
+        gap: '0.75rem',
+        padding: { left: '1.5rem', right: '1.5rem' },
+        arrows: false,
+        pagination: count > 1,
+      },
+    },
+  };
+}
+
+function formatDate(iso: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 const BlogSection: React.FC = () => {
   const [articles, setArticles] = useState<ArticleListItem[]>([]);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchLatest = async () => {
       try {
-        const res = await fetch('/api/blog/list?limit=3');
+        const res = await fetch(`/api/blog/list?limit=${DISPLAY_LIMIT + 1}`);
         if (res.ok) {
           const data = await res.json();
-          setArticles(data.items ?? []);
+          const items: ArticleListItem[] = data.items ?? [];
+          setHasMore(items.length > DISPLAY_LIMIT);
+          setArticles(items.slice(0, DISPLAY_LIMIT));
         }
       } catch (error) {
         console.error('コラムの取得に失敗しました:', error);
@@ -29,19 +78,10 @@ const BlogSection: React.FC = () => {
     fetchLatest();
   }, []);
 
-  const formatDate = (iso: string | null): string => {
-    if (!iso) return '';
-    const d = new Date(iso);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}.${m}.${day}`;
-  };
-
   if (loading) {
     return (
-      <section id="blog" className="relative overflow-hidden bg-white pt-6 sm:pt-12 pb-12 flex flex-col">
-        <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col">
+      <section id="blog" className="relative overflow-hidden bg-white pt-6 sm:pt-12 pb-12">
+        <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto">
           <div className="text-center mb-6 sm:mb-8">
             <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900">
               最新コラム
@@ -58,8 +98,8 @@ const BlogSection: React.FC = () => {
   }
 
   return (
-    <section id="blog" className="relative overflow-hidden bg-white pt-6 sm:pt-12 pb-12 flex flex-col">
-      <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col">
+    <section id="blog" className="relative overflow-hidden bg-white pt-6 sm:pt-12 pb-12">
+      <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto">
         <div className="text-center mb-6 sm:mb-8">
           <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900">
             最新コラム
@@ -69,51 +109,94 @@ const BlogSection: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
+        <Splide
+          options={getBlogCarouselOptions(articles.length)}
+          aria-label="最新コラム"
+          className="blog-splide pb-8"
+        >
           {articles.map((article) => (
-            <Link
-              key={article.id}
-              href={`/blog/${article.slug}`}
-              className="block bg-[#fffaf3] rounded-xl shadow-sm hover:shadow-lg transition-shadow group overflow-hidden"
-            >
-              {article.thumbnail_url && (
-                <div className="aspect-[16/9] w-full overflow-hidden bg-gray-100">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={article.thumbnail_url}
-                    alt={article.title}
-                    loading="lazy"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
+            <SplideSlide key={article.id}>
+              <Link
+                href={`/blog/${article.slug}`}
+                className="block group h-full"
+              >
+                <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-gray-100">
+                  {article.thumbnail_url ? (
+                    <Image
+                      src={article.thumbnail_url}
+                      alt={article.title}
+                      fill
+                      sizes="(max-width: 640px) 80vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : null}
                 </div>
-              )}
-              <div className="p-4 sm:p-5">
-                <div className="flex items-center justify-between mb-2">
+                <div className="mt-3">
                   <p className="text-xs text-gray-500">{formatDate(article.published_at)}</p>
-                  <svg className="w-5 h-5 text-orange-600 group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                  <h3 className="mt-1 text-base font-bold text-gray-900 line-clamp-2">
+                    {article.title}
+                  </h3>
+                  {article.excerpt && (
+                    <p className="mt-1 text-sm text-gray-700 line-clamp-2">{article.excerpt}</p>
+                  )}
                 </div>
-                <h3 className="text-base font-bold text-gray-900 mb-2 line-clamp-2">
-                  {article.title}
-                </h3>
-                {article.excerpt && (
-                  <p className="text-sm text-gray-600 line-clamp-2">{article.excerpt}</p>
-                )}
-              </div>
-            </Link>
+              </Link>
+            </SplideSlide>
           ))}
-        </div>
+        </Splide>
 
-        <div className="text-center">
-          <Link
-            href="/blog"
-            className="inline-block bg-orange-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-orange-700 transition-colors"
-          >
-            すべてのコラムを見る
-          </Link>
-        </div>
+        {hasMore && (
+          <div className="text-center mt-6">
+            <Link
+              href="/blog"
+              className="inline-block bg-orange-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-orange-700 transition-colors"
+            >
+              もっと見る
+            </Link>
+          </div>
+        )}
       </div>
+
+      <style jsx global>{`
+        .blog-splide .splide__arrow {
+          background: white;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          width: 2.5rem;
+          height: 2.5rem;
+          opacity: 1;
+          top: 40%;
+          transform: translateY(-50%);
+        }
+        .blog-splide .splide__arrow--prev { left: -0.5rem; }
+        .blog-splide .splide__arrow--next { right: -0.5rem; }
+        .blog-splide .splide__arrow svg {
+          fill: #ea580c;
+          width: 1rem;
+          height: 1rem;
+        }
+        .blog-splide .splide__arrow:hover {
+          background: #fff7ed;
+          transform: translateY(-50%);
+        }
+        .blog-splide .splide__pagination__page {
+          background: #d1d5db;
+          width: 8px;
+          height: 8px;
+        }
+        .blog-splide .splide__pagination__page.is-active {
+          background: #ea580c;
+          transform: scale(1);
+        }
+        .blog-splide .splide__pagination {
+          bottom: 0;
+        }
+        .blog-splide .splide__slide {
+          height: auto;
+        }
+        .blog-splide .splide__slide > * {
+          height: 100%;
+        }
+      `}</style>
     </section>
   );
 };
