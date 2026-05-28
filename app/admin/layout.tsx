@@ -247,6 +247,7 @@ const menuGroups: MenuGroup[] = [
     key: 'operations',
     label: 'オペレーション',
     items: [
+      { href: '/admin', label: 'ダッシュボード', icon: IconDashboard, exact: true },
       { href: '/admin/analytics', label: 'アナリティクス', icon: IconAnalytics },
       { href: '/admin/delivery', label: '配送管理', icon: IconDelivery },
       { href: '/admin/calendar', label: 'カレンダー', icon: IconCalendar },
