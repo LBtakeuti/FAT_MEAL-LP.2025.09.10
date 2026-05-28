@@ -68,7 +68,8 @@ function slugify(input: string): string {
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
-    .slice(0, 100);
+    .slice(0, 100)
+    .replace(/-+$/g, '');
 }
 
 export function ArticleForm({ mode, initial }: Props) {
