@@ -74,7 +74,7 @@ export function ArticleRichTextEditor({ value, onChange, placeholder }: ArticleR
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
     editorProps: {
       attributes: {
-        class: 'article-editor max-w-none min-h-[400px] p-4 border border-gray-300 rounded-b-md focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white',
+        class: 'article-editor max-w-none min-h-[400px] p-4 border border-gray-300 rounded-b-md focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white',
         'data-placeholder': placeholder || '',
       },
     },
