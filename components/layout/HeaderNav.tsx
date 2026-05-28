@@ -33,6 +33,7 @@ const HeaderNav: React.FC = () => {
       <nav className="flex items-center space-x-2 md:space-x-4 lg:space-x-8 text-sm lg:text-base font-antique">
         <Link href="/" className="text-[#374151] hover:text-orange-600 font-medium transition-colors">ホーム</Link>
         <Link href="/menu-list" className="text-[#374151] hover:text-orange-600 font-medium transition-colors">メニュー</Link>
+        <Link href="/blog" className="text-[#374151] hover:text-orange-600 font-medium transition-colors">コラム</Link>
         <Link href="/news" className="text-[#374151] hover:text-orange-600 font-medium transition-colors">お知らせ</Link>
         <Link href="/contact" className="text-[#374151] hover:text-orange-600 font-medium transition-colors">お問い合わせ</Link>
         <Link

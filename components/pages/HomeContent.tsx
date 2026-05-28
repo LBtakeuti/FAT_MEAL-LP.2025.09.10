@@ -15,6 +15,7 @@ import ReviewSection from '@/components/sections/ReviewSection';
 import AmbassadorSection from '@/components/sections/AmbassadorSection';
 import FeedbackSection from '@/components/sections/FeedbackSection';
 import NewsSection from '@/components/sections/NewsSection';
+import BlogSection from '@/components/sections/BlogSection';
 import FaqSection from '@/components/sections/FaqSection';
 import { ShareContentSection } from '@/components/sections/ShareContentSection';
 import LineFloatingButton from '@/components/ui/LineFloatingButton';
@@ -62,6 +63,8 @@ export default function HomeContent({ menuItems, shareData = null }: HomeContent
         <FeedbackSection />
         <PurchaseFlowSection />
         <NewsSection />
+        {/* F14-1: 最新コラム（両モード表示） */}
+        <BlogSection />
         <FaqSection />
       </main>
       <LineFloatingButton />

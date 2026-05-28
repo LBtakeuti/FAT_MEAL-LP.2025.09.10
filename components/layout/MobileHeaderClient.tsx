@@ -133,6 +133,15 @@ const MobileHeaderClient: React.FC = () => {
             </Link>
 
             <Link
+              href="/blog"
+              onClick={closeMenu}
+              className="block w-full text-left px-6 py-4 text-orange-600 hover:bg-orange-50 active:bg-orange-100 transition-colors font-medium text-lg"
+              style={{ WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}
+            >
+              コラム
+            </Link>
+
+            <Link
               href="/news"
               onClick={closeMenu}
               className="block w-full text-left px-6 py-4 text-orange-600 hover:bg-orange-50 active:bg-orange-100 transition-colors font-medium text-lg"
