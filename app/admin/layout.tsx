@@ -90,6 +90,16 @@ function IconBento() {
     </svg>
   );
 }
+function IconArticles() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="2" width="14" height="16" rx="1" />
+      <line x1="6" y1="6" x2="14" y2="6" />
+      <line x1="6" y1="10" x2="14" y2="10" />
+      <line x1="6" y1="14" x2="11" y2="14" />
+    </svg>
+  );
+}
 function IconNews() {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -278,6 +288,7 @@ const menuGroups: MenuGroup[] = [
     label: 'コンテンツ',
     items: [
       { href: '/admin/menu', label: '弁当管理', icon: IconBento },
+      { href: '/admin/articles', label: 'コラム記事', icon: IconArticles },
       { href: '/admin/news', label: 'ニュース管理', icon: IconNews },
       { href: '/admin/banner', label: 'バナー管理', icon: IconBanner },
       { href: '/admin/media-logos', label: 'メディアロゴ管理', icon: IconMedia },
