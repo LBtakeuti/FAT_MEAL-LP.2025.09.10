@@ -29,11 +29,13 @@ test.describe('コラム詳細ページ スモークテスト', () => {
       waitUntil: 'domcontentloaded',
       timeout: 60000,
     });
+    // Next.js RSC streaming: 404 コンテンツはハイドレーション後に DOM に反映されるため networkidle まで待機
+    await page.waitForLoadState('networkidle', { timeout: 30000 });
     const bodyText = await page.locator('body').innerText();
     const url = page.url();
     // Next.js の notFound() は Docker 開発環境でも 200 を返す場合があるため HTML 内容で確認
     const has404Content =
-      bodyText.match(/404|Not Found|見つかりません/i) !== null ||
+      bodyText.match(/404|Not Found|見つかりません|This page could not be found/i) !== null ||
       url.includes('404');
     expect(has404Content).toBe(true);
   });
