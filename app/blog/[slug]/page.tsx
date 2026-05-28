@@ -112,21 +112,21 @@ export default async function BlogDetailPage({ params }: PageProps) {
           </ol>
         </nav>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,8fr)_minmax(0,4fr)] gap-8 lg:gap-10">
-          <article className="bg-white rounded-2xl shadow-sm overflow-hidden min-w-0">
-            {article.thumbnail_url && (
-              <div className="relative aspect-[16/9] w-full overflow-hidden bg-gray-100">
-                <Image
-                  src={article.thumbnail_url}
-                  alt={article.title}
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 800px"
-                  className="object-cover"
-                  priority
-                />
-              </div>
-            )}
+        {article.thumbnail_url && (
+          <div className="relative aspect-[16/9] w-full overflow-hidden rounded-md bg-gray-100 mb-8">
+            <Image
+              src={article.thumbnail_url}
+              alt={article.title}
+              fill
+              sizes="(max-width: 1024px) 100vw, 1200px"
+              className="object-cover"
+              priority
+            />
+          </div>
+        )}
 
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,8fr)_minmax(0,4fr)] gap-8 lg:gap-10">
+          <article className="bg-white rounded-md shadow-sm overflow-hidden min-w-0">
             <div className="px-5 py-8 sm:px-10 sm:py-12">
               <header className="mb-8">
                 <div className="flex items-center gap-3 text-xs sm:text-sm text-gray-500 mb-3">
@@ -152,24 +152,12 @@ export default async function BlogDetailPage({ params }: PageProps) {
               </header>
 
               <ArticleContent content={article.content} />
-
-              <div className="mt-12 p-6 sm:p-8 bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl text-center">
-                <p className="text-sm sm:text-base text-gray-700 mb-4">
-                  ふとるための栄養設計を、毎月お届け
-                </p>
-                <Link
-                  href="/purchase?type=subscription"
-                  className="inline-block bg-orange-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-orange-700 transition-colors"
-                >
-                  ふとるめしを試す
-                </Link>
-              </div>
             </div>
           </article>
 
           {pickUp.length > 0 && (
             <aside className="lg:sticky lg:top-28 self-start">
-              <div className="bg-white rounded-2xl shadow-sm p-5 sm:p-6">
+              <div className="bg-white rounded-md shadow-sm p-5 sm:p-6">
                 <h2 className="text-xl sm:text-2xl font-bold text-orange-600 mb-5 border-b-2 border-orange-600 pb-2">
                   Pick Up
                 </h2>
@@ -180,7 +168,7 @@ export default async function BlogDetailPage({ params }: PageProps) {
                         href={`/blog/${item.slug}`}
                         className="flex gap-3 group"
                       >
-                        <div className="relative w-20 h-20 shrink-0 overflow-hidden rounded bg-gray-100">
+                        <div className="relative w-20 h-20 shrink-0 overflow-hidden rounded-md bg-gray-100">
                           {item.thumbnail_url ? (
                             <Image
                               src={item.thumbnail_url}

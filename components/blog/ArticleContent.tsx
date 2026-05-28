@@ -46,10 +46,10 @@ export default function ArticleContent({ content }: { content: string }) {
           code: ({ children, className }) => {
             const isInline = !className;
             if (isInline) {
-              return <code className="bg-gray-100 text-pink-700 px-1.5 py-0.5 rounded text-sm">{children}</code>;
+              return <code className="bg-gray-100 text-pink-700 px-1.5 py-0.5 rounded-md text-sm">{children}</code>;
             }
             return (
-              <code className={`${className ?? ''} block bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm leading-relaxed`}>
+              <code className={`${className ?? ''} block bg-gray-900 text-gray-100 p-4 rounded-md overflow-x-auto text-sm leading-relaxed`}>
                 {children}
               </code>
             );
@@ -60,7 +60,7 @@ export default function ArticleContent({ content }: { content: string }) {
               src={typeof src === 'string' ? src : ''}
               alt={alt ?? ''}
               loading="lazy"
-              className="my-6 rounded-lg w-full h-auto"
+              className="my-6 rounded-md w-full h-auto"
             />
           ),
           table: ({ children }) => (

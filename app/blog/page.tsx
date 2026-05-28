@@ -93,7 +93,7 @@ export default function BlogListPage() {
                         <p className="absolute -left-1 -top-3 sm:-top-4 z-10 text-2xl sm:text-3xl md:text-4xl font-extrabold text-orange-600 leading-none tracking-tight drop-shadow-sm">
                           {formatDateDot(article.published_at)}
                         </p>
-                        <div className="relative aspect-square w-full overflow-hidden rounded bg-gray-100 mt-6 sm:mt-8">
+                        <div className="relative aspect-square w-full overflow-hidden rounded-md bg-gray-100 mt-6 sm:mt-8">
                           {article.thumbnail_url ? (
                             <Image
                               src={article.thumbnail_url}

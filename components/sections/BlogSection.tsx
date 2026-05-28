@@ -120,7 +120,7 @@ const BlogSection: React.FC = () => {
                 href={`/blog/${article.slug}`}
                 className="block group h-full"
               >
-                <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-gray-100">
+                <div className="relative aspect-video w-full overflow-hidden rounded-md bg-gray-100">
                   {article.thumbnail_url ? (
                     <Image
                       src={article.thumbnail_url}
