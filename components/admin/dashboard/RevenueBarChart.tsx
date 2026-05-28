@@ -57,7 +57,7 @@ export function RevenueBarChart() {
               }
             />
             <Bar dataKey="subscriptionRevenue" stackId="rev" fill="#9333ea" radius={[0, 0, 0, 0]} />
-            <Bar dataKey="oneTimeRevenue" stackId="rev" fill="#f97316" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="oneTimeRevenue" stackId="rev" fill="#ea580c" radius={[3, 3, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       )}
