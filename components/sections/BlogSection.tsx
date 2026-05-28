@@ -164,7 +164,7 @@ const BlogSection: React.FC = () => {
           width: 2.5rem;
           height: 2.5rem;
           opacity: 1;
-          top: 40%;
+          top: 50%;
           transform: translateY(-50%);
         }
         .blog-splide .splide__arrow--prev { left: -0.5rem; }
