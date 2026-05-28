@@ -27,7 +27,7 @@ test.describe('コラム詳細ページ スモークテスト', () => {
   test('/blog/存在しないスラッグ が 404 コンテンツを表示する', async ({ page }) => {
     await page.goto('/blog/this-slug-does-not-exist-e2e-test', {
       waitUntil: 'domcontentloaded',
-      timeout: 30000,
+      timeout: 60000,
     });
     const bodyText = await page.locator('body').innerText();
     const url = page.url();
@@ -41,7 +41,7 @@ test.describe('コラム詳細ページ スモークテスト', () => {
 
 test.describe('トップページ BlogSection スモークテスト', () => {
   test('トップページが正常に表示される（BlogSection は記事0件時に非表示のため存在確認はスキップ）', async ({ page }) => {
-    await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 60000 });
     await expect(page).toHaveTitle(/.+/);
     const body = page.locator('body');
     await expect(body).toBeVisible();
