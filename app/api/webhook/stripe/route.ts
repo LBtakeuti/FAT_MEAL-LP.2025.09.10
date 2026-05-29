@@ -1586,9 +1586,6 @@ async function sendSubscriptionPurchaseConfirmationEmail(params: {
       </div>
 
       <p>毎月自動で課金・配送されます。解約をご希望の場合はマイページからお申し出ください。</p>
-      <p style="background: #fff8e1; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 4px; margin: 20px 0;">
-        ※ 2ヶ月目以降は価格が変更されます。詳しくはサイト内のプランページをご確認ください。
-      </p>
 
       <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 20px; border-radius: 8px; margin: 20px 0;">
         <p style="margin-top: 0; font-weight: bold; color: #1e40af;">🔑 会員登録が完了しました</p>

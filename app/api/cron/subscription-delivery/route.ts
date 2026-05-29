@@ -256,66 +256,9 @@ async function completeSubscription(
       .eq('id', subscriptionId)
       .single();
 
-    if (subscription && (subscription as any).shipping_address?.email) {
-      await sendSubscriptionCompletionEmail({
-        email: (subscription as any).shipping_address.email,
-        name: (subscription as any).shipping_address.name || 'お客様',
-      });
-    }
+    // F18: 全配送完了メールは送信しないため subscription 取得結果は未使用
+    void subscription;
   } catch (error) {
     console.error('[Subscription Delivery Cron] Error completing subscription:', error);
-  }
-}
-
-// 契約終了メール送信
-async function sendSubscriptionCompletionEmail(params: { email: string; name: string }) {
-  try {
-    const { Resend } = await import('resend');
-    if (!process.env.RESEND_API_KEY) {
-      console.log('[Subscription Delivery Cron] RESEND_API_KEY is not set, skipping email');
-      return;
-    }
-
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    const fromEmail = process.env.RESEND_FROM_EMAIL || '';
-
-    const emailHtml = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.8; color: #333; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .content { background: #fff; padding: 30px; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="content">
-      <p>${params.name}様</p>
-      <p>ふとるめし3ヶ月定期購入プランの全配送が完了しました。</p>
-      <p>ご利用ありがとうございました。</p>
-      <p>またのご利用をお待ちしております。</p>
-    </div>
-  </div>
-</body>
-</html>
-    `;
-
-    const { error } = await resend.emails.send({
-      from: fromEmail,
-      to: params.email,
-      subject: '【ふとるめし】定期購入が完了しました',
-      html: emailHtml,
-    });
-
-    if (error) {
-      console.error('[Subscription Delivery Cron] Failed to send completion email:', error);
-    } else {
-      console.log('[Subscription Delivery Cron] Completion email sent to:', params.email);
-    }
-  } catch (error) {
-    console.error('[Subscription Delivery Cron] Error sending completion email:', error);
   }
 }
