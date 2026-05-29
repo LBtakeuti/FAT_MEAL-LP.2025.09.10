@@ -104,9 +104,6 @@ const BlogSection: React.FC = () => {
           <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900">
             最新コラム
           </h2>
-          <p className="mt-2 text-sm sm:text-base text-gray-600">
-            ふとるためのヒントを編集部がお届け
-          </p>
         </div>
 
         <Splide

@@ -66,9 +66,6 @@ export default function BlogListPage() {
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900">
             コラム
           </h1>
-          <p className="mt-3 text-sm sm:text-base text-gray-600">
-            ふとるためのヒント・栄養・部活サポートまで、編集部がお届けします
-          </p>
         </header>
 
         {loading ? (
