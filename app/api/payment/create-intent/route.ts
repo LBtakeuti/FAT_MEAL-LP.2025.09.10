@@ -10,7 +10,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createServerClient } from '@/lib/supabase';
-import { getPriceIdByInternalCode } from '@/lib/stripe-prices';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -25,19 +24,17 @@ const SUBSCRIPTION_MONTHLY_TOTAL: Record<string, number> = {
   'sub-12': 7500,
 };
 
-// F13-1: サブスクリプション用 Stripe Price ID を internal_code 経由で取得。
-// metadata 検索 → 環境変数 fallback の順で動作する（lib/stripe-prices.ts 参照）。
-async function getSubscriptionPriceIds(planId: string): Promise<{ productPriceId: string; shippingPriceId: string } | null> {
-  try {
-    const [productPriceId, shippingPriceId] = await Promise.all([
-      getPriceIdByInternalCode(planId),
-      getPriceIdByInternalCode('sub-shipping'),
-    ]);
-    return { productPriceId, shippingPriceId };
-  } catch (e) {
-    console.error('[create-intent] getSubscriptionPriceIds failed', e);
-    return null;
-  }
+// サブスクリプション用 Stripe Price ID（商品+送料の2本）を取得。
+// いずれかの env が未設定なら null を返す（呼び出し側で 400 を返す）。
+function getSubscriptionPriceIds(planId: string): { productPriceId: string; shippingPriceId: string } | null {
+  const productMap: Record<string, string | undefined> = {
+    'sub-6': process.env.STRIPE_PRICE_SUB6_PRODUCT,
+    'sub-12': process.env.STRIPE_PRICE_SUB12_PRODUCT,
+  };
+  const productPriceId = productMap[planId];
+  const shippingPriceId = process.env.STRIPE_PRICE_SUB_SHIPPING;
+  if (!productPriceId || !shippingPriceId) return null;
+  return { productPriceId, shippingPriceId };
 }
 
 interface CreateIntentRequest {
@@ -199,7 +196,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: '無効なプランIDです' }, { status: 400 });
       }
 
-      const priceIds = await getSubscriptionPriceIds(planId);
+      const priceIds = getSubscriptionPriceIds(planId);
       if (!priceIds) {
         console.error(`[create-intent] Missing Stripe Price IDs for ${planId}`);
         return NextResponse.json({ error: 'サブスクリプション価格が設定されていません' }, { status: 400 });
