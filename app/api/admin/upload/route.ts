@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import sharp from 'sharp';
 import { createServerClient } from '@/lib/supabase';
+import { withAuth } from '@/lib/api-helpers';
 
 // 許可するファイル種別
 const ALLOWED_MIME_TYPES = [
@@ -10,7 +12,44 @@ const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'];
 // 許可するバケット名
 const ALLOWED_BUCKETS = ['images', 'menu-images', 'news-images', 'ambassador-images', 'feedback-images', 'review-images', 'media-logos', 'banners'];
 
-export async function POST(request: NextRequest) {
+// F17: OG画像基準のリサイズ上限（長辺 1200px / 高さ 630px）
+const MAX_DIMENSION = 1200;
+const RESIZE_HEIGHT = 630;
+// リサイズ対象から外す MIME（SVG はベクター、GIF はアニメ保持のため非対象）
+const SKIP_RESIZE_MIMES = new Set(['image/svg+xml', 'image/gif']);
+
+async function maybeResize(
+  inputBuffer: Buffer,
+  mime: string,
+): Promise<{ buffer: Buffer; resized: boolean }> {
+  if (SKIP_RESIZE_MIMES.has(mime)) {
+    return { buffer: inputBuffer, resized: false };
+  }
+  try {
+    const image = sharp(inputBuffer);
+    const meta = await image.metadata();
+    const width = meta.width ?? 0;
+    const height = meta.height ?? 0;
+    if (width <= MAX_DIMENSION && height <= RESIZE_HEIGHT) {
+      return { buffer: inputBuffer, resized: false };
+    }
+    // contain（fit: 'inside'）でアスペクト比保持しつつ MAX_DIMENSION x RESIZE_HEIGHT 内に縮小
+    const resized = await image
+      .resize({
+        width: MAX_DIMENSION,
+        height: RESIZE_HEIGHT,
+        fit: 'inside',
+        withoutEnlargement: true,
+      })
+      .toBuffer();
+    return { buffer: resized, resized: true };
+  } catch (err) {
+    console.warn('[admin/upload] sharp resize failed, falling back to original', err);
+    return { buffer: inputBuffer, resized: false };
+  }
+}
+
+export const POST = withAuth(async (request: NextRequest) => {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
@@ -62,7 +101,16 @@ export async function POST(request: NextRequest) {
 
     // FileをArrayBufferに変換
     const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const inputBuffer = Buffer.from(arrayBuffer);
+
+    // F17: 1200px / 630px を超える場合のみ自動リサイズ（SVG/GIF はスキップ）
+    const { buffer, resized } = await maybeResize(inputBuffer, file.type);
+    if (resized) {
+      console.log(
+        `[admin/upload] resized to fit ${MAX_DIMENSION}x${RESIZE_HEIGHT}`,
+        { fileName, originalSize: inputBuffer.length, newSize: buffer.length },
+      );
+    }
 
     // Supabase Storageにアップロード
     const supabase = createServerClient();
@@ -96,4 +144,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

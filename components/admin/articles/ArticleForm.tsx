@@ -90,9 +90,47 @@ export function ArticleForm({ mode, initial }: Props) {
   const [ogImageUrl, setOgImageUrl] = useState(initial.og_image_url);
 
   const [thumbUploading, setThumbUploading] = useState(false);
+  const [ogUploading, setOgUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const uploadOgImage = async (file: File) => {
+    if (file.size > 4 * 1024 * 1024) {
+      toast.error('画像サイズは4MB以下にしてください');
+      return;
+    }
+    setOgUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('bucket', 'images');
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(json?.message || 'アップロードに失敗しました');
+        return;
+      }
+      if (json?.url) {
+        setOgImageUrl(json.url);
+        toast.success('OG画像をアップロードしました');
+      }
+    } catch (err) {
+      console.error('og image upload error', err);
+      toast.error('アップロード中にエラーが発生しました');
+    } finally {
+      setOgUploading(false);
+    }
+  };
+
+  const useThumbnailAsOgImage = () => {
+    if (!thumbnailUrl) {
+      toast.error('先にサムネ画像を設定してください');
+      return;
+    }
+    setOgImageUrl(thumbnailUrl);
+    toast.success('サムネ画像をOG画像にコピーしました');
+  };
 
   const uploadThumbnail = async (file: File) => {
     if (file.size > 4 * 1024 * 1024) {
@@ -330,14 +368,57 @@ export function ArticleForm({ mode, initial }: Props) {
             rows={3}
             className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-orange-400"
           />
-          <label className="block text-xs font-semibold text-gray-600 mb-1">OG画像URL</label>
+          <label className="block text-xs font-semibold text-gray-600 mb-1">OG画像</label>
           <input
             type="url"
             value={ogImageUrl}
             onChange={(e) => setOgImageUrl(e.target.value)}
-            placeholder="https://..."
-            className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+            placeholder="https://... または下のボタンからアップロード"
+            className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 mb-2"
           />
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <label
+              className={`inline-flex items-center px-3 py-1 text-xs rounded-md border border-gray-300 cursor-pointer hover:bg-gray-50 ${
+                ogUploading ? 'opacity-50 pointer-events-none' : ''
+              }`}
+            >
+              {ogUploading ? 'アップロード中...' : '画像をアップロード'}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = '';
+                  if (f) uploadOgImage(f);
+                }}
+                disabled={ogUploading}
+                className="hidden"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={useThumbnailAsOgImage}
+              disabled={!thumbnailUrl}
+              className="inline-flex items-center px-3 py-1 text-xs rounded-md border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              title={!thumbnailUrl ? '先にサムネ画像を設定してください' : undefined}
+            >
+              サムネと同じ画像を使う
+            </button>
+            {ogImageUrl && (
+              <button
+                type="button"
+                onClick={() => setOgImageUrl('')}
+                className="text-xs text-red-600 hover:underline"
+              >
+                クリア
+              </button>
+            )}
+          </div>
+          {ogImageUrl && (
+            <div className="relative aspect-[1200/630] w-full overflow-hidden rounded-md bg-gray-100 border border-gray-200">
+              <Image src={ogImageUrl} alt="OG画像プレビュー" fill sizes="240px" className="object-cover" />
+            </div>
+          )}
         </div>
 
         <div className="bg-white rounded-md shadow p-5 space-y-2">
