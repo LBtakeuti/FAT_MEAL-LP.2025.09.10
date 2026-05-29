@@ -94,7 +94,12 @@ export default function AdminArticlesPage() {
     setBusyId(deleteId);
     try {
       const res = await fetch(`/api/admin/articles/${deleteId}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error(String(res.status));
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        const msg = json?.message || json?.error || `削除に失敗しました（HTTP ${res.status}）`;
+        toast.error(msg);
+        return;
+      }
       toast.success('削除しました');
       fetchList({ offset, search });
     } catch (err) {

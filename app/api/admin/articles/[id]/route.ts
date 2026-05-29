@@ -127,9 +127,19 @@ export const PATCH = withAuthDynamic(async (request: NextRequest, context) => {
 export const DELETE = withAuthDynamic(async (_request: NextRequest, context) => {
   const { id } = await context.params;
   const supabase = createServerClient() as any;
-  const { error } = await supabase.from('articles').delete().eq('id', id);
+  // .select() で削除された行を返してもらい、0 件なら 404 を明示返却（RLS で 0 削除になっても error は null のため）
+  const { data, error } = await supabase
+    .from('articles')
+    .delete()
+    .eq('id', id)
+    .select('id');
   if (error) {
+    console.error('[admin/articles DELETE] supabase error', { id, error });
     return handleSupabaseError(error, '記事削除');
+  }
+  if (!data || data.length === 0) {
+    console.warn('[admin/articles DELETE] 0 row deleted (RLS or not-found)', { id });
+    return jsonNotFound('記事が見つからないか削除権限がありません');
   }
   return jsonSuccess({ success: true });
 });
