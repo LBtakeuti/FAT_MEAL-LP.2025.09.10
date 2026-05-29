@@ -108,20 +108,8 @@ export async function GET(request: NextRequest) {
           })
           .eq('id', delivery.id);
 
-        // 残りの pending 配送を確認して契約終了判定
-        const { count: remainingPending } = await (supabase
-          .from('subscription_deliveries') as any)
-          .select('id', { count: 'exact', head: true })
-          .eq('subscription_id', delivery.subscription_id)
-          .eq('status', 'pending')
-          .gt('scheduled_date', todayStr);
-
-        if (remainingPending === 0) {
-          await completeSubscription(subscription.id, supabase);
-        }
-
         results.processed++;
-        console.log(`[Subscription Delivery Cron] Successfully processed delivery ${delivery.id} (remaining: ${remainingPending})`);
+        console.log(`[Subscription Delivery Cron] Successfully processed delivery ${delivery.id}`);
 
       } catch (error) {
         console.error(`[Subscription Delivery Cron] Failed to process delivery ${delivery.id}:`, error);
@@ -231,34 +219,3 @@ async function createOrderFromDelivery(
   };
 }
 
-// 契約終了処理
-async function completeSubscription(
-  subscriptionId: string,
-  supabase: ReturnType<typeof createServerClient>
-) {
-  try {
-    // サブスクリプションを完了状態に更新
-    await (supabase
-      .from('subscriptions') as any)
-      .update({
-        status: 'completed',
-        canceled_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', subscriptionId);
-
-    console.log(`[Subscription Delivery Cron] Subscription ${subscriptionId} completed`);
-
-    // 契約終了メール送信
-    const { data: subscription } = await (supabase
-      .from('subscriptions') as any)
-      .select('shipping_address')
-      .eq('id', subscriptionId)
-      .single();
-
-    // F18: 全配送完了メールは送信しないため subscription 取得結果は未使用
-    void subscription;
-  } catch (error) {
-    console.error('[Subscription Delivery Cron] Error completing subscription:', error);
-  }
-}
