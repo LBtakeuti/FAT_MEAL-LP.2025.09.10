@@ -20,7 +20,7 @@ const PLAN_PRICES: Record<string, { amount: number; shipping: number }> = {
 
 // 月額合計の表示用（フロントへ amount を返す）。
 const SUBSCRIPTION_MONTHLY_TOTAL: Record<string, number> = {
-  'sub-6': 4500,
+  'sub-6': 4800,
   'sub-12': 7500,
 };
 

@@ -30,8 +30,8 @@ const plans: PlanCard[] = [
     id: 'sub-6',
     meals: 6,
     title: '6食プラン',
-    totalPrice: 4500,
-    pricePerMeal: 500, // 商品代のみ(3000/6)、送料を含めない
+    totalPrice: 4800,
+    pricePerMeal: 550, // 商品代のみ(3300/6)、送料を含めない
     isTrial: false,
     popular: true,
   },

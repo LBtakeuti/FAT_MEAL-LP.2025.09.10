@@ -3,7 +3,7 @@
  *
  * プラン構成:
  * - trial-6: お試しプラン（買い切り）6食 ¥5,700（商品¥4,200 + 送料¥1,500）
- * - sub-6: 6食プラン（月額）¥4,500/月（商品¥3,000 + 送料¥1,500）
+ * - sub-6: 6食プラン（月額）¥4,800/月（商品¥3,300 + 送料¥1,500）
  * - sub-12: 12食プラン（月額）¥7,500/月（商品¥6,000 + 送料¥1,500）
  *
  * Legacy（既存契約者のみ・新規発行なし）:
@@ -44,10 +44,10 @@ export const PLAN_CONFIGS: { [key: string]: PlanConfig } = {
     plan_id: 'sub-6',
     meals_per_delivery: 6,
     deliveries_per_month: 1,
-    product_price: 3000,           // ¥500 × 6個
+    product_price: 3300,           // ¥550 × 6個（F20で価格改定）
     shipping_fee_per_delivery: 1500,
     monthly_shipping_fee: 1500,
-    monthly_total: 4500,           // 3000 + 1500
+    monthly_total: 4800,           // 3300 + 1500
   },
   'sub-12': {
     plan_id: 'sub-12',
