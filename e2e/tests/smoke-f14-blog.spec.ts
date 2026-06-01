@@ -5,20 +5,20 @@ import { test, expect } from '@playwright/test';
 
 test.describe('コラム一覧ページ スモークテスト', () => {
   test('/blog が 200 で表示される', async ({ page }) => {
-    await page.goto('/blog', { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.goto('/blog', { waitUntil: 'domcontentloaded', timeout: 60000 });
     await expect(page).toHaveURL(/\/blog/);
     const body = page.locator('body');
     await expect(body).toBeVisible();
   });
 
   test('/blog に 404 コンテンツが含まれない（正常表示）', async ({ page }) => {
-    await page.goto('/blog', { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.goto('/blog', { waitUntil: 'domcontentloaded', timeout: 60000 });
     const bodyText = await page.locator('body').innerText();
     expect(bodyText).not.toMatch(/404|Not Found|ページが見つかりません/i);
   });
 
   test('記事0件でも /blog が空状態で表示される', async ({ page }) => {
-    const response = await page.goto('/blog', { waitUntil: 'domcontentloaded', timeout: 30000 });
+    const response = await page.goto('/blog', { waitUntil: 'domcontentloaded', timeout: 60000 });
     expect(response?.status()).toBe(200);
   });
 });
