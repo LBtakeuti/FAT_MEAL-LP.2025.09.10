@@ -787,6 +787,8 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
 
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  // F22: サブスクプランの3ヶ月最低継続への同意（サブスク選択時のみ）
+  const [agreedToMinTerm, setAgreedToMinTerm] = useState(false);
 
   // アンケート state
   const [surveyQ1, setSurveyQ1] = useState<string[]>([]);
@@ -957,20 +959,49 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
     }, 150);
   };
 
-  const renderPlanSelection = () => (
-    <div className="space-y-6">
-      <PlanSelectorCards
-        plans={planCardData}
-        selectedId={currentSelectedId}
-        onSelect={handlePlanSelect}
-        onProceed={handleProceedToInfo}
-      />
+  const renderPlanSelection = () => {
+    const selectedPlan = getSelectedPlan();
+    const isSubscriptionSelected = !!selectedPlan && selectedPlan.isSubscription;
+    const handleProceedGated = () => {
+      if (isSubscriptionSelected && !agreedToMinTerm) {
+        return;
+      }
+      handleProceedToInfo();
+    };
+    return (
+      <div className="space-y-6">
+        <PlanSelectorCards
+          plans={planCardData}
+          selectedId={currentSelectedId}
+          onSelect={handlePlanSelect}
+          onProceed={handleProceedGated}
+        />
 
-      <p className="text-xs text-gray-400 text-center">
-        送料無料 ・ いつでも解約可能 ・ 管理栄養士監修
-      </p>
-    </div>
-  );
+        {isSubscriptionSelected && (
+          <div className="rounded-lg border border-orange-200 bg-orange-50 px-4 py-3">
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={agreedToMinTerm}
+                onChange={(e) => setAgreedToMinTerm(e.target.checked)}
+                className="mt-1 w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-400"
+              />
+              <span className="text-sm text-gray-800">
+                ご契約から3ヶ月間は解約できないことを理解しました
+                <span className="block text-xs text-gray-600 mt-0.5">
+                  3ヶ月経過後はマイページから解約手続きが可能です
+                </span>
+              </span>
+            </label>
+          </div>
+        )}
+
+        <p className="text-xs text-gray-400 text-center">
+          送料無料 ・ 管理栄養士監修
+        </p>
+      </div>
+    );
+  };
 
   // 配送希望日選択UI（サブスク時のみ表示・4営業日後〜+6日の連続する日付を選択可能。土日含む）
   const renderDeliveryDateSelection = () => {
@@ -1749,6 +1780,20 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
             </span>
           </label>
         </div>
+
+        {/* F22: サブスクリプション3ヶ月最低継続の最終確認（目立つボックス） */}
+        {purchaseType === 'subscription-monthly' && (
+          <div className="rounded-lg border-2 border-amber-300 bg-amber-50 px-4 py-3">
+            <p className="text-sm font-bold text-amber-800 mb-1.5 flex items-center gap-1.5">
+              <span aria-hidden="true">⚠</span>
+              <span>ご注意</span>
+            </p>
+            <p className="text-sm text-amber-900 leading-relaxed">
+              この定期便はご契約から3ヶ月間は解約できません。<br />
+              3ヶ月経過後はマイページから解約可能です。
+            </p>
+          </div>
+        )}
 
         {/* サブスクリプション解約に関する注意書き */}
         {purchaseType === 'subscription-monthly' && (

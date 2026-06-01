@@ -148,11 +148,16 @@ const SubscriptionSection: React.FC = () => {
                       <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-                      <span>いつでも解約可能</span>
+                      <span>3ヶ月経過後は解約可能</span>
                     </li>
                   </>
                 )}
               </ul>
+              {!plan.isTrial && (
+                <p className="text-xs text-gray-500 mb-3 -mt-1">
+                  ※ 最低3ヶ月のご継続をお願いいたします
+                </p>
+              )}
 
               <button
                 onClick={(e) => {
@@ -173,7 +178,8 @@ const SubscriptionSection: React.FC = () => {
 
         <div className="mt-8 sm:mt-12 text-center text-sm text-gray-500">
           <p className="mb-1">※ 価格は税込表示です</p>
-          <p>※ 定期購入はログインが必要です</p>
+          <p className="mb-1">※ 定期購入はログインが必要です</p>
+          <p>※ 定期購入は最低3ヶ月のご継続をお願いいたします</p>
         </div>
       </div>
     </section>
