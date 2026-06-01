@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
     // サブスクリプションの存在確認と情報取得
     const { data: subscription, error: subError } = await (supabase
       .from('subscriptions') as any)
-      .select('id, status, stripe_subscription_id, shipping_address, user_id, plan_name')
+      .select('id, status, stripe_subscription_id, shipping_address, user_id, plan_name, created_at')
       .eq('id', subscriptionId)
       .single();
 
@@ -112,6 +112,23 @@ export async function POST(request: NextRequest) {
         { error: 'このサブスクリプションは既に解約済みまたはアクティブではありません' },
         { status: 400 }
       );
+    }
+
+    // F21: 3ヶ月縛り（F21リリース日以降に契約した新規ユーザーのみ適用）
+    const CUTOFF_DATE = new Date('2026-06-01T00:00:00+09:00');
+    const subscriptionCreatedAt = new Date(subscription.created_at);
+    if (subscriptionCreatedAt >= CUTOFF_DATE) {
+      const cancelableFrom = new Date(subscriptionCreatedAt);
+      cancelableFrom.setMonth(cancelableFrom.getMonth() + 3);
+      if (new Date() < cancelableFrom) {
+        return NextResponse.json(
+          {
+            error: 'ご契約から3ヶ月経過後に解約可能となります',
+            cancelableFrom: cancelableFrom.toISOString(),
+          },
+          { status: 403 }
+        );
+      }
     }
 
     const shippingAddress = subscription.shipping_address as any;

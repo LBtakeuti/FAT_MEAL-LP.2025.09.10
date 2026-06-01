@@ -50,10 +50,34 @@ interface Subscription {
   status: 'active' | 'paused' | 'canceled' | 'past_due';
   payment_status: string;
   started_at: string;
+  created_at?: string;
   canceled_at: string | null;
   current_period_start: string;
   current_period_end: string;
   stripe_subscription_id: string;
+}
+
+// F21: 3ヶ月縛り判定（F21リリース日以降の新規契約者のみ適用）
+const F21_CUTOFF_DATE = new Date('2026-06-01T00:00:00+09:00');
+
+/**
+ * F21: サブスクが解約可能か判定する。
+ * 既存契約者（CUTOFF_DATE 前）は常に解約可。
+ * 新規契約者は契約日 + 3ヶ月（カレンダー月単位、API 側 setMonth(+3) と整合）経過後に解約可。
+ */
+function getCancellationAvailability(sub: { created_at?: string; started_at?: string }): {
+  cancelable: boolean;
+  cancelableFrom: Date | null;
+} {
+  const basis = sub.created_at || sub.started_at;
+  if (!basis) return { cancelable: true, cancelableFrom: null };
+  const createdAt = new Date(basis);
+  if (createdAt < F21_CUTOFF_DATE) {
+    return { cancelable: true, cancelableFrom: null };
+  }
+  const cancelableFrom = new Date(createdAt);
+  cancelableFrom.setMonth(cancelableFrom.getMonth() + 3);
+  return { cancelable: new Date() >= cancelableFrom, cancelableFrom };
 }
 
 const prefectures = [
@@ -416,19 +440,36 @@ export default function MyPage() {
                             </div>
                           )}
                         </div>
-                        {sub.status === 'active' && (
-                          <button
-                            onClick={() => {
-                              setCancelModalSub(sub);
-                              setSelectedReasons([]);
-                              setCancelMessage('');
-                              setCancelSuccess(false);
-                            }}
-                            className="mt-3 w-full py-2 text-sm text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
-                          >
-                            解約する
-                          </button>
-                        )}
+                        {sub.status === 'active' && (() => {
+                          const { cancelable, cancelableFrom } = getCancellationAvailability(sub);
+                          return (
+                            <>
+                              <button
+                                onClick={() => {
+                                  if (!cancelable) return;
+                                  setCancelModalSub(sub);
+                                  setSelectedReasons([]);
+                                  setCancelMessage('');
+                                  setCancelSuccess(false);
+                                }}
+                                disabled={!cancelable}
+                                className={`mt-3 w-full py-2 text-sm border rounded-lg transition-colors ${
+                                  cancelable
+                                    ? 'text-red-600 border-red-300 hover:bg-red-50'
+                                    : 'text-gray-400 border-gray-200 cursor-not-allowed opacity-50'
+                                }`}
+                              >
+                                解約する
+                              </button>
+                              {!cancelable && cancelableFrom && (
+                                <p className="mt-2 text-xs text-orange-600 text-center">
+                                  ご契約から3ヶ月経過後に解約可能となります<br />
+                                  解約可能日: {cancelableFrom.toLocaleDateString('ja-JP')} 以降
+                                </p>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
                     ))}
                   </div>

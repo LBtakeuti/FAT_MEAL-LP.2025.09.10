@@ -129,6 +129,7 @@ export async function GET(request: NextRequest) {
           status: sub.status,
           payment_status: sub.payment_status,
           started_at: sub.started_at,
+          created_at: sub.created_at,
           canceled_at: sub.canceled_at,
           current_period_start: sub.current_period_start,
           current_period_end: sub.current_period_end,
