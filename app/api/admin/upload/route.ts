@@ -30,6 +30,7 @@ async function maybeResize(
     const meta = await image.metadata();
     const width = meta.width ?? 0;
     const height = meta.height ?? 0;
+    // 幅・高さ両方が閾値以内ならリサイズ不要（どちらか一方でも超えればリサイズする）
     if (width <= MAX_DIMENSION && height <= RESIZE_HEIGHT) {
       return { buffer: inputBuffer, resized: false };
     }
