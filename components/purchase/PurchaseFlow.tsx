@@ -952,11 +952,14 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
     );
     setPurchaseType(plan.isTrial ? 'one-time' : 'subscription-monthly');
     if (plan.isSubscription) setOpenPlanId(plan.id);
-    // プラン選択後、自動で次のステップに進む
-    setTimeout(() => {
-      setCurrentStep('info');
-      resetSheetScroll();
-    }, 150);
+    // F22: お試し選択は同意不要のため自動遷移、サブスク選択時は3ヶ月同意チェックを挟むため自動遷移しない
+    if (plan.isTrial) {
+      setAgreedToMinTerm(false); // お試しに切替時は同意フラグをリセット
+      setTimeout(() => {
+        setCurrentStep('info');
+        resetSheetScroll();
+      }, 150);
+    }
   };
 
   const renderPlanSelection = () => {
