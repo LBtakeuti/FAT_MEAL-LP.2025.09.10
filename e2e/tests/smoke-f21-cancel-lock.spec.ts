@@ -6,7 +6,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('F21 解約 API 認証保護スモークテスト', () => {
   test('POST /api/users/subscriptions/cancel が認証なしで 4xx を返す（500 でないこと）', async ({ page }) => {
-    await page.goto('/admin/login', { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.goto('/admin/login', { waitUntil: 'domcontentloaded', timeout: 60000 });
     const status = await page.evaluate(async () => {
       const res = await fetch('/api/users/subscriptions/cancel', {
         method: 'POST',

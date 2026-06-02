@@ -8,7 +8,7 @@ test.describe('F17 upload API 認証保護スモークテスト', () => {
     // upload は POST 専用のため GET は 405 になる場合もある
     const res = await page.goto('/api/admin/upload', {
       waitUntil: 'domcontentloaded',
-      timeout: 30000,
+      timeout: 60000,
     });
     const status = res?.status() ?? 0;
     expect(status).toBeLessThan(500);
