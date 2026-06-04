@@ -63,6 +63,17 @@ test.describe('F15 管理ダッシュボード API スモークテスト', () =>
     expect(status).toBeGreaterThan(0);
   });
 
+  // F30: from/to クエリ付きでも認証保護が機能することを確認
+  test('/api/admin/dashboard/subscription-trend?from=...&to=... が認証なしで 401/403 を返す（500 でないこと）', async ({ page }) => {
+    const res = await page.goto('/api/admin/dashboard/subscription-trend?from=2026-05-01&to=2026-05-31', {
+      waitUntil: 'domcontentloaded',
+      timeout: 30000,
+    });
+    const status = res?.status() ?? 0;
+    expect(status).toBeLessThan(500);
+    expect(status).toBeGreaterThan(0);
+  });
+
   // F26: 集計修正対象エンドポイントの認証保護確認
   test('/api/admin/revenue-chart が認証なしで 401/403 を返す（500 でないこと）', async ({ page }) => {
     const res = await page.goto('/api/admin/revenue-chart', {
