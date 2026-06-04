@@ -4,49 +4,33 @@ import { useEffect, useState } from 'react';
 import {
   TrendingUpIcon,
   CalendarIcon,
-  PiggyBankIcon,
+  UsersIcon,
   UserPlusIcon,
-  UserMinusIcon,
+  TruckIcon,
+  MailIcon,
 } from '@/components/admin/dashboard/icons';
 import { DashboardCard } from '@/components/admin/dashboard/DashboardCard';
-import { DateRangePicker } from '@/components/admin/dashboard/DateRangePicker';
-import { RevenueBarChart } from '@/components/admin/dashboard/RevenueBarChart';
 import { SubscriptionTrendChart } from '@/components/admin/dashboard/SubscriptionTrendChart';
-import { CancellationPieChart } from '@/components/admin/dashboard/CancellationPieChart';
-
-const JST_OFFSET = 9 * 60 * 60 * 1000;
-
-function getCurrentMonthRange(): { from: string; to: string } {
-  const now = new Date(Date.now() + JST_OFFSET);
-  const y = now.getUTCFullYear();
-  const m = now.getUTCMonth();
-  const first = new Date(Date.UTC(y, m, 1));
-  const lastDay = new Date(Date.UTC(y, m + 1, 0));
-  const fmt = (d: Date) =>
-    `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
-  return { from: fmt(first), to: fmt(lastDay) };
-}
+import { PopularArticles } from '@/components/admin/dashboard/PopularArticles';
 
 interface SummaryResponse {
   currentMonthRevenue: number;
   nextMonthSubscriptionForecast: number;
-  allTimeRevenue: number;
   newSubscriptionCount: number;
   cancellationCount: number;
+  activeSubscriptionCount: number;
+  upcomingDeliveriesCount: number;
+  pendingContactsCount: number;
+  popularArticles: Array<{ id: string; slug: string; title: string; view_count: number }>;
 }
 
 export default function AdminDashboardPage() {
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const currentMonth = getCurrentMonthRange();
-  const [range, setRange] = useState<{ from: string; to: string }>(currentMonth);
 
   useEffect(() => {
     setLoading(true);
-    const params = new URLSearchParams();
-    if (range.from) params.set('from', range.from);
-    if (range.to) params.set('to', range.to);
-    fetch(`/api/admin/dashboard/summary?${params.toString()}`)
+    fetch('/api/admin/dashboard/summary')
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => setSummary(d))
       .catch((err) => {
@@ -54,34 +38,22 @@ export default function AdminDashboardPage() {
         setSummary(null);
       })
       .finally(() => setLoading(false));
-  }, [range.from, range.to]);
+  }, []);
 
   const yen = (n: number) => `¥${n.toLocaleString('ja-JP')}`;
   const cnt = (n: number) => `${n.toLocaleString('ja-JP')}件`;
 
+  const newCount = summary?.newSubscriptionCount ?? 0;
+  const cancelCount = summary?.cancellationCount ?? 0;
+  const netCount = newCount - cancelCount;
+  const pendingContacts = summary?.pendingContactsCount ?? 0;
+
   return (
     <div>
-      <div className="flex items-end justify-between mb-6">
-        <h1 className="text-3xl font-bold">ダッシュボード</h1>
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <span>カード範囲:</span>
-          <DateRangePicker
-            from={range.from}
-            to={range.to}
-            onChange={(from, to) => setRange({ from, to })}
-          />
-          <button
-            type="button"
-            onClick={() => setRange(currentMonth)}
-            className="text-xs text-orange-600 hover:underline"
-          >
-            今月に戻す
-          </button>
-        </div>
-      </div>
+      <h1 className="text-3xl font-bold mb-6">ダッシュボード</h1>
 
-      {/* 5カード */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+      {/* 6カード（PC: 3列 / タブレット: 2列 / SP: 1列） */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <DashboardCard
           title="今月の売上"
           value={yen(summary?.currentMonthRevenue ?? 0)}
@@ -99,38 +71,73 @@ export default function AdminDashboardPage() {
           loading={loading}
         />
         <DashboardCard
-          title="累計売上（範囲内）"
-          value={yen(summary?.allTimeRevenue ?? 0)}
-          hint={`${range.from} 〜 ${range.to}`}
-          icon={PiggyBankIcon}
+          title="アクティブサブスク数"
+          value={cnt(summary?.activeSubscriptionCount ?? 0)}
+          hint="現在 active 状態のサブスク"
+          icon={UsersIcon}
           accent="purple"
           loading={loading}
         />
+
+        {/* 新規 / 解約の対比カード */}
+        <div className="p-5 rounded-md shadow flex flex-col gap-2 bg-amber-50 text-amber-700">
+          <div className="flex items-center gap-2 text-xs">
+            <UserPlusIcon className="w-4 h-4" />
+            <span className="font-medium">今月の新規契約数 / 解約数</span>
+          </div>
+          {loading ? (
+            <div className="text-2xl font-bold text-amber-900">…</div>
+          ) : (
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-amber-900">{cnt(newCount)}</span>
+              <span className="text-sm text-amber-700">/</span>
+              <span className="text-2xl font-bold text-rose-900">{cnt(cancelCount)}</span>
+            </div>
+          )}
+          <div className="text-[11px] opacity-75">
+            純増 {netCount >= 0 ? '+' : ''}{netCount} 件（今月）
+          </div>
+        </div>
+
         <DashboardCard
-          title="新規サブスク契約数"
-          value={cnt(summary?.newSubscriptionCount ?? 0)}
-          hint={`${range.from} 〜 ${range.to}`}
-          icon={UserPlusIcon}
-          accent="amber"
+          title="今週の配送予定"
+          value={cnt(summary?.upcomingDeliveriesCount ?? 0)}
+          hint="JST 今日〜+7日 の pending"
+          icon={TruckIcon}
+          accent="teal"
           loading={loading}
         />
-        <DashboardCard
-          title="解約数"
-          value={cnt(summary?.cancellationCount ?? 0)}
-          hint={`${range.from} 〜 ${range.to}`}
-          icon={UserMinusIcon}
-          accent="rose"
-          loading={loading}
-        />
+
+        {/* 未対応お問い合わせ（赤系で目立たせる） */}
+        <div
+          className={`p-5 rounded-md shadow flex flex-col gap-2 ${
+            pendingContacts > 0 ? 'bg-rose-50 text-rose-700' : 'bg-gray-50 text-gray-700'
+          }`}
+        >
+          <div className="flex items-center gap-2 text-xs">
+            <MailIcon className="w-4 h-4" />
+            <span className="font-medium">未対応お問い合わせ</span>
+          </div>
+          <div
+            className={`text-2xl font-bold ${
+              pendingContacts > 0 ? 'text-rose-900' : 'text-gray-900'
+            }`}
+          >
+            {loading ? '…' : cnt(pendingContacts)}
+          </div>
+          <div className="text-[11px] opacity-75">
+            {pendingContacts > 0 ? '対応が必要です' : '未対応はありません'}
+          </div>
+        </div>
       </div>
 
-      {/* 3グラフ */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
-        <RevenueBarChart />
+      {/* 1グラフ + 1ランキング（PC: 2列 / SP: 1列） */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <SubscriptionTrendChart />
-      </div>
-      <div className="grid grid-cols-1 gap-6">
-        <CancellationPieChart from={range.from} to={range.to} />
+        <PopularArticles
+          articles={summary?.popularArticles ?? []}
+          loading={loading}
+        />
       </div>
     </div>
   );

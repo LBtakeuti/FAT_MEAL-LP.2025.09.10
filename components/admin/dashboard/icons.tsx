@@ -35,16 +35,6 @@ export function CalendarIcon({ className }: IconProps) {
   );
 }
 
-export function PiggyBankIcon({ className }: IconProps) {
-  return (
-    <svg {...baseProps} className={className}>
-      <path d="M19 5c-1.5 0-2.8 1.4-3 2-1.7 0-3.5 0-5 1-1 .7-1.5 1.7-2 3-1 2-1 3.5-1 5 0 2 1 3 2 4l1 2h3l1-2c1.5 0 3-1 4-2l2 .5V13c0-1 .5-2 1-3 0-1 0-2-2-3-1.5-.5-2-.5-3-2z" />
-      <path d="M2 9v1c0 1.1.9 2 2 2h1" />
-      <path d="M16 10h.01" />
-    </svg>
-  );
-}
-
 export function UserPlusIcon({ className }: IconProps) {
   return (
     <svg {...baseProps} className={className}>
@@ -56,12 +46,33 @@ export function UserPlusIcon({ className }: IconProps) {
   );
 }
 
-export function UserMinusIcon({ className }: IconProps) {
+export function UsersIcon({ className }: IconProps) {
   return (
     <svg {...baseProps} className={className}>
-      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-      <circle cx="8.5" cy="7" r="4" />
-      <line x1="23" y1="11" x2="17" y2="11" />
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
+
+export function TruckIcon({ className }: IconProps) {
+  return (
+    <svg {...baseProps} className={className}>
+      <rect x="1" y="3" width="15" height="13" />
+      <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+      <circle cx="5.5" cy="18.5" r="2.5" />
+      <circle cx="18.5" cy="18.5" r="2.5" />
+    </svg>
+  );
+}
+
+export function MailIcon({ className }: IconProps) {
+  return (
+    <svg {...baseProps} className={className}>
+      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+      <polyline points="22,6 12,13 2,6" />
     </svg>
   );
 }

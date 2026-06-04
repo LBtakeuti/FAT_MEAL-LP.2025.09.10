@@ -155,12 +155,65 @@ export async function GET(request: NextRequest) {
       console.error('[dashboard/summary] cancellationCount error', err);
     }
 
+    // F29: アクティブサブスク数
+    const activeSubscriptionCount = activeSubs.length;
+
+    // F29: 今週の配送予定（pending かつ JST 今日〜+7日）
+    let upcomingDeliveriesCount = 0;
+    try {
+      const today = new Date(Date.UTC(curYear, curMonth, now.getUTCDate()));
+      const weekLater = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const todayStr = today.toISOString().slice(0, 10);
+      const weekLaterStr = weekLater.toISOString().slice(0, 10);
+      const { count } = await (supabase.from('subscription_deliveries') as any)
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pending')
+        .gte('scheduled_date', todayStr)
+        .lt('scheduled_date', weekLaterStr);
+      upcomingDeliveriesCount = count ?? 0;
+    } catch (err) {
+      console.error('[dashboard/summary] upcomingDeliveriesCount error', err);
+    }
+
+    // F29: 未対応お問い合わせ数
+    let pendingContactsCount = 0;
+    try {
+      const { count } = await (supabase.from('contacts') as any)
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pending');
+      pendingContactsCount = count ?? 0;
+    } catch (err) {
+      console.error('[dashboard/summary] pendingContactsCount error', err);
+    }
+
+    // F29: 記事閲覧ランキング Top5（公開済み記事のみ）
+    let popularArticles: Array<{ id: string; slug: string; title: string; view_count: number }> = [];
+    try {
+      const { data } = await (supabase.from('articles') as any)
+        .select('id, slug, title, view_count')
+        .eq('is_published', true)
+        .order('view_count', { ascending: false })
+        .limit(5);
+      popularArticles = (data || []).map((a: any) => ({
+        id: a.id,
+        slug: a.slug,
+        title: a.title,
+        view_count: a.view_count ?? 0,
+      }));
+    } catch (err) {
+      console.error('[dashboard/summary] popularArticles error', err);
+    }
+
     return NextResponse.json({
       currentMonthRevenue,
       nextMonthSubscriptionForecast,
       allTimeRevenue,
       newSubscriptionCount,
       cancellationCount,
+      activeSubscriptionCount,
+      upcomingDeliveriesCount,
+      pendingContactsCount,
+      popularArticles,
       ranges: {
         currentMonth: { from: curMonthFirst, to: curMonthLastStr },
         applied: {
