@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createServerClient } from '@/lib/supabase';
+import { excludedEmailsAsCsv, isExcludedEmail } from '@/lib/dashboard/excluded-emails';
 
 const JST_OFFSET = 9 * 60 * 60 * 1000;
 
@@ -53,13 +54,15 @@ export async function GET(request: NextRequest) {
     const curMonthLastStr = `${curMonthLast.getUTCFullYear()}-${String(curMonthLast.getUTCMonth() + 1).padStart(2, '0')}-${String(curMonthLast.getUTCDate()).padStart(2, '0')}`;
 
     // 本サイトのサブスクIDを取得（Stripeフィルタの正）
+    // F26: 除外対象メールに紐づくサブスクIDを別集合化して invoice 集計時に除外
     const { data: dbSubs } = await (supabase.from('subscriptions') as any)
-      .select('stripe_subscription_id, status, monthly_total_amount, created_at');
-    const dbSubsAll = dbSubs || [];
+      .select('stripe_subscription_id, status, monthly_total_amount, created_at, shipping_address');
+    const dbSubsAll = (dbSubs || []) as Array<any>;
+    const nonExcludedSubs = dbSubsAll.filter((s) => !isExcludedEmail(s.shipping_address?.email));
     const ourSubIds = new Set<string>(
-      dbSubsAll.map((s: any) => s.stripe_subscription_id).filter(Boolean),
+      nonExcludedSubs.map((s: any) => s.stripe_subscription_id).filter(Boolean),
     );
-    const activeSubs = dbSubsAll.filter((s: any) => s.status === 'active');
+    const activeSubs = nonExcludedSubs.filter((s: any) => s.status === 'active');
 
     // ① 今月の売上（サブスク + 買い切り）
     let currentMonthRevenue = 0;
@@ -75,6 +78,7 @@ export async function GET(request: NextRequest) {
         .select('amount')
         .gt('amount', 0)
         .not('stripe_session_id', 'like', 'sub_delivery_%')
+        .not('customer_email', 'in', excludedEmailsAsCsv())
         .gte('created_at', jstDateBoundary(curMonthFirst))
         .lte('created_at', jstDateBoundary(curMonthLastStr, true));
       const oneTimeRevenue = (monthOrders || []).reduce((s: number, o: any) => s + (o.amount ?? 0), 0);
@@ -108,7 +112,8 @@ export async function GET(request: NextRequest) {
       let ordersQuery = (supabase.from('orders') as any)
         .select('amount')
         .gt('amount', 0)
-        .not('stripe_session_id', 'like', 'sub_delivery_%');
+        .not('stripe_session_id', 'like', 'sub_delivery_%')
+        .not('customer_email', 'in', excludedEmailsAsCsv());
       if (fromParam) ordersQuery = ordersQuery.gte('created_at', jstDateBoundary(fromParam));
       if (toParam) ordersQuery = ordersQuery.lte('created_at', jstDateBoundary(toParam, true));
       const { data: rangeOrders } = await ordersQuery;
@@ -119,15 +124,18 @@ export async function GET(request: NextRequest) {
     }
 
     // ④ 新規サブスク契約数（from/to 指定なし時は今月）
+    // F26: shipping_address->>'email' で除外対象を弾くため一度フェッチして JS 側でカウント
     let newSubscriptionCount = 0;
     try {
       const subFrom = fromParam ?? curMonthFirst;
       const subTo = toParam ?? curMonthLastStr;
-      const { count } = await (supabase.from('subscriptions') as any)
-        .select('id', { count: 'exact', head: true })
+      const { data: rangeSubs } = await (supabase.from('subscriptions') as any)
+        .select('id, shipping_address')
         .gte('created_at', jstDateBoundary(subFrom))
         .lte('created_at', jstDateBoundary(subTo, true));
-      newSubscriptionCount = count ?? 0;
+      newSubscriptionCount = ((rangeSubs || []) as Array<any>)
+        .filter((s) => !isExcludedEmail(s.shipping_address?.email))
+        .length;
     } catch (err) {
       console.error('[dashboard/summary] newSubscriptionCount error', err);
     }
@@ -139,6 +147,7 @@ export async function GET(request: NextRequest) {
       const cTo = toParam ?? curMonthLastStr;
       const { count } = await (supabase.from('subscription_cancellation_requests') as any)
         .select('id', { count: 'exact', head: true })
+        .not('customer_email', 'in', excludedEmailsAsCsv())
         .gte('created_at', jstDateBoundary(cFrom))
         .lte('created_at', jstDateBoundary(cTo, true));
       cancellationCount = count ?? 0;

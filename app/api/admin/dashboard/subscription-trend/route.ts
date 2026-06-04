@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
+import { isExcludedEmail } from '@/lib/dashboard/excluded-emails';
 
 const JST_OFFSET = 9 * 60 * 60 * 1000;
 
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
     const oldest = new Date(Date.UTC(curYear, curMonth - (months - 1), 1) - JST_OFFSET);
 
     const { data: subs, error } = await (supabase.from('subscriptions') as any)
-      .select('created_at')
+      .select('created_at, shipping_address')
       .gte('created_at', oldest.toISOString());
 
     if (error) {
@@ -48,6 +49,8 @@ export async function GET(request: NextRequest) {
 
     for (const row of subs || []) {
       if (!row.created_at) continue;
+      // F26: 除外対象メール（テスト/管理者購入）はカウントしない
+      if (isExcludedEmail(row.shipping_address?.email)) continue;
       const created = new Date(new Date(row.created_at).getTime() + JST_OFFSET);
       const y = created.getUTCFullYear();
       const m = String(created.getUTCMonth() + 1).padStart(2, '0');

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createServerClient } from '@/lib/supabase';
+import { excludedEmailsAsCsv, isExcludedEmail } from '@/lib/dashboard/excluded-emails';
 
 function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY not set');
@@ -83,13 +84,15 @@ export async function GET() {
       const todayEndUnix = Math.floor((Date.UTC(year, month, day + 1) - jstOffset) / 1000);
 
       // 本サイトのサブスクIDをSupabaseから取得（フィルタの正）
+      // F26: 除外対象メール（テスト/管理者）に紐づくサブスクは集計から外す
       const { data: dbSubs } = await (supabase.from('subscriptions') as any)
-        .select('stripe_subscription_id, status, monthly_total_amount');
-      const dbSubsAll = dbSubs || [];
+        .select('stripe_subscription_id, status, monthly_total_amount, shipping_address');
+      const dbSubsAll = (dbSubs || []) as Array<any>;
+      const nonExcludedSubs = dbSubsAll.filter((s) => !isExcludedEmail(s.shipping_address?.email));
       const ourSubIds = new Set<string>(
-        dbSubsAll.map((s: any) => s.stripe_subscription_id).filter(Boolean)
+        nonExcludedSubs.map((s: any) => s.stripe_subscription_id).filter(Boolean)
       );
-      const activeDbSubs = dbSubsAll.filter((s: any) => s.status === 'active');
+      const activeDbSubs = nonExcludedSubs.filter((s: any) => s.status === 'active');
 
       // アクティブなサブスク数（Supabase = 本サイトのみ）
       activeSubscriptions = activeDbSubs.length;
@@ -133,20 +136,22 @@ export async function GET() {
       const jstNow = new Date(Date.now() + jstOffset);
       const todayStr = jstNow.toISOString().split('T')[0];
 
-      // 今日の買い切り売上（サブスク由来の自動注文を除外）
+      // 今日の買い切り売上（サブスク由来の自動注文・F26 除外メールを除外）
       const { data: todayOrders } = await (supabase.from('orders') as any)
         .select('amount')
         .gt('amount', 0)
         .not('stripe_session_id', 'like', 'sub_delivery_%')
+        .not('customer_email', 'in', excludedEmailsAsCsv())
         .gte('created_at', `${todayStr}T00:00:00+09:00`)
         .lt('created_at', `${todayStr}T23:59:59+09:00`);
       todayOneTimeRevenue = (todayOrders || []).reduce((sum: number, o: any) => sum + (o.amount ?? 0), 0);
 
-      // 累計買い切り売上（サブスク由来の自動注文を除外）
+      // 累計買い切り売上（サブスク由来の自動注文・F26 除外メールを除外）
       const { data: allOrders } = await (supabase.from('orders') as any)
         .select('amount')
         .gt('amount', 0)
-        .not('stripe_session_id', 'like', 'sub_delivery_%');
+        .not('stripe_session_id', 'like', 'sub_delivery_%')
+        .not('customer_email', 'in', excludedEmailsAsCsv());
       allTimeOneTimeRevenue = (allOrders || []).reduce((sum: number, o: any) => sum + (o.amount ?? 0), 0);
     } catch (err) {
       console.error('Revenue stats error:', err);

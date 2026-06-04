@@ -9,7 +9,16 @@ import {
 } from '@/lib/api-helpers';
 import { isValidShareLinkSlug } from '@/lib/share-link-slug';
 
-// GET: 共有リンクの統計（過去30日の日別アクセス・ダウンロード）
+// F26: JST 基準で YYYY-MM-DD を返す
+const JST_OFFSET = 9 * 60 * 60 * 1000;
+function toJstDateKey(iso: string): string {
+  return new Date(new Date(iso).getTime() + JST_OFFSET).toISOString().slice(0, 10);
+}
+function jstDateKey(d: Date): string {
+  return new Date(d.getTime() + JST_OFFSET).toISOString().slice(0, 10);
+}
+
+// GET: 共有リンクの統計（過去30日の日別アクセス・ダウンロード、JST 基準）
 export const GET = withAuthDynamic(async (_request: NextRequest, context) => {
   const { slug } = await context.params;
   if (!isValidShareLinkSlug(slug)) return jsonBadRequest('slug の形式が不正です');
@@ -52,7 +61,7 @@ export const GET = withAuthDynamic(async (_request: NextRequest, context) => {
   const accessByDate = new Map<string, number>();
   for (const a of accesses) {
     if (a.ip_address) ips.add(a.ip_address);
-    const date = a.accessed_at.slice(0, 10);
+    const date = toJstDateKey(a.accessed_at);
     accessByDate.set(date, (accessByDate.get(date) || 0) + 1);
   }
 
@@ -62,17 +71,17 @@ export const GET = withAuthDynamic(async (_request: NextRequest, context) => {
   for (const d of downloads) {
     if (d.download_type === 'single') singleDownloads += 1;
     if (d.download_type === 'zip') zipDownloads += 1;
-    const date = d.downloaded_at.slice(0, 10);
+    const date = toJstDateKey(d.downloaded_at);
     downloadByDate.set(date, (downloadByDate.get(date) || 0) + 1);
   }
 
-  // 過去30日をゼロ埋めで返す
+  // 過去30日をゼロ埋めで返す（JST基準）
   const daily_access: Array<{ date: string; count: number }> = [];
   const daily_downloads: Array<{ date: string; count: number }> = [];
   for (let i = 29; i >= 0; i--) {
     const d = new Date(now);
     d.setUTCDate(d.getUTCDate() - i);
-    const date = d.toISOString().slice(0, 10);
+    const date = jstDateKey(d);
     daily_access.push({ date, count: accessByDate.get(date) || 0 });
     daily_downloads.push({ date, count: downloadByDate.get(date) || 0 });
   }
