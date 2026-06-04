@@ -965,10 +965,6 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
         onSelect={handlePlanSelect}
         onProceed={handleProceedToInfo}
       />
-
-      <p className="text-xs text-gray-400 text-center">
-        管理栄養士監修
-      </p>
     </div>
   );
 
