@@ -17,22 +17,33 @@ type TrendEntry = {
   count: number;
 };
 
-export function SubscriptionTrendChart() {
+interface Props {
+  from?: string;
+  to?: string;
+}
+
+export function SubscriptionTrendChart({ from, to }: Props = {}) {
   const [data, setData] = useState<TrendEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
-    fetch('/api/admin/dashboard/subscription-trend?type=monthly&months=12')
+    const sp = new URLSearchParams({ type: 'monthly' });
+    if (from) sp.set('from', from);
+    if (to) sp.set('to', to);
+    if (!from && !to) sp.set('months', '12');
+    fetch(`/api/admin/dashboard/subscription-trend?${sp.toString()}`)
       .then((r) => (r.ok ? r.json() : []))
       .then((d) => setData(Array.isArray(d) ? d : []))
       .catch(() => setData([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [from, to]);
+
+  const titleSuffix = from && to ? `${from} 〜 ${to}` : '直近12ヶ月';
 
   return (
-    <div className="bg-white p-5 rounded-lg shadow">
-      <h3 className="text-sm font-semibold text-gray-700 mb-3">新規サブスク契約数 推移（直近12ヶ月）</h3>
+    <div className="bg-white p-5 rounded-md shadow">
+      <h3 className="text-sm font-semibold text-gray-700 mb-3">新規サブスク契約数 推移（{titleSuffix}）</h3>
       {loading ? (
         <div className="h-[280px] flex items-center justify-center text-gray-400 text-sm">読み込み中…</div>
       ) : data.length === 0 ? (
