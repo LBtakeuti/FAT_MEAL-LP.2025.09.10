@@ -50,7 +50,7 @@ export function DashboardCard({
     : '';
   const content = (
     <div
-      className={`p-5 rounded-lg shadow flex flex-col gap-2 ${accentClasses[accent]} ${interactiveClasses}`}
+      className={`p-5 rounded-md shadow flex flex-col gap-2 ${accentClasses[accent]} ${interactiveClasses}`}
     >
       <div className="flex items-center gap-2 text-xs">
         {Icon && <Icon className="w-4 h-4" />}
