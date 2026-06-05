@@ -9,6 +9,9 @@ interface PlanCard {
   id: PlanId;
   meals: number;
   title: string;
+  /** F33: PC で意図した位置で改行するための分割表示用（任意） */
+  titleMain?: string;
+  titleSub?: string;
   /** サブスクは月額合計、お試しは1回合計 */
   totalPrice: number;
   pricePerMeal: number;
@@ -30,6 +33,8 @@ const plans: PlanCard[] = [
     id: 'sub-6',
     meals: 6,
     title: 'ふとるめしセット（6食）',
+    titleMain: 'ふとるめしセット',
+    titleSub: '（6食）',
     totalPrice: 5100,
     pricePerMeal: 600, // 商品代のみ(3600/6)、送料を含めない
     isTrial: false,
@@ -39,6 +44,8 @@ const plans: PlanCard[] = [
     id: 'sub-12',
     meals: 12,
     title: 'ダブルふとるめセット（12食）',
+    titleMain: 'ダブルふとるめセット',
+    titleSub: '（12食）',
     totalPrice: 8100,
     pricePerMeal: 550, // 商品代のみ(6600/12)、送料を含めない
     isTrial: false,
@@ -85,7 +92,14 @@ const SubscriptionSection: React.FC = () => {
                   {plan.isTrial ? '1回購入' : '定期'}
                 </span>
                 <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 font-antique">
-                  {plan.title}
+                  {plan.titleMain && plan.titleSub ? (
+                    <>
+                      <span className="block">{plan.titleMain}</span>
+                      <span className="block">{plan.titleSub}</span>
+                    </>
+                  ) : (
+                    plan.title
+                  )}
                 </h3>
                 <p className="text-sm text-gray-500">
                   {plan.isTrial
