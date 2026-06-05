@@ -20,8 +20,8 @@ const PLAN_PRICES: Record<string, { amount: number; shipping: number }> = {
 
 // 月額合計の表示用（フロントへ amount を返す）。
 const SUBSCRIPTION_MONTHLY_TOTAL: Record<string, number> = {
-  'sub-6': 4800,
-  'sub-12': 7500,
+  'sub-6': 5100,
+  'sub-12': 8100,
 };
 
 // サブスクリプション用 Stripe Price ID（商品+送料の2本）を取得。

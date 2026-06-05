@@ -3,8 +3,8 @@
  *
  * プラン構成:
  * - trial-6: お試しプラン（買い切り）6食 ¥5,700（商品¥4,200 + 送料¥1,500）
- * - sub-6: 6食プラン（月額）¥4,800/月（商品¥3,300 + 送料¥1,500）
- * - sub-12: 12食プラン（月額）¥7,500/月（商品¥6,000 + 送料¥1,500）
+ * - sub-6: ふとるめしセット（6食）¥5,100/月（商品¥3,600 + 送料¥1,500、1食¥600）
+ * - sub-12: ダブルふとるめセット（12食）¥8,100/月（商品¥6,600 + 送料¥1,500、1食¥550）
  *
  * Legacy（既存契約者のみ・新規発行なし）:
  * - subscription-monthly-12: 旧12食月額プラン。Stripe Subscription Schedule で
@@ -44,19 +44,19 @@ export const PLAN_CONFIGS: { [key: string]: PlanConfig } = {
     plan_id: 'sub-6',
     meals_per_delivery: 6,
     deliveries_per_month: 1,
-    product_price: 3300,           // ¥550 × 6個（F20で価格改定）
+    product_price: 3600,           // ¥600 × 6個（F31で価格改定）
     shipping_fee_per_delivery: 1500,
     monthly_shipping_fee: 1500,
-    monthly_total: 4800,           // 3300 + 1500
+    monthly_total: 5100,           // 3600 + 1500
   },
   'sub-12': {
     plan_id: 'sub-12',
     meals_per_delivery: 12,
     deliveries_per_month: 1,
-    product_price: 6000,           // ¥500 × 12個
+    product_price: 6600,           // ¥550 × 12個（F31で価格改定）
     shipping_fee_per_delivery: 1500,
     monthly_shipping_fee: 1500,
-    monthly_total: 7500,           // 6000 + 1500
+    monthly_total: 8100,           // 6600 + 1500
   },
   // Legacy: 既存契約者のみ対応（新規購入は sub-12 を使用）
   'subscription-monthly-12': {

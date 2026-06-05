@@ -7,12 +7,12 @@ describe('getPlanDisplayName', () => {
     expect(getPlanDisplayName('trial-6')).toBe('ふとるめし お試し6食セット');
   });
 
-  it("'sub-6' → '【定期】ふとるめし6食'", () => {
-    expect(getPlanDisplayName('sub-6')).toBe('【定期】ふとるめし6食');
+  it("'sub-6' → '【定期】ふとるめしセット（6食）'（F31）", () => {
+    expect(getPlanDisplayName('sub-6')).toBe('【定期】ふとるめしセット（6食）');
   });
 
-  it("'sub-12' → '【定期】ふとるめし12食'", () => {
-    expect(getPlanDisplayName('sub-12')).toBe('【定期】ふとるめし12食');
+  it("'sub-12' → '【定期】ダブルふとるめセット（12食）'（F31）", () => {
+    expect(getPlanDisplayName('sub-12')).toBe('【定期】ダブルふとるめセット（12食）');
   });
 
   // --- 旧プラン ---

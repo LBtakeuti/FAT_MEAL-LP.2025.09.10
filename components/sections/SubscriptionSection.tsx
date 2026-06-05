@@ -29,18 +29,18 @@ const plans: PlanCard[] = [
   {
     id: 'sub-6',
     meals: 6,
-    title: '6食プラン',
-    totalPrice: 4800,
-    pricePerMeal: 550, // 商品代のみ(3300/6)、送料を含めない
+    title: 'ふとるめしセット（6食）',
+    totalPrice: 5100,
+    pricePerMeal: 600, // 商品代のみ(3600/6)、送料を含めない
     isTrial: false,
     popular: true,
   },
   {
     id: 'sub-12',
     meals: 12,
-    title: '12食プラン',
-    totalPrice: 7500,
-    pricePerMeal: 500, // 商品代のみ(6000/12)、送料を含めない
+    title: 'ダブルふとるめセット（12食）',
+    totalPrice: 8100,
+    pricePerMeal: 550, // 商品代のみ(6600/12)、送料を含めない
     isTrial: false,
     popular: false,
   },
