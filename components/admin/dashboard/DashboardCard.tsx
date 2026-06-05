@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 
 type IconComponent = React.ComponentType<{ className?: string }>;
 
@@ -12,6 +13,8 @@ interface DashboardCardProps {
   accent?: 'teal' | 'orange' | 'purple' | 'amber' | 'indigo' | 'rose';
   loading?: boolean;
   rangePicker?: React.ReactNode;
+  /** F32: 指定時はカード全体がクリッカブルになり、ホバーで影が強調される */
+  href?: string;
 }
 
 const accentClasses: Record<NonNullable<DashboardCardProps['accent']>, string> = {
@@ -40,9 +43,15 @@ export function DashboardCard({
   accent = 'orange',
   loading = false,
   rangePicker,
+  href,
 }: DashboardCardProps) {
-  return (
-    <div className={`p-5 rounded-lg shadow flex flex-col gap-2 ${accentClasses[accent]}`}>
+  const interactiveClasses = href
+    ? 'cursor-pointer hover:shadow-md transition-shadow'
+    : '';
+  const content = (
+    <div
+      className={`p-5 rounded-lg shadow flex flex-col gap-2 ${accentClasses[accent]} ${interactiveClasses}`}
+    >
       <div className="flex items-center gap-2 text-xs">
         {Icon && <Icon className="w-4 h-4" />}
         <span className="font-medium">{title}</span>
@@ -54,4 +63,12 @@ export function DashboardCard({
       {rangePicker && <div className="mt-2">{rangePicker}</div>}
     </div>
   );
+  if (href) {
+    return (
+      <Link href={href} className="block">
+        {content}
+      </Link>
+    );
+  }
+  return content;
 }
