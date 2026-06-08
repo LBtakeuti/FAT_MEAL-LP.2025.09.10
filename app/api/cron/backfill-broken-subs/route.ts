@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
       // user_id を auth.users から探す
       let userId: string | null = sub.user_id;
       if (!userId && customerEmail) {
-        const { data: usersData } = await supabase.auth.admin.listUsers();
+        const { data: usersData } = await supabase.auth.admin.listUsers({ perPage: 1000 });
         const matched = usersData?.users?.find(u => u.email === customerEmail);
         userId = matched?.id || null;
       }

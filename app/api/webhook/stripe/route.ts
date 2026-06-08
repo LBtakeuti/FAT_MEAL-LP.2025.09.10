@@ -378,7 +378,7 @@ async function handleSuccessfulPayment(session: Stripe.Checkout.Session, stripe:
   const supabase = getSupabaseClient();
   if (supabase && customerEmail) {
     try {
-      const { data: users } = await supabase.auth.admin.listUsers();
+      const { data: users } = await supabase.auth.admin.listUsers({ perPage: 1000 });
       const user = users?.users?.find(u => u.email === customerEmail);
       userId = user?.id || null;
     } catch {
@@ -512,7 +512,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent,
   let userId: string | null = null;
   if (supabase) {
     try {
-      const { data: users } = await supabase.auth.admin.listUsers();
+      const { data: users } = await supabase.auth.admin.listUsers({ perPage: 1000 });
       const user = users?.users?.find(u => u.email === customerEmail);
       userId = user?.id || null;
     } catch { /* ユーザーが見つからない場合はnull */ }
@@ -805,7 +805,7 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
     let userId: string | null = null;
     if (customerEmail) {
       try {
-        const { data: users } = await supabase.auth.admin.listUsers();
+        const { data: users } = await supabase.auth.admin.listUsers({ perPage: 1000 });
         const user = users?.users?.find(u => u.email === customerEmail);
         userId = user?.id || null;
         console.log(`[Webhook] User ID found: ${userId || 'none'}`);

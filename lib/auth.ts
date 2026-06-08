@@ -58,7 +58,9 @@ export async function checkIsAdminByEmail(email: string): Promise<AdminUser | nu
     const supabase = createServerClient();
 
     // メールアドレスでユーザーを検索
-    const { data: users, error } = await supabase.auth.admin.listUsers();
+    // perPage デフォルト 50 のため、auth.users 件数が増えると最古ユーザーが
+    // リストから漏れて 403 になる障害があった。1000 に拡張して回避。
+    const { data: users, error } = await supabase.auth.admin.listUsers({ perPage: 1000 });
 
     if (error) {
       console.error('ユーザー検索エラー:', error);
