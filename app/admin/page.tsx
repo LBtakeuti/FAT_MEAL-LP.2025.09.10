@@ -180,7 +180,7 @@ export default function AdminDashboardPage() {
 
         {/* 未対応お問い合わせ（固定、赤系で目立たせる、クリッカブル） */}
         <Link
-          href="/admin/contacts?status=pending"
+          href={`/admin/contacts?status=pending&${rangeQuery}`}
           className={`block p-5 rounded-md shadow flex flex-col gap-2 cursor-pointer hover:shadow-md transition-shadow ${
             pendingContacts > 0 ? 'bg-rose-50 text-rose-700' : 'bg-gray-50 text-gray-700'
           }`}

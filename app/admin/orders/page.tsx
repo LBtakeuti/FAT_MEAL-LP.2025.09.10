@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { ConfirmDialog, useToast } from '@/components/admin/ui';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ConfirmDialog, DateRangePicker, useToast } from '@/components/admin/ui';
 
 interface PurchaseSurvey {
   q1_answers: string[];
@@ -119,9 +120,39 @@ const getJSTToday = () => {
   return jst.toISOString().slice(0, 10);
 };
 
-export default function AdminOrdersPage() {
+// 今月（JST月初〜今日）の初期範囲
+const getThisMonthRange = (): { from: string; to: string } => {
+  const jstOffset = 9 * 60 * 60 * 1000;
+  const jst = new Date(Date.now() + jstOffset);
+  const y = jst.getUTCFullYear();
+  const m = jst.getUTCMonth();
+  const d = jst.getUTCDate();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return {
+    from: `${y}-${pad(m + 1)}-01`,
+    to: `${y}-${pad(m + 1)}-${pad(d)}`,
+  };
+};
+
+function AdminOrdersPageInner() {
   const toast = useToast();
-  const [activeTab, setActiveTab] = useState<'one-time' | 'subscription'>('one-time');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  // URL の status クエリでサブスクタブを初期表示できるよう判定
+  const initialStatusParam = searchParams.get('status');
+  const [activeTab, setActiveTab] = useState<'one-time' | 'subscription'>(
+    initialStatusParam ? 'subscription' : 'one-time'
+  );
+
+  // 期間フィルタ（買い切り/サブスク共通）— URL ?from&to から初期化、無ければ今月
+  const initialRange = (() => {
+    const f = searchParams.get('from');
+    const t = searchParams.get('to');
+    if (f && t) return { from: f, to: t };
+    return getThisMonthRange();
+  })();
+  const [dateFrom, setDateFrom] = useState<string>(initialRange.from);
+  const [dateTo, setDateTo] = useState<string>(initialRange.to);
 
   // 買い切り
   const [orders, setOrders] = useState<Order[]>([]);
@@ -142,16 +173,31 @@ export default function AdminOrdersPage() {
   const [cancelConfirmSubId, setCancelConfirmSubId] = useState<string | null>(null);
   const [cancellingSubId, setCancellingSubId] = useState<string | null>(null);
   const [expandedSubId, setExpandedSubId] = useState<string | null>(null);
-  const [subStatusFilter, setSubStatusFilter] = useState<'all' | 'active' | 'canceled' | 'past_due' | 'paused'>('all');
+  const [subStatusFilter, setSubStatusFilter] = useState<'all' | 'active' | 'canceled' | 'past_due' | 'paused'>(
+    (initialStatusParam === 'active' || initialStatusParam === 'canceled' || initialStatusParam === 'past_due' || initialStatusParam === 'paused')
+      ? initialStatusParam
+      : 'all'
+  );
   const [subSearchName, setSubSearchName] = useState('');
-  const [subDateFrom, setSubDateFrom] = useState('');
-  const [subDateTo, setSubDateTo] = useState('');
+
+  // 期間範囲変更時に URL ?from&to を更新（タブ/ステータスは現在値を引き継ぐ）
+  const updateDateRange = (from: string, to: string) => {
+    setDateFrom(from);
+    setDateTo(to);
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    if (activeTab === 'subscription' && subStatusFilter !== 'all') {
+      params.set('status', subStatusFilter);
+    }
+    router.replace(`/admin/orders${params.toString() ? `?${params.toString()}` : ''}`, { scroll: false });
+  };
 
   const filteredSubscriptions = subscriptions.filter((sub) => {
     if (subStatusFilter !== 'all' && sub.status !== subStatusFilter) return false;
     if (subSearchName && !sub.customer_name?.toLowerCase().includes(subSearchName.toLowerCase())) return false;
-    if (subDateFrom && sub.started_at < subDateFrom) return false;
-    if (subDateTo && sub.started_at > subDateTo + 'T23:59:59') return false;
+    if (dateFrom && sub.started_at < dateFrom) return false;
+    if (dateTo && sub.started_at > dateTo + 'T23:59:59') return false;
     return true;
   });
 
@@ -289,14 +335,16 @@ export default function AdminOrdersPage() {
     }
   };
 
-  const filteredOrders = filter === 'all'
-    ? orders
-    : orders.filter(order => {
-        if (filter === 'pending') return order.status === 'pending';
-        if (filter === 'confirmed') return order.status === 'confirmed';
-        if (filter === 'shipped') return order.status === 'shipped' || order.status === 'delivered';
-        return true;
-      });
+  const filteredOrders = orders.filter((order) => {
+    if (filter !== 'all') {
+      if (filter === 'pending' && order.status !== 'pending') return false;
+      if (filter === 'confirmed' && order.status !== 'confirmed') return false;
+      if (filter === 'shipped' && order.status !== 'shipped' && order.status !== 'delivered') return false;
+    }
+    if (dateFrom && order.created_at < dateFrom) return false;
+    if (dateTo && order.created_at > dateTo + 'T23:59:59') return false;
+    return true;
+  });
 
   // 買い切りチェックボックス操作
   const toggleOrderSelect = (id: string) => {
@@ -335,8 +383,8 @@ export default function AdminOrdersPage() {
   const resetSubFilters = () => {
     setSubStatusFilter('all');
     setSubSearchName('');
-    setSubDateFrom('');
-    setSubDateTo('');
+    const m = getThisMonthRange();
+    updateDateRange(m.from, m.to);
   };
 
   return (
@@ -367,6 +415,14 @@ export default function AdminOrdersPage() {
         </button>
       </div>
 
+      {/* 期間フィルタ（買い切り/サブスク共通） */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <DateRangePicker from={dateFrom} to={dateTo} onChange={updateDateRange} />
+        <span className="text-sm text-gray-600">
+          期間: {dateFrom || '指定なし'} 〜 {dateTo || '指定なし'}
+        </span>
+      </div>
+
       {/* 買い切りタブ */}
       {activeTab === 'one-time' && (
         <>
@@ -380,19 +436,34 @@ export default function AdminOrdersPage() {
           ) : (
             <>
               <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
-                <div className="flex gap-2 flex-wrap">
-                  <button onClick={() => setFilter('all')} className={`px-4 py-2 rounded-lg text-sm ${filter === 'all' ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
-                    すべて ({orders.length})
-                  </button>
-                  <button onClick={() => setFilter('pending')} className={`px-4 py-2 rounded-lg text-sm ${filter === 'pending' ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
-                    注文受付 ({orders.filter(o => o.status === 'pending').length})
-                  </button>
-                  <button onClick={() => setFilter('confirmed')} className={`px-4 py-2 rounded-lg text-sm ${filter === 'confirmed' ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
-                    連絡済み ({orders.filter(o => o.status === 'confirmed').length})
-                  </button>
-                  <button onClick={() => setFilter('shipped')} className={`px-4 py-2 rounded-lg text-sm ${filter === 'shipped' ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
-                    発送済み ({orders.filter(o => o.status === 'shipped' || o.status === 'delivered').length})
-                  </button>
+                <div className="flex gap-2 flex-wrap items-center">
+                  {(() => {
+                    // 期間内の注文（タブのカウントは期間フィルタ反映後を使用）
+                    const inRange = orders.filter(o => {
+                      if (dateFrom && o.created_at < dateFrom) return false;
+                      if (dateTo && o.created_at > dateTo + 'T23:59:59') return false;
+                      return true;
+                    });
+                    return (
+                      <>
+                        <button onClick={() => setFilter('all')} className={`px-4 py-2 rounded-lg text-sm ${filter === 'all' ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                          すべて ({inRange.length})
+                        </button>
+                        <button onClick={() => setFilter('pending')} className={`px-4 py-2 rounded-lg text-sm ${filter === 'pending' ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                          注文受付 ({inRange.filter(o => o.status === 'pending').length})
+                        </button>
+                        <button onClick={() => setFilter('confirmed')} className={`px-4 py-2 rounded-lg text-sm ${filter === 'confirmed' ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                          連絡済み ({inRange.filter(o => o.status === 'confirmed').length})
+                        </button>
+                        <button onClick={() => setFilter('shipped')} className={`px-4 py-2 rounded-lg text-sm ${filter === 'shipped' ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
+                          発送済み ({inRange.filter(o => o.status === 'shipped' || o.status === 'delivered').length})
+                        </button>
+                      </>
+                    );
+                  })()}
+                  <span className="text-sm text-gray-500 ml-2">
+                    全 {orders.length} 件中
+                  </span>
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -633,25 +704,6 @@ export default function AdminOrdersPage() {
                     placeholder="顧客名で検索"
                     className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                   />
-                  <label className="flex items-center gap-1 text-sm text-gray-600">
-                    開始日
-                    <input
-                      type="date"
-                      value={subDateFrom}
-                      onChange={(e) => setSubDateFrom(e.target.value)}
-                      className="px-2 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    />
-                  </label>
-                  <span className="text-gray-500">〜</span>
-                  <label className="flex items-center gap-1 text-sm text-gray-600">
-                    終了日
-                    <input
-                      type="date"
-                      value={subDateTo}
-                      onChange={(e) => setSubDateTo(e.target.value)}
-                      className="px-2 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    />
-                  </label>
                   <button
                     onClick={resetSubFilters}
                     className="px-3 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg hover:bg-gray-200 transition-colors"
@@ -903,5 +955,13 @@ export default function AdminOrdersPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function AdminOrdersPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-gray-500">読み込み中...</div>}>
+      <AdminOrdersPageInner />
+    </Suspense>
   );
 }

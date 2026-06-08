@@ -1,8 +1,23 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
-import { ConfirmDialog, useToast } from '@/components/admin/ui';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { ConfirmDialog, DateRangePicker, useToast } from '@/components/admin/ui';
+
+// 今月（JST月初〜今日）の初期範囲
+const getThisMonthRange = (): { from: string; to: string } => {
+  const jstOffset = 9 * 60 * 60 * 1000;
+  const jst = new Date(Date.now() + jstOffset);
+  const y = jst.getUTCFullYear();
+  const m = jst.getUTCMonth();
+  const d = jst.getUTCDate();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return {
+    from: `${y}-${pad(m + 1)}-01`,
+    to: `${y}-${pad(m + 1)}-${pad(d)}`,
+  };
+};
 
 interface Contact {
   id: string;
@@ -16,26 +31,43 @@ interface Contact {
   created_at: string;
 }
 
-export default function AdminContactsPage() {
+function AdminContactsPageInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialStatus = searchParams.get('status');
+  const initialRange = (() => {
+    const f = searchParams.get('from');
+    const t = searchParams.get('to');
+    if (f && t) return { from: f, to: t };
+    return getThisMonthRange();
+  })();
+
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'responded' | 'closed'>('all');
+  const [filter, setFilter] = useState<'all' | 'pending' | 'responded' | 'closed'>(
+    initialStatus === 'pending' || initialStatus === 'responded' || initialStatus === 'closed'
+      ? initialStatus
+      : 'all'
+  );
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [dateFrom, setDateFrom] = useState<string>(initialRange.from);
+  const [dateTo, setDateTo] = useState<string>(initialRange.to);
   const toast = useToast();
 
   const toggleExpand = (id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));
   };
 
-  useEffect(() => {
-    fetchContacts();
-  }, []);
-
-  const fetchContacts = async () => {
+  const fetchContacts = useCallback(async (from: string, to: string) => {
+    setLoading(true);
     try {
-      const response = await fetch('/api/admin/contacts');
+      const params = new URLSearchParams();
+      if (from) params.set('from', from);
+      if (to) params.set('to', to);
+      const url = `/api/admin/contacts${params.toString() ? `?${params.toString()}` : ''}`;
+      const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
         setContacts(data);
@@ -45,6 +77,20 @@ export default function AdminContactsPage() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    fetchContacts(dateFrom, dateTo);
+  }, [fetchContacts, dateFrom, dateTo]);
+
+  const updateDateRange = (from: string, to: string) => {
+    setDateFrom(from);
+    setDateTo(to);
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    if (filter !== 'all') params.set('status', filter);
+    router.replace(`/admin/contacts${params.toString() ? `?${params.toString()}` : ''}`, { scroll: false });
   };
 
   const handleStatusChange = async (id: string, newStatus: Contact['status']) => {
@@ -58,7 +104,7 @@ export default function AdminContactsPage() {
       });
 
       if (response.ok) {
-        fetchContacts();
+        fetchContacts(dateFrom, dateTo);
       }
     } catch (error) {
       console.error('Failed to update status:', error);
@@ -77,7 +123,7 @@ export default function AdminContactsPage() {
       if (response.ok) {
         toast.success('削除しました');
         if (expandedId === deleteId) setExpandedId(null);
-        fetchContacts();
+        fetchContacts(dateFrom, dateTo);
       } else {
         toast.error('削除に失敗しました');
       }
@@ -146,7 +192,15 @@ export default function AdminContactsPage() {
               </Link>
             </div>
 
-            {/* フィルター */}
+            {/* 期間フィルタ */}
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <DateRangePicker from={dateFrom} to={dateTo} onChange={updateDateRange} />
+              <span className="text-sm text-gray-600">
+                期間: {dateFrom || '指定なし'} 〜 {dateTo || '指定なし'} / 全 {contacts.length} 件
+              </span>
+            </div>
+
+            {/* ステータスフィルター */}
             <div className="mt-4 flex gap-2">
               <button
                 onClick={() => setFilter('all')}
@@ -379,6 +433,14 @@ export default function AdminContactsPage() {
         onCancel={() => setDeleteId(null)}
       />
     </div>
+  );
+}
+
+export default function AdminContactsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-100 flex items-center justify-center text-gray-500">読み込み中...</div>}>
+      <AdminContactsPageInner />
+    </Suspense>
   );
 }
 
