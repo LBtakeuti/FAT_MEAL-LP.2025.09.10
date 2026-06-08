@@ -9,6 +9,7 @@ import {
   UserPlusIcon,
   TruckIcon,
   MailIcon,
+  GiftIcon,
 } from '@/components/admin/dashboard/icons';
 import { DashboardCard } from '@/components/admin/dashboard/DashboardCard';
 import { DateRangePicker } from '@/components/admin/dashboard/DateRangePicker';
@@ -33,6 +34,7 @@ interface SummaryResponse {
   rangeRevenue: number;
   newSubscriptionCount: number;
   cancellationCount: number;
+  trialPurchaseCount: number;
   rangeDeliveriesCount: number;
   nextMonthSubscriptionForecast: number;
   activeSubscriptionCount: number;
@@ -155,6 +157,16 @@ export default function AdminDashboardPage() {
             純増 {netCount >= 0 ? '+' : ''}{netCount} 件（{rangeLabel}）
           </div>
         </div>
+
+        <DashboardCard
+          title="期間内のお試し購入"
+          value={cnt(summary?.trialPurchaseCount ?? 0)}
+          hint={`${rangeLabel} の単発購入`}
+          icon={GiftIcon}
+          accent="indigo"
+          loading={loading}
+          href={`/admin/orders?${rangeQuery}`}
+        />
 
         <DashboardCard
           title="期間内の配送予定"

@@ -136,6 +136,23 @@ export async function GET(request: NextRequest) {
       console.error('[dashboard/summary] cancellationCount error', err);
     }
 
+    // 連動④-b: 範囲内のお試し購入数（F34）
+    // orders から amount > 0 / 非サブスク配送 / 除外メール除外 / menu_set にお試しを含む
+    let trialPurchaseCount = 0;
+    try {
+      const { count } = await (supabase.from('orders') as any)
+        .select('id', { count: 'exact', head: true })
+        .gt('amount', 0)
+        .not('stripe_session_id', 'like', 'sub_delivery_%')
+        .not('customer_email', 'in', excludedEmailsAsCsv())
+        .ilike('menu_set', '%お試し%')
+        .gte('created_at', jstDateBoundary(rangeFrom))
+        .lte('created_at', jstDateBoundary(rangeTo, true));
+      trialPurchaseCount = count ?? 0;
+    } catch (err) {
+      console.error('[dashboard/summary] trialPurchaseCount error', err);
+    }
+
     // 連動⑤: 範囲内の配送予定件数（subscription_deliveries.scheduled_date は date 型 = JST 解釈）
     let rangeDeliveriesCount = 0;
     try {
@@ -183,6 +200,7 @@ export async function GET(request: NextRequest) {
       rangeRevenue,
       newSubscriptionCount,
       cancellationCount,
+      trialPurchaseCount,
       rangeDeliveriesCount,
       // 固定項目
       nextMonthSubscriptionForecast,
