@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 import Stripe from 'stripe';
 import { postSlack } from '@/lib/slack';
+import { verifyAuth } from '@/lib/auth';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -81,6 +82,12 @@ async function sendCancellationSlackNotification(params: {
 
 export async function POST(request: NextRequest) {
   try {
+    // F36: 認証チェック。所有者一致は subscription 取得後に確認。
+    const auth = await verifyAuth(request);
+    if (!auth.authenticated || !auth.user) {
+      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { subscriptionId, stripeSubscriptionId, reasons, message } = body;
 
@@ -105,6 +112,22 @@ export async function POST(request: NextRequest) {
         { error: 'サブスクリプションが見つかりません' },
         { status: 404 }
       );
+    }
+
+    // F36: 所有者一致チェック。subscription.user_id と認証ユーザーが不一致なら 403。
+    // user_id が null の場合は shipping_address.email で補助判定（移行期データ向け）。
+    const shippingEmail = (subscription.shipping_address as any)?.email || null;
+    const isOwner =
+      (subscription.user_id && subscription.user_id === auth.user.id) ||
+      (!subscription.user_id && shippingEmail && auth.user.email &&
+        shippingEmail.toLowerCase() === auth.user.email.toLowerCase());
+    if (!isOwner) {
+      return NextResponse.json({ error: 'このサブスクリプションを解約する権限がありません' }, { status: 403 });
+    }
+
+    // stripeSubscriptionId の整合性チェック（リクエスト値とDB値の一致）
+    if (subscription.stripe_subscription_id !== stripeSubscriptionId) {
+      return NextResponse.json({ error: 'リクエストが不正です' }, { status: 400 });
     }
 
     if (subscription.status !== 'active') {

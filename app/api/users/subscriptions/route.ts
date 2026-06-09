@@ -1,18 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
+import { verifyAuth } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServerClient();
-    const userId = request.nextUrl.searchParams.get('userId');
-    const email = request.nextUrl.searchParams.get('email');
-
-    if (!userId && !email) {
-      return NextResponse.json(
-        { error: 'userId or email is required' },
-        { status: 400 }
-      );
+    // F36: 認証 + 所有者強制。検索条件は常にトークンの user.id / user.email で上書き。
+    const auth = await verifyAuth(request);
+    if (!auth.authenticated || !auth.user) {
+      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }
+
+    const requestedUserId = request.nextUrl.searchParams.get('userId');
+    const requestedEmail = request.nextUrl.searchParams.get('email');
+    if (requestedUserId && requestedUserId !== auth.user.id) {
+      return NextResponse.json({ error: '他ユーザーのサブスクは取得できません' }, { status: 403 });
+    }
+    if (requestedEmail && auth.user.email && requestedEmail.toLowerCase() !== auth.user.email.toLowerCase()) {
+      return NextResponse.json({ error: '他ユーザーのサブスクは取得できません' }, { status: 403 });
+    }
+
+    const supabase = createServerClient();
+    const userId = auth.user.id;
+    const email = auth.user.email || null;
 
     console.log(`[Subscriptions API] Searching for userId: ${userId}, email: ${email}`);
 

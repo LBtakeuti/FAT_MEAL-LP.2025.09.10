@@ -155,5 +155,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/admin/:path*', '/api/payment/:path*', '/api/contact/:path*', '/api/checkout']
+  // F36: /api/users/:path* を CSRF Origin チェック対象に追加。
+  // 認証本体（所有者一致チェック）は各 route ハンドラ内で実施する。
+  matcher: ['/admin/:path*', '/api/admin/:path*', '/api/payment/:path*', '/api/contact/:path*', '/api/checkout', '/api/users/:path*']
 };
