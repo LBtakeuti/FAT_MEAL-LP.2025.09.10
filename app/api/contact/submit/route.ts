@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { createServerClient } from '@/lib/supabase';
 import { postSlackAttachments } from '@/lib/slack';
+import { rateLimit, getClientIP } from '@/lib/rate-limit';
 
 function escapeHtml(str: string): string {
   return str
@@ -13,6 +14,16 @@ function escapeHtml(str: string): string {
 
 export async function POST(req: NextRequest) {
   try {
+    // F46: レート制限（IPあたり5回/分、メールスパム/送信攻撃対策）
+    const clientIP = getClientIP(req);
+    const { allowed } = rateLimit(`contact-submit:${clientIP}`, 5, 60_000);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'お問い合わせの送信が多すぎます。しばらく時間を空けてから再度お試しください' },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
 
     // 氏名を結合

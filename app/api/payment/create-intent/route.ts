@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createServerClient } from '@/lib/supabase';
+import { rateLimit, getClientIP } from '@/lib/rate-limit';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -70,6 +71,16 @@ interface CreateIntentRequest {
 
 export async function POST(request: NextRequest) {
   try {
+    // F46: レート制限（IPあたり10回/分、決済の自動連打/総当たり攻撃対策）
+    const clientIP = getClientIP(request);
+    const { allowed } = rateLimit(`payment-intent:${clientIP}`, 10, 60_000);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'リクエストが多すぎます。しばらく時間を空けてから再度お試しください' },
+        { status: 429 }
+      );
+    }
+
     const body: CreateIntentRequest = await request.json();
     const { cart, customerInfo, couponCode, purchaseType } = body;
 

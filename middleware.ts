@@ -34,16 +34,18 @@ export async function middleware(request: NextRequest) {
   }
 
   // CSRF保護: POST/PATCH/DELETE リクエストのOrigin検証（Webhook除外）
+  // F46: Origin or Host が欠ける（curl 等で素通り）ケースも拒否するよう厳格化
   if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(request.method)) {
     const isWebhook = request.nextUrl.pathname.startsWith('/api/webhook/');
     if (!isWebhook) {
       const origin = request.headers.get('origin');
       const host = request.headers.get('host');
-      if (origin && host) {
-        const originHost = new URL(origin).host;
-        if (originHost !== host) {
-          return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-        }
+      if (!origin || !host) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+      const originHost = new URL(origin).host;
+      if (originHost !== host) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
     }
   }
