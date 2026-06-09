@@ -154,6 +154,13 @@ export default function MyPage() {
   // F40: お支払い情報変更（Stripe Customer Portal）
   const [billingPortalLoading, setBillingPortalLoading] = useState(false);
   const [billingPortalError, setBillingPortalError] = useState('');
+  // F41: 住所変更確認モーダル
+  const [addressConfirm, setAddressConfirm] = useState<{
+    pending: Partial<UserProfile>;
+    activeSubsCount: number;
+  } | null>(null);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileToast, setProfileToast] = useState<{ type: 'success' | 'warn' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
     const supabase = createBrowserClient();
@@ -225,25 +232,80 @@ export default function MyPage() {
     }
   };
 
-  const updateProfile = async (updatedProfile: Partial<UserProfile>) => {
+  // F41: 住所関連フィールドのキー（user_profiles 側の名称）
+  const ADDRESS_KEYS: (keyof UserProfile)[] = [
+    'last_name',
+    'first_name',
+    'phone',
+    'postal_code',
+    'prefecture',
+    'city',
+    'address_detail',
+    'building',
+  ];
+
+  // F41: 住所系フィールドに実際の変更があるかを判定
+  const hasAddressChange = (updates: Partial<UserProfile>): boolean => {
+    if (!profile) return false;
+    return ADDRESS_KEYS.some(
+      (k) => k in updates && (updates as any)[k] !== (profile as any)[k]
+    );
+  };
+
+  // 実際の PATCH 送信。住所系か否かにかかわらず共通フローを通す。
+  const submitProfileUpdate = async (updates: Partial<UserProfile>) => {
+    setProfileSaving(true);
+    setProfileToast(null);
     try {
       const res = await fetch('/api/users/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, ...updatedProfile }),
+        body: JSON.stringify({ userId: user.id, ...updates }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        setProfile(data);
-        alert('プロフィールを更新しました');
-      } else {
-        const error = await res.json();
-        alert(`更新に失敗しました: ${error.error}`);
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        setProfileToast({ type: 'error', message: `更新に失敗しました: ${error.error || ''}` });
+        return;
       }
-    } catch (error) {
-      console.error('Failed to update profile:', error);
-      alert('更新に失敗しました');
+      const data = await res.json();
+      // API レスポンスから syncedSubscriptions / syncFailed を除去して profile state を更新
+      const { syncedSubscriptions = 0, syncFailed = false, ...profileData } = data as any;
+      setProfile(profileData);
+      if (syncFailed) {
+        setProfileToast({
+          type: 'warn',
+          message: '住所は更新しましたが、定期便の配送先同期に失敗しました。お問い合わせください',
+        });
+      } else if (syncedSubscriptions > 0) {
+        setProfileToast({
+          type: 'success',
+          message: `変更しました（定期便の配送先も同期しました：${syncedSubscriptions}件）`,
+        });
+      } else {
+        setProfileToast({ type: 'success', message: 'プロフィールを更新しました' });
+      }
+      // サブスク表示も同期反映するため再取得
+      if (user?.id && user?.email) {
+        loadSubscriptions(user.id, user.email);
+      }
+    } catch (err) {
+      console.error('Failed to update profile:', err);
+      setProfileToast({ type: 'error', message: '更新に失敗しました' });
+    } finally {
+      setProfileSaving(false);
     }
+  };
+
+  // F41: 住所系変更時は確認モーダル経由、それ以外は即送信
+  const updateProfile = async (updatedProfile: Partial<UserProfile>) => {
+    if (hasAddressChange(updatedProfile)) {
+      const activeSubsCount = subscriptions.filter(
+        (s) => s.status === 'active' || s.status === 'past_due'
+      ).length;
+      setAddressConfirm({ pending: updatedProfile, activeSubsCount });
+      return;
+    }
+    await submitProfileUpdate(updatedProfile);
   };
 
   const handleLogout = async () => {
@@ -537,6 +599,88 @@ export default function MyPage() {
                   解約後も課金済みの期間分は通常通り配送されます。
                   ご不明点は<a href="/contact" className="text-orange-600 hover:underline">お問い合わせ</a>よりご連絡ください。
                 </p>
+              </div>
+            </div>
+          )}
+
+          {/* F41: 住所変更確認モーダル */}
+          {addressConfirm && profile && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-3">ご登録の住所を以下に変更します</h3>
+                <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700 space-y-1 mb-4">
+                  {(() => {
+                    const merged = { ...profile, ...addressConfirm.pending } as UserProfile;
+                    const fullName = [merged.last_name, merged.first_name].filter(Boolean).join(' ');
+                    return (
+                      <>
+                        {fullName && <div>お名前: {fullName}</div>}
+                        {merged.phone && <div>電話番号: {merged.phone}</div>}
+                        {merged.postal_code && <div>郵便番号: 〒{merged.postal_code}</div>}
+                        <div>
+                          住所: {merged.prefecture || ''}{merged.city || ''}{merged.address_detail || ''}
+                          {merged.building ? ` ${merged.building}` : ''}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+                {addressConfirm.activeSubsCount > 0 ? (
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-800 mb-4">
+                    <p className="font-medium">アクティブな定期便の配送先も同時に変更されます。</p>
+                    <p className="text-xs mt-1">よろしいですか？（対象: {addressConfirm.activeSubsCount}件）</p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-600 mb-4">この内容で更新します。よろしいですか？</p>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setAddressConfirm(null)}
+                    disabled={profileSaving}
+                    className="flex-1 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    キャンセル
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const pending = addressConfirm.pending;
+                      setAddressConfirm(null);
+                      await submitProfileUpdate(pending);
+                    }}
+                    disabled={profileSaving}
+                    className="flex-1 py-2 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 font-medium"
+                  >
+                    {profileSaving ? '更新中...' : '変更する'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* F41: 更新結果トースト */}
+          {profileToast && (
+            <div className="fixed inset-x-0 top-20 z-40 flex justify-center pointer-events-none px-4">
+              <div
+                className={`pointer-events-auto max-w-md w-full px-4 py-3 rounded-lg shadow-lg text-sm ${
+                  profileToast.type === 'success'
+                    ? 'bg-green-50 border border-green-200 text-green-700'
+                    : profileToast.type === 'warn'
+                    ? 'bg-amber-50 border border-amber-200 text-amber-800'
+                    : 'bg-red-50 border border-red-200 text-red-700'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p>{profileToast.message}</p>
+                  <button
+                    onClick={() => setProfileToast(null)}
+                    aria-label="閉じる"
+                    className="text-gray-400 hover:text-gray-600 flex-shrink-0"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           )}
