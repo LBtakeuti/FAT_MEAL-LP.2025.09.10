@@ -201,8 +201,14 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
     code: string;
     discount: number;
     percentOff?: number;
+    // F44: 範囲判定
+    scope?: 'product' | 'all';
+    appliesToProducts?: string[] | null;
+    appliesToCurrentPlan?: boolean | null;
   } | null>(null);
   const [couponError, setCouponError] = useState('');
+  // F44: プラン切り替え時にクーポンが範囲外になり自動解除した時のトースト
+  const [couponAutoRemovedToast, setCouponAutoRemovedToast] = useState<string>('');
   // 適用直後の盛り上がり演出フラグ（紙吹雪・バウンス）
   const [couponJustApplied, setCouponJustApplied] = useState(false);
 
@@ -489,6 +495,55 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
   // カートが空かどうか
   const isCartEmpty = cart.every(item => item.quantity === 0);
 
+  // F44: プラン切り替え時に適用済みクーポンを再判定
+  // 範囲外（appliesToCurrentPlan === false）になったら自動で外し、トースト通知する
+  const selectedPlanIdForCoupon = cart.find(item => item.quantity > 0)?.planId;
+  useEffect(() => {
+    if (!appliedCoupon || !selectedPlanIdForCoupon) return;
+    // 全体クーポンや判定情報なしは触らない
+    if (appliedCoupon.scope !== 'product') return;
+    // 同一プランが範囲内なら触らない
+    if (appliedCoupon.appliesToCurrentPlan === true) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/payment/validate-coupon', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: appliedCoupon.code, planId: selectedPlanIdForCoupon }),
+        });
+        const data = await res.json();
+        if (cancelled) return;
+        if (data.valid) {
+          // 新プランで有効 → 情報を更新
+          setAppliedCoupon({
+            code: data.code,
+            discount: data.discount || 0,
+            percentOff: data.percentOff,
+            scope: data.scope,
+            appliesToProducts: data.appliesToProducts,
+            appliesToCurrentPlan: data.appliesToCurrentPlan,
+          });
+        } else {
+          // 範囲外 → 自動解除 + トースト通知
+          const removedCode = appliedCoupon.code;
+          setAppliedCoupon(null);
+          setCouponAutoRemovedToast(
+            `クーポン ${removedCode} はこのプランには使えないため解除しました`
+          );
+        }
+      } catch (e) {
+        console.error('[coupon re-validate] failed:', e);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPlanIdForCoupon]);
+
   // クーポン適用
   const applyCoupon = async () => {
     // Stripe Promotion Code は大文字小文字を区別するので入力をそのまま送る
@@ -500,10 +555,12 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
     setCouponValidating(true);
     setCouponError('');
     try {
+      // F44: planId を含めて API に範囲判定を任せる
+      const selectedPlanForCoupon = getSelectedPlan();
       const res = await fetch('/api/payment/validate-coupon', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ code, planId: selectedPlanForCoupon?.id }),
       });
       const data = await res.json();
       if (data.valid) {
@@ -511,6 +568,9 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
           code: data.code,
           discount: data.discount || 0,
           percentOff: data.percentOff,
+          scope: data.scope,
+          appliesToProducts: data.appliesToProducts,
+          appliesToCurrentPlan: data.appliesToCurrentPlan,
         });
         setCouponError('');
         // 紙吹雪 + バウンス演出
@@ -1525,14 +1585,25 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
             <p className="text-gray-900">¥{subtotal.toLocaleString()}</p>
           </div>
 
+          {/* F44: 商品限定クーポン割引（商品代金の下に表示） */}
+          {appliedCoupon && appliedCoupon.scope === 'product' && (
+            <div className="flex justify-between items-center py-3 border-b border-gray-200">
+              <div className="flex items-center gap-2">
+                <p className="text-green-600">クーポン割引</p>
+                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">{appliedCoupon.code}</span>
+              </div>
+              <p className="text-green-600">-¥{appliedCoupon.discount.toLocaleString()}</p>
+            </div>
+          )}
+
           {/* 送料 */}
           <div className="flex justify-between items-center py-3 border-b border-gray-200">
             <p className="text-gray-600">送料</p>
             <p className="text-gray-900">¥{shippingFee.toLocaleString()}</p>
           </div>
 
-          {/* クーポン割引 */}
-          {appliedCoupon && (
+          {/* F44: 全体クーポン割引（送料の下に表示・従来位置） */}
+          {appliedCoupon && appliedCoupon.scope !== 'product' && (
             <div className="flex justify-between items-center py-3 border-b border-gray-200">
               <div className="flex items-center gap-2">
                 <p className="text-green-600">クーポン割引</p>
@@ -2022,6 +2093,27 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
                 className="flex-1 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
               >
                 ログインして続行
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* F44: クーポン自動解除トースト */}
+      {couponAutoRemovedToast && (
+        <div className="fixed inset-x-0 top-20 z-40 flex justify-center pointer-events-none px-4">
+          <div className="pointer-events-auto max-w-md w-full px-4 py-3 rounded-lg shadow-lg text-sm bg-amber-50 border border-amber-200 text-amber-800">
+            <div className="flex items-start justify-between gap-2">
+              <p>{couponAutoRemovedToast}</p>
+              <button
+                type="button"
+                onClick={() => setCouponAutoRemovedToast('')}
+                aria-label="閉じる"
+                className="text-gray-400 hover:text-gray-600 flex-shrink-0"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
           </div>
