@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createBrowserClient } from '@/lib/supabase';
+import { sanitizeRedirect } from '@/lib/safe-redirect';
 import Link from 'next/link';
 
 // Supabaseのエラーメッセージを日本語に変換
@@ -67,8 +68,9 @@ function LoginForm() {
           });
 
           if (!error) {
-            const redirectAfterAuth = searchParams.get('redirect');
-            router.push(redirectAfterAuth || '/');
+            // F45: open redirect 対策。外部URL や protocol-relative URL は弾く
+            const redirectAfterAuth = sanitizeRedirect(searchParams.get('redirect'));
+            router.push(redirectAfterAuth);
             router.refresh();
             return;
           }
@@ -95,7 +97,8 @@ function LoginForm() {
     try {
       // 本番環境では環境変数のSITE_URLを使用、なければ現在のoriginを使用
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-      const oauthRedirectParam = searchParams.get('redirect');
+      // F45: open redirect 対策。redirect クエリ値は安全な相対パスのみ通す
+      const oauthRedirectParam = sanitizeRedirect(searchParams.get('redirect'), '');
       const oauthRedirectTo = oauthRedirectParam
         ? `${siteUrl}/login?redirect=${encodeURIComponent(oauthRedirectParam)}`
         : `${siteUrl}/login`;
@@ -133,7 +136,8 @@ function LoginForm() {
     try {
       if (isSignUp) {
         // 新規登録
-        const signUpRedirect = searchParams.get('redirect') || '/';
+        // F45: emailRedirectTo に渡す next も sanitize（後段で callback/client が使うため）
+        const signUpRedirect = sanitizeRedirect(searchParams.get('redirect'));
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
@@ -167,13 +171,9 @@ function LoginForm() {
         }
 
         // ログイン成功 - リダイレクトパラメータがあればそこへ
-        const redirectUrl = searchParams.get('redirect');
-
-        if (redirectUrl) {
-          router.push(redirectUrl);
-        } else {
-          router.push('/');
-        }
+        // F45: open redirect 対策。不正な redirect は "/" に fallback される
+        const redirectUrl = sanitizeRedirect(searchParams.get('redirect'));
+        router.push(redirectUrl);
         router.refresh();
       }
     } catch (err: any) {

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@/lib/supabase';
+import { sanitizeRedirect } from '@/lib/safe-redirect';
 
 export default function AuthCallbackClient() {
   const router = useRouter();
@@ -14,7 +15,8 @@ export default function AuthCallbackClient() {
 
       // URLのクエリパラメータからリダイレクト先とcodeを取得
       const urlParams = new URLSearchParams(window.location.search);
-      const nextUrl = urlParams.get('next') || '/';
+      // F45: open redirect 対策。next クエリ値は安全な相対パスのみ通す
+      const nextUrl = sanitizeRedirect(urlParams.get('next'));
       const code = urlParams.get('code');
 
       // PKCE フロー：メール認証リンクに含まれる code を交換
