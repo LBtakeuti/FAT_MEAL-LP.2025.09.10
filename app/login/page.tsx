@@ -385,6 +385,17 @@ function LoginForm() {
         </button>
       </div>
 
+      {!isSignUp && (
+        <div className="mt-3 text-center">
+          <Link
+            href="/auth/forgot-password"
+            className="text-orange-600 hover:text-orange-700 hover:underline text-sm"
+          >
+            パスワードを忘れた方はこちら
+          </Link>
+        </div>
+      )}
+
       <div className="mt-4 text-center">
         <Link href="/" className="text-gray-600 hover:text-gray-900 text-sm">
           ← トップページに戻る
