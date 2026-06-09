@@ -502,8 +502,11 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
     if (!appliedCoupon || !selectedPlanIdForCoupon) return;
     // 全体クーポンや判定情報なしは触らない
     if (appliedCoupon.scope !== 'product') return;
-    // 同一プランが範囲内なら触らない
-    if (appliedCoupon.appliesToCurrentPlan === true) return;
+    // F44-fix: appliesToCurrentPlan は前回 validate 時のプラン基準の値のため、
+    // プラン変更検知時に skip すると stale な値で判定をスキップしてしまう。
+    // 商品限定クーポンはプランが変わるたびに必ず再 validate する。
+    // 同一プラン内の数量変更等では useEffect 依存（selectedPlanIdForCoupon）が
+    // 変わらないため再実行されない。
 
     let cancelled = false;
     (async () => {
