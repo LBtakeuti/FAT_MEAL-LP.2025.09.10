@@ -124,6 +124,7 @@ export async function GET(request: NextRequest) {
     console.log('[Subscription Delivery Cron] Completed:', results);
 
     // F47: failed が出ていれば運用 Slack に警告
+    // F47-fix: Slack 失敗で cron 全体失敗 catch に落ちないよう .catch() を付ける
     if (results.failed > 0) {
       await postSlack('ops', [
         {
@@ -137,7 +138,7 @@ export async function GET(request: NextRequest) {
             text: `*対象日:* ${todayStr}\n*processed:* ${results.processed} / *failed:* ${results.failed} / *outOfStock:* ${results.outOfStock}`,
           },
         },
-      ]);
+      ]).catch(() => { /* Slack側失敗は呼び出し元を止めない */ });
     }
 
     return NextResponse.json({

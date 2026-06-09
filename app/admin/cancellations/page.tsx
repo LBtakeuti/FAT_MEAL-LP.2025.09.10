@@ -207,7 +207,7 @@ function CancellationsPageInner() {
                                   : 'bg-gray-100 text-gray-800'
                               }`}
                             >
-                              {it.status}
+                              {it.status === 'completed' ? '完了' : it.status === 'pending' ? '保留' : it.status}
                             </span>
                           </td>
                         </tr>
