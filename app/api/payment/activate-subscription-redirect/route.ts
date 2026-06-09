@@ -49,10 +49,16 @@ export async function POST(request: NextRequest) {
 
     const paymentMethodId = setupIntent.payment_method as string;
     const meta = setupIntent.metadata || {};
-    const priceId = meta.price_id;
+    // F37: create-intent が書く metadata キー名と完全整合させる。
+    // 旧実装では meta.price_id / env.STRIPE_SHIPPING_PRICE_FREE を読んでおり、
+    // どちらも常に undefined のため 3DS フロー時にサブスク作成が必ず失敗していた。
+    const productPriceId = meta.product_price_id;
+    // shipping は metadata 優先、未設定なら env にフォールバック
+    const shippingPriceId = meta.shipping_price_id || process.env.STRIPE_PRICE_SUB_SHIPPING || '';
     const planId = meta.plan_id;
+    const promotionCodeId = meta.promotion_code_id || '';
 
-    if (!priceId || !planId) {
+    if (!productPriceId || !shippingPriceId || !planId) {
       return NextResponse.json({ error: 'プラン情報が見つかりません' }, { status: 400 });
     }
 
@@ -60,14 +66,15 @@ export async function POST(request: NextRequest) {
       invoice_settings: { default_payment_method: paymentMethodId },
     });
 
-    const shippingPriceId = process.env.STRIPE_SHIPPING_PRICE_FREE || '';
-    const items: Stripe.SubscriptionCreateParams.Item[] = [{ price: priceId }];
-    if (shippingPriceId) items.push({ price: shippingPriceId });
-
     const subscription = await stripe.subscriptions.create(
       {
         customer: customerId,
-        items,
+        items: [
+          { price: productPriceId },
+          { price: shippingPriceId },
+        ],
+        // F37: 3DS フローでもクーポン（Promotion Code）を反映
+        ...(promotionCodeId ? { discounts: [{ promotion_code: promotionCodeId }] } : {}),
         default_payment_method: paymentMethodId,
         metadata: {
           setup_intent_id: setupIntentId,
@@ -83,6 +90,7 @@ export async function POST(request: NextRequest) {
           address: meta.address || '',
           preferred_delivery_date: meta.preferred_delivery_date || '',
           referral_code: meta.referral_code || '',
+          share_slug: meta.share_slug || '',
           notes: meta.notes || '',
           email: meta.email || '',
         },
