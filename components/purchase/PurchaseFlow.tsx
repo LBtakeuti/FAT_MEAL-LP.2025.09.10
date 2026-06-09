@@ -219,6 +219,9 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
   const [couponValidating, setCouponValidating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  // F43: 既存会員エラー時のログイン誘導モーダル
+  const [showLoginRedirectModal, setShowLoginRedirectModal] = useState(false);
+
   // ログインユーザーとプロフィールを取得
   useEffect(() => {
     const loadUserProfile = async () => {
@@ -350,6 +353,43 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
   }, [searchParams]);
 
   // 会員登録後の STEP2 データ復元（?step=confirm で戻ってきた場合）
+  // F43: ?restore=1 で localStorage から購入フロー状態を復元（ログイン後の遷移先用）
+  useEffect(() => {
+    if (searchParams.get('restore') !== '1') return;
+    const saved = localStorage.getItem('purchaseFlow_savedState');
+    if (!saved) return;
+    try {
+      const parsed = JSON.parse(saved);
+      // 有効期限チェック
+      if (typeof parsed.expiresAt !== 'number' || parsed.expiresAt < Date.now()) {
+        localStorage.removeItem('purchaseFlow_savedState');
+        return;
+      }
+      if (parsed.cart) setCart(parsed.cart);
+      if (parsed.customerInfo) {
+        // パスワードは復元しない（ログイン済みのため不要）
+        setCustomerInfo({ ...parsed.customerInfo, password: '' });
+      }
+      if (parsed.purchaseType) {
+        setPurchaseType(parsed.purchaseType);
+        setIsTrialMode(parsed.purchaseType !== 'subscription-monthly');
+      }
+      if (parsed.appliedCoupon) setAppliedCoupon(parsed.appliedCoupon);
+      if (Array.isArray(parsed.surveyQ1)) setSurveyQ1(parsed.surveyQ1);
+      if (typeof parsed.surveyQ1Other === 'string') setSurveyQ1Other(parsed.surveyQ1Other);
+      if (Array.isArray(parsed.surveyQ2)) setSurveyQ2(parsed.surveyQ2);
+      if (typeof parsed.surveyQ2Other === 'string') setSurveyQ2Other(parsed.surveyQ2Other);
+      if (Array.isArray(parsed.surveyQ3)) setSurveyQ3(parsed.surveyQ3);
+      if (typeof parsed.surveyQ3Other === 'string') setSurveyQ3Other(parsed.surveyQ3Other);
+      // ログイン後はサブスクの場合、確認ステップへ進める（再入力負担を減らす）
+      setCurrentStep('confirm');
+    } catch (err) {
+      console.error('Failed to restore purchase flow state:', err);
+    } finally {
+      localStorage.removeItem('purchaseFlow_savedState');
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     const stepParam = searchParams.get('step');
     if (stepParam !== 'confirm') return;
@@ -921,11 +961,44 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
         resetSheetScroll();
       } catch (error: unknown) {
         console.error('Payment intent error:', error);
-        alert(error instanceof Error ? error.message : '決済の準備に失敗しました。もう一度お試しください。');
+        const errMsg = error instanceof Error ? error.message : '決済の準備に失敗しました。もう一度お試しください。';
+        // F43: 既存会員（メール重複）エラーはモーダルでログイン誘導
+        if (errMsg.includes('既にアカウントをお持ちの場合はログインしてください')) {
+          setShowLoginRedirectModal(true);
+        } else {
+          alert(errMsg);
+        }
       } finally {
         setCheckoutLoading(false);
       }
     }
+  };
+
+  // F43: 購入フロー状態を localStorage に保存してログインへ遷移
+  const handleProceedToLogin = () => {
+    try {
+      const payload = {
+        savedAt: Date.now(),
+        expiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24h
+        cart,
+        // パスワードはセキュリティのため保存しない
+        customerInfo: { ...customerInfo, password: '' },
+        purchaseType,
+        appliedCoupon,
+        surveyQ1,
+        surveyQ1Other,
+        surveyQ2,
+        surveyQ2Other,
+        surveyQ3,
+        surveyQ3Other,
+        shareSlug,
+      };
+      localStorage.setItem('purchaseFlow_savedState', JSON.stringify(payload));
+    } catch (e) {
+      console.error('Failed to save purchase flow state:', e);
+    }
+    const returnUrl = '/purchase?restore=1';
+    window.location.href = `/login?redirect=${encodeURIComponent(returnUrl)}`;
   };
 
   const planCardData: PlanCardData[] = planOptions.map((plan) => ({
@@ -1912,6 +1985,47 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
           onClose={() => setSelectedMenuItem(null)}
           showPurchaseButton={false}
         />
+      )}
+
+      {/* F43: 既存会員ログイン誘導モーダル */}
+      {showLoginRedirectModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-bold text-gray-900 mb-2">既に会員登録されています</h3>
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  このメールアドレスは既に会員登録されています。<br />
+                  ログインしてからお買い物を続けてください。
+                </p>
+                <p className="text-xs text-gray-500 mt-2">
+                  ご入力内容は保存され、ログイン後に自動で復元されます。
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowLoginRedirectModal(false)}
+                className="flex-1 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                onClick={handleProceedToLogin}
+                className="flex-1 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                ログインして続行
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );
