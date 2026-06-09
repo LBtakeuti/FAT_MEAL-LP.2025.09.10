@@ -618,6 +618,9 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent,
 }
 
 // 在庫を減らす関数（セット単位）
+// F47-C: SELECT→計算→UPDATE の3ステップを Supabase RPC（decrement_stock_sets）で
+//        単一UPDATEに置換。並列Webhook時の競合（race condition）を防ぐ。
+//        RPC 戻り値 NULL = 在庫不足で更新せず、現在の挙動と同じ「更新しないが処理は止めない」。
 async function reduceInventory(items: Stripe.LineItem[]) {
   const supabase = getSupabaseClient();
   if (!supabase) {
@@ -640,46 +643,28 @@ async function reduceInventory(items: Stripe.LineItem[]) {
   }
 
   try {
-    // 現在のセット在庫を取得
-    const { data: current, error: fetchError } = await (supabase
-      .from('inventory_settings') as any)
-      .select('id, stock_sets')
-      .eq('set_type', '6-set')
-      .single();
+    // F47-C: アトミックに減算（RPC）。NULL なら在庫不足。
+    const { data: newStock, error: rpcError } = await (supabase as any).rpc(
+      'decrement_stock_sets',
+      { p_set_type: '6-set', p_n: setsToReduce }
+    );
 
-    if (fetchError) {
-      console.error('Failed to fetch inventory settings:', fetchError);
+    if (rpcError) {
+      console.error('Failed to decrement_stock_sets (RPC):', rpcError);
       return;
     }
-
-    if (!current) {
-      console.error('No inventory settings found');
+    if (newStock === null || newStock === undefined) {
+      console.warn(`[Inventory] decrement_stock_sets returned NULL: stock < ${setsToReduce}（在庫不足のため未更新）`);
       return;
     }
-
-    const currentStock = current.stock_sets || 0;
-    const newStock = Math.max(0, currentStock - setsToReduce);
-
-    // セット在庫を更新
-    const { error: updateError } = await (supabase
-      .from('inventory_settings') as any)
-      .update({
-        stock_sets: newStock,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('set_type', '6-set');
-
-    if (updateError) {
-      console.error('Failed to update inventory settings:', updateError);
-    } else {
-      console.log(`Set inventory updated: ${currentStock} -> ${newStock} (reduced by ${setsToReduce} sets)`);
-    }
+    console.log(`Set inventory updated (atomic): -> ${newStock} (reduced by ${setsToReduce} sets)`);
   } catch (error) {
     console.error('Error reducing inventory:', error);
   }
 }
 
 // inventory_settingsのstock_setsを減算する共通関数
+// F47-C: RPC（decrement_stock_sets）でアトミック化。
 async function reduceInventorySets(setsToReduce: number, reason: string) {
   const supabase = getSupabaseClient();
   if (!supabase) {
@@ -692,33 +677,20 @@ async function reduceInventorySets(setsToReduce: number, reason: string) {
   }
 
   try {
-    const { data: current, error: fetchError } = await (supabase
-      .from('inventory_settings') as any)
-      .select('id, stock_sets')
-      .eq('set_type', '6-set')
-      .single();
+    const { data: newStock, error: rpcError } = await (supabase as any).rpc(
+      'decrement_stock_sets',
+      { p_set_type: '6-set', p_n: setsToReduce }
+    );
 
-    if (fetchError || !current) {
-      console.error('[Webhook] Failed to fetch inventory settings:', fetchError);
+    if (rpcError) {
+      console.error('[Webhook] Failed to decrement_stock_sets (RPC):', rpcError);
       return;
     }
-
-    const currentStock = current.stock_sets || 0;
-    const newStock = Math.max(0, currentStock - setsToReduce);
-
-    const { error: updateError } = await (supabase
-      .from('inventory_settings') as any)
-      .update({
-        stock_sets: newStock,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('set_type', '6-set');
-
-    if (updateError) {
-      console.error('[Webhook] Failed to update inventory settings:', updateError);
-    } else {
-      console.log(`[Webhook] Inventory reduced: ${currentStock} -> ${newStock} (${setsToReduce} sets, ${reason})`);
+    if (newStock === null || newStock === undefined) {
+      console.warn(`[Webhook] decrement_stock_sets returned NULL: stock < ${setsToReduce}（在庫不足のため未更新）`);
+      return;
     }
+    console.log(`[Webhook] Inventory reduced (atomic): -> ${newStock} (${setsToReduce} sets, ${reason})`);
   } catch (error) {
     console.error('[Webhook] Error reducing inventory:', error);
   }
