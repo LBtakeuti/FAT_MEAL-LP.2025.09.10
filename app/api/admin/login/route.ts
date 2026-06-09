@@ -5,9 +5,20 @@ import {
   setAuthCookies,
   checkIsAdminByEmail,
 } from '@/lib/auth';
+import { rateLimit, getClientIP } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    // F47: レート制限（IPあたり5回/分、管理者ログインのブルートフォース対策）
+    const clientIP = getClientIP(request);
+    const { allowed } = rateLimit(`admin-login:${clientIP}`, 5, 60_000);
+    if (!allowed) {
+      return NextResponse.json(
+        { message: 'ログイン試行が多すぎます。しばらく時間を空けてから再度お試しください' },
+        { status: 429 }
+      );
+    }
+
     const { email, password } = await request.json();
 
     if (!email || !password) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 import { Resend } from 'resend';
+import { postSlack } from '@/lib/slack';
 
 export const maxDuration = 60; // Vercelの最大実行時間
 
@@ -385,10 +386,24 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('[Cron Job] Daily order report error:', error);
     console.error('[Cron Job] Error details:', error instanceof Error ? error.stack : String(error));
+    // F47: cron 全体失敗時の Slack 通知
+    await postSlack('ops', [
+      {
+        type: 'header',
+        text: { type: 'plain_text', text: '🚨 日次注文レポートcron: 全体失敗', emoji: true },
+      },
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `*エラー:* ${error instanceof Error ? error.message : String(error)}`,
+        },
+      },
+    ]).catch(() => { /* Slack側失敗は呼び出し元を止めない */ });
     return NextResponse.json(
-      { 
-        error: 'Failed to send daily order report', 
-        details: error instanceof Error ? error.message : String(error) 
+      {
+        error: 'Failed to send daily order report',
+        details: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }
     );

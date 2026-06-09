@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 import { SHARE_PHOTO_BUCKET } from '@/lib/share-storage';
+import { postSlack } from '@/lib/slack';
 
 /**
  * 期限切れ共有リンクのクリーンアップCron。
@@ -17,6 +18,9 @@ export async function GET(request: NextRequest) {
   if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  // F47: cron 全体を try/catch で wrap し、失敗時に Slack 通知
+  try {
 
   const dryRun = request.nextUrl.searchParams.get('dryRun') === '1';
   const supabase = createServerClient() as any;
@@ -105,4 +109,26 @@ export async function GET(request: NextRequest) {
     total_photos_removed: summary.reduce((acc, s) => acc + s.storage_removed, 0),
     detail: summary,
   });
+
+  } catch (error) {
+    // F47: cron 全体失敗時の Slack 通知
+    console.error('[cleanup] error:', error);
+    await postSlack('ops', [
+      {
+        type: 'header',
+        text: { type: 'plain_text', text: '🚨 共有リンク クリーンアップcron: 全体失敗', emoji: true },
+      },
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `*エラー:* ${error instanceof Error ? error.message : String(error)}`,
+        },
+      },
+    ]).catch(() => { /* Slack側失敗は呼び出し元を止めない */ });
+    return NextResponse.json(
+      { error: 'cleanup failed', details: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    );
+  }
 }

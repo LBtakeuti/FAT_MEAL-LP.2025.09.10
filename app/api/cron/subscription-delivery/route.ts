@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
+import { postSlack } from '@/lib/slack';
 
 export const maxDuration = 60; // Vercelの最大実行時間
 
@@ -122,6 +123,23 @@ export async function GET(request: NextRequest) {
 
     console.log('[Subscription Delivery Cron] Completed:', results);
 
+    // F47: failed が出ていれば運用 Slack に警告
+    if (results.failed > 0) {
+      await postSlack('ops', [
+        {
+          type: 'header',
+          text: { type: 'plain_text', text: '⚠️ サブスク配送cron: 一部失敗', emoji: true },
+        },
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `*対象日:* ${todayStr}\n*processed:* ${results.processed} / *failed:* ${results.failed} / *outOfStock:* ${results.outOfStock}`,
+          },
+        },
+      ]);
+    }
+
     return NextResponse.json({
       success: true,
       date: todayStr,
@@ -129,10 +147,24 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('[Subscription Delivery Cron] Error:', error);
+    // F47: cron 全体失敗時の Slack 通知
+    await postSlack('ops', [
+      {
+        type: 'header',
+        text: { type: 'plain_text', text: '🚨 サブスク配送cron: 全体失敗', emoji: true },
+      },
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `*エラー:* ${error instanceof Error ? error.message : String(error)}`,
+        },
+      },
+    ]).catch(() => { /* Slack側失敗は呼び出し元を止めない */ });
     return NextResponse.json(
-      { 
-        error: 'Failed to process subscription deliveries', 
-        details: error instanceof Error ? error.message : String(error) 
+      {
+        error: 'Failed to process subscription deliveries',
+        details: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }
     );

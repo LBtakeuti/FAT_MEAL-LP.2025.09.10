@@ -76,7 +76,7 @@ const ContactPageContent: React.FC = () => {
     }
     if (!formData.phone) newErrors.phone = '必須項目です';
     if (!formData.message) newErrors.message = '必須項目です';
-    if (!formData.privacyPolicy) newErrors.privacyPolicy = 'reCAPTCHAによる保護およびプライバシーポリシーに同意してください';
+    if (!formData.privacyPolicy) newErrors.privacyPolicy = 'プライバシーポリシーに同意してください';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -283,11 +283,8 @@ const ContactPageContent: React.FC = () => {
                     className="mt-1"
                   />
                   <span className="text-sm text-gray-700">
-                    このサイトはreCAPTCHAによって保護されており、Google
-                    <a href="https://policies.google.com/privacy" className="text-blue-500 hover:underline mx-1" target="_blank" rel="noopener noreferrer">プライバシーポリシー</a>
-                    および
-                    <a href="https://policies.google.com/terms" className="text-blue-500 hover:underline mx-1" target="_blank" rel="noopener noreferrer">利用規約</a>
-                    が適用されることに同意します。
+                    <a href="/privacy" className="text-blue-500 hover:underline mx-1">プライバシーポリシー</a>
+                    に同意します。
                     <span className="text-red-500 ml-1">必須</span>
                   </span>
                 </label>
