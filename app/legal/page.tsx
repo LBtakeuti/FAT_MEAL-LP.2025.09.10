@@ -130,6 +130,53 @@ export default function LegalPage() {
                 <li>・送料</li>
               </ul>
             </div>
+
+            {/* 定期購入プランについて */}
+            <div className="pb-4">
+              <h2 className="text-sm sm:text-base font-semibold text-gray-700 mb-2">
+                12. 定期購入プランについて
+              </h2>
+              <div className="text-gray-900 text-sm sm:text-base space-y-3">
+                <div>
+                  <p className="font-medium">【商品名】</p>
+                  <ul className="ml-4 space-y-1">
+                    <li>・ふとるめしセット（6食）</li>
+                    <li>・ダブルふとるめセット（12食）</li>
+                  </ul>
+                </div>
+                <div>
+                  <p className="font-medium">【販売価格（税込）】</p>
+                  <ul className="ml-4 space-y-1">
+                    <li>・ふとるめしセット（6食）：月額 5,100円（商品3,600円＋送料1,500円）</li>
+                    <li>・ダブルふとるめセット（12食）：月額 8,100円（商品6,600円＋送料1,500円）</li>
+                  </ul>
+                </div>
+                <div>
+                  <p className="font-medium">【引渡時期】</p>
+                  <p className="ml-4">月1回、ご指定の配送希望日にお届けします</p>
+                </div>
+                <div>
+                  <p className="font-medium">【支払時期】</p>
+                  <p className="ml-4">毎月自動課金（契約日を起算日として1ヶ月ごと）</p>
+                </div>
+                <div>
+                  <p className="font-medium">【最低継続期間】</p>
+                  <p className="ml-4">3ヶ月（2026年6月1日以降の新規契約に適用）</p>
+                </div>
+                <div>
+                  <p className="font-medium">【解約方法】</p>
+                  <p className="ml-4">ご契約日から3ヶ月経過後、マイページの「定期購入」より解約手続きが可能です</p>
+                </div>
+                <div>
+                  <p className="font-medium">【解約申請の効力発生時期】</p>
+                  <p className="ml-4">解約申請後、課金済み月の配送完了をもって自動更新が停止します</p>
+                </div>
+                <div>
+                  <p className="font-medium">【既存契約者の取扱い】</p>
+                  <p className="ml-4">2026年5月31日以前にご契約のユーザーについては、最低継続期間は適用されず、いつでも解約可能です</p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Back Button */}

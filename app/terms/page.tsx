@@ -96,10 +96,25 @@ export default function TermsPage() {
               </ol>
             </div>
 
-            {/* 第7条（禁止事項） */}
+            {/* 第7条（定期購入プランの継続期間・解約） */}
             <div className="border-t border-gray-200 pt-4">
               <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3">
-                第7条（禁止事項）
+                第7条（定期購入プランの継続期間・解約）
+              </h2>
+              <ol className="text-gray-700 text-sm sm:text-base space-y-2 list-decimal ml-6">
+                <li>ユーザーは、本サービスの定期購入プラン（ふとるめしセット（6食）、ダブルふとるめセット（12食）等）にお申し込みいただけます。</li>
+                <li>定期購入プランは、毎月自動更新されます。</li>
+                <li>2026年6月1日以降に新規お申し込みされた定期購入プランについて、最低3ヶ月間（契約日から起算して90日間）のご継続をお願いいたします。当該期間内の解約はお受けできません。</li>
+                <li>解約は、ご契約日から3ヶ月経過後、マイページの解約ボタンよりお手続きください。</li>
+                <li>解約申請後、課金済みの月の配送が完了し次第、自動更新が停止します。</li>
+                <li>2026年5月31日以前にご契約のユーザーについては、本条第3項の最低継続期間は適用されず、いつでも解約可能です。</li>
+              </ol>
+            </div>
+
+            {/* 第8条（禁止事項） */}
+            <div className="border-t border-gray-200 pt-4">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3">
+                第8条（禁止事項）
               </h2>
               <p className="text-gray-700 text-sm sm:text-base mb-2">
                 ユーザーは、本サービスの利用にあたり、以下の行為をしてはなりません。
@@ -113,10 +128,10 @@ export default function TermsPage() {
               </ul>
             </div>
 
-            {/* 第8条（サービス提供の停止・終了） */}
+            {/* 第9条（サービス提供の停止・終了） */}
             <div className="border-t border-gray-200 pt-4">
               <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3">
-                第8条（サービス提供の停止・終了）
+                第9条（サービス提供の停止・終了）
               </h2>
               <ol className="text-gray-700 text-sm sm:text-base space-y-2 list-decimal ml-6">
                 <li>当社は、以下の場合にユーザーに事前通知することなく本サービスの提供を停止・終了することができます。
@@ -130,10 +145,10 @@ export default function TermsPage() {
               </ol>
             </div>
 
-            {/* 第9条（免責事項） */}
+            {/* 第10条（免責事項） */}
             <div className="border-t border-gray-200 pt-4">
               <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3">
-                第9条（免責事項）
+                第10条（免責事項）
               </h2>
               <ol className="text-gray-700 text-sm sm:text-base space-y-2 list-decimal ml-6">
                 <li>商品の味覚や好みに関する不一致について、当社は責任を負いません。</li>
@@ -142,30 +157,30 @@ export default function TermsPage() {
               </ol>
             </div>
 
-            {/* 第10条（個人情報の取扱い） */}
+            {/* 第11条（個人情報の取扱い） */}
             <div className="border-t border-gray-200 pt-4">
               <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3">
-                第10条（個人情報の取扱い）
+                第11条（個人情報の取扱い）
               </h2>
               <p className="text-gray-700 text-sm sm:text-base">
                 当社は、ユーザーの個人情報をプライバシーポリシーに従って適切に取り扱います。
               </p>
             </div>
 
-            {/* 第11条（規約の変更） */}
+            {/* 第12条（規約の変更） */}
             <div className="border-t border-gray-200 pt-4">
               <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3">
-                第11条（規約の変更）
+                第12条（規約の変更）
               </h2>
               <p className="text-gray-700 text-sm sm:text-base">
                 当社は、必要に応じて本規約を変更することができ、変更後の規約は本サービスに掲示した時点から効力を生じるものとします。
               </p>
             </div>
 
-            {/* 第12条（準拠法・管轄裁判所） */}
+            {/* 第13条（準拠法・管轄裁判所） */}
             <div className="border-t border-gray-200 pt-4">
               <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-3">
-                第12条（準拠法・管轄裁判所）
+                第13条（準拠法・管轄裁判所）
               </h2>
               <ol className="text-gray-700 text-sm sm:text-base space-y-2 list-decimal ml-6">
                 <li>本規約の解釈および適用は、日本法に準拠します。</li>
