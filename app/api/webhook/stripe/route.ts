@@ -1802,6 +1802,11 @@ async function sendPaymentFailedEmail(params: {
   const resend = await getResendClient();
   if (!resend) return;
 
+  // F40: マイページ経由でお支払い情報を更新できるリンクを案内。
+  // env (NEXT_PUBLIC_SITE_URL) 優先、未設定時は本番URLにフォールバック。
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.futorumeshi.com';
+  const mypageUrl = `${siteUrl}/mypage`;
+
   const emailHtml = `
 <!DOCTYPE html>
 <html>
@@ -1812,6 +1817,9 @@ async function sendPaymentFailedEmail(params: {
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
     .content { background: #fff; padding: 30px; }
     .warning { background: #fef2f2; border: 1px solid #ef4444; padding: 20px; border-radius: 8px; margin: 20px 0; }
+    .cta { text-align: center; margin: 24px 0; }
+    .cta a { display: inline-block; background: #dc2626; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; }
+    .cta a:hover { background: #b91c1c; }
   </style>
 </head>
 <body>
@@ -1821,8 +1829,12 @@ async function sendPaymentFailedEmail(params: {
       <div class="warning">
         <p style="margin-top: 0; color: #dc2626;"><strong>お支払いに問題が発生しました</strong></p>
         <p>「${params.planName}」の月額料金のお支払いが完了しませんでした。</p>
-        <p>お手数ですが、決済方法をご確認の上、再度お試しください。</p>
+        <p>お手数ですが、マイページからお支払い情報（カード情報）をご確認・更新ください。</p>
       </div>
+      <div class="cta">
+        <a href="${mypageUrl}">マイページでお支払い情報を変更する</a>
+      </div>
+      <p style="font-size: 12px; color: #666;">ボタンが表示されない場合は、以下のURLをブラウザにコピー＆ペーストしてください。<br>${mypageUrl}</p>
       <p>お支払いが確認できない場合、サブスクリプションが一時停止される場合があります。</p>
       <p>ご不明な点がございましたらご連絡ください。</p>
     </div>

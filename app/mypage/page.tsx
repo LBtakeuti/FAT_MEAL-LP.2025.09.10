@@ -151,6 +151,9 @@ export default function MyPage() {
   const [cancelMessage, setCancelMessage] = useState('');
   const [cancelLoading, setCancelLoading] = useState(false);
   const [cancelSuccess, setCancelSuccess] = useState(false);
+  // F40: お支払い情報変更（Stripe Customer Portal）
+  const [billingPortalLoading, setBillingPortalLoading] = useState(false);
+  const [billingPortalError, setBillingPortalError] = useState('');
 
   useEffect(() => {
     const supabase = createBrowserClient();
@@ -290,6 +293,25 @@ export default function MyPage() {
       alert(error.message || '解約処理に失敗しました');
     } finally {
       setCancelLoading(false);
+    }
+  };
+
+  // F40: Stripe Customer Portal を開く
+  const handleOpenBillingPortal = async () => {
+    setBillingPortalLoading(true);
+    setBillingPortalError('');
+    try {
+      const res = await fetch('/api/users/billing-portal', { method: 'POST' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'お支払い情報ページを開けませんでした');
+      }
+      const data = await res.json();
+      if (!data.url) throw new Error('お支払い情報ページを開けませんでした');
+      window.location.href = data.url;
+    } catch (error: any) {
+      setBillingPortalError(error.message || 'お支払い情報ページを開けませんでした');
+      setBillingPortalLoading(false);
     }
   };
 
@@ -440,10 +462,39 @@ export default function MyPage() {
                             </div>
                           )}
                         </div>
+                        {/* F40: past_due 時の警告 + お支払い情報変更ボタン */}
+                        {sub.status === 'past_due' && (
+                          <div className="mt-3 bg-red-50 border border-red-300 rounded-lg p-3">
+                            <div className="flex items-start gap-2 mb-2">
+                              <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                              </svg>
+                              <div className="text-sm text-red-700">
+                                <p className="font-medium">お支払いに失敗しました</p>
+                                <p className="text-xs mt-1">カード情報を更新してください。更新が完了するとサブスクリプションが再開されます。</p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={handleOpenBillingPortal}
+                              disabled={billingPortalLoading}
+                              className="w-full py-2 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                            >
+                              {billingPortalLoading ? '読み込み中...' : 'お支払い情報を変更する'}
+                            </button>
+                          </div>
+                        )}
                         {sub.status === 'active' && (() => {
                           const { cancelable, cancelableFrom } = getCancellationAvailability(sub);
                           return (
                             <>
+                              {/* F40: active時の「お支払い情報を変更する」ボタン（通常スタイル） */}
+                              <button
+                                onClick={handleOpenBillingPortal}
+                                disabled={billingPortalLoading}
+                                className="mt-3 w-full py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                              >
+                                {billingPortalLoading ? '読み込み中...' : 'お支払い情報を変更する'}
+                              </button>
                               <button
                                 onClick={() => {
                                   if (!cancelable) return;
@@ -453,7 +504,7 @@ export default function MyPage() {
                                   setCancelSuccess(false);
                                 }}
                                 disabled={!cancelable}
-                                className={`mt-3 w-full py-2 text-sm border rounded-lg transition-colors ${
+                                className={`mt-2 w-full py-2 text-sm border rounded-lg transition-colors ${
                                   cancelable
                                     ? 'text-red-600 border-red-300 hover:bg-red-50'
                                     : 'text-gray-400 border-gray-200 cursor-not-allowed opacity-50'
@@ -470,6 +521,9 @@ export default function MyPage() {
                             </>
                           );
                         })()}
+                        {billingPortalError && (
+                          <p className="mt-2 text-xs text-red-600 text-center">{billingPortalError}</p>
+                        )}
                       </div>
                     ))}
                   </div>
