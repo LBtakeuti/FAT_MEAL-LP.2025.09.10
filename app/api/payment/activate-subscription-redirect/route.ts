@@ -107,6 +107,14 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error.message : String(error);
     console.error('Subscription redirect activation error:', errMsg);
+    // F37-fix: Stripe の InvalidRequestError（不正な setupIntentId 等）は
+    // クライアントエラーとして 400 に正規化する。500 はサーバ側エラー専用。
+    if (error instanceof Stripe.errors.StripeInvalidRequestError) {
+      return NextResponse.json(
+        { error: '無効なリクエストです' },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
       { error: 'サブスクリプションの開始に失敗しました' },
       { status: 500 }
