@@ -39,6 +39,8 @@ export async function GET(request: NextRequest) {
     console.log('[Subscription Delivery Cron] Processing deliveries for:', todayStr);
     
     // 今日以前の未処理配送を取得（過去の取り残し分も含む）
+    // F38: order_id IS NULL を追加して、既に order 作成済みのレコードを除外。
+    // cron リトライ/二重起動による同一顧客への二重出荷を防ぐ。
     const { data: todayDeliveries, error: fetchError } = await supabase
       .from('subscription_deliveries')
       .select(`
@@ -51,7 +53,8 @@ export async function GET(request: NextRequest) {
         )
       `)
       .lte('scheduled_date', todayStr)
-      .eq('status', 'pending') as { data: SubscriptionDelivery[] | null; error: any };
+      .eq('status', 'pending')
+      .is('order_id', null) as { data: SubscriptionDelivery[] | null; error: any };
 
     if (fetchError) {
       console.error('[Subscription Delivery Cron] Failed to fetch deliveries:', fetchError);
@@ -154,8 +157,12 @@ async function checkInventoryForDelivery(
       return false;
     }
 
-    // 1配送 = 12食 = 2セット必要
-    const requiredSets = 2;
+    // F38: 必要セット数は meals_per_delivery（1セット=6食）から動的計算。
+    // 6食プラン → 1セット、12食プラン → 2セット、将来18食 → 3セット。
+    // 旧実装は `requiredSets = 2` ハードコードのため、6食プランで在庫1セット時に
+    // 配送可能なのに out-of-stock 扱いでスキップされていた。
+    const mealsPerDelivery = delivery.meals_per_delivery || 12;
+    const requiredSets = Math.ceil(mealsPerDelivery / 6);
     const currentStock = inventorySettings.stock_sets || 0;
 
     return currentStock >= requiredSets;
