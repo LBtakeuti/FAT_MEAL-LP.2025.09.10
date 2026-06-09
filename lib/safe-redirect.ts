@@ -20,6 +20,11 @@ export function isSafeRedirect(value: string | null | undefined): boolean {
   if (/^[a-z][a-z0-9+.-]*:/i.test(value)) return false;
   // protocol-relative URL（//evil.com, ///evil.com 等）を除外
   if (value.startsWith('//')) return false;
+  // F45-fix: バックスラッシュを含む値を除外。
+  // WHATWG URL パーサーはバックスラッシュをスラッシュに正規化するため、
+  //   "/\\evil.com" は new URL で "https://evil.com/" として解釈される（外部ドメイン）。
+  // 安全側に倒し、相対パスとして妥当でないバックスラッシュ含みは一律拒否する。
+  if (value.includes('\\')) return false;
   // / 始まりの相対パスのみ許可
   if (!value.startsWith('/')) return false;
   return true;

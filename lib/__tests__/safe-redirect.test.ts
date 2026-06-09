@@ -45,6 +45,23 @@ describe('isSafeRedirect', () => {
     });
   });
 
+  describe('F45-fix: バックスラッシュバイパス対策（false）', () => {
+    // WHATWG URL パーサーは "\\" を "/" に正規化するため、
+    // "/\\evil.com" は new URL で "https://evil.com/" として解釈される。
+    // バックスラッシュを含む値は一律拒否する。
+    it.each([
+      ['/\\evil.com'],
+      ['/\\\\evil.com'],
+      ['\\/evil.com'],
+      ['\\\\evil.com'],
+      ['\\\\//evil.com'],
+      ['/path/\\evil.com'],
+      ['/legit?next=\\evil.com'],
+    ])('"%s" は安全でない', (val) => {
+      expect(isSafeRedirect(val)).toBe(false);
+    });
+  });
+
   describe('相対パス・空値（false）', () => {
     it.each([
       ['relative-path'],
