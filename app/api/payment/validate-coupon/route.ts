@@ -110,6 +110,13 @@ export async function POST(request: NextRequest) {
 
     let discount = 0;
 
+    // F56: クーポンの表示出し分け用に name / metadata をそのまま返す。
+    // フロントは metadata（display_label / theme / free_shipping / product_discount）を
+    // 解釈して専用デザイン・割引内訳を出し分ける。未設定/未知値はフロント側でデフォルトへ。
+    const couponName: string | null = typeof coupon.name === 'string' ? coupon.name : null;
+    const couponMetadata: Record<string, string> =
+      coupon.metadata && typeof coupon.metadata === 'object' ? coupon.metadata : {};
+
     if (coupon.percent_off) {
       return NextResponse.json({
         valid: true,
@@ -119,6 +126,8 @@ export async function POST(request: NextRequest) {
         scope,
         appliesToProducts,
         appliesToCurrentPlan,
+        couponName,
+        couponMetadata,
       });
     } else if (coupon.amount_off) {
       discount = coupon.amount_off;
@@ -131,6 +140,8 @@ export async function POST(request: NextRequest) {
       scope,
       appliesToProducts,
       appliesToCurrentPlan,
+      couponName,
+      couponMetadata,
     });
   } catch (error) {
     console.error('Coupon validation error:', error);

@@ -205,6 +205,9 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
     scope?: 'product' | 'all';
     appliesToProducts?: string[] | null;
     appliesToCurrentPlan?: boolean | null;
+    // F56: Stripe coupon の name / metadata（専用デザイン・割引内訳の出し分け用）
+    couponName?: string | null;
+    couponMetadata?: Record<string, string> | null;
   } | null>(null);
   const [couponError, setCouponError] = useState('');
   // F44: プラン切り替え時にクーポンが範囲外になり自動解除した時のトースト
@@ -511,6 +514,68 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
   const { subtotal, shippingFee, totalAmount } = calculateTotal();
   const discount = calculateCouponDiscount(getSelectedPlan());
 
+  // F56: Stripe coupon の metadata から表示の出し分け設定を構築する。
+  // metadata キー:
+  //   - display_label : クーポンカードの見出し文言
+  //   - theme         : 色テーマ（gold / pink / blue）。未知値はデフォルト（orange）
+  //   - free_shipping : "true" で送料を取り消し線→¥0 表示し、内訳に送料割引を加える
+  //   - product_discount : 数値文字列で商品本体からの割引額を内訳に加える
+  // 整合ガード（F56 必須）: 内訳合計（送料割引 + 商品本体割引）が実割引額と一致しない場合は
+  // 専用表示を使わずデフォルト表示にフォールバックする。未設定/未知値も安全にデフォルトへ。
+  const COUPON_THEME_GRADIENTS: Record<string, string> = {
+    gold: 'from-amber-500 via-yellow-400 to-amber-300',
+    pink: 'from-pink-500 via-rose-400 to-pink-300',
+    blue: 'from-blue-600 via-sky-500 to-cyan-300',
+  };
+  const buildCouponDisplayConfig = (): {
+    custom: boolean;
+    label: string | null;
+    gradientClass: string | null;
+    freeShipping: boolean;
+    productDiscount: number;
+  } => {
+    const fallback = {
+      custom: false,
+      label: null,
+      gradientClass: null,
+      freeShipping: false,
+      productDiscount: 0,
+    };
+    const meta = appliedCoupon?.couponMetadata;
+    if (!appliedCoupon || !meta || typeof meta !== 'object') return fallback;
+
+    const freeShipping = meta.free_shipping === 'true';
+    const rawProductDiscount = meta.product_discount;
+    const productDiscount =
+      typeof rawProductDiscount === 'string' && /^\d+$/.test(rawProductDiscount.trim())
+        ? parseInt(rawProductDiscount.trim(), 10)
+        : 0;
+
+    // metadata に表示指示が一切なければデフォルト表示
+    const hasDisplayDirective =
+      typeof meta.display_label === 'string' ||
+      typeof meta.theme === 'string' ||
+      freeShipping ||
+      productDiscount > 0;
+    if (!hasDisplayDirective) return fallback;
+
+    // 整合ガード: 内訳合計が実割引額（サーバー式ミラー）と一致するか
+    const breakdownTotal = (freeShipping ? shippingFee : 0) + productDiscount;
+    if (breakdownTotal !== discount) {
+      console.warn(
+        `[F56] クーポン内訳合計が実割引額と不一致のためデフォルト表示にフォールバック: breakdown=${breakdownTotal} / discount=${discount} (code=${appliedCoupon.code})`
+      );
+      return fallback;
+    }
+
+    const themeKey = typeof meta.theme === 'string' ? meta.theme : '';
+    const gradientClass = COUPON_THEME_GRADIENTS[themeKey] || null;
+    const label = typeof meta.display_label === 'string' ? meta.display_label : null;
+
+    return { custom: true, label, gradientClass, freeShipping, productDiscount };
+  };
+  const couponDisplay = buildCouponDisplayConfig();
+
   // カートが空かどうか
   const isCartEmpty = cart.every(item => item.quantity === 0);
 
@@ -546,6 +611,8 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
             scope: data.scope,
             appliesToProducts: data.appliesToProducts,
             appliesToCurrentPlan: data.appliesToCurrentPlan,
+            couponName: data.couponName,
+            couponMetadata: data.couponMetadata,
           });
         } else {
           // 範囲外 → 自動解除 + トースト通知
@@ -593,6 +660,8 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
           scope: data.scope,
           appliesToProducts: data.appliesToProducts,
           appliesToCurrentPlan: data.appliesToCurrentPlan,
+          couponName: data.couponName,
+          couponMetadata: data.couponMetadata,
         });
         setCouponError('');
         // 紙吹雪 + バウンス演出
@@ -1616,8 +1685,19 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
             <p className="text-gray-900">¥{subtotal.toLocaleString()}</p>
           </div>
 
-          {/* F44: 商品限定クーポン割引（商品代金の下に表示） */}
-          {appliedCoupon && appliedCoupon.scope === 'product' && (
+          {/* F56: クーポン専用デザイン（metadata 整合済み）の商品本体割引 */}
+          {appliedCoupon && couponDisplay.custom && couponDisplay.productDiscount > 0 && (
+            <div className="flex justify-between items-center py-3 border-b border-gray-200">
+              <div className="flex items-center gap-2">
+                <p className="text-green-600">{couponDisplay.label || 'クーポン割引（商品）'}</p>
+                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">{appliedCoupon.code}</span>
+              </div>
+              <p className="text-green-600">-¥{couponDisplay.productDiscount.toLocaleString()}</p>
+            </div>
+          )}
+
+          {/* F44: 商品限定クーポン割引（商品代金の下に表示）。F56 専用表示時は非表示 */}
+          {appliedCoupon && !couponDisplay.custom && appliedCoupon.scope === 'product' && (
             <div className="flex justify-between items-center py-3 border-b border-gray-200">
               <div className="flex items-center gap-2">
                 <p className="text-green-600">クーポン割引</p>
@@ -1627,14 +1707,21 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
             </div>
           )}
 
-          {/* 送料 */}
+          {/* 送料。F56 free_shipping 時は取り消し線→¥0 */}
           <div className="flex justify-between items-center py-3 border-b border-gray-200">
             <p className="text-gray-600">送料</p>
-            <p className="text-gray-900">¥{shippingFee.toLocaleString()}</p>
+            {appliedCoupon && couponDisplay.custom && couponDisplay.freeShipping ? (
+              <p className="text-gray-900">
+                <span className="text-gray-400 line-through mr-2">¥{shippingFee.toLocaleString()}</span>
+                <span className="text-green-600 font-semibold">¥0</span>
+              </p>
+            ) : (
+              <p className="text-gray-900">¥{shippingFee.toLocaleString()}</p>
+            )}
           </div>
 
-          {/* F44: 全体クーポン割引（送料の下に表示・従来位置） */}
-          {appliedCoupon && appliedCoupon.scope !== 'product' && (
+          {/* F44: 全体クーポン割引（送料の下に表示・従来位置）。F56 専用表示時は非表示 */}
+          {appliedCoupon && !couponDisplay.custom && appliedCoupon.scope !== 'product' && (
             <div className="flex justify-between items-center py-3 border-b border-gray-200">
               <div className="flex items-center gap-2">
                 <p className="text-green-600">クーポン割引</p>
@@ -1692,7 +1779,9 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
           </h2>
           {appliedCoupon ? (
             <div
-              className={`relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500 via-orange-400 to-amber-300 p-5 shadow-lg text-white ${
+              className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${
+                (couponDisplay.custom && couponDisplay.gradientClass) || 'from-orange-500 via-orange-400 to-amber-300'
+              } p-5 shadow-lg text-white ${
                 couponJustApplied ? 'animate-coupon-pop' : ''
               }`}
             >
@@ -1710,6 +1799,12 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
                     </span>
                     <span className="text-lg sm:text-xl font-bold align-baseline">OFF</span>
                   </div>
+                  {/* F56: metadata の display_label があれば見出しとして表示 */}
+                  {couponDisplay.custom && couponDisplay.label && (
+                    <div className="mt-2 text-sm font-semibold text-white/90">
+                      {couponDisplay.label}
+                    </div>
+                  )}
                   <div className="mt-2 flex items-center gap-2 text-sm">
                     <span className="inline-flex items-center px-2 py-0.5 rounded bg-white/20 backdrop-blur font-mono text-xs">
                       {appliedCoupon.code}
