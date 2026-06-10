@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { createServerClient } from '@/lib/supabase';
 import type { ArticleDetail, ArticleListItem } from '@/types/article';
 import ArticleContent from '@/components/blog/ArticleContent';
+import ShareButtons from '@/components/blog/ShareButtons';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -208,7 +209,17 @@ export default async function BlogDetailPage({ params }: PageProps) {
                 )}
               </header>
 
+              {/* F50-1: 記事上部のシェアボタン */}
+              <div className="mb-6 pb-6 border-b border-gray-200">
+                <ShareButtons url={canonicalUrl} title={article.title} label="この記事をシェア" />
+              </div>
+
               <ArticleContent content={article.content} />
+
+              {/* F50-1: 記事下部のシェアボタン（読了後の共有導線） */}
+              <div className="mt-10 pt-6 border-t border-gray-200">
+                <ShareButtons url={canonicalUrl} title={article.title} label="記事をシェアする" />
+              </div>
             </div>
           </article>
 
