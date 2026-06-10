@@ -45,6 +45,9 @@ async function fetchLatestExcluding(slug: string, limit = 5): Promise<ArticleLis
   return (data as ArticleListItem[]) ?? [];
 }
 
+// F49: 環境変数の origin（OG / canonical / JSON-LD で共有）
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.futorumeshi.com';
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const article = await fetchArticle(slug);
@@ -54,13 +57,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = article.meta_title || `${article.title} | ふとるめし コラム`;
   const description = article.meta_description || article.excerpt || 'ふとるめし編集部がお届けするコラム';
   const ogImage = article.og_image_url || article.thumbnail_url || undefined;
+  const canonicalUrl = `${SITE_URL}/blog/${slug}`;
   return {
     title,
     description,
+    // F49: 重複コンテンツ防止のため canonical URL を明示
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
       title,
       description,
       type: 'article',
+      url: canonicalUrl,
+      siteName: 'ふとるめし',
+      locale: 'ja_JP',
       ...(ogImage ? { images: [{ url: ogImage }] } : {}),
       ...(article.published_at ? { publishedTime: article.published_at } : {}),
     },
@@ -95,8 +106,45 @@ export default async function BlogDetailPage({ params }: PageProps) {
       if (error) console.error('[blog/[slug]] view_count update failed', error);
     });
 
+  // F49: Article 構造化データ（JSON-LD）。リッチリザルト対応のため検索エンジンに記事の主要情報を機械可読で提供
+  const canonicalUrl = `${SITE_URL}/blog/${article.slug}`;
+  const articleImage = article.og_image_url || article.thumbnail_url || `${SITE_URL}/icon.png`;
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: article.title,
+    description: article.meta_description || article.excerpt || '',
+    image: articleImage,
+    datePublished: article.published_at || undefined,
+    dateModified: article.published_at || undefined,
+    // author は articles.author（既定値「ふとるめし編集部」のため Organization で出す）
+    author: {
+      '@type': 'Organization',
+      name: article.author || 'ふとるめし編集部',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'ふとるめし',
+      logo: {
+        '@type': 'ImageObject',
+        url: `${SITE_URL}/icon.png`,
+      },
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': canonicalUrl,
+    },
+  };
+
   return (
     <main className="min-h-screen bg-[#F9F8F3] pt-24 sm:pt-28 pb-16">
+      {/* F49: Article 構造化データ（JSON-LD）でリッチリザルト対応 */}
+      <script
+        type="application/ld+json"
+        // dangerouslySetInnerHTML は必要悪。article 値は DB から取得した文字列のみで、
+        // JSON.stringify で記号は適切にエスケープされる。XSS リスクなし。
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto">
         <nav className="text-xs sm:text-sm text-gray-500 mb-6" aria-label="パンくず">
           <ol className="flex items-center gap-1 flex-wrap">
