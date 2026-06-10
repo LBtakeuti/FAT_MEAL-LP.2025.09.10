@@ -217,7 +217,7 @@ export default function AdminInventoryPage() {
         <h3 className="text-sm font-medium text-blue-900 mb-2">在庫管理について</h3>
         <ul className="text-sm text-blue-700 space-y-1">
           <li>・在庫は6食セット単位で管理されます</li>
-          <li>・お試し購入時は1セット、ふとるめしセット（6食）は2セット、ダブルふとるめセット（12食）は4セット、24食プランは8セットが減ります</li>
+          <li>・お試し購入時は1セット、ふとるめしセット（6食）は1セット、ダブルふとるめセット（12食）は2セットが減ります</li>
           <li>・在庫が10セット以下になると警告が表示されます</li>
           <li>・在庫が0になると購入ができなくなります</li>
         </ul>
