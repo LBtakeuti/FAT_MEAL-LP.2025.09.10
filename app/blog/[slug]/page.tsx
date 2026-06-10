@@ -136,14 +136,23 @@ export default async function BlogDetailPage({ params }: PageProps) {
     },
   };
 
+  // F49-fix: JSON.stringify は < > & をエスケープしないため、
+  // article.title 等に "</script><script>alert(1)</script>" が含まれていると
+  // ブラウザがスクリプトブロックを早期終了して XSS が成立する。
+  // < > & を Unicode エスケープして安全な JSON 文字列に変換する。
+  const safeJsonLd = JSON.stringify(jsonLd)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026');
+
   return (
     <main className="min-h-screen bg-[#F9F8F3] pt-24 sm:pt-28 pb-16">
       {/* F49: Article 構造化データ（JSON-LD）でリッチリザルト対応 */}
       <script
         type="application/ld+json"
-        // dangerouslySetInnerHTML は必要悪。article 値は DB から取得した文字列のみで、
-        // JSON.stringify で記号は適切にエスケープされる。XSS リスクなし。
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        // F49-fix: < > & を Unicode エスケープ済み（safeJsonLd）。
+        // </script> インジェクションを防止する。
+        dangerouslySetInnerHTML={{ __html: safeJsonLd }}
       />
       <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto">
         <nav className="text-xs sm:text-sm text-gray-500 mb-6" aria-label="パンくず">
