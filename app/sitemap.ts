@@ -38,10 +38,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let articleUrls: MetadataRoute.Sitemap = [];
   try {
     const supabase = createServerClient() as any;
+    // F50-4: スケジュール公開対応。published_at が未来の記事は sitemap に含めない
+    const nowIso = new Date().toISOString();
     const { data, error } = await supabase
       .from('articles')
       .select('slug, updated_at, published_at')
       .eq('is_published', true)
+      .lte('published_at', nowIso)
       .order('updated_at', { ascending: false });
 
     if (error) {

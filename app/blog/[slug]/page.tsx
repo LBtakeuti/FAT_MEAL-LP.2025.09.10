@@ -7,6 +7,7 @@ import type { ArticleDetail, ArticleListItem } from '@/types/article';
 import ArticleContent from '@/components/blog/ArticleContent';
 import ShareButtons from '@/components/blog/ShareButtons';
 import TableOfContents from '@/components/blog/TableOfContents';
+import RelatedArticles from '@/components/blog/RelatedArticles';
 import { extractToc } from '@/lib/blog-toc';
 
 interface PageProps {
@@ -15,6 +16,8 @@ interface PageProps {
 
 async function fetchArticle(slug: string): Promise<ArticleDetail | null> {
   const supabase = createServerClient() as any;
+  // F50-4: スケジュール公開対応。published_at が未来の記事は表示しない。
+  const nowIso = new Date().toISOString();
   const { data, error } = await supabase
     .from('articles')
     .select(
@@ -23,6 +26,7 @@ async function fetchArticle(slug: string): Promise<ArticleDetail | null> {
     )
     .eq('slug', slug)
     .eq('is_published', true)
+    .lte('published_at', nowIso)
     .maybeSingle();
 
   if (error) {
@@ -34,11 +38,14 @@ async function fetchArticle(slug: string): Promise<ArticleDetail | null> {
 
 async function fetchLatestExcluding(slug: string, limit = 5): Promise<ArticleListItem[]> {
   const supabase = createServerClient() as any;
+  // F50-4: スケジュール公開対応。published_at が未来の記事は表示しない。
+  const nowIso = new Date().toISOString();
   const { data, error } = await supabase
     .from('articles')
     .select('id, slug, title, excerpt, thumbnail_url, tags, author, published_at')
     .eq('is_published', true)
     .neq('slug', slug)
+    .lte('published_at', nowIso)
     .order('published_at', { ascending: false })
     .limit(limit);
   if (error) {
@@ -46,6 +53,36 @@ async function fetchLatestExcluding(slug: string, limit = 5): Promise<ArticleLis
     return [];
   }
   return (data as ArticleListItem[]) ?? [];
+}
+
+// F50-3: 関連記事（タグベース）。tags が同じ記事を最新順で取得する。
+// タグが無い場合や、該当が0件の場合は最新記事をフォールバックで返す。
+async function fetchRelatedArticles(
+  slug: string,
+  tags: string[] | null | undefined,
+  limit = 4,
+): Promise<ArticleListItem[]> {
+  const supabase = createServerClient() as any;
+  // F50-4: スケジュール公開対応。
+  const nowIso = new Date().toISOString();
+  if (tags && tags.length > 0) {
+    const { data, error } = await supabase
+      .from('articles')
+      .select('id, slug, title, excerpt, thumbnail_url, tags, author, published_at')
+      .eq('is_published', true)
+      .neq('slug', slug)
+      .overlaps('tags', tags)
+      .lte('published_at', nowIso)
+      .order('published_at', { ascending: false })
+      .limit(limit);
+    if (error) {
+      console.error('[blog/[slug]] related fetch error', error);
+    } else if (Array.isArray(data) && data.length > 0) {
+      return data as ArticleListItem[];
+    }
+  }
+  // フォールバック: 最新記事
+  return fetchLatestExcluding(slug, limit);
 }
 
 // F49: 環境変数の origin（OG / canonical / JSON-LD で共有）
@@ -99,6 +136,8 @@ export default async function BlogDetailPage({ params }: PageProps) {
   if (!article) notFound();
 
   const pickUp = await fetchLatestExcluding(article.slug, 5);
+  // F50-3: 関連記事（タグベース、フォールバック最新記事）
+  const related = await fetchRelatedArticles(article.slug, article.tags, 4);
 
   const supabase = createServerClient() as any;
   void supabase
@@ -266,6 +305,9 @@ export default async function BlogDetailPage({ params }: PageProps) {
             </aside>
           )}
         </div>
+
+        {/* F50-3: 関連記事（タグベース、Pick Up と並列） */}
+        <RelatedArticles items={related} />
 
         <div className="mt-10 text-center">
           <Link href="/blog" className="text-sm text-orange-600 hover:underline">

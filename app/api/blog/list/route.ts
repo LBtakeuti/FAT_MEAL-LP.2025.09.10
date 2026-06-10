@@ -24,6 +24,8 @@ export async function GET(request: NextRequest) {
     const offset = Math.max(0, Number.isFinite(offsetRaw) ? offsetRaw : 0);
     const tag = searchParams.get('tag');
 
+    // F50-4: スケジュール公開対応。published_at が未来の記事は一覧に出さない。
+    const nowIso = new Date().toISOString();
     let query = supabase
       .from('articles')
       .select(
@@ -31,6 +33,7 @@ export async function GET(request: NextRequest) {
         { count: 'exact' },
       )
       .eq('is_published', true)
+      .lte('published_at', nowIso)
       .order('published_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
