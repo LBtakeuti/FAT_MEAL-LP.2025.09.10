@@ -168,13 +168,13 @@ export function ArticleForm({ mode, initial }: Props) {
 
   const save = async (publish?: boolean) => {
     if (!title.trim()) { toast.error('タイトルは必須です'); return; }
-    if (!slug.trim()) { toast.error('slug は必須です'); return; }
     const markdown = htmlToMarkdown(editorHtml);
     if (!markdown) { toast.error('本文は必須です'); return; }
 
     const body = {
       title: title.trim(),
-      slug: slug.trim(),
+      // F53: slug は任意。空欄なら送らず、作成時はサーバー側で自動生成・編集時は既存slugを維持する
+      slug: slug.trim() || undefined,
       excerpt: excerpt || null,
       content: markdown,
       thumbnail_url: thumbnailUrl || null,
@@ -252,7 +252,7 @@ export function ArticleForm({ mode, initial }: Props) {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">slug <span className="text-red-500">*</span></label>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">slug</label>
           <div className="flex gap-2">
             <input
               type="text"
@@ -269,7 +269,11 @@ export function ArticleForm({ mode, initial }: Props) {
               タイトルから生成
             </button>
           </div>
-          <p className="mt-1 text-xs text-gray-500">URL: /blog/{slug || '<slug>'}</p>
+          <p className="mt-1 text-xs text-gray-500">
+            {slug
+              ? <>URL: /blog/{slug}</>
+              : '空欄の場合、保存時に /blog/article-日付（例: article-20260610）が自動で割り当てられます。'}
+          </p>
         </div>
 
         <div>

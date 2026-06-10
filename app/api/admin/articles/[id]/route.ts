@@ -38,7 +38,10 @@ export const PATCH = withAuthDynamic(async (request: NextRequest, context) => {
   const body = await request.json();
   const supabase = createServerClient() as any;
 
-  if (body.slug !== undefined) {
+  // F53: 編集時に slug が空欄で送られてきた場合は「既存の slug を維持」する（自動再生成しない）。
+  // 公開済み記事の URL が勝手に変わると SEO・リンク切れの原因になるため、URL 安定性を最優先。
+  const slugProvided = body.slug !== undefined && body.slug !== null && String(body.slug).trim() !== '';
+  if (slugProvided) {
     const slug = String(body.slug).trim();
     if (!/^[a-z0-9](?:[a-z0-9-]{0,98}[a-z0-9])?$/.test(slug)) {
       return jsonBadRequest('slug は小文字英数字とハイフンのみ（先頭末尾はハイフン不可、最大100文字）');
@@ -72,6 +75,8 @@ export const PATCH = withAuthDynamic(async (request: NextRequest, context) => {
   const updateData: Record<string, unknown> = {};
   for (const key of allowedKeys) {
     if (body[key] === undefined) continue;
+    // F53: 空欄 slug は更新対象から除外（既存 slug を維持）
+    if (key === 'slug' && !slugProvided) continue;
     if (key === 'tags') {
       updateData[key] = Array.isArray(body.tags)
         ? body.tags.map((t: unknown) => String(t).trim()).filter(Boolean)

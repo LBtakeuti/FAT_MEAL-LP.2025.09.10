@@ -55,40 +55,73 @@ export const GET = withAuth(async (request: NextRequest) => {
 });
 
 /**
- * F16: 管理用 記事作成 API
+ * F16 / F53: 管理用 記事作成 API
  *
  * POST /api/admin/articles
  * - 認証: 管理者のみ
- * - 必須: title, slug, content
- * - slug は ^[a-z0-9][a-z0-9-]*[a-z0-9]$ 形式（部分的な kebab-case 強制）
+ * - 必須: title, content（slug は任意）
+ * - slug 入力時は ^[a-z0-9][a-z0-9-]*[a-z0-9]$ 形式（部分的な kebab-case 強制）+ 一意チェック
+ * - F53: slug 未指定/空欄なら `article-{YYYYMMDD}`（JST）をベースに、重複時は -2, -3 … で一意化して自動生成
  */
+
+/** JST の今日を YYYYMMDD 文字列で返す */
+function jstDateStamp(): string {
+  const jst = new Date(Date.now() + 9 * 60 * 60 * 1000);
+  const y = jst.getUTCFullYear();
+  const m = String(jst.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(jst.getUTCDate()).padStart(2, '0');
+  return `${y}${m}${d}`;
+}
+
+/**
+ * F53: `article-{YYYYMMDD}` をベースに、articles に存在しない一意な slug を生成する。
+ * 既に埋まっていれば -2, -3 … と連番を付けて空きを探す。
+ */
+async function generateUniqueSlug(supabase: any): Promise<string> {
+  const base = `article-${jstDateStamp()}`;
+  for (let i = 1; ; i++) {
+    const candidate = i === 1 ? base : `${base}-${i}`;
+    const { data: hit } = await supabase
+      .from('articles')
+      .select('id')
+      .eq('slug', candidate)
+      .maybeSingle();
+    if (!hit) return candidate;
+  }
+}
+
 export const POST = withAuth(async (request: NextRequest) => {
   const body = await request.json();
 
   const validation = validateBody(body, {
     title: { required: true, type: 'string' },
-    slug: { required: true, type: 'string' },
     content: { required: true, type: 'string' },
   });
   if (!validation.valid) {
     return jsonBadRequest(validation.errors.join(', '));
   }
 
-  const slug = String(body.slug).trim();
-  if (!/^[a-z0-9](?:[a-z0-9-]{0,98}[a-z0-9])?$/.test(slug)) {
-    return jsonBadRequest('slug は小文字英数字とハイフンのみ（先頭末尾はハイフン不可、最大100文字）');
-  }
-
   const supabase = createServerClient() as any;
 
-  // slug ユニーク確認
-  const { data: existing } = await supabase
-    .from('articles')
-    .select('id')
-    .eq('slug', slug)
-    .maybeSingle();
-  if (existing) {
-    return jsonBadRequest('この slug は既に使用されています');
+  const inputSlug = body.slug !== undefined && body.slug !== null ? String(body.slug).trim() : '';
+  let slug: string;
+  if (inputSlug === '') {
+    // F53: 空欄なら自動生成（一意性も内部で担保）
+    slug = await generateUniqueSlug(supabase);
+  } else {
+    // 手入力 slug: 従来通りバリデーション + 一意チェック
+    if (!/^[a-z0-9](?:[a-z0-9-]{0,98}[a-z0-9])?$/.test(inputSlug)) {
+      return jsonBadRequest('slug は小文字英数字とハイフンのみ（先頭末尾はハイフン不可、最大100文字）');
+    }
+    const { data: existing } = await supabase
+      .from('articles')
+      .select('id')
+      .eq('slug', inputSlug)
+      .maybeSingle();
+    if (existing) {
+      return jsonBadRequest('この slug は既に使用されています');
+    }
+    slug = inputSlug;
   }
 
   const isPublished = Boolean(body.is_published);
