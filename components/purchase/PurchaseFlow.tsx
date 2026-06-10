@@ -463,6 +463,25 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
     return planOptions.find(p => p.id === selectedItem.planId) || null;
   };
 
+  // F55: クーポン割引額をサーバー式ミラーで算出する。
+  // base はサーバー（create-intent）と完全一致する selectedPlan.totalPrice（総額=商品+送料）。
+  // - percent_off: 割引後 = round(base*(1-p/100))、割引額 = base - 割引後
+  // - amount_off : 割引後 = max(0, base - amount_off)、割引額 = base - 割引後
+  // validate-coupon は percent_off 時に discount:0 を返すため（表示専用バグ）、
+  // ここで実請求と一致する割引額を再計算する。決済計算（create-intent）は無改変。
+  const calculateCouponDiscount = (plan: PlanOption | null): number => {
+    if (!plan || !appliedCoupon) return 0;
+    const base = plan.totalPrice;
+    if (appliedCoupon.percentOff) {
+      const afterDiscount = Math.round(base * (1 - appliedCoupon.percentOff / 100));
+      return Math.max(0, base - afterDiscount);
+    }
+    // amount_off（固定額）。validate-coupon が discount に固定額を返している前提だが、
+    // base を超えないようサーバー式（max(0, base - amount_off)）でクランプする。
+    const afterDiscount = Math.max(0, base - appliedCoupon.discount);
+    return base - afterDiscount;
+  };
+
   // カート内の合計金額を計算
   const calculateTotal = (): { subtotal: number; shippingFee: number; totalAmount: number } => {
     const selectedPlan = getSelectedPlan();
@@ -470,7 +489,7 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
       return { subtotal: 0, shippingFee: 0, totalAmount: 0 };
     }
 
-    const discount = appliedCoupon ? appliedCoupon.discount : 0;
+    const discount = calculateCouponDiscount(selectedPlan);
 
     // お試しプランの場合、totalPriceは既に送料込み
     if (selectedPlan.isTrial) {
@@ -490,7 +509,7 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
   };
 
   const { subtotal, shippingFee, totalAmount } = calculateTotal();
-  const discount = appliedCoupon ? appliedCoupon.discount : 0;
+  const discount = calculateCouponDiscount(getSelectedPlan());
 
   // カートが空かどうか
   const isCartEmpty = cart.every(item => item.quantity === 0);
@@ -1012,6 +1031,15 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
 
         if (!response.ok) {
           throw new Error(data.error || '決済の準備に失敗しました');
+        }
+
+        // F55 安全装置③: 表示合計（サーバー式ミラー）と実請求額（data.amount=create-intent
+        // が割引適用後に返す実値）の一致を検証する。ズレた場合でも決済フォームには必ず
+        // 実請求額（data.amount）を渡すため表示と請求は一致する。差異は dev で警告する。
+        if (typeof data.amount === 'number' && data.amount !== totalAmount) {
+          console.warn(
+            `[F55] 表示合計と実請求額が不一致: display=${totalAmount} / charge=${data.amount}。決済フォームには実請求額を使用します。`
+          );
         }
 
         // clientSecret を取得して決済フォームステップに遷移
@@ -1595,7 +1623,7 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
                 <p className="text-green-600">クーポン割引</p>
                 <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">{appliedCoupon.code}</span>
               </div>
-              <p className="text-green-600">-¥{appliedCoupon.discount.toLocaleString()}</p>
+              <p className="text-green-600">-¥{discount.toLocaleString()}</p>
             </div>
           )}
 
@@ -1612,7 +1640,7 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
                 <p className="text-green-600">クーポン割引</p>
                 <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">{appliedCoupon.code}</span>
               </div>
-              <p className="text-green-600">-¥{appliedCoupon.discount.toLocaleString()}</p>
+              <p className="text-green-600">-¥{discount.toLocaleString()}</p>
             </div>
           )}
 
@@ -1678,7 +1706,7 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
                     <span className="text-4xl sm:text-5xl">
                       {appliedCoupon.percentOff
                         ? `${appliedCoupon.percentOff}% `
-                        : `-¥${appliedCoupon.discount.toLocaleString()} `}
+                        : `-¥${discount.toLocaleString()} `}
                     </span>
                     <span className="text-lg sm:text-xl font-bold align-baseline">OFF</span>
                   </div>
