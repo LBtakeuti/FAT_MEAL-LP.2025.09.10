@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { ConfirmDialog, useToast } from '@/components/admin/ui';
 import { ArticleRichTextEditor } from './ArticleRichTextEditor';
 import ArticlePreview from './ArticlePreview';
+import MediaPickerModal from '@/components/admin/MediaPickerModal';
 import { htmlToMarkdown, markdownToHtml } from '@/lib/article-markdown';
 
 export interface ArticleFormInitial {
@@ -97,6 +98,8 @@ export function ArticleForm({ mode, initial }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   // F51-1: 本文を「編集」「プレビュー」タブで切り替える
   const [bodyTab, setBodyTab] = useState<'edit' | 'preview'>('edit');
+  // F51-3: メディアピッカーモーダル（サムネ用 / OG画像用）
+  const [pickerTarget, setPickerTarget] = useState<'thumbnail' | 'og' | null>(null);
 
   const uploadOgImage = async (file: File) => {
     if (file.size > 4 * 1024 * 1024) {
@@ -359,22 +362,32 @@ export function ArticleForm({ mode, initial }: Props) {
           ) : (
             <div className="aspect-[16/9] w-full rounded-md bg-gray-100 mb-2 flex items-center justify-center text-xs text-gray-400">未設定</div>
           )}
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
-            onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) uploadThumbnail(f); }}
-            disabled={thumbUploading}
-            className="text-xs"
-          />
-          {thumbnailUrl && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
+              onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) uploadThumbnail(f); }}
+              disabled={thumbUploading}
+              className="text-xs"
+            />
+            {/* F51-3: メディアライブラリから選択 */}
             <button
               type="button"
-              onClick={() => setThumbnailUrl('')}
-              className="ml-2 text-xs text-red-600 hover:underline"
+              onClick={() => setPickerTarget('thumbnail')}
+              className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-700"
             >
-              削除
+              メディアから選択
             </button>
-          )}
+            {thumbnailUrl && (
+              <button
+                type="button"
+                onClick={() => setThumbnailUrl('')}
+                className="text-xs text-red-600 hover:underline"
+              >
+                削除
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="bg-white rounded-md shadow p-5">
@@ -449,6 +462,14 @@ export function ArticleForm({ mode, initial }: Props) {
             >
               サムネと同じ画像を使う
             </button>
+            {/* F51-3: メディアライブラリから選択 */}
+            <button
+              type="button"
+              onClick={() => setPickerTarget('og')}
+              className="inline-flex items-center px-3 py-1 text-xs rounded-md border border-gray-300 hover:bg-gray-50"
+            >
+              メディアから選択
+            </button>
             {ogImageUrl && (
               <button
                 type="button"
@@ -515,6 +536,17 @@ export function ArticleForm({ mode, initial }: Props) {
         loading={deleting}
         onConfirm={handleDelete}
         onCancel={() => setConfirmDelete(false)}
+      />
+
+      {/* F51-3: メディアピッカー（サムネ / OG画像 共通） */}
+      <MediaPickerModal
+        open={pickerTarget !== null}
+        onClose={() => setPickerTarget(null)}
+        onSelect={(item) => {
+          if (pickerTarget === 'thumbnail') setThumbnailUrl(item.url);
+          else if (pickerTarget === 'og') setOgImageUrl(item.url);
+          setPickerTarget(null);
+        }}
       />
     </div>
   );

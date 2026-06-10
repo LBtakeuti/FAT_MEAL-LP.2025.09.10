@@ -289,6 +289,7 @@ const menuGroups: MenuGroup[] = [
     items: [
       { href: '/admin/menu', label: '弁当管理', icon: IconBento },
       { href: '/admin/articles', label: 'コラム記事', icon: IconArticles },
+      { href: '/admin/media', label: 'メディアライブラリ', icon: IconMedia },
       { href: '/admin/news', label: 'ニュース管理', icon: IconNews },
       { href: '/admin/banner', label: 'バナー管理', icon: IconBanner },
       { href: '/admin/media-logos', label: 'メディアロゴ管理', icon: IconMedia },
