@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 
 // F57: 「初回のみ注記」の表示判定ロジックのユニットテスト。
 //
-// 対象は components/purchase/PurchaseFlow.tsx 内のインライン JSX 判定（1753-1762 行付近）。
+// 対象は components/purchase/PurchaseFlow.tsx 内のインライン JSX 判定（1755-1766 行付近）。
 // 本リポジトリの慣習（lib/__tests__/cancellation-availability.test.ts /
 // coupon-discount.test.ts と同パターン）に倣い、判定と文言生成の純粋部分を
 // テスト側に同式で切り出してカバーする。PurchaseFlow.tsx は無改変。
@@ -42,12 +42,14 @@ function shouldShowFirstTimeNote(coupon: Coupon | null, plan: Plan | null): bool
   );
 }
 
-// PurchaseFlow.tsx の文言生成と同式（表示すると判定された前提）。
+// PurchaseFlow.tsx の文言生成と同式（表示すると判定された前提 / 3分岐）。
 function firstTimeNoteText(coupon: Coupon, plan: Plan): string {
   const price = plan.totalPrice.toLocaleString();
-  return coupon.duration === 'repeating' && coupon.durationInMonths
-    ? `※このクーポンは最初の${coupon.durationInMonths}ヶ月のみ適用されます。以降は通常価格 ¥${price} です。`
-    : `※このクーポンは初回のみ適用されます。2回目以降は通常価格 ¥${price} です。`;
+  return coupon.duration === 'once'
+    ? `※このクーポンは初回のみ適用されます。2回目以降は通常価格 ¥${price} です。`
+    : coupon.durationInMonths
+      ? `※このクーポンは最初の${coupon.durationInMonths}ヶ月のみ適用されます。以降は通常価格 ¥${price} です。`
+      : `※このクーポンは一定期間のみ適用されます。期間終了後は通常価格 ¥${price} です。`;
 }
 
 describe('F57: shouldShowFirstTimeNote（表示判定）', () => {
@@ -117,16 +119,16 @@ describe('F57: firstTimeNoteText（文言分岐）', () => {
     ).toBe('※このクーポンは最初の6ヶ月のみ適用されます。以降は通常価格 ¥8,100 です。');
   });
 
-  it('repeating だが durationInMonths が null → once 文言にフォールバック', () => {
+  it('repeating だが durationInMonths が null → 「一定期間のみ」汎用文言（once に誤断定しない）', () => {
     expect(
       firstTimeNoteText({ duration: 'repeating', durationInMonths: null }, planSub6),
-    ).toBe('※このクーポンは初回のみ適用されます。2回目以降は通常価格 ¥5,100 です。');
+    ).toBe('※このクーポンは一定期間のみ適用されます。期間終了後は通常価格 ¥5,100 です。');
   });
 
-  it('repeating だが durationInMonths=0(falsy) → once 文言にフォールバック', () => {
+  it('repeating だが durationInMonths=0(falsy) → 「一定期間のみ」汎用文言', () => {
     expect(
       firstTimeNoteText({ duration: 'repeating', durationInMonths: 0 }, planSub6),
-    ).toBe('※このクーポンは初回のみ適用されます。2回目以降は通常価格 ¥5,100 です。');
+    ).toBe('※このクーポンは一定期間のみ適用されます。期間終了後は通常価格 ¥5,100 です。');
   });
 
   it('金額は totalPrice.toLocaleString() でカンマ区切りされる', () => {
