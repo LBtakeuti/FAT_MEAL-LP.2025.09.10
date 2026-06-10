@@ -11,9 +11,10 @@ import {
 /**
  * F16: 管理用 記事一覧 API
  *
- * GET /api/admin/articles?limit=&offset=&search=&isPublished=
+ * GET /api/admin/articles?limit=&offset=&search=&isPublished=&tag=
  * - 認証: 管理者のみ
  * - 公開・下書きの両方を含む（管理用）
+ * - F51-2: tag フィルタ追加（postgres text[] の contains で完全一致）
  */
 export const GET = withAuth(async (request: NextRequest) => {
   const supabase = createServerClient() as any;
@@ -24,6 +25,7 @@ export const GET = withAuth(async (request: NextRequest) => {
   const offset = Math.max(0, Number.isFinite(offsetRaw) ? offsetRaw : 0);
   const search = sp.get('search');
   const isPublishedParam = sp.get('isPublished');
+  const tag = sp.get('tag');
 
   let query = supabase
     .from('articles')
@@ -39,6 +41,10 @@ export const GET = withAuth(async (request: NextRequest) => {
   }
   if (isPublishedParam === 'true') query = query.eq('is_published', true);
   if (isPublishedParam === 'false') query = query.eq('is_published', false);
+  if (tag) {
+    // F51-2: tags は text[] のため contains で完全一致
+    query = query.contains('tags', [tag]);
+  }
 
   const { data, count, error } = await query;
   if (error) {

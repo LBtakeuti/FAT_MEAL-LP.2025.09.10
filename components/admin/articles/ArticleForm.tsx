@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { ConfirmDialog, useToast } from '@/components/admin/ui';
 import { ArticleRichTextEditor } from './ArticleRichTextEditor';
+import ArticlePreview from './ArticlePreview';
 import { htmlToMarkdown, markdownToHtml } from '@/lib/article-markdown';
 
 export interface ArticleFormInitial {
@@ -94,6 +95,8 @@ export function ArticleForm({ mode, initial }: Props) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // F51-1: 本文を「編集」「プレビュー」タブで切り替える
+  const [bodyTab, setBodyTab] = useState<'edit' | 'preview'>('edit');
 
   const uploadOgImage = async (file: File) => {
     if (file.size > 4 * 1024 * 1024) {
@@ -277,9 +280,51 @@ export function ArticleForm({ mode, initial }: Props) {
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">本文 <span className="text-red-500">*</span></label>
-          <p className="mb-2 text-xs text-gray-500">画像挿入ボタン（🖼）で画像をアップロード・挿入できます。保存時に Markdown へ変換されます。</p>
-          <ArticleRichTextEditor value={editorHtml} onChange={setEditorHtml} />
+          <div className="flex items-end justify-between mb-2">
+            <label className="block text-sm font-semibold text-gray-700">
+              本文 <span className="text-red-500">*</span>
+            </label>
+            {/* F51-1: 編集 / プレビュー タブ */}
+            <div className="inline-flex rounded-md border border-gray-300 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setBodyTab('edit')}
+                className={`px-3 py-1 text-xs font-medium ${
+                  bodyTab === 'edit'
+                    ? 'bg-orange-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                編集
+              </button>
+              <button
+                type="button"
+                onClick={() => setBodyTab('preview')}
+                className={`px-3 py-1 text-xs font-medium border-l border-gray-300 ${
+                  bodyTab === 'preview'
+                    ? 'bg-orange-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                プレビュー
+              </button>
+            </div>
+          </div>
+          {bodyTab === 'edit' ? (
+            <>
+              <p className="mb-2 text-xs text-gray-500">画像挿入ボタン（🖼）で画像をアップロード・挿入できます。保存時に Markdown へ変換されます。</p>
+              <ArticleRichTextEditor value={editorHtml} onChange={setEditorHtml} />
+            </>
+          ) : (
+            <ArticlePreview
+              title={title}
+              author={author || 'ふとるめし編集部'}
+              publishedAt={localInputToIso(publishedAtLocal)}
+              tags={tagsInput.split(',').map((t) => t.trim()).filter(Boolean)}
+              excerpt={excerpt}
+              markdown={htmlToMarkdown(editorHtml)}
+            />
+          )}
         </div>
       </div>
 

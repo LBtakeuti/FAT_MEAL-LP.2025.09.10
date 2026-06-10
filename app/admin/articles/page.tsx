@@ -29,6 +29,8 @@ function formatDateTime(iso: string | null): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
+type StatusFilter = 'all' | 'published' | 'draft';
+
 export default function AdminArticlesPage() {
   const [items, setItems] = useState<AdminArticleListItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -38,36 +40,52 @@ export default function AdminArticlesPage() {
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  // F51-2: フィルタ追加（公開状態 / タグ）
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [tagFilter, setTagFilter] = useState<string>('');
+  const [tagInput, setTagInput] = useState<string>('');
   const toast = useToast();
 
-  const fetchList = useCallback(async (params: { offset: number; search: string }) => {
-    setLoading(true);
-    try {
-      const sp = new URLSearchParams();
-      sp.set('limit', String(PAGE_SIZE));
-      sp.set('offset', String(params.offset));
-      if (params.search) sp.set('search', params.search);
-      const res = await fetch(`/api/admin/articles?${sp.toString()}`);
-      if (!res.ok) throw new Error(String(res.status));
-      const json: ListResponse = await res.json();
-      setItems(json.articles ?? []);
-      setTotal(json.total ?? 0);
-    } catch (err) {
-      console.error('Failed to fetch articles', err);
-      toast.error('記事一覧の取得に失敗しました');
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
+  const fetchList = useCallback(
+    async (params: { offset: number; search: string; status: StatusFilter; tag: string }) => {
+      setLoading(true);
+      try {
+        const sp = new URLSearchParams();
+        sp.set('limit', String(PAGE_SIZE));
+        sp.set('offset', String(params.offset));
+        if (params.search) sp.set('search', params.search);
+        if (params.status === 'published') sp.set('isPublished', 'true');
+        else if (params.status === 'draft') sp.set('isPublished', 'false');
+        if (params.tag) sp.set('tag', params.tag);
+        const res = await fetch(`/api/admin/articles?${sp.toString()}`);
+        if (!res.ok) throw new Error(String(res.status));
+        const json: ListResponse = await res.json();
+        setItems(json.articles ?? []);
+        setTotal(json.total ?? 0);
+      } catch (err) {
+        console.error('Failed to fetch articles', err);
+        toast.error('記事一覧の取得に失敗しました');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [toast],
+  );
 
   useEffect(() => {
-    fetchList({ offset, search });
-  }, [fetchList, offset, search]);
+    fetchList({ offset, search, status: statusFilter, tag: tagFilter });
+  }, [fetchList, offset, search, statusFilter, tagFilter]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setOffset(0);
     setSearch(searchInput.trim());
+  };
+
+  const handleTagSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setOffset(0);
+    setTagFilter(tagInput.trim());
   };
 
   const togglePublish = async (article: AdminArticleListItem) => {
@@ -80,7 +98,7 @@ export default function AdminArticlesPage() {
       });
       if (!res.ok) throw new Error(String(res.status));
       toast.success(article.is_published ? '下書きに戻しました' : '公開しました');
-      fetchList({ offset, search });
+      fetchList({ offset, search, status: statusFilter, tag: tagFilter });
     } catch (err) {
       console.error('Failed to toggle publish', err);
       toast.error('状態切替に失敗しました');
@@ -101,7 +119,7 @@ export default function AdminArticlesPage() {
         return;
       }
       toast.success('削除しました');
-      fetchList({ offset, search });
+      fetchList({ offset, search, status: statusFilter, tag: tagFilter });
     } catch (err) {
       console.error('Failed to delete article', err);
       toast.error('削除に失敗しました');
@@ -127,7 +145,7 @@ export default function AdminArticlesPage() {
           </Link>
         </div>
 
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 space-y-3">
           <form onSubmit={handleSearchSubmit} className="flex gap-2 items-center">
             <input
               type="text"
@@ -152,6 +170,47 @@ export default function AdminArticlesPage() {
               </button>
             )}
           </form>
+          {/* F51-2: 公開状態 + タグフィルタ */}
+          <div className="flex flex-wrap items-center gap-2">
+            {(['all', 'published', 'draft'] as StatusFilter[]).map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => { setOffset(0); setStatusFilter(s); }}
+                className={`px-3 py-1.5 rounded-md text-xs ${
+                  statusFilter === s
+                    ? 'bg-orange-600 text-white'
+                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                {s === 'all' ? 'すべて' : s === 'published' ? '公開中' : '下書き'}
+              </button>
+            ))}
+            <form onSubmit={handleTagSubmit} className="flex items-center gap-2 ml-2">
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                placeholder="タグで絞り込み"
+                className="border border-gray-300 rounded-md px-3 py-1.5 text-sm w-44 focus:outline-none focus:ring-2 focus:ring-orange-400"
+              />
+              <button
+                type="submit"
+                className="bg-gray-800 text-white px-3 py-1.5 rounded-md text-xs hover:bg-gray-900"
+              >
+                適用
+              </button>
+              {tagFilter && (
+                <button
+                  type="button"
+                  onClick={() => { setTagFilter(''); setTagInput(''); setOffset(0); }}
+                  className="text-xs text-gray-500 hover:underline"
+                >
+                  クリア
+                </button>
+              )}
+            </form>
+          </div>
         </div>
 
         {loading ? (
