@@ -8,6 +8,9 @@ import remarkGfm from 'remark-gfm';
  * react-markdown + remark-gfm。タイポグラフィは prose 風にカスタムクラスで揃える。
  */
 export default function ArticleContent({ content }: { content: string }) {
+  // F50-2: TOC アンカー用に h2/h3 へシリアル id を付与する。
+  // lib/blog-toc.ts と同じ番号付け規則（h2/h3 共通で出現順）。
+  let headingCounter = 0;
   return (
     <div className="article-body text-gray-800 leading-relaxed">
       <ReactMarkdown
@@ -16,14 +19,28 @@ export default function ArticleContent({ content }: { content: string }) {
           h1: ({ children }) => (
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mt-10 mb-4">{children}</h1>
           ),
-          h2: ({ children }) => (
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mt-10 mb-3 pb-2 border-b border-orange-200">
-              {children}
-            </h2>
-          ),
-          h3: ({ children }) => (
-            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mt-8 mb-3">{children}</h3>
-          ),
+          h2: ({ children }) => {
+            headingCounter += 1;
+            return (
+              <h2
+                id={`toc-${headingCounter}`}
+                className="text-xl sm:text-2xl font-bold text-gray-900 mt-10 mb-3 pb-2 border-b border-orange-200 scroll-mt-24"
+              >
+                {children}
+              </h2>
+            );
+          },
+          h3: ({ children }) => {
+            headingCounter += 1;
+            return (
+              <h3
+                id={`toc-${headingCounter}`}
+                className="text-lg sm:text-xl font-bold text-gray-900 mt-8 mb-3 scroll-mt-24"
+              >
+                {children}
+              </h3>
+            );
+          },
           p: ({ children }) => <p className="my-4 leading-[1.9]">{children}</p>,
           ul: ({ children }) => <ul className="my-4 list-disc pl-6 space-y-1">{children}</ul>,
           ol: ({ children }) => <ol className="my-4 list-decimal pl-6 space-y-1">{children}</ol>,

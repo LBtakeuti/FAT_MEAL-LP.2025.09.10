@@ -1,0 +1,51 @@
+/**
+ * F50-2: Markdown 本文から h2 / h3 見出しを抽出して目次（TOC）を作る。
+ *
+ * - 行頭の "## " / "### " を h2 / h3 として認識する
+ * - id は出現順のシリアル番号 (`toc-1`, `toc-2`, ...)
+ * - ArticleContent.tsx の h2/h3 レンダラが同じ番号付け規則で id を付与する
+ * - 見出し数が 3 未満の記事では TOC を表示しない
+ *
+ * フェンスコードブロック内の "##" は見出し扱いしないため除外する。
+ */
+
+export interface TocItem {
+  id: string;
+  text: string;
+  level: 2 | 3;
+}
+
+export function extractToc(markdown: string): TocItem[] {
+  if (!markdown) return [];
+
+  const lines = markdown.split('\n');
+  const items: TocItem[] = [];
+  let inFence = false;
+  let counter = 0;
+
+  for (const rawLine of lines) {
+    const line = rawLine.replace(/\r$/, '');
+    // ``` で始まる行はフェンスコードブロックの切り替え
+    if (/^```/.test(line.trim())) {
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) continue;
+
+    const h2 = line.match(/^##\s+(.+?)\s*$/);
+    const h3 = line.match(/^###\s+(.+?)\s*$/);
+    if (h2) {
+      counter += 1;
+      items.push({ id: `toc-${counter}`, text: h2[1].trim(), level: 2 });
+      continue;
+    }
+    if (h3) {
+      counter += 1;
+      items.push({ id: `toc-${counter}`, text: h3[1].trim(), level: 3 });
+      continue;
+    }
+    // それ以外の h1（# ）は TOC 対象外、h4 以降も対象外
+  }
+
+  return items;
+}

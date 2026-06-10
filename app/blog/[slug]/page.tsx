@@ -6,6 +6,8 @@ import { createServerClient } from '@/lib/supabase';
 import type { ArticleDetail, ArticleListItem } from '@/types/article';
 import ArticleContent from '@/components/blog/ArticleContent';
 import ShareButtons from '@/components/blog/ShareButtons';
+import TableOfContents from '@/components/blog/TableOfContents';
+import { extractToc } from '@/lib/blog-toc';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -213,6 +215,9 @@ export default async function BlogDetailPage({ params }: PageProps) {
               <div className="mb-6 pb-6 border-b border-gray-200">
                 <ShareButtons url={canonicalUrl} title={article.title} label="この記事をシェア" />
               </div>
+
+              {/* F50-2: もくじ（見出し3個以上の場合のみ表示） */}
+              <TableOfContents items={extractToc(article.content)} />
 
               <ArticleContent content={article.content} />
 
