@@ -117,6 +117,16 @@ export async function POST(request: NextRequest) {
     const couponMetadata: Record<string, string> =
       coupon.metadata && typeof coupon.metadata === 'object' ? coupon.metadata : {};
 
+    // F57: 適用期間（once / repeating / forever）を返す。
+    // 定期プラン×duration='once' の初回限定クーポンで「初回のみ適用」注記を出すため。
+    // repeating の場合は duration_in_months（適用月数）も返す。
+    const duration: 'once' | 'repeating' | 'forever' | null =
+      coupon.duration === 'once' || coupon.duration === 'repeating' || coupon.duration === 'forever'
+        ? coupon.duration
+        : null;
+    const durationInMonths: number | null =
+      typeof coupon.duration_in_months === 'number' ? coupon.duration_in_months : null;
+
     if (coupon.percent_off) {
       return NextResponse.json({
         valid: true,
@@ -128,6 +138,8 @@ export async function POST(request: NextRequest) {
         appliesToCurrentPlan,
         couponName,
         couponMetadata,
+        duration,
+        durationInMonths,
       });
     } else if (coupon.amount_off) {
       discount = coupon.amount_off;
@@ -142,6 +154,8 @@ export async function POST(request: NextRequest) {
       appliesToCurrentPlan,
       couponName,
       couponMetadata,
+      duration,
+      durationInMonths,
     });
   } catch (error) {
     console.error('Coupon validation error:', error);

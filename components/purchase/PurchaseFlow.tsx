@@ -208,6 +208,9 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
     // F56: Stripe coupon の name / metadata（専用デザイン・割引内訳の出し分け用）
     couponName?: string | null;
     couponMetadata?: Record<string, string> | null;
+    // F57: 適用期間（初回のみ注記の出し分け用）
+    duration?: 'once' | 'repeating' | 'forever' | null;
+    durationInMonths?: number | null;
   } | null>(null);
   const [couponError, setCouponError] = useState('');
   // F44: プラン切り替え時にクーポンが範囲外になり自動解除した時のトースト
@@ -613,6 +616,8 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
             appliesToCurrentPlan: data.appliesToCurrentPlan,
             couponName: data.couponName,
             couponMetadata: data.couponMetadata,
+            duration: data.duration,
+            durationInMonths: data.durationInMonths,
           });
         } else {
           // 範囲外 → 自動解除 + トースト通知
@@ -662,6 +667,8 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
           appliesToCurrentPlan: data.appliesToCurrentPlan,
           couponName: data.couponName,
           couponMetadata: data.couponMetadata,
+          duration: data.duration,
+          durationInMonths: data.durationInMonths,
         });
         setCouponError('');
         // 紙吹雪 + バウンス演出
@@ -1738,6 +1745,21 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
             </p>
             <p className="text-2xl font-bold text-orange-600">¥{totalAmount.toLocaleString()}</p>
           </div>
+
+          {/* F57: 定期プラン × 初回限定クーポン（duration='once'）のとき、
+              「初回のみ適用・2回目以降は通常価格」を明示する注記。
+              お試し（単発購入）は「2回目以降」の概念が無いため表示しない。
+              duration='repeating' は最初の N ヶ月のみ適用の旨を出す（durationInMonths があるとき）。 */}
+          {appliedCoupon &&
+            selectedPlan &&
+            !selectedPlan.isTrial &&
+            (appliedCoupon.duration === 'once' || appliedCoupon.duration === 'repeating') && (
+              <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                {appliedCoupon.duration === 'repeating' && appliedCoupon.durationInMonths
+                  ? `※このクーポンは最初の${appliedCoupon.durationInMonths}ヶ月のみ適用されます。以降は通常価格 ¥${selectedPlan.totalPrice.toLocaleString()} です。`
+                  : `※このクーポンは初回のみ適用されます。2回目以降は通常価格 ¥${selectedPlan.totalPrice.toLocaleString()} です。`}
+              </p>
+            )}
 
           {/* 配送案内 */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
