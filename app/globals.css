@@ -247,6 +247,16 @@ button:hover {
   background: #E55220;
 }
 
+/* F60-4: 朝昼夜カードのモバイル横カルーセルはスクロールバーを隠す
+   （グローバルのオレンジ横バーが出ないように） */
+.daily-scenes-carousel {
+  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.daily-scenes-carousel::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
 /* 購入円形ボタン（右下追従） */
 .purchase-circle-button {
   position: fixed;

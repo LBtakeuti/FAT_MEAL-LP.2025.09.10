@@ -47,15 +47,15 @@ const scenes: Scene[] = [
 
 export default function DailyScenesSection() {
   return (
-    <section className="bg-white py-12 sm:py-16" aria-label="ふとるめしのある毎日">
+    <section className="bg-white py-8 sm:py-10" aria-label="ふとるめしのある毎日">
       <div className="max-w-6xl mx-auto px-4">
-        {/* 見出し（中央）。上にオレンジの筆ストロークを装飾配置。
-            F60-2: swoosh はコンテンツ幅の約60%（最大~680px）で右に跳ね上がる形に拡大配置。
-            Figma座標（枠1757基準）の x=15.1%/幅60.7% を踏襲（比率1081:284を保持）。 */}
-        <div className="relative mb-10 sm:mb-14 pt-24 sm:pt-32 text-center">
-          {/* 装飾SVG。最適化パイプラインを通す実益が薄いため unoptimized 指定（review F60軽微対応）。
-              F60-2-fix2: swoosh の弧の下端が見出しに被らないようクリアランス確保
-              （上余白を増やし、swoosh自体も上方シフト）。Figma同様「弧と見出しの間に余白」。 */}
+        {/* 見出し（中央）。オレンジの筆ストロークを見出しの「背後に重ねて」装飾配置。
+            F60-4: 実GT(figma_GT_overlap.png)では swoosh の縦範囲の上部に見出しが内包される
+            （swoosh が見出しの背後を通る＝重なる）。swoosh を z 下げ・見出しを z 上げにし、
+            見出しが swoosh の上部1/4〜1/3 に重なる位置に置く。
+            色（淡いサーモン0.27）・幅(約60%)・右上がりの向きは維持。 */}
+        <div className="relative mb-8 sm:mb-12 pt-10 sm:pt-12 text-center">
+          {/* 装飾SVG（最適化不要のため unoptimized）。見出しの背後に重ねる（z-0） */}
           <Image
             src="/images/daily-scenes/swoosh.svg"
             alt=""
@@ -63,17 +63,23 @@ export default function DailyScenesSection() {
             width={1081}
             height={284}
             unoptimized
-            className="pointer-events-none absolute left-[12%] -top-2 sm:-top-4 w-[60%] max-w-[680px] h-auto"
+            className="pointer-events-none absolute left-[12%] top-0 z-0 w-[60%] max-w-[680px] h-auto"
           />
-          <h2 className="relative text-xl sm:text-2xl font-semibold text-gray-900">
+          <h2 className="relative z-10 text-xl sm:text-2xl font-semibold text-gray-900">
             ふとるめしを取り入れて、毎日をもっと豊かに
           </h2>
         </div>
 
-        {/* 3カード（PC=3カラム横並び / モバイル=縦積み） */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8">
+        {/* 3カード。
+            F60-4: モバイル=横スワイプのカルーセル（overflow-x-auto + scroll-snap、
+            各カード basis ~80% で次カードがpeek）。PC(sm+)=従来の3カラムgrid。
+            snap/スクロールバー非表示は globals の .daily-scenes-carousel で制御。 */}
+        <div className="daily-scenes-carousel flex snap-x snap-mandatory gap-6 overflow-x-auto pb-2 sm:grid sm:grid-cols-3 sm:gap-8 sm:overflow-visible">
           {scenes.map((scene) => (
-            <article key={scene.image} className="flex flex-col">
+            <article
+              key={scene.image}
+              className="flex shrink-0 basis-4/5 snap-start flex-col sm:basis-auto sm:shrink"
+            >
               {/* 縦長写真 + 下グラデ + 中央キャプション */}
               <div className="relative aspect-[529/750] w-full overflow-hidden rounded-lg">
                 <Image
