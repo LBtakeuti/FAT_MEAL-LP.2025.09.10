@@ -79,7 +79,7 @@ const NewsSection: React.FC = () => {
   if (loading) {
     return (
       <section id="news" className="relative overflow-hidden bg-white pt-6 sm:pt-12 pb-20 sm:pb-12 flex flex-col">
-        <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col">
+        <div className="max-w-full px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col">
           <div className="text-center mb-6 sm:mb-8">
             <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900">
               お知らせ
@@ -94,7 +94,7 @@ const NewsSection: React.FC = () => {
   if (newsItems.length === 0) {
     return (
       <section id="news" className="relative overflow-hidden bg-white pt-6 sm:pt-12 pb-20 sm:pb-12 flex flex-col">
-        <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col">
+        <div className="max-w-full px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col">
           <div className="text-center mb-6 sm:mb-8">
             <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900">
               お知らせ
@@ -109,7 +109,7 @@ const NewsSection: React.FC = () => {
   return (
     <section id="news" className="relative overflow-hidden bg-white pt-6 sm:pt-12 pb-20 sm:pb-12 flex flex-col">
       <div
-        className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col cursor-pointer"
+        className="max-w-full px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col cursor-pointer"
         onClick={scrollToNewsSection}
       >
         {/* Title */}
