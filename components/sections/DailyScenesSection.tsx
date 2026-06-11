@@ -15,8 +15,6 @@ type Scene = {
   alt: string;
   /** 写真内キャプションの前半（白文字） */
   captionLead: string;
-  /** 昼カードのみキャプションをやや大きく/太く（Figma: 昼=33/w700, 朝夜=30/w500） */
-  captionStrong?: boolean;
   /** カード下の小見出し（ブランドオレンジ） */
   title: string;
   /** カード下の本文（黒） */
@@ -35,7 +33,6 @@ const scenes: Scene[] = [
     image: '/images/daily-scenes/hiru.webp',
     alt: 'お弁当を食べる男性',
     captionLead: '軽食に',
-    captionStrong: true,
     title: 'お昼のふとるめし',
     body: 'おなかをすかせて帰ってくる子どもに、温めるだけの軽食を。',
   },
@@ -93,12 +90,8 @@ export default function DailyScenesSection() {
                   aria-hidden="true"
                 />
                 {/* F60-3: キャプションを水平中央・下から約9%に配置（text-center）。
-                    Figma: 昼のみ大きく/太く（captionStrong）、朝夜はやや小さく。 */}
-                <p
-                  className={`absolute bottom-[9%] left-0 right-0 px-4 text-center text-white drop-shadow-sm ${
-                    scene.captionStrong ? 'text-xl sm:text-2xl font-bold' : 'text-lg sm:text-xl font-medium'
-                  }`}
-                >
+                    実GT(figma_GT_real.png)は朝昼夜とも均一サイズ・均一ウェイト。 */}
+                <p className="absolute bottom-[9%] left-0 right-0 px-4 text-center text-lg sm:text-xl font-medium text-white drop-shadow-sm">
                   {scene.captionLead}
                   <span className="text-orange-600">ふとるめし</span>
                 </p>
