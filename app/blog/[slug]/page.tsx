@@ -213,6 +213,20 @@ export default async function BlogDetailPage({ params }: PageProps) {
           </ol>
         </nav>
 
+        {/* F72: 上部にも「コラム一覧に戻る」導線を設置（下部の既存ボタンは残置）。
+            orange-600 トーンで、矢印付きの戻りリンク。 */}
+        <div className="mb-6">
+          <Link
+            href="/blog"
+            className="inline-flex items-center text-sm font-medium text-orange-600 hover:underline"
+          >
+            <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            コラム一覧に戻る
+          </Link>
+        </div>
+
         {article.thumbnail_url && (
           <div className="relative aspect-[16/9] w-full overflow-hidden rounded-md bg-gray-100 mb-8">
             <Image
