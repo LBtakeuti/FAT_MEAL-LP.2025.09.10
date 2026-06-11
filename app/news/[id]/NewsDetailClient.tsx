@@ -31,7 +31,9 @@ const NewsDetailClient: React.FC<NewsDetailClientProps> = ({ newsItem, allNews }
 
   return (
     <div className="min-h-screen bg-white">
-      <main className="pt-14 sm:pt-20 pb-20">
+      {/* F69: 固定ヘッダーに上部パンくず（お知らせ一覧リンク）が隠れていたため、
+          上部paddingを blog詳細(pt-24 sm:pt-28)と揃えてヘッダー高さをクリアする。 */}
+      <main className="pt-24 sm:pt-28 pb-20">
         <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[800px] lg:px-8 mx-auto">
 
           {/* Breadcrumb Navigation */}
