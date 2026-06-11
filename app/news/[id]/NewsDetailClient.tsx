@@ -40,7 +40,7 @@ const NewsDetailClient: React.FC<NewsDetailClientProps> = ({ newsItem, allNews }
           <div className="mb-6">
             <Link
               href="/news"
-              className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+              className="inline-flex items-center text-orange-600 hover:text-orange-700 transition-colors"
             >
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
