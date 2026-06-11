@@ -196,7 +196,9 @@ export default async function BlogDetailPage({ params }: PageProps) {
         // </script> インジェクションを防止する。
         dangerouslySetInnerHTML={{ __html: safeJsonLd }}
       />
-      <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto">
+      {/* F63: コラム詳細の本文コンテナを横方向に拡大（読みやすさを保ちつつ横いっぱい寄りに）。
+          モバイルは左右padを詰め、PC/大画面は max-width を拡大。 */}
+      <div className="max-w-full px-3 md:max-w-[900px] md:px-6 lg:max-w-[1320px] lg:px-8 xl:max-w-[1480px] mx-auto">
         <nav className="text-xs sm:text-sm text-gray-500 mb-6" aria-label="パンくず">
           <ol className="flex items-center gap-1 flex-wrap">
             <li>
