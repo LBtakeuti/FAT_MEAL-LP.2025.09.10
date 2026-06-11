@@ -131,6 +131,7 @@ export default function DailyScenesSection() {
                   alt={scene.alt}
                   fill
                   sizes="(max-width: 640px) 100vw, 33vw"
+                  quality={88}
                   className="object-cover"
                 />
                 {/* 下方向の黒グラデ（キャプションの可読性確保）。
