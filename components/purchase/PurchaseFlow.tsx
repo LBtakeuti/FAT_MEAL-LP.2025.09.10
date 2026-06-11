@@ -1748,9 +1748,11 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
 
           {/* F57: 定期プラン × 期間限定クーポンのとき、適用期間と通常価格を明示する注記。
               お試し（単発購入）は「2回目以降」の概念が無いため表示しない。
-              - once: 初回のみ適用、2回目以降は通常価格
-              - repeating（月数あり）: 最初の N ヶ月のみ適用、以降は通常価格
-              - repeating（月数欠落）: 月数を断定できないため「一定期間のみ」と汎用表現にする
+              F59: 文言をより自然なトーンに調整し、通常価格が「（送料込み）」であることを明記
+              （送料の見え方による誤解を防ぐため）。表示条件・金額参照・判定ロジックは不変。
+              - once: 初回限定の割引、2回目以降は通常価格（送料込み）
+              - repeating（月数あり）: 最初の N ヶ月限定の割引、以降は通常価格（送料込み）
+              - repeating（月数欠落）: 月数を断定できないため「期間限定の割引」と汎用表現にする
                 （「初回のみ」と誤って断定しないようにするため。Stripe 仕様上 repeating は通常月数あり） */}
           {appliedCoupon &&
             selectedPlan &&
@@ -1758,10 +1760,10 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
             (appliedCoupon.duration === 'once' || appliedCoupon.duration === 'repeating') && (
               <p className="text-xs text-gray-500 mt-1 leading-relaxed">
                 {appliedCoupon.duration === 'once'
-                  ? `※このクーポンは初回のみ適用されます。2回目以降は通常価格 ¥${selectedPlan.totalPrice.toLocaleString()} です。`
+                  ? `※初回限定の割引です。2回目以降は通常価格 ¥${selectedPlan.totalPrice.toLocaleString()}（送料込み）になります。`
                   : appliedCoupon.durationInMonths
-                    ? `※このクーポンは最初の${appliedCoupon.durationInMonths}ヶ月のみ適用されます。以降は通常価格 ¥${selectedPlan.totalPrice.toLocaleString()} です。`
-                    : `※このクーポンは一定期間のみ適用されます。期間終了後は通常価格 ¥${selectedPlan.totalPrice.toLocaleString()} です。`}
+                    ? `※最初の${appliedCoupon.durationInMonths}ヶ月限定の割引です。以降は通常価格 ¥${selectedPlan.totalPrice.toLocaleString()}（送料込み）になります。`
+                    : `※期間限定の割引です。期間終了後は通常価格 ¥${selectedPlan.totalPrice.toLocaleString()}（送料込み）になります。`}
               </p>
             )}
 
