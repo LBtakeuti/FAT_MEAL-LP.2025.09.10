@@ -15,6 +15,29 @@ export interface TocItem {
   level: 2 | 3;
 }
 
+/**
+ * F70: 見出しテキストに残る inline markdown 記号を除去して表示用テキストにする。
+ * 目次に「*」等の記号が出ないようにする。
+ * - リンク [label](url) / 画像 ![alt](url) → label / alt
+ * - 強調 **bold** / __bold__ / *italic* / _italic_ → 中身
+ * - インラインコード `code` → 中身
+ */
+export function stripInlineMarkdown(input: string): string {
+  let s = input;
+  // 画像 ![alt](url) → alt（リンクより先に処理）
+  s = s.replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1');
+  // リンク [label](url) → label
+  s = s.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1');
+  // 太字/斜体（** __ * _）。記号のみ外し中身は残す
+  s = s.replace(/\*\*([^*]+)\*\*/g, '$1');
+  s = s.replace(/__([^_]+)__/g, '$1');
+  s = s.replace(/\*([^*]+)\*/g, '$1');
+  s = s.replace(/_([^_]+)_/g, '$1');
+  // インラインコード `code` → code
+  s = s.replace(/`([^`]+)`/g, '$1');
+  return s.trim();
+}
+
 export function extractToc(markdown: string): TocItem[] {
   if (!markdown) return [];
 
@@ -36,12 +59,12 @@ export function extractToc(markdown: string): TocItem[] {
     const h3 = line.match(/^###\s+(.+?)\s*$/);
     if (h2) {
       counter += 1;
-      items.push({ id: `toc-${counter}`, text: h2[1].trim(), level: 2 });
+      items.push({ id: `toc-${counter}`, text: stripInlineMarkdown(h2[1].trim()), level: 2 });
       continue;
     }
     if (h3) {
       counter += 1;
-      items.push({ id: `toc-${counter}`, text: h3[1].trim(), level: 3 });
+      items.push({ id: `toc-${counter}`, text: stripInlineMarkdown(h3[1].trim()), level: 3 });
       continue;
     }
     // それ以外の h1（# ）は TOC 対象外、h4 以降も対象外
