@@ -67,8 +67,11 @@ export default function DailyScenesSection() {
             unoptimized
             className="pointer-events-none absolute left-[6%] top-5 z-0 w-[88%] max-w-[680px] h-auto sm:left-[12%] sm:top-0 sm:w-[60%]"
           />
+          {/* F60-6: 見出しはレスポンシブで出し分け。
+              モバイル(base)=短縮版を1行で（whitespace-nowrap）。PC(sm+)=フル文言。 */}
           <h2 className="relative z-10 text-xl sm:text-2xl font-semibold text-gray-900">
-            ふとるめしを取り入れて、毎日をもっと豊かに
+            <span className="whitespace-nowrap sm:hidden">ふとるめしで、毎日を豊かに</span>
+            <span className="hidden sm:inline">ふとるめしを取り入れて、毎日をもっと豊かに</span>
           </h2>
         </div>
 
