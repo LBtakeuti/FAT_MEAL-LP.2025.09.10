@@ -28,11 +28,13 @@ export function stripInlineMarkdown(input: string): string {
   s = s.replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1');
   // リンク [label](url) → label
   s = s.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1');
-  // 太字/斜体（** __ * _）。記号のみ外し中身は残す
+  // 太字/斜体（** __ * _）。記号のみ外し中身は残す。
+  // F70: 語中アンダースコア(user_id 等)を斜体と誤認しないよう、_ 斜体は
+  // 前後が行頭/行末/空白のときのみ対象にする（CommonMark の語中 _ 非強調仕様に倣う）。
   s = s.replace(/\*\*([^*]+)\*\*/g, '$1');
   s = s.replace(/__([^_]+)__/g, '$1');
   s = s.replace(/\*([^*]+)\*/g, '$1');
-  s = s.replace(/_([^_]+)_/g, '$1');
+  s = s.replace(/(^|\s)_([^_]+)_(?=\s|$)/g, '$1$2');
   // インラインコード `code` → code
   s = s.replace(/`([^`]+)`/g, '$1');
   return s.trim();
