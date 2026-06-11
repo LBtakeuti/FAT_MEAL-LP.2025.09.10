@@ -54,8 +54,10 @@ export default function DailyScenesSection() {
             （swoosh が見出しの背後を通る＝重なる）。swoosh を z 下げ・見出しを z 上げにし、
             見出しが swoosh の上部1/4〜1/3 に重なる位置に置く。
             色（淡いサーモン0.27）・幅(約60%)・右上がりの向きは維持。 */}
-        <div className="relative mb-8 sm:mb-12 pt-10 sm:pt-12 text-center">
-          {/* 装飾SVG（最適化不要のため unoptimized）。見出しの背後に重ねる（z-0） */}
+        <div className="relative mb-8 sm:mb-12 pt-8 sm:pt-12 text-center">
+          {/* 装飾SVG（最適化不要のため unoptimized）。見出しの背後に重ねる（z-0）。
+              F60-5: モバイルは幅88%・やや左寄せ・見出し1行目に弧がかかる縦位置。
+              PC(sm+)は従来の left-12%/top-0/w-60% を維持（モバイル専用クラスで分岐）。 */}
           <Image
             src="/images/daily-scenes/swoosh.svg"
             alt=""
@@ -63,7 +65,7 @@ export default function DailyScenesSection() {
             width={1081}
             height={284}
             unoptimized
-            className="pointer-events-none absolute left-[12%] top-0 z-0 w-[60%] max-w-[680px] h-auto"
+            className="pointer-events-none absolute left-[6%] top-5 z-0 w-[88%] max-w-[680px] h-auto sm:left-[12%] sm:top-0 sm:w-[60%]"
           />
           <h2 className="relative z-10 text-xl sm:text-2xl font-semibold text-gray-900">
             ふとるめしを取り入れて、毎日をもっと豊かに
