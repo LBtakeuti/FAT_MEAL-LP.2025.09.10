@@ -3,24 +3,31 @@ import { test, expect } from '@playwright/test';
 // SC-F60: DailyScenesSection（ふとるめしのある毎日）描画スモーク
 // 対象: トップページ（/）に追加した新セクション（MediaLogosSection 直後）
 // 観点: (1) トップページが新セクション追加後も 200 でレンダリングされる（既存回帰）
-//       (2) 新セクションの主要文言が描画される（PC=3カラムgrid）
+//       (2) 新セクションの主要文言が描画される（PC=3カラムgrid・見出しフル版）
 //       (3) 3枚の webp + swoosh.svg が 404 にならない
 //       (4) F60-4: モバイル幅（390px）でも主要文言が描画される（横カルーセル化後の回帰）
+//       (5) F60-6: 見出しは幅で出し分け。PC=フル版「ふとるめしを取り入れて、毎日をもっと豊かに」、
+//           モバイル=短縮版「ふとるめしで、毎日を豊かに」。両 span が DOM に存在し CSS（sm:hidden /
+//           hidden sm:inline）で可視制御されるため getByText + toBeVisible で可視側を判定する。
 // 読み取り専用・本番データ非改変（GET のみ）。
+
+// 見出し文言（F60-6 で幅出し分け）
+const HEADING_PC = 'ふとるめしを取り入れて、毎日をもっと豊かに';
+const HEADING_MOBILE = 'ふとるめしで、毎日を豊かに';
 
 test.describe('F60 DailyScenesSection 描画スモーク', () => {
   test('トップページが 200 + 新セクション主要文言が可視', async ({ page }) => {
     const response = await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 60000 });
     expect(response?.status()).toBe(200);
 
-    // 中央見出し
-    await expect(
-      page.getByRole('heading', { name: 'ふとるめしを取り入れて、毎日をもっと豊かに' })
-    ).toBeVisible();
-
-    // 朝/昼/夜カードの小見出し（セクション内に限定）
     const section = page.locator('section[aria-label="ふとるめしのある毎日"]');
     await expect(section).toBeVisible();
+
+    // 中央見出し（PC幅=1280px デフォルト）: フル版が可視・短縮版は非可視
+    await expect(section.getByText(HEADING_PC, { exact: true })).toBeVisible();
+    await expect(section.getByText(HEADING_MOBILE, { exact: true })).toBeHidden();
+
+    // 朝/昼/夜カードの小見出し（セクション内に限定）
     await expect(section.getByText('朝のふとるめし')).toBeVisible();
     await expect(section.getByText('お昼のふとるめし')).toBeVisible();
     await expect(section.getByText('夜のふとるめし')).toBeVisible();
@@ -37,10 +44,11 @@ test.describe('F60 DailyScenesSection 描画スモーク', () => {
     const section = page.locator('section[aria-label="ふとるめしのある毎日"]');
     await expect(section).toBeVisible();
 
-    // 見出しと先頭（朝）カードは初期表示で可視
-    await expect(
-      section.getByRole('heading', { name: 'ふとるめしを取り入れて、毎日をもっと豊かに' })
-    ).toBeVisible();
+    // 見出し（モバイル幅=390px）: 短縮版が可視・フル版は非可視（F60-6 出し分け）
+    await expect(section.getByText(HEADING_MOBILE, { exact: true })).toBeVisible();
+    await expect(section.getByText(HEADING_PC, { exact: true })).toBeHidden();
+
+    // 先頭（朝）カードは初期表示で可視
     await expect(section.getByText('朝のふとるめし')).toBeVisible();
 
     // 横カルーセル内の3カードはいずれも DOM 上に存在（横スクロールで到達可能）
