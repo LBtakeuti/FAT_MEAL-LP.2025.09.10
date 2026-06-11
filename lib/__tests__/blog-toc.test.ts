@@ -94,6 +94,23 @@ describe('stripInlineMarkdown', () => {
   it('前後の空白は trim される', () => {
     expect(stripInlineMarkdown('  **太字**  ')).toBe('太字');
   });
+
+  // F70 follow-up (30b10f9): 語中アンダースコアを斜体と誤認して過剰除去しない。
+  it('語中アンダースコア(user_id)は斜体扱いせず保持する', () => {
+    expect(stripInlineMarkdown('user_id の取り扱い')).toBe('user_id の取り扱い');
+  });
+
+  it('複数の語中アンダースコア(api_key, access_token)も保持する', () => {
+    expect(stripInlineMarkdown('api_key と access_token')).toBe('api_key と access_token');
+  });
+
+  it('空白で区切られた _斜体_ は従来どおり中身を残して記号除去する', () => {
+    expect(stripInlineMarkdown('これは _斜体_ です')).toBe('これは 斜体 です');
+  });
+
+  it('語中アンダースコアと正当な _斜体_ が混在しても斜体のみ除去する', () => {
+    expect(stripInlineMarkdown('user_id は _重要_ です')).toBe('user_id は 重要 です');
+  });
 });
 
 describe('extractToc × stripInlineMarkdown 連携', () => {
