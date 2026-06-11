@@ -2,17 +2,13 @@
 
 import React from 'react';
 import type { AmbassadorItem } from '@/types/ambassador';
-import { CARD_WIDTH, CARD_IMAGE_ASPECT_RATIO } from '@/lib/constants/card';
 
 interface AmbassadorCardProps {
   item: AmbassadorItem;
 }
 
-// モバイル版のカードサイズ定数
-const MOBILE_CARD_WIDTH = CARD_WIDTH;
-const MOBILE_CARD_HEIGHT = Math.round(MOBILE_CARD_WIDTH / CARD_IMAGE_ASPECT_RATIO);
+// モバイル版のアバターサイズ（F66: カード幅は流動化したため固定幅定数は廃止）
 const MOBILE_AVATAR_SIZE = 40;
-const MOBILE_CONTENT_WIDTH = MOBILE_CARD_WIDTH - MOBILE_AVATAR_SIZE - 16; // 16px = grid gap
 
 export function AmbassadorCard({ item }: AmbassadorCardProps) {
   return (
@@ -234,24 +230,28 @@ export function AmbassadorCard({ item }: AmbassadorCardProps) {
           color: #fff;
         }
 
-        /* Mobile responsive */
+        /* Mobile responsive
+           F66: スライド枠(流動幅)にカード内部も追従させる。固定px幅だと大きめスマホ(430px等)で
+           枠との差が白い余白になるため、カード/サムネ/本文を width:100%（grid は avatar固定+1fr）に。
+           サムネ高さは aspect-ratio(25/14) で幅に応じて自動算出。 */
         @media (max-width: 768px) {
           .ambassador-card {
-            width: ${MOBILE_CARD_WIDTH}px;
+            width: 100%;
           }
           .ambassador-thumbnail {
-            width: ${MOBILE_CARD_WIDTH}px;
-            height: ${MOBILE_CARD_HEIGHT}px;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 25 / 14;
           }
           .ambassador-thumbnail-img {
-            width: ${MOBILE_CARD_WIDTH}px;
-            height: ${MOBILE_CARD_HEIGHT}px;
+            width: 100%;
+            height: 100%;
           }
           .ambassador-thumbnail-label {
             display: none;
           }
           .ambassador-container {
-            grid-template-columns: ${MOBILE_AVATAR_SIZE}px ${MOBILE_CONTENT_WIDTH}px;
+            grid-template-columns: ${MOBILE_AVATAR_SIZE}px 1fr;
           }
           .ambassador-author {
             width: ${MOBILE_AVATAR_SIZE}px;
@@ -264,7 +264,8 @@ export function AmbassadorCard({ item }: AmbassadorCardProps) {
             align-items: center;
           }
           .ambassador-content {
-            width: ${MOBILE_CONTENT_WIDTH}px;
+            width: 100%;
+            min-width: 0;
           }
           .ambassador-title {
             font-size: 14px;
