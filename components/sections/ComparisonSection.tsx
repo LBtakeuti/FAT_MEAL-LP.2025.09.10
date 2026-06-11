@@ -97,7 +97,7 @@ function RadarChart({
         style={{
           transform: grown ? 'scale(1)' : 'scale(0)',
           transformOrigin: `${CX}px ${CY}px`,
-          transition: 'transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)',
+          transition: 'transform 1.4s cubic-bezier(0.22, 1, 0.36, 1)',
         }}
       >
         <polygon
