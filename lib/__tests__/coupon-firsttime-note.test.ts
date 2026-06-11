@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 
 // F57: 「初回のみ注記」の表示判定ロジックのユニットテスト。
 //
-// 対象は components/purchase/PurchaseFlow.tsx 内のインライン JSX 判定（1755-1766 行付近）。
+// 対象は components/purchase/PurchaseFlow.tsx 内のインライン JSX 判定（1757-1768 行付近）。
 // 本リポジトリの慣習（lib/__tests__/cancellation-availability.test.ts /
 // coupon-discount.test.ts と同パターン）に倣い、判定と文言生成の純粋部分を
 // テスト側に同式で切り出してカバーする。PurchaseFlow.tsx は無改変。
@@ -10,10 +10,10 @@ import { describe, it, expect } from 'vitest';
 // 表示条件（JSX と同式）:
 //   appliedCoupon && selectedPlan && !selectedPlan.isTrial &&
 //   (duration === 'once' || duration === 'repeating')
-// 文言分岐（3分岐 / commit ef47b49）:
-//   once → 「初回のみ…2回目以降は通常価格 ¥{totalPrice}」
-//   repeating かつ durationInMonths（truthy）→「最初の{N}ヶ月のみ…以降は通常価格 ¥{totalPrice}」
-//   repeating かつ durationInMonths 欠落(null/0) →「一定期間のみ適用…期間終了後は通常価格 ¥{totalPrice}」
+// 文言分岐（3分岐 / commit e0fc904 = F59、通常価格に「（送料込み）」を明記したトーン調整）:
+//   once → 「※初回限定の割引です。2回目以降は通常価格 ¥{totalPrice}（送料込み）になります。」
+//   repeating かつ durationInMonths（truthy）→「※最初の{N}ヶ月限定の割引です。以降は通常価格 ¥{totalPrice}（送料込み）になります。」
+//   repeating かつ durationInMonths 欠落(null/0) →「※期間限定の割引です。期間終了後は通常価格 ¥{totalPrice}（送料込み）になります。」
 //     （月数を断定できないため「初回のみ」と誤断定しない汎用表現）
 
 const PLAN_TOTAL: Record<string, number> = {
@@ -46,10 +46,10 @@ function shouldShowFirstTimeNote(coupon: Coupon | null, plan: Plan | null): bool
 function firstTimeNoteText(coupon: Coupon, plan: Plan): string {
   const price = plan.totalPrice.toLocaleString();
   return coupon.duration === 'once'
-    ? `※このクーポンは初回のみ適用されます。2回目以降は通常価格 ¥${price} です。`
+    ? `※初回限定の割引です。2回目以降は通常価格 ¥${price}（送料込み）になります。`
     : coupon.durationInMonths
-      ? `※このクーポンは最初の${coupon.durationInMonths}ヶ月のみ適用されます。以降は通常価格 ¥${price} です。`
-      : `※このクーポンは一定期間のみ適用されます。期間終了後は通常価格 ¥${price} です。`;
+      ? `※最初の${coupon.durationInMonths}ヶ月限定の割引です。以降は通常価格 ¥${price}（送料込み）になります。`
+      : `※期間限定の割引です。期間終了後は通常価格 ¥${price}（送料込み）になります。`;
 }
 
 describe('F57: shouldShowFirstTimeNote（表示判定）', () => {
@@ -95,40 +95,40 @@ describe('F57: shouldShowFirstTimeNote（表示判定）', () => {
 });
 
 describe('F57: firstTimeNoteText（文言分岐）', () => {
-  it('once: 「初回のみ…2回目以降は通常価格 ¥5,100」(sub-6)', () => {
+  it('once: 「※初回限定の割引です…通常価格 ¥5,100（送料込み）」(sub-6)', () => {
     expect(firstTimeNoteText({ duration: 'once' }, planSub6)).toBe(
-      '※このクーポンは初回のみ適用されます。2回目以降は通常価格 ¥5,100 です。',
+      '※初回限定の割引です。2回目以降は通常価格 ¥5,100（送料込み）になります。',
     );
   });
 
   it('once: sub-12 は ¥8,100 を埋め込む', () => {
     expect(firstTimeNoteText({ duration: 'once' }, planSub12)).toBe(
-      '※このクーポンは初回のみ適用されます。2回目以降は通常価格 ¥8,100 です。',
+      '※初回限定の割引です。2回目以降は通常価格 ¥8,100（送料込み）になります。',
     );
   });
 
-  it('repeating + durationInMonths=3: 「最初の3ヶ月のみ…通常価格 ¥5,100」(sub-6)', () => {
+  it('repeating + durationInMonths=3: 「※最初の3ヶ月限定の割引です…¥5,100（送料込み）」(sub-6)', () => {
     expect(
       firstTimeNoteText({ duration: 'repeating', durationInMonths: 3 }, planSub6),
-    ).toBe('※このクーポンは最初の3ヶ月のみ適用されます。以降は通常価格 ¥5,100 です。');
+    ).toBe('※最初の3ヶ月限定の割引です。以降は通常価格 ¥5,100（送料込み）になります。');
   });
 
   it('repeating + durationInMonths=6: N がそのまま反映される(sub-12)', () => {
     expect(
       firstTimeNoteText({ duration: 'repeating', durationInMonths: 6 }, planSub12),
-    ).toBe('※このクーポンは最初の6ヶ月のみ適用されます。以降は通常価格 ¥8,100 です。');
+    ).toBe('※最初の6ヶ月限定の割引です。以降は通常価格 ¥8,100（送料込み）になります。');
   });
 
-  it('repeating だが durationInMonths が null → 「一定期間のみ」汎用文言（once に誤断定しない）', () => {
+  it('repeating だが durationInMonths が null → 「※期間限定の割引」汎用文言（once に誤断定しない）', () => {
     expect(
       firstTimeNoteText({ duration: 'repeating', durationInMonths: null }, planSub6),
-    ).toBe('※このクーポンは一定期間のみ適用されます。期間終了後は通常価格 ¥5,100 です。');
+    ).toBe('※期間限定の割引です。期間終了後は通常価格 ¥5,100（送料込み）になります。');
   });
 
-  it('repeating だが durationInMonths=0(falsy) → 「一定期間のみ」汎用文言', () => {
+  it('repeating だが durationInMonths=0(falsy) → 「※期間限定の割引」汎用文言', () => {
     expect(
       firstTimeNoteText({ duration: 'repeating', durationInMonths: 0 }, planSub6),
-    ).toBe('※このクーポンは一定期間のみ適用されます。期間終了後は通常価格 ¥5,100 です。');
+    ).toBe('※期間限定の割引です。期間終了後は通常価格 ¥5,100（送料込み）になります。');
   });
 
   it('金額は totalPrice.toLocaleString() でカンマ区切りされる', () => {
