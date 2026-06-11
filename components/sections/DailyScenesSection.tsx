@@ -1,4 +1,7 @@
+'use client';
+
 import Image from 'next/image';
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * F60: 「ふとるめしのある毎日」セクション。
@@ -46,15 +49,50 @@ const scenes: Scene[] = [
 ];
 
 export default function DailyScenesSection() {
+  // F62: スクロールで見出し・3カードをフェードイン（opacity + 上方スライド）。
+  // IntersectionObserver で初回発火。prefers-reduced-motion 有効時は即表示（アニメなし）。
+  const sectionRef = useRef<HTMLElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const prefersReduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+      setVisible(true);
+      return;
+    }
+    const el = sectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.2 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // フェードイン用のスタイル（visible で opacity1/translateY0 へ）。delayMs でstagger。
+  const fadeStyle = (delayMs: number): React.CSSProperties => ({
+    opacity: visible ? 1 : 0,
+    transform: visible ? 'translateY(0)' : 'translateY(16px)',
+    transition: `opacity 0.6s ease-out ${delayMs}ms, transform 0.6s ease-out ${delayMs}ms`,
+  });
+
   return (
-    <section className="bg-white py-8 sm:py-10" aria-label="ふとるめしのある毎日">
+    <section ref={sectionRef} className="bg-white py-8 sm:py-10" aria-label="ふとるめしのある毎日">
       <div className="max-w-6xl mx-auto px-4">
         {/* 見出し（中央）。オレンジの筆ストロークを見出しの「背後に重ねて」装飾配置。
             F60-4: 実GT(figma_GT_overlap.png)では swoosh の縦範囲の上部に見出しが内包される
             （swoosh が見出しの背後を通る＝重なる）。swoosh を z 下げ・見出しを z 上げにし、
             見出しが swoosh の上部1/4〜1/3 に重なる位置に置く。
             色（淡いサーモン0.27）・幅(約60%)・右上がりの向きは維持。 */}
-        <div className="relative mb-8 sm:mb-12 pt-8 sm:pt-12 text-center">
+        <div className="relative mb-8 sm:mb-12 pt-8 sm:pt-12 text-center" style={fadeStyle(0)}>
           {/* 装飾SVG（最適化不要のため unoptimized）。見出しの背後に重ねる（z-0）。
               F60-5: モバイルは幅88%・やや左寄せ・見出し1行目に弧がかかる縦位置。
               PC(sm+)は従来の left-12%/top-0/w-60% を維持（モバイル専用クラスで分岐）。 */}
@@ -80,10 +118,11 @@ export default function DailyScenesSection() {
             各カード basis ~80% で次カードがpeek）。PC(sm+)=従来の3カラムgrid。
             snap/スクロールバー非表示は globals の .daily-scenes-carousel で制御。 */}
         <div className="daily-scenes-carousel flex snap-x snap-mandatory gap-6 overflow-x-auto pb-2 sm:grid sm:grid-cols-3 sm:gap-8 sm:overflow-visible">
-          {scenes.map((scene) => (
+          {scenes.map((scene, i) => (
             <article
               key={scene.image}
               className="flex shrink-0 basis-4/5 snap-start flex-col sm:basis-auto sm:shrink"
+              style={fadeStyle(120 + i * 120)}
             >
               {/* 縦長写真 + 下グラデ + 中央キャプション */}
               <div className="relative aspect-[529/750] w-full overflow-hidden rounded-lg">
