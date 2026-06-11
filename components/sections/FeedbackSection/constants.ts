@@ -1,9 +1,6 @@
 import type { Options } from '@splidejs/splide';
-import { CARD_HORIZONTAL_PADDING } from '@/lib/constants/card';
 
 export function getCarouselOptions(count: number): Options {
-  const padding = `${CARD_HORIZONTAL_PADDING}px`;
-
   return {
     type: count > 4 ? 'loop' : 'slide',
     perPage: 4,
@@ -29,8 +26,10 @@ export function getCarouselOptions(count: number): Options {
       },
       640: {
         perPage: 1,
-        gap: '1rem',
-        padding: { left: padding, right: padding },
+        // F68: 次カードのpeekが右に離れすぎていたため gap/padding を詰める。
+        // gap を 1rem→0.5rem、右paddingを抑えて次カードが自然な近さで覗くように。
+        gap: '0.5rem',
+        padding: { left: '16px', right: '28px' },
         arrows: count > 1,
         pagination: count > 1,
         autoplay: count > 1,
