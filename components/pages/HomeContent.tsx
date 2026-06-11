@@ -6,6 +6,7 @@ import HeroStatsSection from '@/components/sections/HeroStatsSection';
 import MenuIntroSection from '@/components/sections/MenuIntroSection';
 import ComparisonSection from '@/components/sections/ComparisonSection';
 import MediaLogosSection from '@/components/sections/MediaLogosSection';
+import DailyScenesSection from '@/components/sections/DailyScenesSection';
 import BentoTvSection from '@/components/sections/BentoTvSection';
 import SportsScienceSection from '@/components/sections/SportsScienceSection';
 import PurchaseFlowSection from '@/components/sections/PurchaseFlowSection';
@@ -54,6 +55,8 @@ export default function HomeContent({ menuItems, shareData = null }: HomeContent
         {/* F8: TV取材風の弁当画像。share モードでは出さない（メディアロゴの直前） */}
         {!isShare && <BentoTvSection />}
         <MediaLogosSection />
+        {/* F60: 朝昼夜の食卓3カード（メディアロゴ直後） */}
+        <DailyScenesSection />
         <ComparisonSection />
         <SportsScienceSection />
         <MenuSection initialMenuItems={menuItems} />
