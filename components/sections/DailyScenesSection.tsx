@@ -52,8 +52,9 @@ export default function DailyScenesSection() {
         {/* 見出し（中央）。上にオレンジの筆ストロークを装飾配置。
             F60-2: swoosh はコンテンツ幅の約60%（最大~680px）で右に跳ね上がる形に拡大配置。
             Figma座標（枠1757基準）の x=15.1%/幅60.7% を踏襲（比率1081:284を保持）。 */}
-        <div className="relative mb-10 sm:mb-14 pt-8 sm:pt-10 text-center">
-          {/* 装飾SVG。最適化パイプラインを通す実益が薄いため unoptimized 指定（review F60軽微対応） */}
+        <div className="relative mb-10 sm:mb-14 pt-16 sm:pt-20 text-center">
+          {/* 装飾SVG。最適化パイプラインを通す実益が薄いため unoptimized 指定（review F60軽微対応）。
+              F60-2-fix: 見出しの上に弧が乗るよう上方へ配置（baseline跨ぎを解消）。 */}
           <Image
             src="/images/daily-scenes/swoosh.svg"
             alt=""
@@ -61,7 +62,7 @@ export default function DailyScenesSection() {
             width={1081}
             height={284}
             unoptimized
-            className="pointer-events-none absolute left-[12%] -top-1 sm:top-0 w-[60%] max-w-[680px] h-auto"
+            className="pointer-events-none absolute left-[12%] top-0 w-[60%] max-w-[680px] h-auto"
           />
           <h2 className="relative text-xl sm:text-2xl font-semibold text-gray-900">
             ふとるめしを取り入れて、毎日をもっと豊かに
