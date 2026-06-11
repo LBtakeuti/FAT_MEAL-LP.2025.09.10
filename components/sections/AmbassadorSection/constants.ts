@@ -1,5 +1,5 @@
 import type { Options } from '@splidejs/splide';
-import { CARD_WIDTH, CARD_HORIZONTAL_PADDING } from '@/lib/constants/card';
+import { CARD_HORIZONTAL_PADDING } from '@/lib/constants/card';
 
 export function getCarouselOptions(count: number): Options {
   const padding = `${CARD_HORIZONTAL_PADDING}px`;
@@ -33,7 +33,11 @@ export function getCarouselOptions(count: number): Options {
       },
       768: {
         perPage: 1,
-        fixedWidth: `${CARD_WIDTH}px`,
+        // F66: 固定幅(327px)だと大きめスマホ(430px等)で左右に不自然な余白が出るため、
+        // fixedWidth を解除して viewport 幅に追従させる（perPage:1 で流動幅）。
+        // 次カードが少し覗く peek 用に左右 padding を残す。
+        fixedWidth: undefined,
+        gap: '16px',
         padding: { left: padding, right: padding },
         arrows: count > 1,
         pagination: count > 1,
