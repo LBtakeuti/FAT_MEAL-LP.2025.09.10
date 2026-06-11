@@ -51,12 +51,14 @@ export default function DailyScenesSection() {
       <div className="max-w-6xl mx-auto px-4">
         {/* 見出し（中央）。上にオレンジの筆ストロークを装飾配置 */}
         <div className="relative mb-10 sm:mb-14 text-center">
+          {/* 装飾SVG。最適化パイプラインを通す実益が薄いため unoptimized 指定（review F60軽微対応） */}
           <Image
             src="/images/daily-scenes/swoosh.svg"
             alt=""
             aria-hidden="true"
             width={1081}
             height={284}
+            unoptimized
             className="pointer-events-none absolute left-1/2 -top-6 sm:-top-8 w-56 sm:w-72 -translate-x-1/2 -translate-y-1/2"
           />
           <h2 className="relative text-2xl sm:text-3xl font-semibold text-gray-900">
