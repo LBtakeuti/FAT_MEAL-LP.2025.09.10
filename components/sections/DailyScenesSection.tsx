@@ -49,8 +49,10 @@ export default function DailyScenesSection() {
   return (
     <section className="bg-white py-12 sm:py-16" aria-label="ふとるめしのある毎日">
       <div className="max-w-6xl mx-auto px-4">
-        {/* 見出し（中央）。上にオレンジの筆ストロークを装飾配置 */}
-        <div className="relative mb-10 sm:mb-14 text-center">
+        {/* 見出し（中央）。上にオレンジの筆ストロークを装飾配置。
+            F60-2: swoosh はコンテンツ幅の約60%（最大~680px）で右に跳ね上がる形に拡大配置。
+            Figma座標（枠1757基準）の x=15.1%/幅60.7% を踏襲（比率1081:284を保持）。 */}
+        <div className="relative mb-10 sm:mb-14 pt-8 sm:pt-10 text-center">
           {/* 装飾SVG。最適化パイプラインを通す実益が薄いため unoptimized 指定（review F60軽微対応） */}
           <Image
             src="/images/daily-scenes/swoosh.svg"
@@ -59,9 +61,9 @@ export default function DailyScenesSection() {
             width={1081}
             height={284}
             unoptimized
-            className="pointer-events-none absolute left-1/2 -top-6 sm:-top-8 w-56 sm:w-72 -translate-x-1/2 -translate-y-1/2"
+            className="pointer-events-none absolute left-[12%] -top-1 sm:top-0 w-[60%] max-w-[680px] h-auto"
           />
-          <h2 className="relative text-2xl sm:text-3xl font-semibold text-gray-900">
+          <h2 className="relative text-xl sm:text-2xl font-semibold text-gray-900">
             ふとるめしを取り入れて、毎日をもっと豊かに
           </h2>
         </div>
@@ -79,21 +81,23 @@ export default function DailyScenesSection() {
                   sizes="(max-width: 640px) 100vw, 33vw"
                   className="object-cover"
                 />
-                {/* 下方向の黒グラデ（キャプションの可読性確保） */}
+                {/* 下方向の黒グラデ（キャプションの可読性確保）。
+                    F60-2: Figma同等の readable な見え方にするため高さ約60%・濃いめに強化。 */}
                 <div
-                  className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 to-transparent"
+                  className="pointer-events-none absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/85 via-black/40 to-transparent"
                   aria-hidden="true"
                 />
-                <p className="absolute bottom-4 left-4 text-lg font-semibold text-white drop-shadow-sm">
+                <p className="absolute bottom-5 left-5 text-lg sm:text-xl font-semibold text-white drop-shadow-sm">
                   {scene.captionLead}
                   <span className="text-orange-600">ふとるめし</span>
                 </p>
               </div>
 
-              {/* カード下のテキスト（白背景）：小見出し（オレンジ）＋本文（黒） */}
+              {/* カード下のテキスト（白背景）：小見出し（オレンジ）＋本文（黒）。
+                  F60-2: Figma比率に合わせ小見出しを text-lg(w500)、本文を text-base に。 */}
               <div className="pt-4">
-                <h3 className="text-base font-medium text-orange-600">{scene.title}</h3>
-                <p className="mt-1 text-sm leading-relaxed text-gray-900">{scene.body}</p>
+                <h3 className="text-lg font-medium text-orange-600">{scene.title}</h3>
+                <p className="mt-1 text-sm sm:text-base leading-relaxed text-gray-900">{scene.body}</p>
               </div>
             </article>
           ))}
