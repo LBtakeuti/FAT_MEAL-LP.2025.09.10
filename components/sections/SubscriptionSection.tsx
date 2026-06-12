@@ -3,6 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Reveal } from '@/components/ui/Reveal';
+import { PushButton } from '@/components/ui/PushButton';
 
 type PlanId = 'trial-6' | 'sub-6' | 'sub-12';
 
@@ -175,19 +176,18 @@ const SubscriptionSection: React.FC = () => {
                 </p>
               )}
 
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handlePurchase(plan.id);
-                }}
-                className={`mt-auto w-full h-14 rounded-xl font-bold text-lg transition-all duration-300 shadow-md hover:shadow-lg ${
-                  plan.isTrial
-                    ? 'bg-amber-500 text-white hover:bg-amber-600'
-                    : 'bg-orange-500 text-white hover:bg-orange-600'
-                }`}
-              >
-                {plan.isTrial ? 'お試しを購入する' : '定期購入する'}
-              </button>
+              <div className="mt-auto">
+                <PushButton
+                  size="plan"
+                  variant={plan.isTrial ? 'amber' : 'orange'}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePurchase(plan.id);
+                  }}
+                >
+                  {plan.isTrial ? 'お試しを購入する' : '定期購入する'}
+                </PushButton>
+              </div>
             </div>
           ))}
         </Reveal>
