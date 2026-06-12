@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { createBrowserClient } from '@/lib/supabase';
 import LogoutModal from '@/components/ui/LogoutModal';
-import { PushButton } from '@/components/ui/PushButton';
 import MobileHeaderLogo from './MobileHeaderLogo';
 
 const MobileHeaderClient: React.FC = () => {
@@ -65,10 +64,16 @@ const MobileHeaderClient: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* 購入ボタン */}
-            <PushButton href="/purchase" size="md" aria-label="購入">
+            {/* 購入ボタン
+                F76-3: ヘッダーバーは高さがタイトで3Dの浮き(translateY)が収まりにくいため、
+                3D(PushButton)をやめてフラットに戻す。色は orange-600 トークン（生カラーには戻さない）。 */}
+            <Link
+              href="/purchase"
+              className="flex items-center justify-center px-4 h-9 rounded-full bg-orange-600 text-white font-bold text-sm hover:bg-orange-700 transition-colors whitespace-nowrap"
+              aria-label="購入"
+            >
               購入
-            </PushButton>
+            </Link>
 
             {/* Hamburger Menu Button */}
             <button
