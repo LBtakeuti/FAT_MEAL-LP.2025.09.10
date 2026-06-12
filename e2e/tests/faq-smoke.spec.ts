@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Locator } from '@playwright/test';
 
 test.describe('FAQセクション スモークテスト', () => {
   // F8-1: BentoTvSection 追加によりトップページの初回描画が遅くなったためタイムアウトを延長
@@ -9,6 +9,19 @@ test.describe('FAQセクション スモークテスト', () => {
     // FAQセクションが表示されるまでAPIレスポンスを待つ（最大30秒）
     await page.waitForSelector('#faq', { timeout: 30000 });
   });
+
+  // SEO-S1 で FAQ を SSR 化したため #faq は初期HTMLに即存在する。
+  // そのため waitForSelector('#faq') 解決時点ではまだ React のアコーディオン
+  // onClick がアタッチ（hydration完了）していないことがあり、即クリックすると
+  // 初回クリックが取りこぼされ aria-expanded が toggle しない。
+  // 「クリック→期待状態」を expect(...).toPass() でラップし、操作可能になるまで
+  // クリックをリトライする（待機の入れ方のみ。仕様・期待値は不変）。
+  const clickUntil = async (locator: Locator, expected: 'true' | 'false') => {
+    await expect(async () => {
+      await locator.click();
+      await expect(locator).toHaveAttribute('aria-expanded', expected, { timeout: 1000 });
+    }).toPass({ timeout: 15000 });
+  };
 
   test('FAQセクションが表示される', async ({ page }) => {
     const section = page.locator('#faq');
@@ -49,7 +62,8 @@ test.describe('FAQセクション スモークテスト', () => {
 
   test('質問クリックでアコーディオンが展開し、+アイコンが回転する', async ({ page }) => {
     const firstButton = page.locator('#faq button[aria-expanded]').first();
-    await firstButton.click();
+    // hydration 完了まで待ってから展開（aria-expanded='true' を満たすまでクリック）
+    await clickUntil(firstButton, 'true');
 
     await expect(firstButton).toHaveAttribute('aria-expanded', 'true');
 
@@ -64,7 +78,8 @@ test.describe('FAQセクション スモークテスト', () => {
 
   test('答えタイトルがオレンジ（orange-600）で表示される', async ({ page }) => {
     const firstButton = page.locator('#faq button[aria-expanded]').first();
-    await firstButton.click();
+    // hydration 完了まで待ってから展開
+    await clickUntil(firstButton, 'true');
 
     const answerTitle = page.locator('#faq p.text-orange-600').first();
     await expect(answerTitle).toBeVisible();
@@ -78,7 +93,8 @@ test.describe('FAQセクション スモークテスト', () => {
       return;
     }
 
-    await buttons.nth(0).click();
+    // hydration 完了まで待ってから1件目を開く
+    await clickUntil(buttons.nth(0), 'true');
     await expect(buttons.nth(0)).toHaveAttribute('aria-expanded', 'true');
 
     await buttons.nth(1).click();
@@ -88,7 +104,8 @@ test.describe('FAQセクション スモークテスト', () => {
 
   test('展開済み項目を再クリックで閉じる', async ({ page }) => {
     const firstButton = page.locator('#faq button[aria-expanded]').first();
-    await firstButton.click();
+    // hydration 完了まで待ってから展開
+    await clickUntil(firstButton, 'true');
     await expect(firstButton).toHaveAttribute('aria-expanded', 'true');
 
     await firstButton.click();
