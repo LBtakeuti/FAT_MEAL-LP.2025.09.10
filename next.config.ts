@@ -4,6 +4,9 @@ import path from "path";
 const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(__dirname),
   images: {
+    // Next.js 15: 使用中の quality 値を許可リストに登録（未登録だと警告）。
+    // 75=デフォルト、88=DailyScenesSection の next/image で使用。
+    qualities: [75, 88],
     remotePatterns: [
       {
         protocol: 'https',
