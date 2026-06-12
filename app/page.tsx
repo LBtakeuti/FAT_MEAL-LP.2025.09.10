@@ -81,14 +81,15 @@ export default async function Home() {
   // blog詳細と同じく < > & を Unicode エスケープして </script> インジェクションを防止。
   const safeFaqJsonLd = faqJsonLd ? toSafeJsonLd(faqJsonLd) : null;
 
-  // SEO-S3: Organization 構造化データ（会社・ロゴ・URL）。
-  // sameAs(SNS URL) は確定後に追記予定のため現状は省略。
+  // SEO-S3: Organization 構造化データ（会社・ロゴ・URL・SNS）。
+  // sameAs は公式 Instagram のみ（トラッキングパラメータを除いた正規URL）。
   const organizationJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'ふとるめし',
     url: SITE_URL,
     logo: `${SITE_URL}/images/branding/logo-header.png`,
+    sameAs: ['https://www.instagram.com/futorumeshi'],
   };
 
   // SEO-S3: WebSite 構造化データ（サイト内検索が無いため SearchAction は省略）。
