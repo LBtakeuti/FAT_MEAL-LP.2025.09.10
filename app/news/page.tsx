@@ -1,61 +1,33 @@
-'use client';
-
-import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { getNewsServer } from '@/lib/supabase';
 
-interface NewsItem {
-  id: string;
-  title: string;
-  date: string;
-  excerpt: string | null;
-  content: string;
-  image: string | null;
+// SEO-S2: お知らせ一覧をサーバーレンダリング化。お知らせタイトル・/news/[id] への
+// 内部リンクを初期HTMLに出してクローラーに露出する。戻り導線は <Link> でSSR化。
+export const revalidate = 60;
+
+// 日付フォーマット（YYYY-MM-DD → YYYY.MM.DD）
+function formatDate(dateStr: string): string {
+  return dateStr.replace(/-/g, '.');
 }
 
-export default function NewsListPage() {
-  const router = useRouter();
-  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchNews = async () => {
-      try {
-        const res = await fetch('/api/news');
-        if (res.ok) {
-          const data = await res.json();
-          setNewsItems(data);
-        }
-      } catch (error) {
-        console.error('ニュースの取得に失敗しました:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchNews();
-  }, []);
-
-  // 日付をフォーマット（YYYY-MM-DD → YYYY.MM.DD）
-  const formatDate = (dateStr: string) => {
-    return dateStr.replace(/-/g, '.');
-  };
+export default async function NewsListPage() {
+  const newsItems = await getNewsServer();
 
   return (
     <div className="min-h-screen bg-white">
       <main className="pt-20 sm:pt-20 pb-20">
         <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto">
-
-          {/* Breadcrumb Navigation */}
+          {/* Breadcrumb Navigation（SEO-S2: router.push→<Link>でSSR化） */}
           <div className="mb-6 mt-4 sm:mt-0">
-            <button
-              onClick={() => router.push('/')}
+            <Link
+              href="/"
               className="inline-flex items-center text-gray-600 hover:text-gray-900 transition-colors"
             >
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
               <span className="text-sm">戻る</span>
-            </button>
+            </Link>
           </div>
 
           {/* Title */}
@@ -66,9 +38,7 @@ export default function NewsListPage() {
             <p className="text-sm sm:text-base text-gray-600 mt-2">NEWS</p>
           </div>
 
-          {loading ? (
-            <div className="text-center text-gray-500 py-12">読み込み中...</div>
-          ) : newsItems.length === 0 ? (
+          {newsItems.length === 0 ? (
             <div className="text-center text-gray-500 py-12">現在お知らせはありません</div>
           ) : (
             <>

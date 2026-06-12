@@ -115,6 +115,78 @@ export async function getMenuItemsServer(limit?: number): Promise<MenuItemDB[]> 
   return data || [];
 }
 
+// SEO-S2: お知らせ一覧をサーバーサイドで取得（/news index・トップNewsSection のSSR用）。
+// /api/news と同一（news を date DESC）。
+export interface NewsServerItem {
+  id: string;
+  title: string;
+  date: string;
+  excerpt: string | null;
+  content: string;
+  image: string | null;
+}
+
+export async function getNewsServer(): Promise<NewsServerItem[]> {
+  const { url, anonKey, serviceRoleKey } = validateEnv();
+  const client = createClient<Database>(url, serviceRoleKey || anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  const { data, error } = await (client as any)
+    .from('news')
+    .select('*')
+    .order('date', { ascending: false });
+
+  if (error) {
+    console.error('お知らせ取得エラー（サーバーサイド）:', error);
+    return [];
+  }
+
+  return (data as NewsServerItem[]) || [];
+}
+
+// SEO-S2: コラム一覧をサーバーサイドで取得（/blog index・トップBlogSection のSSR用）。
+// /api/blog/list と同一条件（is_published・published_at<=now・published_at DESC）。
+export interface ArticleListServerItem {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  thumbnail_url: string | null;
+  tags: string[];
+  author: string;
+  published_at: string | null;
+}
+
+export async function getArticlesServer(
+  limit = 12,
+  offset = 0,
+): Promise<{ items: ArticleListServerItem[]; total: number }> {
+  const { url, anonKey, serviceRoleKey } = validateEnv();
+  const client = createClient<Database>(url, serviceRoleKey || anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  const nowIso = new Date().toISOString();
+  const { data, count, error } = await (client as any)
+    .from('articles')
+    .select(
+      'id, slug, title, excerpt, thumbnail_url, tags, author, published_at',
+      { count: 'exact' },
+    )
+    .eq('is_published', true)
+    .lte('published_at', nowIso)
+    .order('published_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    console.error('コラム一覧取得エラー（サーバーサイド）:', error);
+    return { items: [], total: 0 };
+  }
+
+  return { items: (data as ArticleListServerItem[]) || [], total: count ?? 0 };
+}
+
 // SEO-S1: FAQ をサーバーサイドで取得（SSR/クローラーに本文を出すため）。
 // /api/faqs と同一クエリ（is_active のみ・sort_order順）。
 export interface FaqServerItem {
