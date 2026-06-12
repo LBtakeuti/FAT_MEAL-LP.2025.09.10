@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { Reveal } from '@/components/ui/Reveal';
 
 type SportTab = 'baseball' | 'soccer' | 'football';
 
@@ -90,17 +91,22 @@ const SportsScienceSection: React.FC = () => {
   return (
     <section className="sports-science-section">
       <div className="inner">
-        {/* 小ラベル */}
-        <p className="small-label">Sports Science</p>
+        {/* F73: 見出し群を先にフェードイン */}
+        <Reveal>
+          {/* 小ラベル */}
+          <p className="small-label">Sports Science</p>
 
-        {/* メインタイトル */}
-        <h2 className="main-title">
-          太れば、<span className="accent">変わる。</span>
-        </h2>
+          {/* メインタイトル */}
+          <h2 className="main-title">
+            太れば、<span className="accent">変わる。</span>
+          </h2>
 
-        {/* タイトル下の水平線 */}
-        <div className="title-rule" />
+          {/* タイトル下の水平線 */}
+          <div className="title-rule" />
+        </Reveal>
 
+        {/* F73: 見出しに続いてタブ＋パネルを軽くstaggerで */}
+        <Reveal delayMs={120}>
         {/* タブボタン */}
         <div className="tabs">
           {TABS.map((tab) => (
@@ -128,6 +134,7 @@ const SportsScienceSection: React.FC = () => {
             ))}
           </div>
         </div>
+        </Reveal>
 
         {/* CTAエリア */}
         <div className="cta-area">

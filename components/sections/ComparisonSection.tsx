@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { Reveal } from '@/components/ui/Reveal';
 
 const LABELS = ['カロリー', 'タンパク質', 'ボリューム', '増量適性', '続けやすさ'];
 const MAX_SCORE = 5;
@@ -175,7 +176,8 @@ export default function ComparisonSection() {
 
   return (
     <section ref={sectionRef} className="comparison-section">
-      <h2 className="comparison-title">ふとるめしは他と何が違うの！？</h2>
+      {/* F73: 見出しをフェードイン（グラフ本体は F61 の広がるアニメ） */}
+      <Reveal as="h2" className="comparison-title">ふとるめしは他と何が違うの！？</Reveal>
       <div className="chart-grid">
         <div className="chart-block">
           <span className="chart-label label-futoru">ふとるめし</span>

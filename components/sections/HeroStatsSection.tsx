@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { Reveal } from '@/components/ui/Reveal';
 
 interface HeroStatsSectionProps {
   hideCta?: boolean;
@@ -10,8 +11,9 @@ interface HeroStatsSectionProps {
 const HeroStatsSection: React.FC<HeroStatsSectionProps> = ({ hideCta = false }) => {
   return (
     <section className="hero-stats-section">
+      {/* F73: 統計カードをフェードイン（PC/モバイル各ブロックを Reveal で包む） */}
       {/* PC版：3枚独立カード */}
-      <div className="hero-stats-pc">
+      <Reveal className="hero-stats-pc">
         <div className="hero-stat-card">
           <p className="hsc-label">1食あたり平均カロリー</p>
           <div className="hsc-val">
@@ -38,10 +40,10 @@ const HeroStatsSection: React.FC<HeroStatsSectionProps> = ({ hideCta = false }) 
           </div>
           <p className="hsc-sub">レンチンするだけ。すぐ食べられる</p>
         </div>
-      </div>
+      </Reveal>
 
       {/* モバイル版：1枠を3分割 */}
-      <div className="hero-stats-sp">
+      <Reveal className="hero-stats-sp">
         <div className="hss-item">
           <p className="hss-label">平均カロリー</p>
           <div className="hss-val">
@@ -68,7 +70,7 @@ const HeroStatsSection: React.FC<HeroStatsSectionProps> = ({ hideCta = false }) 
           </div>
           <p className="hss-sub">レンチンするだけ</p>
         </div>
-      </div>
+      </Reveal>
 
       {/* CTAボタン */}
       {!hideCta && (
