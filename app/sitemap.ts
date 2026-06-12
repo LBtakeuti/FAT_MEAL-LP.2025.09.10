@@ -64,5 +64,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error('[sitemap] unexpected error:', e);
   }
 
-  return [...staticUrls, ...articleUrls];
+  // SEO-S3: 動的URL: お知らせ個別（/news/[id]）。記事と同パターンで全件追加。
+  let newsUrls: MetadataRoute.Sitemap = [];
+  try {
+    const supabase = createServerClient() as any;
+    const { data, error } = await supabase
+      .from('news')
+      .select('id, date')
+      .order('date', { ascending: false });
+
+    if (error) {
+      console.error('[sitemap] news fetch error:', error);
+    } else if (Array.isArray(data)) {
+      newsUrls = data
+        .filter((n: any) => n?.id != null && String(n.id))
+        .map((n: any) => ({
+          url: `${SITE_URL}/news/${n.id}`,
+          lastModified: n.date ? new Date(n.date) : now,
+          changeFrequency: 'monthly' as ChangeFrequency,
+          priority: 0.5,
+        }));
+    }
+  } catch (e) {
+    console.error('[sitemap] news unexpected error:', e);
+  }
+
+  return [...staticUrls, ...articleUrls, ...newsUrls];
 }
