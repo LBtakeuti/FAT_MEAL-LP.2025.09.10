@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { Reveal } from '@/components/ui/Reveal';
+import DailyScenesCarousel from './DailyScenesCarousel';
 
 /**
  * F60: 「ふとるめしのある毎日」セクション。
@@ -81,8 +82,9 @@ export default function DailyScenesSection() {
         {/* 3カード。
             F60-4: モバイル=横スワイプのカルーセル（overflow-x-auto + scroll-snap、
             各カード basis ~80% で次カードがpeek）。PC(sm+)=従来の3カラムgrid。
-            snap/スクロールバー非表示は globals の .daily-scenes-carousel で制御。 */}
-        <div className="daily-scenes-carousel flex snap-x snap-mandatory gap-6 overflow-x-auto pb-2 sm:grid sm:grid-cols-3 sm:gap-8 sm:overflow-visible">
+            snap/スクロールバー非表示・横パン限定は globals の .daily-scenes-carousel で制御。
+            F77: クライアントラッパー(DailyScenesCarousel)でオートプレイを付与（カードはSSRのまま）。 */}
+        <DailyScenesCarousel className="daily-scenes-carousel flex snap-x snap-mandatory gap-6 overflow-x-auto pb-2 sm:grid sm:grid-cols-3 sm:gap-8 sm:overflow-visible">
           {scenes.map((scene, i) => (
             <Reveal
               as="article"
@@ -122,7 +124,7 @@ export default function DailyScenesSection() {
               </div>
             </Reveal>
           ))}
-        </div>
+        </DailyScenesCarousel>
       </div>
     </section>
   );

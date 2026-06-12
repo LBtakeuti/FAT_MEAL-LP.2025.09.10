@@ -257,6 +257,15 @@ button:hover {
   display: none; /* Chrome/Safari */
 }
 
+/* F77: モバイルのカルーセルは横パンのみ許可（縦タッチはページスクロールに委ねる）。
+   斜め/縦スワイプでセクションごと上下にブレるのを防ぐ。
+   sm+ は3カラムgrid（横スクロールなし）のため touch-action は base のみで十分。 */
+@media (max-width: 639px) {
+  .daily-scenes-carousel {
+    touch-action: pan-x;
+  }
+}
+
 /* 購入円形ボタン（右下追従） */
 .purchase-circle-button {
   position: fixed;
