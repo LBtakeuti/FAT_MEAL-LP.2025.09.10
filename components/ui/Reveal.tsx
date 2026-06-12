@@ -76,7 +76,9 @@ export function Reveal({
           opacity: state === 'shown' ? 1 : 0,
           transform: state === 'shown' ? 'translateY(0)' : 'translateY(18px)',
           transition: `opacity 0.55s ease-out ${delayMs}ms, transform 0.55s ease-out ${delayMs}ms`,
-          willChange: 'opacity, transform',
+          // F73(review軽微): willChange は hidden の間だけ。reveal 完了後は外して
+          // 合成レイヤーの残留（多数展開時のメモリ微増）を避ける。
+          willChange: state === 'hidden' ? 'opacity, transform' : undefined,
         };
 
   return (
