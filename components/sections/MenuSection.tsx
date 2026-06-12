@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { Reveal } from '@/components/ui/Reveal';
 import { MenuCard } from '../menu/MenuCard';
 import { MenuDetailModal } from '../menu/MenuDetailModal';
 import type { MenuItem } from '@/types';
@@ -43,12 +44,12 @@ const MenuSection: React.FC<MenuSectionProps> = ({ initialMenuItems = [] }) => {
     <>
       <section id="menu" className="bg-white py-0 sm:py-4">
         <div className="max-w-6xl mx-auto px-4 pb-2">
-          {/* タイトル */}
-          <div className="mb-6">
+          {/* タイトル（F73: 見出しフェードイン） */}
+          <Reveal className="mb-6">
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 font-antique">
               <span className="text-orange-600">メニュー</span>
             </h2>
-          </div>
+          </Reveal>
 
           {/* メニューカード - 6枚グリッド */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">

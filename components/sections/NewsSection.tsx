@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Reveal } from '@/components/ui/Reveal';
 
 interface NewsItem {
   id: string;
@@ -112,12 +113,12 @@ const NewsSection: React.FC = () => {
         className="max-w-full px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto flex-1 flex flex-col cursor-pointer"
         onClick={scrollToNewsSection}
       >
-        {/* Title */}
-        <div className="text-center mb-6 sm:mb-8">
+        {/* Title（F73: 見出しフェードイン） */}
+        <Reveal className="text-center mb-6 sm:mb-8">
           <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900">
             お知らせ
           </h2>
-        </div>
+        </Reveal>
 
         {/* Mobile: Vertical list */}
         <div className="sm:hidden flex-1 flex flex-col">

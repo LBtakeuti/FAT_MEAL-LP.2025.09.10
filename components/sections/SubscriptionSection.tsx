@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
+import { Reveal } from '@/components/ui/Reveal';
 
 type PlanId = 'trial-6' | 'sub-6' | 'sub-12';
 
@@ -63,7 +64,8 @@ const SubscriptionSection: React.FC = () => {
   return (
     <section id="subscription" className="relative overflow-hidden bg-white py-12 sm:py-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 max-w-5xl mx-auto">
+        {/* F73: プランカード群をフェードイン */}
+        <Reveal className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 max-w-5xl mx-auto">
           {plans.map((plan) => (
             <div
               key={plan.id}
@@ -188,7 +190,7 @@ const SubscriptionSection: React.FC = () => {
               </button>
             </div>
           ))}
-        </div>
+        </Reveal>
 
         <div className="mt-8 sm:mt-12 text-center text-sm text-gray-500">
           <p className="mb-1">※ 価格は税込表示です</p>

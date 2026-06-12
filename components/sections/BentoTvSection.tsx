@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { Reveal } from '@/components/ui/Reveal';
 
 /**
  * F8: トップページ上部に配置する、TV取材風の弁当ビジュアルセクション。
@@ -8,14 +9,17 @@ export default function BentoTvSection() {
   return (
     <section className="bg-white py-6 sm:py-10" aria-label="ふとるめしのメニュー">
       <div className="max-w-6xl mx-auto px-4">
-        <Image
-          src="/images/sections/futorumeshi-tv.webp"
-          alt="ふとるめしの弁当メニュー：開封ショットと6個並びの紹介"
-          width={3402}
-          height={984}
-          sizes="(max-width: 1024px) 100vw, 1024px"
-          className="w-full h-auto"
-        />
+        {/* F73: フェードイン */}
+        <Reveal>
+          <Image
+            src="/images/sections/futorumeshi-tv.webp"
+            alt="ふとるめしの弁当メニュー：開封ショットと6個並びの紹介"
+            width={3402}
+            height={984}
+            sizes="(max-width: 1024px) 100vw, 1024px"
+            className="w-full h-auto"
+          />
+        </Reveal>
       </div>
     </section>
   );

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Splide, SplideSlide } from '@splidejs/react-splide';
+import { Reveal } from '@/components/ui/Reveal';
 import type { Options } from '@splidejs/splide';
 import '@splidejs/react-splide/css';
 import type { ArticleListItem } from '@/types/article';
@@ -100,11 +101,12 @@ const BlogSection: React.FC = () => {
   return (
     <section id="blog" className="relative overflow-hidden bg-white pt-6 sm:pt-12 pb-12">
       <div className="max-w-[375px] px-4 md:max-w-[768px] md:px-6 lg:max-w-[1200px] lg:px-8 mx-auto">
-        <div className="text-center mb-6 sm:mb-8">
+        {/* F73: 見出しフェードイン */}
+        <Reveal className="text-center mb-6 sm:mb-8">
           <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900">
             最新コラム
           </h2>
-        </div>
+        </Reveal>
 
         <Splide
           options={getBlogCarouselOptions(articles.length)}

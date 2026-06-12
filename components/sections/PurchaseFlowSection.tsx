@@ -1,5 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
+import { Reveal } from '@/components/ui/Reveal';
 
 const PurchaseFlowSection: React.FC = () => {
   const steps = [
@@ -32,12 +33,12 @@ const PurchaseFlowSection: React.FC = () => {
   return (
     <section className="bg-gray-50 py-12 sm:py-20">
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
-        {/* ヘッダー */}
-        <div className="text-center mb-10 sm:mb-14">
+        {/* ヘッダー（F73: フェードイン） */}
+        <Reveal className="text-center mb-10 sm:mb-14">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
             購入の流れ
           </h2>
-        </div>
+        </Reveal>
 
         {/* モバイル: 縦並びカード */}
         <div className="flex flex-col gap-4 sm:hidden">
