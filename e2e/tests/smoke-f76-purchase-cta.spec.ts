@@ -35,6 +35,40 @@ test.describe('F76 購入CTA 遷移先ガード', () => {
     expect(html, 'Mobile/HeroStats/PurchaseFlow の /purchase').toContain('href="/purchase"');
   });
 
+  test('F76-2/F76-3 導線の遷移先が保持される（お知らせを見る→/news, 定期コースを見る→?type=subscription, モバイルヘッダー購入→/purchase）', async ({
+    page,
+  }) => {
+    // F76-2 で PushButton(<Link href>) 化した2導線 ＋ F76-3 でフラットLink化したモバイルヘッダー購入。
+    // いずれも href なので遷移先（退行防止）を判定する。レスポンシブで PC/モバイル片方が
+    // 非表示になる導線は「href付きで存在（count>0）＋可視なものが少なくとも1つ」で判定。
+    await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 60000 });
+
+    // F76-2: NewsSection「お知らせを見る」→ /news（PC=lg / モバイル=full の2箇所）。
+    const newsCta = page.locator('a[href="/news"]', { hasText: 'お知らせを見る' });
+    expect(await newsCta.count(), '「お知らせを見る」→ /news が存在').toBeGreaterThan(0);
+    await expect(
+      newsCta.filter({ visible: true }).first(),
+      '少なくとも1つの「お知らせを見る」が可視'
+    ).toBeVisible();
+
+    // F76-2: SportsScience 副次CTA「定期コースを見る」→ /purchase?type=subscription（outline-orange）。
+    const subCta = page.locator('a[href="/purchase?type=subscription"]', {
+      hasText: '定期コースを見る',
+    });
+    expect(
+      await subCta.count(),
+      '「定期コースを見る」→ /purchase?type=subscription が存在'
+    ).toBeGreaterThan(0);
+    await expect(subCta.filter({ visible: true }).first(), '「定期コースを見る」が可視').toBeVisible();
+
+    // F76-3: モバイルヘッダーの「購入」（フラットLink・sm:hidden）→ /purchase・aria-label="購入"。
+    // モバイル幅でのみ可視なので viewport を 390px にして可視判定する。
+    await page.setViewportSize({ width: 390, height: 844 });
+    const mobilePurchase = page.locator('header a[href="/purchase"][aria-label="購入"]');
+    expect(await mobilePurchase.count(), 'モバイルヘッダー購入→ /purchase が存在').toBeGreaterThan(0);
+    await expect(mobilePurchase.first(), 'モバイルヘッダー購入が可視（390px）').toBeVisible();
+  });
+
   test('プランカード「お試しを購入する」→ /purchase?plan=trial-6', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 60000 });
     const btn = page.locator('#subscription button:has-text("お試しを購入する")').first();

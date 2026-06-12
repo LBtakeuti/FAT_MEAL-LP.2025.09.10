@@ -61,6 +61,19 @@ test.describe('F60 DailyScenesSection 描画スモーク', () => {
     await expect(section.getByText('夜のふとるめし')).toBeVisible();
   });
 
+  test('F77: モバイルカルーセルが touch-action:pan-x（縦動き抑制）で存在する', async ({ page }) => {
+    // F77: DailyScenesCarousel（クライアントラッパー）化後も .daily-scenes-carousel が存続し、
+    // モバイル幅では touch-action:pan-x（横パン限定＝縦スクロールを奪わない）であること。
+    // autoplay のスクロール挙動はタイミング依存の装飾のため、ここでは恒久ガードに含めない
+    // （カードが SSR で出続けることは上の主要文言テストが担保）。
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 60000 });
+    const carousel = page.locator('.daily-scenes-carousel').first();
+    await expect(carousel).toHaveCount(1);
+    const touchAction = await carousel.evaluate((el) => getComputedStyle(el).touchAction);
+    expect(touchAction, 'モバイルで touch-action:pan-x（縦動き抑制）').toBe('pan-x');
+  });
+
   test('セクションの画像素材（webp 3枚 + swoosh.svg）が 200 を返す', async ({ request }) => {
     const assets = [
       '/images/daily-scenes/asa.webp',
