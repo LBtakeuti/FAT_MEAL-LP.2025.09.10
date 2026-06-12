@@ -12,8 +12,10 @@ import Link from 'next/link';
  *   hover でさらに浮き、active で沈む（土台に重なる）。
  *
  * variant（色の意味分け）:
- * - orange = ブランドオレンジ（定期/汎用の購入導線）。土台 orange-800・上面 orange-600。
- * - amber  = お試し導線（お試し/単発を色で区別）。土台 amber-700・上面 amber-500。
+ * - orange = ブランドオレンジ（定期/汎用の購入導線）。土台 orange-800・上面 orange-600・白文字。
+ * - amber  = お試し導線（お試し/単発を色で区別）。土台 amber-700・上面 amber-500・白文字。
+ * - outline-orange = 副次CTA（主要購入CTAより主張を抑える）。土台 orange-600・
+ *   上面は白地＋オレンジ枠＋オレンジ文字。3D質感は保ちつつ塗りで主従を表現。
  *
  * ガード:
  * - 挙動は呼び出し側のまま（onClick / href / type）。<button>/<a>/<Link> を出し分け。
@@ -22,7 +24,7 @@ import Link from 'next/link';
  * - transform のみのアニメで CLS なし。色はトークン（orange/amber 系）のみ。
  */
 
-type Variant = 'orange' | 'amber';
+type Variant = 'orange' | 'amber' | 'outline-orange';
 type Size = 'md' | 'lg' | 'full' | 'plan';
 
 interface CommonProps {
@@ -54,11 +56,22 @@ const RADIUS: Record<Size, string> = {
   plan: 'rounded-xl',
 };
 
-// variant ごとの色トークン。土台=濃いトーン、上面=メイントーン（白文字）。
+// variant ごとの色トークン。土台=濃いトーン、上面=メイントーン。
 // 「お試し(amber)/定期(orange)」の導線差を色で保つため variant を分離。
+// text/border は上面の文字色・枠（outline 系は白地＋オレンジ枠で主張を抑える）。
 const VARIANT = {
-  orange: { outer: 'bg-orange-800', inner: 'bg-orange-600', innerDisabled: 'bg-orange-600/60', ring: 'ring-orange-400' },
-  amber: { outer: 'bg-amber-700', inner: 'bg-amber-500', innerDisabled: 'bg-amber-500/60', ring: 'ring-amber-400' },
+  orange: {
+    outer: 'bg-orange-800', inner: 'bg-orange-600', innerDisabled: 'bg-orange-600/60',
+    ring: 'ring-orange-400', text: 'text-white', border: '',
+  },
+  amber: {
+    outer: 'bg-amber-700', inner: 'bg-amber-500', innerDisabled: 'bg-amber-500/60',
+    ring: 'ring-amber-400', text: 'text-white', border: '',
+  },
+  'outline-orange': {
+    outer: 'bg-orange-600', inner: 'bg-white', innerDisabled: 'bg-white/70',
+    ring: 'ring-orange-400', text: 'text-orange-700', border: 'border border-orange-600',
+  },
 } as const;
 
 // 上面の浮き演出（共通）。浮き→hoverでさらに浮き→activeで沈む。
@@ -82,9 +95,10 @@ export function PushButton(props: PushButtonProps) {
     `${isFullWidth ? 'w-full' : ''} ${className}`
   ).trim();
 
-  // 上面（inner）: メイントーン・白文字。disabled 時は沈み演出を無効化。
+  // 上面（inner）: メイントーン。文字色・枠は variant 依存（outline 系は白地＋オレンジ）。
+  // disabled 時は沈み演出を無効化。
   const innerCls =
-    `block ${radius} text-white font-bold text-center whitespace-nowrap ${SIZE_INNER[size]} ` +
+    `block ${radius} ${v.text} ${v.border} font-bold text-center whitespace-nowrap ${SIZE_INNER[size]} ` +
     (disabled ? `${v.innerDisabled} translate-y-0` : `${v.inner} ${LIFT}`);
 
   const inner = <span className={innerCls}>{children}</span>;

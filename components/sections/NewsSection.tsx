@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Reveal } from '@/components/ui/Reveal';
+import { PushButton } from '@/components/ui/PushButton';
 
 interface NewsItem {
   id: string;
@@ -149,14 +150,11 @@ const NewsSection: React.FC<NewsSectionProps> = ({ initialNews = [] }) => {
             ))}
           </div>
 
-          {/* View all button */}
+          {/* View all button（F76-2: 3D押し込みボタン化。モバイルは全幅） */}
           <div className="mt-6 mb-0">
-            <Link
-              href="/news"
-              className="block w-full bg-orange-600 text-white py-3 rounded-full text-center font-semibold text-base hover:bg-orange-700 transition-colors"
-            >
+            <PushButton href="/news" size="full">
               お知らせを見る
-            </Link>
+            </PushButton>
           </div>
         </div>
 
@@ -187,12 +185,10 @@ const NewsSection: React.FC<NewsSectionProps> = ({ initialNews = [] }) => {
 
           {/* View all button */}
           <div className="text-center">
-            <Link
-              href="/news"
-              className="inline-block bg-orange-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-orange-700 transition-colors"
-            >
+            {/* F76-2: 3D押し込みボタン化（PC・既存のオレンジ塗りトーン踏襲） */}
+            <PushButton href="/news" size="lg">
               お知らせを見る
-            </Link>
+            </PushButton>
           </div>
         </div>
       </div>

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { Reveal } from '@/components/ui/Reveal';
 import { PushButton } from '@/components/ui/PushButton';
 
@@ -147,13 +146,15 @@ const SportsScienceSection: React.FC = () => {
             </span>
           </p>
           <div className="cta-btn-wrap">
-            {/* F76: 主要CTA（お試し購入）を3D押し込みボタン化。定期コースを見る（副次）は従来のまま */}
+            {/* F76: 主要CTA（お試し購入）を3D押し込みボタン化。
+                F76-2: 副次CTA（定期コースを見る）も3D化。主従を保つため outline-orange × md
+                （主要=塗りorange lg より主張を抑える）。 */}
             <PushButton href="/purchase?type=trial" size="lg">
               お試し6個セットを注文する
             </PushButton>
-            <Link href="/purchase?type=subscription" className="cta-secondary">
+            <PushButton href="/purchase?type=subscription" variant="outline-orange" size="md">
               定期コースを見る
-            </Link>
+            </PushButton>
           </div>
           <p className="cta-note">
             送料無料 ・ いつでも解約可能 ・ 管理栄養士監修
