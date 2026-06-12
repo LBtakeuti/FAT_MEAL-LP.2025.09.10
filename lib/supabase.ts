@@ -145,6 +145,28 @@ export async function getNewsServer(): Promise<NewsServerItem[]> {
   return (data as NewsServerItem[]) || [];
 }
 
+// SEO-S3: お知らせ個別をサーバーサイドで取得（/news/[id] の generateMetadata・SSR用）。
+// /api/news/[id] と同一（id 一致の単一レコード）。見つからなければ null。
+export async function getNewsByIdServer(id: string): Promise<NewsServerItem | null> {
+  const { url, anonKey, serviceRoleKey } = validateEnv();
+  const client = createClient<Database>(url, serviceRoleKey || anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  const { data, error } = await (client as any)
+    .from('news')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error) {
+    console.error('お知らせ個別取得エラー（サーバーサイド）:', error);
+    return null;
+  }
+
+  return (data as NewsServerItem | null) ?? null;
+}
+
 // SEO-S2: コラム一覧をサーバーサイドで取得（/blog index・トップBlogSection のSSR用）。
 // /api/blog/list と同一条件（is_published・published_at<=now・published_at DESC）。
 export interface ArticleListServerItem {

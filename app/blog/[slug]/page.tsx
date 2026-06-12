@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { createServerClient } from '@/lib/supabase';
+import { toSafeJsonLd } from '@/lib/seo';
 import type { ArticleDetail, ArticleListItem } from '@/types/article';
 import ArticleContent from '@/components/blog/ArticleContent';
 import ShareButtons from '@/components/blog/ShareButtons';
@@ -181,11 +182,21 @@ export default async function BlogDetailPage({ params }: PageProps) {
   // F49-fix: JSON.stringify は < > & をエスケープしないため、
   // article.title 等に "</script><script>alert(1)</script>" が含まれていると
   // ブラウザがスクリプトブロックを早期終了して XSS が成立する。
-  // < > & を Unicode エスケープして安全な JSON 文字列に変換する。
-  const safeJsonLd = JSON.stringify(jsonLd)
-    .replace(/</g, '\\u003c')
-    .replace(/>/g, '\\u003e')
-    .replace(/&/g, '\\u0026');
+  // < > & を Unicode エスケープして安全な JSON 文字列に変換する（lib/seo に共通化）。
+  const safeJsonLd = toSafeJsonLd(jsonLd);
+
+  // SEO-S3: パンくず構造化データ（ふとるめし › コラム › 記事タイトル）。
+  // 画面のパンくず表示と対応。
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'ふとるめし', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: 'コラム', item: `${SITE_URL}/blog` },
+      { '@type': 'ListItem', position: 3, name: article.title, item: canonicalUrl },
+    ],
+  };
+  const safeBreadcrumbJsonLd = toSafeJsonLd(breadcrumbJsonLd);
 
   return (
     <main className="min-h-screen bg-[#F9F8F3] pt-24 sm:pt-28 pb-16">
@@ -195,6 +206,11 @@ export default async function BlogDetailPage({ params }: PageProps) {
         // F49-fix: < > & を Unicode エスケープ済み（safeJsonLd）。
         // </script> インジェクションを防止する。
         dangerouslySetInnerHTML={{ __html: safeJsonLd }}
+      />
+      {/* SEO-S3: パンくず構造化データ（< > & エスケープ済み） */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeBreadcrumbJsonLd }}
       />
       {/* F63: コラム詳細の本文コンテナを横方向に拡大（読みやすさを保ちつつ横いっぱい寄りに）。
           モバイルは左右padを詰め、PC/大画面は max-width を拡大。 */}

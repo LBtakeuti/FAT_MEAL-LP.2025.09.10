@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { getMenuItemsServer, getFaqsServer, getArticlesServer, getNewsServer } from '@/lib/supabase';
 import HomeContent from '@/components/pages/HomeContent';
-import { SITE_URL } from '@/lib/seo';
+import { SITE_URL, toSafeJsonLd } from '@/lib/seo';
 import type { MenuItem } from '@/types';
 
 export const revalidate = 60; // 60秒でキャッシュを再検証
@@ -79,17 +79,42 @@ export default async function Home() {
         }
       : null;
   // blog詳細と同じく < > & を Unicode エスケープして </script> インジェクションを防止。
-  const safeFaqJsonLd = faqJsonLd
-    ? JSON.stringify(faqJsonLd)
-        .replace(/</g, '\\u003c')
-        .replace(/>/g, '\\u003e')
-        .replace(/&/g, '\\u0026')
-    : null;
+  const safeFaqJsonLd = faqJsonLd ? toSafeJsonLd(faqJsonLd) : null;
+
+  // SEO-S3: Organization 構造化データ（会社・ロゴ・URL）。
+  // sameAs(SNS URL) は確定後に追記予定のため現状は省略。
+  const organizationJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'ふとるめし',
+    url: SITE_URL,
+    logo: `${SITE_URL}/images/branding/logo-header.png`,
+  };
+
+  // SEO-S3: WebSite 構造化データ（サイト内検索が無いため SearchAction は省略）。
+  const webSiteJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'ふとるめし',
+    url: SITE_URL,
+  };
+
+  const safeOrganizationJsonLd = toSafeJsonLd(organizationJsonLd);
+  const safeWebSiteJsonLd = toSafeJsonLd(webSiteJsonLd);
 
   return (
     <>
       {/* 画像のプリロードリンク */}
       <ImagePreloadLinks images={imageUrls} />
+      {/* SEO-S3: Organization / WebSite 構造化データ（< > & エスケープ済み） */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeOrganizationJsonLd }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeWebSiteJsonLd }}
+      />
       {/* SEO-S1: FAQPage 構造化データ（XSS対策で < > & エスケープ済み） */}
       {safeFaqJsonLd && (
         <script
