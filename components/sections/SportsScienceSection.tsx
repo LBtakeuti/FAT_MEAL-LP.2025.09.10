@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Reveal } from '@/components/ui/Reveal';
+import { PushButton } from '@/components/ui/PushButton';
 
 type SportTab = 'baseball' | 'soccer' | 'football';
 
@@ -146,9 +147,10 @@ const SportsScienceSection: React.FC = () => {
             </span>
           </p>
           <div className="cta-btn-wrap">
-            <Link href="/purchase?type=trial" className="cta-primary">
+            {/* F76: 主要CTA（お試し購入）を3D押し込みボタン化。定期コースを見る（副次）は従来のまま */}
+            <PushButton href="/purchase?type=trial" size="lg">
               お試し6個セットを注文する
-            </Link>
+            </PushButton>
             <Link href="/purchase?type=subscription" className="cta-secondary">
               定期コースを見る
             </Link>

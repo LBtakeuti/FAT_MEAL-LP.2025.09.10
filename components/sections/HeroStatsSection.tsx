@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
 import { Reveal } from '@/components/ui/Reveal';
 import { CountUp } from '@/components/ui/CountUp';
+import { PushButton } from '@/components/ui/PushButton';
 
 interface HeroStatsSectionProps {
   hideCta?: boolean;
@@ -73,12 +73,12 @@ const HeroStatsSection: React.FC<HeroStatsSectionProps> = ({ hideCta = false }) 
         </div>
       </Reveal>
 
-      {/* CTAボタン */}
+      {/* CTAボタン（F76: 3D押し込みボタン化） */}
       {!hideCta && (
         <div className="hero-stats-cta">
-          <Link href="/purchase" className="hero-stats-cta-btn">
+          <PushButton href="/purchase" size="lg">
             まずは太る
-          </Link>
+          </PushButton>
         </div>
       )}
     </section>

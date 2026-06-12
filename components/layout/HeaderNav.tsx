@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { createBrowserClient } from '@/lib/supabase';
+import { PushButton } from '@/components/ui/PushButton';
 
 const HeaderNav: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
@@ -44,13 +45,10 @@ const HeaderNav: React.FC = () => {
         </Link>
       </nav>
 
-      {/* ふとるめしを始めるボタン - 右端に絶対配置 */}
-      <Link
-        href="/purchase?type=subscription"
-        className="absolute right-0 flex items-center px-5 py-2 rounded-full bg-[#FF6B35] text-white font-antique font-bold text-sm lg:text-base hover:bg-[#E55220] transition-colors whitespace-nowrap"
-      >
+      {/* ふとるめしを始めるボタン - 右端に絶対配置（F76: 3D押し込みボタン化） */}
+      <PushButton href="/purchase?type=subscription" size="md" className="absolute right-0">
         購入する
-      </Link>
+      </PushButton>
     </div>
   );
 };
