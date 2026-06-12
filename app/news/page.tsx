@@ -1,9 +1,32 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getNewsServer } from '@/lib/supabase';
+import { SITE_URL, DEFAULT_OG_IMAGE } from '@/lib/seo';
 
 // SEO-S2: お知らせ一覧をサーバーレンダリング化。お知らせタイトル・/news/[id] への
 // 内部リンクを初期HTMLに出してクローラーに露出する。戻り導線は <Link> でSSR化。
 export const revalidate = 60;
+
+// SEO-S3: お知らせ一覧の固有メタ情報。
+export const metadata: Metadata = {
+  title: 'お知らせ | ふとるめし',
+  description: 'ふとるめしからのお知らせ・新着情報の一覧です。',
+  alternates: { canonical: `${SITE_URL}/news` },
+  openGraph: {
+    type: 'website',
+    title: 'お知らせ | ふとるめし',
+    description: 'ふとるめしからのお知らせ・新着情報の一覧です。',
+    url: `${SITE_URL}/news`,
+    siteName: 'ふとるめし',
+    locale: 'ja_JP',
+    images: [DEFAULT_OG_IMAGE],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'お知らせ | ふとるめし',
+    description: 'ふとるめしからのお知らせ・新着情報の一覧です。',
+  },
+};
 
 // 日付フォーマット（YYYY-MM-DD → YYYY.MM.DD）
 function formatDate(dateStr: string): string {

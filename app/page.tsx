@@ -1,8 +1,15 @@
+import type { Metadata } from 'next';
 import { getMenuItemsServer, getFaqsServer, getArticlesServer, getNewsServer } from '@/lib/supabase';
 import HomeContent from '@/components/pages/HomeContent';
+import { SITE_URL } from '@/lib/seo';
 import type { MenuItem } from '@/types';
 
 export const revalidate = 60; // 60秒でキャッシュを再検証
+
+// SEO-S3: トップの canonical を明示（title/description/OGP はルート layout を継承）。
+export const metadata: Metadata = {
+  alternates: { canonical: SITE_URL },
+};
 
 // 画像プリロード用コンポーネント
 function ImagePreloadLinks({ images }: { images: string[] }) {
