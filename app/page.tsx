@@ -1,4 +1,4 @@
-import { getMenuItemsServer, getFaqsServer } from '@/lib/supabase';
+import { getMenuItemsServer, getFaqsServer, getArticlesServer, getNewsServer } from '@/lib/supabase';
 import HomeContent from '@/components/pages/HomeContent';
 import type { MenuItem } from '@/types';
 
@@ -24,11 +24,15 @@ function ImagePreloadLinks({ images }: { images: string[] }) {
 }
 
 export default async function Home() {
-  // サーバーサイドでメニュー・FAQデータを取得（FAQはSEO-S1でSSR化）
-  const [menuItemsDB, faqs] = await Promise.all([
+  // サーバーサイドでメニュー・FAQ・最新コラム・お知らせを取得
+  // （FAQ=SEO-S1、コラム/お知らせ=SEO-S2 でSSR化）
+  const [menuItemsDB, faqs, articlesRes, news] = await Promise.all([
     getMenuItemsServer(6),
     getFaqsServer(),
+    getArticlesServer(11, 0), // BlogSection の DISPLAY_LIMIT(10)+1（hasMore判定用）
+    getNewsServer(),
   ]);
+  const initialArticles = articlesRes.items;
 
   // DBの型をMenuItem型に変換
   const menuItems: MenuItem[] = menuItemsDB.map((item) => ({
@@ -86,7 +90,12 @@ export default async function Home() {
           dangerouslySetInnerHTML={{ __html: safeFaqJsonLd }}
         />
       )}
-      <HomeContent menuItems={menuItems} initialFaqs={faqs} />
+      <HomeContent
+        menuItems={menuItems}
+        initialFaqs={faqs}
+        initialArticles={initialArticles}
+        initialNews={news}
+      />
     </>
   );
 }

@@ -13,11 +13,18 @@ interface NewsItem {
   image: string | null;
 }
 
-const NewsSection: React.FC = () => {
-  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
-  const [loading, setLoading] = useState(true);
+interface NewsSectionProps {
+  /** SEO-S2: サーバー取得済みのお知らせ。あればSSRで即描画（クローラーに項目露出）。 */
+  initialNews?: NewsItem[];
+}
 
+const NewsSection: React.FC<NewsSectionProps> = ({ initialNews = [] }) => {
+  const [newsItems, setNewsItems] = useState<NewsItem[]>(initialNews);
+  const [loading, setLoading] = useState(initialNews.length === 0);
+
+  // SEO-S2: 初期データが無い場合のみクライアントfetchでフォールバック取得。
   useEffect(() => {
+    if (initialNews.length > 0) return;
     const fetchNews = async () => {
       try {
         const res = await fetch('/api/news');
@@ -32,7 +39,7 @@ const NewsSection: React.FC = () => {
       }
     };
     fetchNews();
-  }, []);
+  }, [initialNews.length]);
 
   // URLハッシュ（#news）の処理
   useEffect(() => {

@@ -23,7 +23,7 @@ import LineFloatingButton from '@/components/ui/LineFloatingButton';
 import PurchaseCircleButton from '@/components/ui/PurchaseCircleButton';
 import type { MenuItem } from '@/types';
 import type { SharePhotoLike } from '@/lib/share-download';
-import type { FaqServerItem } from '@/lib/supabase';
+import type { FaqServerItem, ArticleListServerItem, NewsServerItem } from '@/lib/supabase';
 
 interface ShareData {
   link: {
@@ -40,9 +40,18 @@ interface HomeContentProps {
   shareData?: ShareData | null;
   /** SEO-S1: サーバー取得した FAQ（SSRで初期表示するため） */
   initialFaqs?: FaqServerItem[];
+  /** SEO-S2: サーバー取得した最新コラム/お知らせ（SSRで初期表示するため） */
+  initialArticles?: ArticleListServerItem[];
+  initialNews?: NewsServerItem[];
 }
 
-export default function HomeContent({ menuItems, shareData = null, initialFaqs = [] }: HomeContentProps) {
+export default function HomeContent({
+  menuItems,
+  shareData = null,
+  initialFaqs = [],
+  initialArticles = [],
+  initialNews = [],
+}: HomeContentProps) {
   const isShare = !!shareData;
 
   return (
@@ -68,9 +77,9 @@ export default function HomeContent({ menuItems, shareData = null, initialFaqs =
         <AmbassadorSection />
         <FeedbackSection />
         <PurchaseFlowSection />
-        <NewsSection />
+        <NewsSection initialNews={initialNews} />
         {/* F14-1: 最新コラム（両モード表示） */}
-        <BlogSection />
+        <BlogSection initialArticles={initialArticles} />
         <FaqSection initialFaqs={initialFaqs} />
       </main>
       <LineFloatingButton />

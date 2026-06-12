@@ -55,12 +55,22 @@ function formatDate(iso: string | null): string {
   return `${y}-${m}-${day}`;
 }
 
-const BlogSection: React.FC = () => {
-  const [articles, setArticles] = useState<ArticleListItem[]>([]);
-  const [hasMore, setHasMore] = useState(false);
-  const [loading, setLoading] = useState(true);
+interface BlogSectionProps {
+  /** SEO-S2: サーバー取得済みの最新コラム（DISPLAY_LIMIT+1件まで）。あればSSRで即描画。 */
+  initialArticles?: ArticleListItem[];
+}
 
+const BlogSection: React.FC<BlogSectionProps> = ({ initialArticles }) => {
+  const seeded = initialArticles && initialArticles.length > 0;
+  const [articles, setArticles] = useState<ArticleListItem[]>(
+    seeded ? initialArticles.slice(0, DISPLAY_LIMIT) : [],
+  );
+  const [hasMore, setHasMore] = useState(seeded ? initialArticles.length > DISPLAY_LIMIT : false);
+  const [loading, setLoading] = useState(!seeded);
+
+  // SEO-S2: 初期データが無い場合のみクライアントfetchでフォールバック取得。
   useEffect(() => {
+    if (seeded) return;
     const fetchLatest = async () => {
       try {
         const res = await fetch(`/api/blog/list?limit=${DISPLAY_LIMIT + 1}`);
@@ -77,7 +87,7 @@ const BlogSection: React.FC = () => {
       }
     };
     fetchLatest();
-  }, []);
+  }, [seeded]);
 
   if (loading) {
     return (
