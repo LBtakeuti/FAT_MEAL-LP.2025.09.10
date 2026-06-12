@@ -1,4 +1,4 @@
-import { getMenuItemsServer } from '@/lib/supabase';
+import { getMenuItemsServer, getFaqsServer } from '@/lib/supabase';
 import HomeContent from '@/components/pages/HomeContent';
 import type { MenuItem } from '@/types';
 
@@ -24,8 +24,11 @@ function ImagePreloadLinks({ images }: { images: string[] }) {
 }
 
 export default async function Home() {
-  // サーバーサイドでメニューデータを取得
-  const menuItemsDB = await getMenuItemsServer(6);
+  // サーバーサイドでメニュー・FAQデータを取得（FAQはSEO-S1でSSR化）
+  const [menuItemsDB, faqs] = await Promise.all([
+    getMenuItemsServer(6),
+    getFaqsServer(),
+  ]);
 
   // DBの型をMenuItem型に変換
   const menuItems: MenuItem[] = menuItemsDB.map((item) => ({
@@ -47,11 +50,43 @@ export default async function Home() {
   // 最初の6枚の画像URLを抽出
   const imageUrls = menuItems.slice(0, 6).map(item => item.image).filter(Boolean);
 
+  // SEO-S1: FAQPage 構造化データ（JSON-LD）。各FAQを Question/acceptedAnswer に。
+  // 回答は answer_title ＋ answer_detail を結合（検索リッチリザルト用の本文）。
+  const faqJsonLd =
+    faqs.length > 0
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: faqs.map((f) => ({
+            '@type': 'Question',
+            name: f.question,
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: [f.answer_title, f.answer_detail].filter(Boolean).join('\n'),
+            },
+          })),
+        }
+      : null;
+  // blog詳細と同じく < > & を Unicode エスケープして </script> インジェクションを防止。
+  const safeFaqJsonLd = faqJsonLd
+    ? JSON.stringify(faqJsonLd)
+        .replace(/</g, '\\u003c')
+        .replace(/>/g, '\\u003e')
+        .replace(/&/g, '\\u0026')
+    : null;
+
   return (
     <>
       {/* 画像のプリロードリンク */}
       <ImagePreloadLinks images={imageUrls} />
-      <HomeContent menuItems={menuItems} />
+      {/* SEO-S1: FAQPage 構造化データ（XSS対策で < > & エスケープ済み） */}
+      {safeFaqJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeFaqJsonLd }}
+        />
+      )}
+      <HomeContent menuItems={menuItems} initialFaqs={faqs} />
     </>
   );
 }

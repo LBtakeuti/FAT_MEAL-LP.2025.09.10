@@ -11,12 +11,19 @@ interface FaqItem {
   sort_order: number;
 }
 
-export default function FaqSection() {
-  const [faqs, setFaqs] = useState<FaqItem[]>([]);
-  const [loading, setLoading] = useState(true);
+interface FaqSectionProps {
+  /** SEO-S1: サーバー取得済みのFAQ。あればSSRで即描画（no-JS/クローラーに本文が出る）。 */
+  initialFaqs?: FaqItem[];
+}
+
+export default function FaqSection({ initialFaqs = [] }: FaqSectionProps) {
+  const [faqs, setFaqs] = useState<FaqItem[]>(initialFaqs);
   const [openId, setOpenId] = useState<string | null>(null);
 
+  // SEO-S1: 初期データが無い場合のみクライアントfetchでフォールバック取得。
+  // 初期データがあればSSRの値をそのまま使う（再fetchしない＝チラつき/重複回避）。
   useEffect(() => {
+    if (initialFaqs.length > 0) return;
     const load = async () => {
       try {
         const res = await fetch('/api/faqs');
@@ -26,18 +33,15 @@ export default function FaqSection() {
         }
       } catch (e) {
         console.error('Failed to load faqs', e);
-      } finally {
-        setLoading(false);
       }
     };
     load();
-  }, []);
+  }, [initialFaqs.length]);
 
   const toggle = useCallback((id: string) => {
     setOpenId((prev) => (prev === id ? null : id));
   }, []);
 
-  if (loading) return null;
   if (faqs.length === 0) return null;
 
   return (

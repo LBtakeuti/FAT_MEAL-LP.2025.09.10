@@ -115,3 +115,35 @@ export async function getMenuItemsServer(limit?: number): Promise<MenuItemDB[]> 
   return data || [];
 }
 
+// SEO-S1: FAQ をサーバーサイドで取得（SSR/クローラーに本文を出すため）。
+// /api/faqs と同一クエリ（is_active のみ・sort_order順）。
+export interface FaqServerItem {
+  id: string;
+  question: string;
+  answer_title: string;
+  answer_detail: string;
+  sort_order: number;
+}
+
+export async function getFaqsServer(): Promise<FaqServerItem[]> {
+  const { url, anonKey, serviceRoleKey } = validateEnv();
+
+  const client = createClient<Database>(url, serviceRoleKey || anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  const { data, error } = await (client as any)
+    .from('faqs')
+    .select('id, question, answer_title, answer_detail, sort_order')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('FAQ取得エラー（サーバーサイド）:', error);
+    return [];
+  }
+
+  return (data as FaqServerItem[]) || [];
+}
+
