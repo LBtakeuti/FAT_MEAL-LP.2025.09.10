@@ -37,6 +37,33 @@ rm -rf .next && pnpm dev -p 3010
 いずれも `rm -rf .next` のクリーン再起動で回復する。F61–F66 / F67–F68 の2回で
 発生し、毎回クリーン再起動で全 green に復帰した実績がある。
 
+## 既知の事象：孤児 next-server プロセスで全ルート 500
+
+長いセッションで dev / start を何度も切り替えると、`pkill -f "next dev"` が
+呼び出し形の違いで取り切れず **孤児の next-server プロセスが残留** する
+（別バージョン v14 / v16 等が混在することもある）。複数プロセスが同一 `.next` を
+奪い合い、`routes-manifest.json` / `_document.js` が ENOENT になって **全ルート 500**。
+`rm -rf .next` 直後に再起動しても孤児が壊し続けるため回復しない。
+
+- **対処**: `pkill -9 -f next-server; pkill -9 -f "next dev"; pkill -9 -f "next start"`
+  で全孤児を一掃 → `rm -rf .next && pnpm dev -p 3010`（または本番 build 確認時は
+  `rm -rf .next && pnpm build && pnpm start -p 3010`）で **単一プロセス**を起動。
+- `ps aux | grep next-server` で残プロセスが正しい1つだけであることを確認する。
+- ソース無罪の切り分け: tsc / eslint green ＋ クリーン後の全ルート 200。
+
+## 既知の事象：バックグラウンド `pnpm start` が Ready 直後に死ぬ
+
+`pnpm start &` のように単純バックグラウンドで起動すると、起動用シェルが終了した
+タイミングで **SIGHUP を受けてサーバが数秒後に exit** する。Ready ログは出るのに
+直後から全ルート 500 / 000 になり、E2E が「全滅」する（`.next` 破損ではなくプロセス死）。
+
+- **対処**: `nohup pnpm start -p 3010 > /tmp/prod3010.log 2>&1 < /dev/null &`
+  で起動する（シェル終了の SIGHUP を無視させる）。
+  **macOS に `setsid` は無い**ため `nohup` のみ。`setsid` を付けると
+  `nohup: setsid: No such file or directory` で起動すらしない。
+- 起動後は `lsof -nP -iTCP:3010 -sTCP:LISTEN` ＋ 数十秒の連続 curl で
+  「死なずに LISTENING 継続」を確認してから E2E テストメートに渡す。
+
 ## 切り分け手順
 
 E2E が fail したとき、まず「ソース起因か環境起因か」を切り分ける:
