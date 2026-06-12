@@ -1,6 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { Reveal } from '@/components/ui/Reveal';
+import { PushButton } from '@/components/ui/PushButton';
 
 const PurchaseFlowSection: React.FC = () => {
   const steps = [
@@ -96,12 +97,9 @@ const PurchaseFlowSection: React.FC = () => {
 
         {/* CTA */}
         <div className="mt-10 sm:mt-14 text-center">
-          <a
-            href="/purchase"
-            className="inline-block bg-[#E8593C] text-white px-10 py-3.5 sm:py-4 rounded-full font-bold text-base sm:text-lg hover:bg-[#d64a2e] transition-colors shadow-md"
-          >
+          <PushButton href="/purchase" size="lg">
             今すぐ注文する
-          </a>
+          </PushButton>
         </div>
       </div>
     </section>

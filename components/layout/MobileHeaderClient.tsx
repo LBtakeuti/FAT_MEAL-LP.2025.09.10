@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { createBrowserClient } from '@/lib/supabase';
 import LogoutModal from '@/components/ui/LogoutModal';
+import { PushButton } from '@/components/ui/PushButton';
 import MobileHeaderLogo from './MobileHeaderLogo';
 
 const MobileHeaderClient: React.FC = () => {
@@ -65,13 +66,9 @@ const MobileHeaderClient: React.FC = () => {
 
           <div className="flex items-center gap-3">
             {/* 購入ボタン */}
-            <Link
-              href="/purchase"
-              className="flex items-center justify-center px-4 h-9 rounded-full bg-[#FF6B35] text-white font-bold text-sm hover:bg-[#E55220] transition-all duration-300 whitespace-nowrap"
-              aria-label="購入"
-            >
+            <PushButton href="/purchase" size="md" aria-label="購入">
               購入
-            </Link>
+            </PushButton>
 
             {/* Hamburger Menu Button */}
             <button
