@@ -14,9 +14,12 @@ import { rateLimit, getClientIP } from '@/lib/rate-limit';
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 // planId → 商品 Price ID（env）。Price から Product ID は retrieve で取得する。
+// trial-6（お試し/単発）も含め、現役プラン全てを解決できるようにする。
+// これにより商品制限付きクーポン(scope==='product')の applies_to を全プランで尊重する。
 function getProductPriceIdForPlan(planId: string | null | undefined): string | null {
   if (!planId) return null;
   const map: Record<string, string | undefined> = {
+    'trial-6': process.env.STRIPE_PRICE_TRIAL_6SET,
     'sub-6': process.env.STRIPE_PRICE_SUB6_PRODUCT,
     'sub-12': process.env.STRIPE_PRICE_SUB12_PRODUCT,
   };
@@ -79,21 +82,31 @@ export async function POST(request: NextRequest) {
       : null;
     const scope: 'product' | 'all' = appliesToProducts && appliesToProducts.length > 0 ? 'product' : 'all';
 
-    // F44: planId が指定された場合、現プランの product_id が範囲に含まれるか判定
+    // F44 / 汎用ガード: planId が指定された場合、現プランの product_id が範囲に含まれるか判定。
+    // scope==='all'（全体クーポン）は全プランで有効。
+    // scope==='product'（商品制限クーポン）は applies_to に現プランの Product が含まれる場合のみ有効。
+    // 重要（安全側デフォルト）: 商品制限クーポンでプランの Product を解決できない/不明な場合は
+    //   null を素通りさせず false に倒す。これにより trial-6 など applies_to 外のプランへの
+    //   誤適用を防ぐ（KOSHIGAYA 等の定期専用クーポンを単発購入で弾く）。
     let appliesToCurrentPlan: boolean | null = null;
     if (typeof planId === 'string' && planId) {
       if (scope === 'all') {
         appliesToCurrentPlan = true;
       } else {
         const productPriceId = getProductPriceIdForPlan(planId);
-        if (productPriceId) {
+        if (!productPriceId) {
+          // 商品制限クーポンなのにプランの Product を解決できない → 安全側で拒否
+          console.error('[validate-coupon] Unresolvable product for product-scope coupon, denying:', planId);
+          appliesToCurrentPlan = false;
+        } else {
           try {
             const price = await stripe.prices.retrieve(productPriceId);
             const productId = typeof price.product === 'string' ? price.product : (price.product as any)?.id;
+            // Product を取得できなければ安全側で拒否
             appliesToCurrentPlan = !!productId && appliesToProducts!.includes(productId);
           } catch (e) {
-            console.error('[validate-coupon] Failed to retrieve price for plan:', planId, e);
-            appliesToCurrentPlan = null;
+            console.error('[validate-coupon] Failed to retrieve price for plan, denying:', planId, e);
+            appliesToCurrentPlan = false;
           }
         }
       }

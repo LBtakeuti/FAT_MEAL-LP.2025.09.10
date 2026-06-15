@@ -152,11 +152,40 @@ export async function POST(request: NextRequest) {
             }
 
             if (coupon) {
-              appliedCouponId = coupon.id;
-              if (coupon.percent_off) {
-                amount = Math.round(amount * (1 - coupon.percent_off / 100));
-              } else if (coupon.amount_off) {
-                amount = Math.max(0, amount - coupon.amount_off);
+              // 汎用ガード（多重防衛 / API直叩き対策）:
+              // クーポンに applies_to.products がある（商品制限クーポン）場合、
+              // 購入商品(trial-6)の Stripe Product が含まれているか検証し、
+              // 含まれなければ割引を一切適用しない。
+              // 単発購入は discounts ではなく自前計算で amount から引くため、
+              // ここで applies_to を見ないと定期専用クーポンがお試しにすり抜ける。
+              const appliesToProducts: string[] | null = Array.isArray(coupon.applies_to?.products)
+                ? coupon.applies_to.products
+                : null;
+              let couponApplicable = true;
+              if (appliesToProducts && appliesToProducts.length > 0) {
+                couponApplicable = false;
+                const trialPriceId = process.env.STRIPE_PRICE_TRIAL_6SET;
+                if (trialPriceId) {
+                  try {
+                    const price = await stripe.prices.retrieve(trialPriceId);
+                    const productId =
+                      typeof price.product === 'string' ? price.product : (price.product as any)?.id;
+                    couponApplicable = !!productId && appliesToProducts.includes(productId);
+                  } catch (e) {
+                    // 解決できない場合は安全側で適用しない
+                    console.error('[create-intent/one-time] Failed to resolve trial product, skipping coupon:', e);
+                    couponApplicable = false;
+                  }
+                }
+              }
+
+              if (couponApplicable) {
+                appliedCouponId = coupon.id;
+                if (coupon.percent_off) {
+                  amount = Math.round(amount * (1 - coupon.percent_off / 100));
+                } else if (coupon.amount_off) {
+                  amount = Math.max(0, amount - coupon.amount_off);
+                }
               }
             }
           }
