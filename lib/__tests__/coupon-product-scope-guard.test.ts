@@ -120,6 +120,10 @@ async function createIntentOneTimeAmount(
   stripe: ReturnType<typeof makeFakeStripe>,
   coupon: Coupon,
   base: number,
+  // 実ルートの process.env.STRIPE_PRICE_TRIAL_6SET 参照を模倣。
+  // 既定は env 設定済み（price_trial6）。env 未設定の検証時のみ '' を渡す
+  // （未設定 env は falsy。undefined だと既定値にフォールバックしてしまうため空文字で表現）。
+  trialPriceId: string = ENV.STRIPE_PRICE_TRIAL_6SET,
 ): Promise<{ amount: number; applied: boolean }> {
   const appliesToProducts: string[] | null = Array.isArray(coupon.applies_to?.products)
     ? coupon.applies_to!.products!
@@ -127,7 +131,6 @@ async function createIntentOneTimeAmount(
   let couponApplicable = true;
   if (appliesToProducts && appliesToProducts.length > 0) {
     couponApplicable = false;
-    const trialPriceId = ENV.STRIPE_PRICE_TRIAL_6SET;
     if (trialPriceId) {
       try {
         const price = await stripe.prices.retrieve(trialPriceId);
@@ -277,5 +280,16 @@ describe('商品制限クーポンガード: create-intent (one-time / trial-6)'
     const res = await createIntentOneTimeAmount(stripe, coupon, TRIAL_BASE);
     expect(res.applied).toBe(false);
     expect(res.amount).toBe(TRIAL_BASE);
+  });
+
+  it('env(STRIPE_PRICE_TRIAL_6SET)未設定で trial product 解決不能 → 安全側で割引非適用・amount 据え置き', async () => {
+    const stripe = makeFakeStripe();
+    // applies_to に trial product を含むクーポンでも、env 未設定なら解決できないので弾く。
+    const coupon: Coupon = { applies_to: { products: ['prod_trial'] }, amount_off: 2100 };
+    const res = await createIntentOneTimeAmount(stripe, coupon, TRIAL_BASE, '');
+    expect(res.applied).toBe(false);
+    expect(res.amount).toBe(TRIAL_BASE);
+    // env 未設定なら Stripe retrieve は呼ばれない（if (trialPriceId) でスキップ）
+    expect(stripe.prices.retrieve).not.toHaveBeenCalled();
   });
 });
