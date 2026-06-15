@@ -121,3 +121,31 @@ FBや変更後に再発防止として追加されたリグレッションシナ
 | SC-REG-007-01 | 実在slugでページが200を返しHTML本文が描画される | スモーク | /message/a-school が200・article.message-body が表示 |
 | SC-REG-007-02 | h1タイトルが表示される | スモーク | h1が可視かつテキスト1文字以上 |
 | SC-REG-007-03 | 存在しないslugは404ページが表示される | スモーク | notFound()発火後に404コンテンツが描画される |
+
+---
+
+## SC-REG-008: trial-6 + 定期専用クーポン(KOSHIGAYA)誤適用ガード
+
+- **対象コミット**: 537dc49 / 502a484
+- **FB番号**: 未付与（指示書 docs/debug-coupon-trial-leak.md 由来）
+- **変更概要**: 商品制限クーポン（scope='product'）をお試しプラン(trial-6)に誤適用しないガードを汎用ガード関数として実装。安全側デフォルトとして planId の Product 解決不能時も valid:false に倒す。
+- **テストファイル**: `e2e/tests/regression-coupon-trial-leak.spec.ts`
+
+### シナリオ一覧
+
+| シナリオID | テスト名 | 種別 | 確認内容 |
+|-----------|---------|------|---------|
+| SC-REG-008-01 | trial-6 + KOSHIGAYA → valid:false かつ discount 未付与 | リグレッション | POST /api/payment/validate-coupon で valid:false・appliedCoupon/discount/percentOff が未付与 |
+| SC-REG-008-02 | trial-6 + 無効コード → valid:false かつ discount 未付与 | リグレッション | 存在しないコードで valid:false・discount 未付与を恒久固定 |
+| SC-REG-008-03 | sub-6 + 無効コード → valid:false（過剰ブロックでない） | リグレッション | scope='product' ガードが sub-6 に過剰発火していないこと |
+
+### 環境制約（重要）
+
+- ローカル .env.local の STRIPE_SECRET_KEY は sk_test（テストモード）
+- KOSHIGAYA は Stripe live の Promotion Code 想定のため、テストモードでは stripe.promotionCodes.list が空を返し `{ valid:false, error:'無効なクーポンコードです' }` になる
+- これは "wrong plan" ガードパス（`error:'このクーポンは選択中のプランにはお使いいただけません'`）ではなく "無効コード" パスだが、実害（割引適用）はゼロ
+- ライブ環境での KOSHIGAYA による "wrong plan" ガードパスの確認は **手動確認項目**
+
+### 過剰ブロック回帰（ライブ環境手動確認項目）
+
+テストモード環境には scope='all' の全体クーポンが存在しないため、sub-6 / sub-12 で valid:true になる経路を E2E 自動検証できない。実コード（app/api/payment/validate-coupon/route.ts）上 scope==='all' の場合に valid:true を返す経路が存在することを確認済み。ライブ環境での sub-6 / sub-12 + 全体クーポンの valid:true は Stripe ダッシュボードのテストモード全体クーポンで手動確認すること。
