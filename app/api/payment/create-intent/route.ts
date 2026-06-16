@@ -152,6 +152,13 @@ export async function POST(request: NextRequest) {
             }
 
             if (coupon) {
+              // 定期専用クーポンのお試し誤適用ガード（ブラックリスト方式 / keitakeuchi判断 2026-06-16）:
+              // coupon.metadata.subscription_only === "true" のクーポンは、お試し(one-time / trial-6)では
+              // 割引を一切適用しない。applies_to 未設定で metadata/amount_off 駆動の割引が
+              // すり抜けるのを止める恒久ガード（KOSHIGAYA=ze8rKt4d 等）。
+              // フラグ無しは従来どおり適用可（将来のお試し用クーポンに影響しない）。
+              const isSubscriptionOnlyCoupon = coupon.metadata?.subscription_only === 'true';
+
               // 汎用ガード（多重防衛 / API直叩き対策）:
               // クーポンに applies_to.products がある（商品制限クーポン）場合、
               // 購入商品(trial-6)の Stripe Product が含まれているか検証し、
@@ -161,8 +168,9 @@ export async function POST(request: NextRequest) {
               const appliesToProducts: string[] | null = Array.isArray(coupon.applies_to?.products)
                 ? coupon.applies_to.products
                 : null;
-              let couponApplicable = true;
-              if (appliesToProducts && appliesToProducts.length > 0) {
+              // subscription_only クーポンは初期から不適用に倒す（以降の applies_to 判定でも上書きしない）。
+              let couponApplicable = !isSubscriptionOnlyCoupon;
+              if (couponApplicable && appliesToProducts && appliesToProducts.length > 0) {
                 couponApplicable = false;
                 const trialPriceId = process.env.STRIPE_PRICE_TRIAL_6SET;
                 if (trialPriceId) {

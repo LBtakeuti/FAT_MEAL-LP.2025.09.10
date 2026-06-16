@@ -475,8 +475,17 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
   // - amount_off : 割引後 = max(0, base - amount_off)、割引額 = base - 割引後
   // validate-coupon は percent_off 時に discount:0 を返すため（表示専用バグ）、
   // ここで実請求と一致する割引額を再計算する。決済計算（create-intent）は無改変。
+  // 定期専用クーポンのお試し誤適用ガード（ブラックリスト方式 / keitakeuchi判断 2026-06-16）:
+  // metadata.subscription_only === "true" のクーポンは、お試し(isTrial)プランでは
+  // 割引・表示を一切出さない。サーバ(validate-coupon)で弾く前提だが、プラン切替時の
+  // stale 状態や直叩きに対する多重防衛としてフロントでも遮断する。
+  const isSubscriptionOnlyCouponApplied = (): boolean =>
+    appliedCoupon?.couponMetadata?.subscription_only === 'true';
+
   const calculateCouponDiscount = (plan: PlanOption | null): number => {
     if (!plan || !appliedCoupon) return 0;
+    // お試しプラン × 定期専用クーポンは割引ゼロ
+    if (plan.isTrial && isSubscriptionOnlyCouponApplied()) return 0;
     const base = plan.totalPrice;
     if (appliedCoupon.percentOff) {
       const afterDiscount = Math.round(base * (1 - appliedCoupon.percentOff / 100));
@@ -546,6 +555,8 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
     };
     const meta = appliedCoupon?.couponMetadata;
     if (!appliedCoupon || !meta || typeof meta !== 'object') return fallback;
+    // お試しプラン × 定期専用クーポンは専用表示も出さない（割引ゼロと整合）
+    if (getSelectedPlan()?.isTrial && isSubscriptionOnlyCouponApplied()) return fallback;
 
     const freeShipping = meta.free_shipping === 'true';
     const rawProductDiscount = meta.product_discount;
@@ -587,8 +598,11 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
   const selectedPlanIdForCoupon = cart.find(item => item.quantity > 0)?.planId;
   useEffect(() => {
     if (!appliedCoupon || !selectedPlanIdForCoupon) return;
-    // 全体クーポンや判定情報なしは触らない
-    if (appliedCoupon.scope !== 'product') return;
+    // 商品制限クーポン(scope==='product')に加え、定期専用クーポン(subscription_only)も
+    // プラン切替時に再判定する。定期専用は scope==='all' のため従来は素通りしていたが、
+    // 定期→お試しへ切替時に valid:false で自動解除させる必要がある。
+    const isSubscriptionOnly = appliedCoupon.couponMetadata?.subscription_only === 'true';
+    if (appliedCoupon.scope !== 'product' && !isSubscriptionOnly) return;
     // F44-fix: appliesToCurrentPlan は前回 validate 時のプラン基準の値のため、
     // プラン変更検知時に skip すると stale な値で判定をスキップしてしまう。
     // 商品限定クーポンはプランが変わるたびに必ず再 validate する。

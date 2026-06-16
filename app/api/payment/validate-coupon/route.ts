@@ -75,6 +75,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ valid: false, error: 'クーポン情報を取得できませんでした' });
     }
 
+    // 定期専用クーポンのお試し誤適用ガード（ブラックリスト方式 / keitakeuchi判断 2026-06-16）:
+    // coupon.metadata.subscription_only === "true" のクーポンは、お試し(one-time / trial-6)では弾く。
+    // KOSHIGAYA(ze8rKt4d) のように applies_to 未設定で metadata/amount_off 駆動の割引が
+    // scope==='all' 扱いで trial にすり抜けるのを止める。
+    // - フラグ無し = お試しでも使える（将来のお試し用クーポンはフラグ未設定で通す）。
+    // - 定期(sub-6/sub-12)は対象外（過剰ブロック禁止）。
+    // - 判定不能（クーポン取得失敗・例外）は上流で error 返却済み＝安全側。
+    const isOneTimePlan = planId === 'trial-6';
+    const isSubscriptionOnlyCoupon = coupon.metadata?.subscription_only === 'true';
+    if (isOneTimePlan && isSubscriptionOnlyCoupon) {
+      return NextResponse.json({
+        valid: false,
+        error: 'このクーポンは定期プラン専用のため、お試しにはお使いいただけません',
+        scope: 'all',
+      });
+    }
+
     // F44: applies_to.products を取得して scope を決定
     // applies_to.products は string[]（Product ID 配列）。未指定なら全体クーポン。
     const appliesToProducts: string[] | null = Array.isArray(coupon.applies_to?.products)
