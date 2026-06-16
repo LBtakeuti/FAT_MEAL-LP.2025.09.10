@@ -56,6 +56,8 @@ type Coupon = {
   applies_to?: { products?: string[] };
   percent_off?: number;
   amount_off?: number;
+  // ブラックリスト方式の判定信号（cb935fd）。"true" ならお試し(trial-6)で弾く。
+  metadata?: Record<string, string>;
 };
 
 // === validate-coupon/route.ts ミラー ===
@@ -81,6 +83,15 @@ async function validateCoupon(
   coupon: Coupon,
   planId: string | null,
 ): Promise<ValidateResult> {
+  // 定期専用クーポンのお試し誤適用ガード（ブラックリスト方式 / cb935fd）。
+  // scope 判定より前に評価する（本体ルートの順序と一致）。
+  // isOneTimePlan は trial-6 限定。subscription_only==='true' なら valid:false / scope:'all'。
+  const isOneTimePlan = planId === 'trial-6';
+  const isSubscriptionOnlyCoupon = coupon.metadata?.subscription_only === 'true';
+  if (isOneTimePlan && isSubscriptionOnlyCoupon) {
+    return { valid: false, scope: 'all', appliesToCurrentPlan: null };
+  }
+
   const appliesToProducts: string[] | null = Array.isArray(coupon.applies_to?.products)
     ? coupon.applies_to!.products!
     : null;
@@ -125,11 +136,13 @@ async function createIntentOneTimeAmount(
   // （未設定 env は falsy。undefined だと既定値にフォールバックしてしまうため空文字で表現）。
   trialPriceId: string = ENV.STRIPE_PRICE_TRIAL_6SET,
 ): Promise<{ amount: number; applied: boolean }> {
+  // subscription_only クーポンは初期から不適用に倒す（以降の applies_to 判定でも上書きしない）。
+  const isSubscriptionOnlyCoupon = coupon.metadata?.subscription_only === 'true';
   const appliesToProducts: string[] | null = Array.isArray(coupon.applies_to?.products)
     ? coupon.applies_to!.products!
     : null;
-  let couponApplicable = true;
-  if (appliesToProducts && appliesToProducts.length > 0) {
+  let couponApplicable = !isSubscriptionOnlyCoupon;
+  if (couponApplicable && appliesToProducts && appliesToProducts.length > 0) {
     couponApplicable = false;
     if (trialPriceId) {
       try {
@@ -236,6 +249,50 @@ describe('商品制限クーポンガード: validate-coupon', () => {
       expect(res.valid).toBe(true);
     });
   });
+
+  // ブラックリスト方式（cb935fd）: applies_to 非依存で metadata.subscription_only で弾く。
+  describe('subscription_only ブラックリスト', () => {
+    it('trial-6 + metadata.subscription_only:"true"（applies_to なし）→ valid:false / scope:all', async () => {
+      const stripe = makeFakeStripe();
+      // KOSHIGAYA 実値相当: applies_to 未設定・amount_off 駆動でも subscription_only で弾く。
+      const coupon: Coupon = { amount_off: 2100, metadata: { subscription_only: 'true' } };
+      const res = await validateCoupon(stripe, coupon, 'trial-6');
+      expect(res.valid).toBe(false);
+      expect(res.scope).toBe('all');
+      // applies_to が無いので Product 解決には進まない
+      expect(stripe.prices.retrieve).not.toHaveBeenCalled();
+    });
+
+    it('trial-6 + subscription_only フラグ無し → 従来どおり valid:true（過剰に弾かない）', async () => {
+      const stripe = makeFakeStripe();
+      const coupon: Coupon = { amount_off: 2100, metadata: { product_discount: '600' } };
+      const res = await validateCoupon(stripe, coupon, 'trial-6');
+      expect(res.valid).toBe(true);
+      expect(res.scope).toBe('all');
+    });
+
+    it('sub-6 + subscription_only:"true" → 従来どおり valid:true（定期は適用・過剰ブロック禁止）', async () => {
+      const stripe = makeFakeStripe();
+      const coupon: Coupon = { amount_off: 2100, metadata: { subscription_only: 'true' } };
+      const res = await validateCoupon(stripe, coupon, 'sub-6');
+      expect(res.valid).toBe(true);
+      expect(res.scope).toBe('all');
+    });
+
+    it('sub-12 + subscription_only:"true" → 従来どおり valid:true（定期は適用）', async () => {
+      const stripe = makeFakeStripe();
+      const coupon: Coupon = { amount_off: 2100, metadata: { subscription_only: 'true' } };
+      const res = await validateCoupon(stripe, coupon, 'sub-12');
+      expect(res.valid).toBe(true);
+    });
+
+    it('subscription_only:"false" は弾かない（"true" 以外は無効化されない）', async () => {
+      const stripe = makeFakeStripe();
+      const coupon: Coupon = { amount_off: 2100, metadata: { subscription_only: 'false' } };
+      const res = await validateCoupon(stripe, coupon, 'trial-6');
+      expect(res.valid).toBe(true);
+    });
+  });
 });
 
 describe('商品制限クーポンガード: create-intent (one-time / trial-6)', () => {
@@ -291,5 +348,59 @@ describe('商品制限クーポンガード: create-intent (one-time / trial-6)'
     expect(res.amount).toBe(TRIAL_BASE);
     // env 未設定なら Stripe retrieve は呼ばれない（if (trialPriceId) でスキップ）
     expect(stripe.prices.retrieve).not.toHaveBeenCalled();
+  });
+
+  // ブラックリスト方式（cb935fd）: subscription_only で割引を一切適用しない。
+  describe('subscription_only ブラックリスト', () => {
+    it('subscription_only:"true"（amount_off）→ 割引非適用・amount 据え置き（applies_to ガードと独立）', async () => {
+      const stripe = makeFakeStripe();
+      const coupon: Coupon = { amount_off: 2100, metadata: { subscription_only: 'true' } };
+      const res = await createIntentOneTimeAmount(stripe, coupon, TRIAL_BASE);
+      expect(res.applied).toBe(false);
+      expect(res.amount).toBe(TRIAL_BASE);
+      // applies_to が無いので Product 解決へは進まない
+      expect(stripe.prices.retrieve).not.toHaveBeenCalled();
+    });
+
+    it('subscription_only:"true"（percent_off）→ 割引非適用・amount 据え置き', async () => {
+      const stripe = makeFakeStripe();
+      const coupon: Coupon = { percent_off: 30, metadata: { subscription_only: 'true' } };
+      const res = await createIntentOneTimeAmount(stripe, coupon, TRIAL_BASE);
+      expect(res.applied).toBe(false);
+      expect(res.amount).toBe(TRIAL_BASE);
+    });
+
+    it('subscription_only:"true" は applies_to に trial product を含んでいても弾く（上書きされない）', async () => {
+      const stripe = makeFakeStripe();
+      const coupon: Coupon = {
+        applies_to: { products: ['prod_trial'] },
+        amount_off: 1000,
+        metadata: { subscription_only: 'true' },
+      };
+      const res = await createIntentOneTimeAmount(stripe, coupon, TRIAL_BASE);
+      expect(res.applied).toBe(false);
+      expect(res.amount).toBe(TRIAL_BASE);
+      // 初期から不適用に倒れているので applies_to 解決へは進まない
+      expect(stripe.prices.retrieve).not.toHaveBeenCalled();
+    });
+
+    it('subscription_only フラグ無し & 通常クーポン → 従来どおり割引適用（回帰）', async () => {
+      const stripe = makeFakeStripe();
+      const coupon: Coupon = { amount_off: 2100, metadata: { product_discount: '600' } };
+      const res = await createIntentOneTimeAmount(stripe, coupon, TRIAL_BASE);
+      expect(res.applied).toBe(true);
+      expect(res.amount).toBe(TRIAL_BASE - 2100); // 3600
+    });
+
+    it('KOSHIGAYA 実値相当（applies_to未設定 / amount_off:2100 / metadata{product_discount,free_shipping,subscription_only:"true"}）→ trial-6 で割引ゼロ', async () => {
+      const stripe = makeFakeStripe();
+      const coupon: Coupon = {
+        amount_off: 2100,
+        metadata: { product_discount: '600', free_shipping: 'true', subscription_only: 'true' },
+      };
+      const res = await createIntentOneTimeAmount(stripe, coupon, TRIAL_BASE);
+      expect(res.applied).toBe(false);
+      expect(res.amount).toBe(TRIAL_BASE); // 5700 据え置き
+    });
   });
 });
