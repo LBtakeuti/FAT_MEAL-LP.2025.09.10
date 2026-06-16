@@ -149,3 +149,28 @@ FBや変更後に再発防止として追加されたリグレッションシナ
 ### 過剰ブロック回帰（ライブ環境手動確認項目）
 
 テストモード環境には scope='all' の全体クーポンが存在しないため、sub-6 / sub-12 で valid:true になる経路を E2E 自動検証できない。実コード（app/api/payment/validate-coupon/route.ts）上 scope==='all' の場合に valid:true を返す経路が存在することを確認済み。ライブ環境での sub-6 / sub-12 + 全体クーポンの valid:true は Stripe ダッシュボードのテストモード全体クーポンで手動確認すること。
+
+---
+
+## SC-REG-009: trial-6 + 定期専用クーポン（subscription_only フラグ）ブラックリストガード
+
+- **対象コミット**: cb935fd / 23e22a4
+- **FB番号**: 未付与（指示書 docs/debug-coupon-trial-leak.md 由来・第2ラウンド）
+- **変更概要**: 越谷クーポン(ze8rKt4d)が applies_to 未設定でガード不発火だった件の恒久対応。coupon.metadata `subscription_only:"true"` を持つクーポンを、お試し(one-time/trial-6)でのみ弾く blacklist ガードを実装。3経路（validate-coupon / create-intent one-time / フロント PurchaseFlow 表示）で拒否を統一。フラグ無しは通す（将来のお試し用クーポンを個別運用可）。判定不能（取得失敗/例外）は安全側で弾く。定期(sub-6/sub-12)は不変。
+- **テストファイル**: `e2e/tests/regression-coupon-subscription-only.spec.ts`
+
+### シナリオ一覧
+
+| シナリオID | テスト名 | 種別 | 確認内容 |
+|-----------|---------|------|---------|
+| SC-REG-009-01 | trial-6 + subscription_only:true クーポン → valid:false・定期専用文言・割引ゼロ | リグレッション | 実ガード経路（route.ts L85-93）を通過し弾く |
+| SC-REG-009-02 | trial-6 + フラグ無しクーポン → valid:true・割引付与 | リグレッション | 過剰ブロックなし（お試し用クーポンは通す） |
+| SC-REG-009-03 | sub-6 + subscription_only:true クーポン → valid:true | リグレッション | 定期では弾かない（isOneTimePlan=planId==='trial-6'のみ） |
+| SC-REG-009-04 | sub-12 + subscription_only:true クーポン → valid:true | リグレッション | 定期では弾かない |
+| SC-REG-009-05 | trial-6 + 無効コード → valid:false・割引ゼロ | リグレッション | 恒久固定 |
+
+### 環境制約・検証メモ
+
+- ローカル STRIPE_SECRET_KEY は sk_test（テストモード）。本番 KOSHIGAYA(ze8rKt4d) はテストモードに存在しないため、テストモード専用クーポン E2ETESTSUBONLY001(metadata.subscription_only="true") / E2ETESTNOFLAG001(フラグ無し) を作成して実ガード経路を再現。テスト後にプロモーションコード非アクティブ化・クーポン削除でクリーンアップ済み（live データ操作なし）。
+- SC-REG-008（第1ラウンドの applies_to ガード）とは別経路。今回の真因は「有効クーポンに applies_to が無く、割引が metadata(product_discount/free_shipping)＋amount_off のアプリ独自適用で出る」点。詳細は docs/debug-coupon-trial-leak.md 【第2ラウンド】参照。
+- **ライブ環境の最終確認（手動）**: 本番 KOSHIGAYA(ze8rKt4d) に metadata `subscription_only:"true"` を付与した上で、お試しで割引が出ないこと／定期で従来どおり使えることを確認すること。コード配備＋フラグ付与の両方で漏れ停止。
