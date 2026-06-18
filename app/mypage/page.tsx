@@ -162,6 +162,18 @@ export default function MyPage() {
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileToast, setProfileToast] = useState<{ type: 'success' | 'warn' | 'error'; message: string } | null>(null);
 
+  // お客様API（/api/users/*）向けの Authorization ヘッダを生成する共通ヘルパー。
+  // 一般会員は Supabase セッション（localStorage）を持つが auth-token Cookie を持たないため、
+  // access_token を Bearer トークンとして付与してサーバ側の verifyAuth を通す。
+  const authHeader = async (): Promise<Record<string, string>> => {
+    const supabase = createBrowserClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
   useEffect(() => {
     const supabase = createBrowserClient();
 
@@ -179,7 +191,8 @@ export default function MyPage() {
 
   const loadProfile = async (userId: string, email: string) => {
     try {
-      const res = await fetch(`/api/users/profile?userId=${userId}`);
+      const headers = await authHeader();
+      const res = await fetch(`/api/users/profile?userId=${userId}`, { headers });
       if (res.ok) {
         const data = await res.json();
         setProfile(data);
@@ -187,7 +200,7 @@ export default function MyPage() {
         // プロフィールが存在しない場合は新規作成
         const createRes = await fetch('/api/users/profile', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...headers },
           body: JSON.stringify({ userId, email }),
         });
         if (createRes.ok) {
@@ -205,7 +218,8 @@ export default function MyPage() {
   const loadOrders = async (email: string) => {
     setOrdersLoading(true);
     try {
-      const res = await fetch(`/api/users/orders?email=${encodeURIComponent(email)}`);
+      const headers = await authHeader();
+      const res = await fetch(`/api/users/orders?email=${encodeURIComponent(email)}`, { headers });
       if (res.ok) {
         const data = await res.json();
         setOrders(data.orders || []);
@@ -220,7 +234,8 @@ export default function MyPage() {
   const loadSubscriptions = async (userId: string, email: string) => {
     setSubscriptionsLoading(true);
     try {
-      const res = await fetch(`/api/users/subscriptions?userId=${userId}&email=${encodeURIComponent(email)}`);
+      const headers = await authHeader();
+      const res = await fetch(`/api/users/subscriptions?userId=${userId}&email=${encodeURIComponent(email)}`, { headers });
       if (res.ok) {
         const data = await res.json();
         setSubscriptions(data.subscriptions || []);
@@ -257,9 +272,10 @@ export default function MyPage() {
     setProfileSaving(true);
     setProfileToast(null);
     try {
+      const headers = await authHeader();
       const res = await fetch('/api/users/profile', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...headers },
         body: JSON.stringify({ userId: user.id, ...updates }),
       });
       if (!res.ok) {
@@ -325,9 +341,10 @@ export default function MyPage() {
     if (!cancelModalSub || selectedReasons.length === 0) return;
     setCancelLoading(true);
     try {
+      const headers = await authHeader();
       const res = await fetch('/api/users/subscriptions/cancel', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...headers },
         body: JSON.stringify({
           subscriptionId: cancelModalSub.id,
           stripeSubscriptionId: cancelModalSub.stripe_subscription_id,
@@ -363,7 +380,8 @@ export default function MyPage() {
     setBillingPortalLoading(true);
     setBillingPortalError('');
     try {
-      const res = await fetch('/api/users/billing-portal', { method: 'POST' });
+      const headers = await authHeader();
+      const res = await fetch('/api/users/billing-portal', { method: 'POST', headers });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || 'お支払い情報ページを開けませんでした');

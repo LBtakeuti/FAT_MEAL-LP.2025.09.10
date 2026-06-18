@@ -212,9 +212,21 @@ export async function verifyAdminToken(token: string): Promise<AdminUser | null>
 
 /**
  * リクエストから認証トークン（access_token）を取得
+ * Cookie `auth-token`（管理者ログインが発行）を優先し、
+ * 無ければ `Authorization: Bearer <token>` ヘッダから取得する（お客様の Supabase access_token 用）。
  */
 export function getAuthToken(req: NextRequest): string | undefined {
-  return req.cookies.get('auth-token')?.value;
+  const cookie = req.cookies.get('auth-token')?.value;
+  if (cookie) {
+    return cookie;
+  }
+
+  const bearer = req.headers.get('authorization');
+  if (bearer?.startsWith('Bearer ')) {
+    return bearer.slice(7);
+  }
+
+  return undefined;
 }
 
 /**
