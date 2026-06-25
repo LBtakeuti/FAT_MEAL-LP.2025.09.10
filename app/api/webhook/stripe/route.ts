@@ -290,11 +290,14 @@ export async function POST(request: NextRequest) {
       // サブスクリプションの請求成功時（毎月の自動課金成功時）
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object as Stripe.Invoice;
-        if (getInvoiceSubscriptionId(invoice)) {
+        const invSubId = getInvoiceSubscriptionId(invoice);
+        if (invSubId) {
           if (invoice.billing_reason === 'subscription_cycle') {
             await handleMonthlySubscriptionPayment(invoice, stripe);
+          } else if (invoice.billing_reason === 'subscription_create') {
+            // ②: 初回入金成立時に「成立扱い」を1回だけ実行する（未払い時は出さない）。
+            await activateInitialSubscriptionByInvoice(invSubId, stripe);
           }
-          // subscription_create: createSubscriptionFromStripe内で処理済み
           // subscription_update: スキップ（スケジュール調整など）
         }
         break;
@@ -712,6 +715,10 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
     throw new Error('Supabase client not available');
   }
 
+  // ②: 入金成立後にのみ「成立扱い」する。作成時に Stripe が active/trialing なら即活性化。
+  const isStripeActive = subscription.status === 'active' || subscription.status === 'trialing';
+  console.log(`[Webhook] subscription.status=${subscription.status}, isStripeActive=${isStripeActive}`);
+
   try {
     // まずCheckout Sessionを取得してメタデータを取得
     console.log(`[Webhook] Fetching checkout session for subscription: ${subscription.id}`);
@@ -864,8 +871,10 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
           address_detail: subscription.metadata?.address_detail || checkoutSession?.metadata?.address_detail || '',
           building: subscription.metadata?.building || checkoutSession?.metadata?.building || '',
         },
-        status: 'active',
-        payment_status: 'active',
+        // ②: 成立扱い（active化）は入金後（invoice.payment_succeeded）に遅延する。
+        //     作成時点で Stripe が active/trialing の場合のみ active、それ以外は incomplete。
+        status: isStripeActive ? 'active' : 'incomplete',
+        payment_status: isStripeActive ? 'active' : 'incomplete',
         current_period_start: new Date(currentPeriodStart * 1000).toISOString(),
         current_period_end: new Date(currentPeriodEnd * 1000).toISOString(),
         started_at: new Date(subscription.created * 1000).toISOString(),
@@ -888,29 +897,6 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
         .update({ subscription_id: (dbSubscription as any).id })
         .eq('stripe_session_id', checkoutSession.id);
     }
-
-    // 初回コミッション記録（サブスクリプション）
-    if (referralCode && INITIAL_COMMISSION[planId]) {
-      await recordReferralCommission({
-        referralCode,
-        sourceType: 'subscription_initial',
-        sourceId: (dbSubscription as any).id,
-        planId,
-        commissionType: 'initial',
-        commissionAmount: INITIAL_COMMISSION[planId],
-        billingPeriodStart: new Date(currentPeriodStart * 1000).toISOString(),
-        billingPeriodEnd: new Date(currentPeriodEnd * 1000).toISOString(),
-      });
-    }
-
-    // share-link(個別メッセージ) 経由のコンバージョン記録（初回）
-    const initialShareSlug = checkoutSession?.metadata?.share_slug || subscription.metadata?.share_slug || undefined;
-    await recordShareLinkConversion({
-      shareSlug: initialShareSlug,
-      sourceType: 'subscription_initial',
-      sourceId: (dbSubscription as any).id,
-      planId,
-    });
 
     // subscription_deliveriesテーブルに初回配送予定を作成
     const deliveries = deliverySchedules.map((schedule) => {
@@ -938,45 +924,197 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
 
     console.log(`Subscription created: ${(dbSubscription as any).id} with ${deliveries.length} initial deliveries`);
 
-    // 初回請求額を取得（Phase1実額）
-    let initialInvoiceAmount = planConfig.monthly_total; // フォールバック
-    if (subscription.latest_invoice) {
-      try {
-        const latestInvoice = await stripe.invoices.retrieve(subscription.latest_invoice as string);
-        if (latestInvoice.amount_paid > 0) {
-          initialInvoiceAmount = latestInvoice.amount_paid;
-        }
-      } catch (invoiceError) {
-        console.warn('[Webhook] Failed to retrieve latest invoice, using planConfig price:', invoiceError);
-      }
+    // ②: 「成立扱い」（コミッション記録・購入完了メール・Slack「契約！」・在庫減算）は
+    //     入金成立後に1回だけ実行する。作成時に Stripe が active/trialing の場合のみここで活性化。
+    if (isStripeActive) {
+      await activateSubscriptionOnPayment({
+        dbSubscriptionId: (dbSubscription as any).id,
+        stripeSubscriptionId: subscription.id,
+        stripe,
+      });
+    } else {
+      console.log(`[Webhook] subscription ${subscription.id} not yet paid (status=${subscription.status}). Deferring activation (no Slack/email/inventory).`);
     }
-
-    // 購入完了メール送信（実際の請求額を使用）
-    await sendSubscriptionPurchaseConfirmationEmail({
-      email: customerEmail,
-      name: customerName,
-      subscriptionId: (dbSubscription as any).id,
-      planName: planName,
-      monthlyAmount: initialInvoiceAmount,
-      deliverySchedules: deliverySchedules,
-    });
-
-    // Slack通知（実際の請求額を使用）
-    await sendSubscriptionSlackNotification({
-      customerName: customerName,
-      customerEmail: customerEmail,
-      planName: planName,
-      monthlyAmount: initialInvoiceAmount,
-    });
-
-    // 在庫を減算（1セット=6食換算: sub-6=1セット, sub-12=2セット）
-    const setsToReduce = Math.max(1, Math.floor(planConfig.meals_per_delivery / 6));
-    await reduceInventorySets(setsToReduce, `subscription created: ${planName}`);
 
   } catch (error) {
     console.error('Error creating subscription from Stripe:', error);
     throw error;
   }
+}
+
+/**
+ * ②: 定期契約の「成立扱い」を1回だけ実行する共通処理。
+ *   - status/payment_status='active' に更新（既に active なら冪等で何もしない）
+ *   - 初回コミッション記録 / share-link コンバージョン記録
+ *   - 購入完了メール / Slack「契約！」通知
+ *   - 在庫減算
+ * 呼び出し元: createSubscriptionFromStripe（作成時に active のケース）/
+ *           invoice.payment_succeeded（billing_reason='subscription_create' で初回入金成立時）。
+ */
+async function activateSubscriptionOnPayment(params: {
+  dbSubscriptionId: string;
+  stripeSubscriptionId: string;
+  stripe: Stripe;
+}) {
+  const { dbSubscriptionId, stripeSubscriptionId, stripe } = params;
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    console.error('[Webhook] activateSubscriptionOnPayment: Supabase client not available');
+    throw new Error('Supabase client not available');
+  }
+
+  // DBサブスクを取得し、既に active なら冪等で何もしない（二重通知防止）。
+  const { data: dbSub, error: fetchError } = await (supabase
+    .from('subscriptions') as any)
+    .select('*')
+    .eq('id', dbSubscriptionId)
+    .single();
+
+  if (fetchError || !dbSub) {
+    console.error(`[Webhook] activateSubscriptionOnPayment: subscription not found id=${dbSubscriptionId}`, fetchError);
+    return;
+  }
+
+  if (dbSub.status === 'active') {
+    console.log(`[Webhook] activateSubscriptionOnPayment: ${dbSubscriptionId} already active. Skip (idempotent).`);
+    return;
+  }
+
+  // status/payment_status を active に更新。
+  const { error: updateError } = await (supabase
+    .from('subscriptions') as any)
+    .update({ status: 'active', payment_status: 'active' })
+    .eq('id', dbSubscriptionId);
+
+  if (updateError) {
+    console.error(`[Webhook] activateSubscriptionOnPayment: failed to update status for ${dbSubscriptionId}`, updateError);
+    throw new Error(`Failed to activate subscription: ${updateError.message}`);
+  }
+  console.log(`[Webhook] activateSubscriptionOnPayment: ${dbSubscriptionId} → active`);
+
+  const planId: string = dbSub.plan_id;
+  const planName: string = dbSub.plan_name || getPlanName(planId);
+  const planConfig = getPlanConfig(planId);
+  const shippingAddress = dbSub.shipping_address || {};
+  const customerEmail: string = shippingAddress.email || '';
+  const customerName: string = shippingAddress.name || 'お客様';
+  const referralCode: string = dbSub.referral_code || '';
+  const currentPeriodStart: string = dbSub.current_period_start;
+  const currentPeriodEnd: string = dbSub.current_period_end;
+
+  // 配送スケジュール（メール表示用）を取得。
+  const { data: deliveryRows } = await (supabase
+    .from('subscription_deliveries') as any)
+    .select('scheduled_date, menu_set, meals_per_delivery')
+    .eq('subscription_id', dbSubscriptionId)
+    .order('scheduled_date', { ascending: true });
+
+  const deliverySchedules = (deliveryRows || []).map((row: any, idx: number) => ({
+    delivery_number: idx + 1,
+    scheduled_date: new Date(row.scheduled_date),
+    menu_set: row.menu_set,
+    meals_per_delivery: row.meals_per_delivery,
+  }));
+
+  // 初回コミッション記録（サブスクリプション）
+  if (referralCode && INITIAL_COMMISSION[planId]) {
+    await recordReferralCommission({
+      referralCode,
+      sourceType: 'subscription_initial',
+      sourceId: dbSubscriptionId,
+      planId,
+      commissionType: 'initial',
+      commissionAmount: INITIAL_COMMISSION[planId],
+      billingPeriodStart: currentPeriodStart,
+      billingPeriodEnd: currentPeriodEnd,
+    });
+  }
+
+  // share-link(個別メッセージ) 経由のコンバージョン記録（初回）
+  let shareSlug: string | undefined;
+  try {
+    const stripeSub = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+    shareSlug = stripeSub.metadata?.share_slug || undefined;
+  } catch (e) {
+    console.warn('[Webhook] activateSubscriptionOnPayment: failed to retrieve stripe subscription for share_slug', e);
+  }
+  await recordShareLinkConversion({
+    shareSlug,
+    sourceType: 'subscription_initial',
+    sourceId: dbSubscriptionId,
+    planId,
+  });
+
+  // 初回請求額を取得（Phase1実額）
+  let initialInvoiceAmount = planConfig.monthly_total; // フォールバック
+  try {
+    const stripeSub = await stripe.subscriptions.retrieve(stripeSubscriptionId);
+    if (stripeSub.latest_invoice) {
+      const latestInvoice = await stripe.invoices.retrieve(stripeSub.latest_invoice as string);
+      if (latestInvoice.amount_paid > 0) {
+        initialInvoiceAmount = latestInvoice.amount_paid;
+      }
+    }
+  } catch (invoiceError) {
+    console.warn('[Webhook] activateSubscriptionOnPayment: failed to retrieve latest invoice, using planConfig price:', invoiceError);
+  }
+
+  // 購入完了メール送信（実際の請求額を使用）
+  await sendSubscriptionPurchaseConfirmationEmail({
+    email: customerEmail,
+    name: customerName,
+    subscriptionId: dbSubscriptionId,
+    planName,
+    monthlyAmount: initialInvoiceAmount,
+    deliverySchedules,
+  });
+
+  // Slack通知「契約！」（実際の請求額を使用）
+  await sendSubscriptionSlackNotification({
+    customerName,
+    customerEmail,
+    planName,
+    monthlyAmount: initialInvoiceAmount,
+  });
+
+  // 在庫を減算（1セット=6食換算: sub-6=1セット, sub-12=2セット）
+  const setsToReduce = Math.max(1, Math.floor(planConfig.meals_per_delivery / 6));
+  await reduceInventorySets(setsToReduce, `subscription activated: ${planName}`);
+}
+
+/**
+ * ②: 初回入金成立（invoice.payment_succeeded / billing_reason='subscription_create'）時に、
+ *   Stripe サブスクリプションIDから DB サブスクを引いて活性化処理を1回だけ実行する。
+ *   webhook イベントの到着順は不定のため、DB 行がまだ無い場合はスキップ
+ *   （customer.subscription.created 側で active 判定して活性化されるため取りこぼさない）。
+ */
+async function activateInitialSubscriptionByInvoice(stripeSubscriptionId: string, stripe: Stripe) {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    console.error('[Webhook] activateInitialSubscriptionByInvoice: Supabase client not available');
+    return;
+  }
+
+  const { data: dbSub, error } = await (supabase
+    .from('subscriptions') as any)
+    .select('id, status')
+    .eq('stripe_subscription_id', stripeSubscriptionId)
+    .maybeSingle();
+
+  if (error) {
+    console.error(`[Webhook] activateInitialSubscriptionByInvoice: lookup error for ${stripeSubscriptionId}`, error);
+    return;
+  }
+  if (!dbSub) {
+    console.log(`[Webhook] activateInitialSubscriptionByInvoice: DB subscription not found yet for ${stripeSubscriptionId}. created イベント側で活性化される想定。`);
+    return;
+  }
+
+  await activateSubscriptionOnPayment({
+    dbSubscriptionId: dbSub.id,
+    stripeSubscriptionId,
+    stripe,
+  });
 }
 
 // 毎月の請求成功時の処理
