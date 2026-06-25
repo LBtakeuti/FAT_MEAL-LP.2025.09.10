@@ -8,6 +8,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { confirmInitialSubscriptionPayment } from '@/lib/confirm-subscription-payment';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -68,6 +69,9 @@ export async function POST(request: NextRequest) {
     });
 
     // Subscription 作成（商品 + 送料 の2 Price で月額一律請求）
+    // B1: payment_behavior=default_incomplete + 初回 invoice の PaymentIntent をサーバ側で確定する。
+    //     これにより「確認待ち」のまま放置されて約23時間後に incomplete_expired で
+    //     無言失効する不具合を防ぐ。
     const subscription = await stripe.subscriptions.create(
       {
         customer: customerId,
@@ -78,6 +82,9 @@ export async function POST(request: NextRequest) {
         // 有効な Promotion Code があれば Stripe 請求にクーポンを反映
         ...(promotionCodeId ? { discounts: [{ promotion_code: promotionCodeId }] } : {}),
         default_payment_method: paymentMethodId,
+        payment_behavior: 'default_incomplete',
+        payment_settings: { save_default_payment_method: 'on_subscription' },
+        expand: ['latest_invoice.payment_intent'],
         metadata: {
           setup_intent_id: setupIntentId,
           plan_id: planId,
@@ -102,9 +109,31 @@ export async function POST(request: NextRequest) {
       }
     );
 
+    // B1: 初回 invoice の PaymentIntent をサーバ側で確定する。
+    const result = await confirmInitialSubscriptionPayment(stripe, subscription, paymentMethodId);
+
+    if (result.requiresAction) {
+      // 追加認証（Link/3DS）が必要。フロントで完了させるため client_secret を返す。
+      return NextResponse.json({
+        subscriptionId: subscription.id,
+        status: subscription.status,
+        requiresAction: true,
+        clientSecret: result.clientSecret,
+      });
+    }
+
+    if (result.error) {
+      // 確定に失敗（残高不足・カード拒否等）。無言で放置せずエラーを返す。
+      console.error(`[activate-subscription] Initial payment failed for ${subscription.id}: ${result.error}`);
+      return NextResponse.json(
+        { error: '初回のお支払いを確定できませんでした。別の決済手段をお試しください。' },
+        { status: 402 }
+      );
+    }
+
     return NextResponse.json({
       subscriptionId: subscription.id,
-      status: subscription.status,
+      status: result.subscriptionStatus ?? subscription.status,
     });
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error.message : String(error);

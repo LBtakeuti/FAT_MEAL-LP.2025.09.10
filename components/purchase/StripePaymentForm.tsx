@@ -116,11 +116,24 @@ function PaymentForm({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ setupIntentId, customerId }),
         });
+        const data = await res.json();
         if (!res.ok) {
-          const data = await res.json();
           setErrorMessage(data.error || 'サブスクリプションの開始に失敗しました');
           setProcessing(false);
           return;
+        }
+
+        // B1: 初回決済に追加認証（Link/3DS）が必要な場合はここで完了させる。
+        //     無言失効を防ぐため、client_secret で handleNextAction を実行する。
+        if (data.requiresAction && data.clientSecret) {
+          const { error: actionError } = await stripe.handleNextAction({
+            clientSecret: data.clientSecret,
+          });
+          if (actionError) {
+            setErrorMessage(getErrorMessage(actionError));
+            setProcessing(false);
+            return;
+          }
         }
       } catch {
         setErrorMessage('サブスクリプションの開始に失敗しました');

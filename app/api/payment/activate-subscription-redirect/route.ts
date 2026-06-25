@@ -4,6 +4,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { confirmInitialSubscriptionPayment } from '@/lib/confirm-subscription-payment';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -66,6 +67,8 @@ export async function POST(request: NextRequest) {
       invoice_settings: { default_payment_method: paymentMethodId },
     });
 
+    // B1: payment_behavior=default_incomplete + 初回 invoice の PaymentIntent をサーバ側で確定。
+    //     incomplete_expired での無言失効を防ぐ。
     const subscription = await stripe.subscriptions.create(
       {
         customer: customerId,
@@ -76,6 +79,9 @@ export async function POST(request: NextRequest) {
         // F37: 3DS フローでもクーポン（Promotion Code）を反映
         ...(promotionCodeId ? { discounts: [{ promotion_code: promotionCodeId }] } : {}),
         default_payment_method: paymentMethodId,
+        payment_behavior: 'default_incomplete',
+        payment_settings: { save_default_payment_method: 'on_subscription' },
+        expand: ['latest_invoice.payment_intent'],
         metadata: {
           setup_intent_id: setupIntentId,
           plan_id: planId,
@@ -100,9 +106,30 @@ export async function POST(request: NextRequest) {
       }
     );
 
+    // B1: 初回 invoice の PaymentIntent をサーバ側で確定する。
+    const result = await confirmInitialSubscriptionPayment(stripe, subscription, paymentMethodId);
+
+    if (result.requiresAction) {
+      // 既存の3DSリダイレクト導線に合わせ、client_secret を返してフロントで追加認証を完了させる。
+      return NextResponse.json({
+        subscriptionId: subscription.id,
+        status: subscription.status,
+        requiresAction: true,
+        clientSecret: result.clientSecret,
+      });
+    }
+
+    if (result.error) {
+      console.error(`[activate-subscription-redirect] Initial payment failed for ${subscription.id}: ${result.error}`);
+      return NextResponse.json(
+        { error: '初回のお支払いを確定できませんでした。別の決済手段をお試しください。' },
+        { status: 402 }
+      );
+    }
+
     return NextResponse.json({
       subscriptionId: subscription.id,
-      status: subscription.status,
+      status: result.subscriptionStatus ?? subscription.status,
     });
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error.message : String(error);
