@@ -933,7 +933,29 @@ async function createSubscriptionFromStripe(subscription: Stripe.Subscription, s
         stripe,
       });
     } else {
-      console.log(`[Webhook] subscription ${subscription.id} not yet paid (status=${subscription.status}). Deferring activation (no Slack/email/inventory).`);
+      // ②-堅牢化: 作成イベント受信時点では未活性でも、実際には先に決済が成立して
+      //   Stripe 側が active/trialing になっている（イベント到着順の入れ違い）ことがある。
+      //   ここで最新ステータスを再取得し、active/trialing なら取りこぼさず活性化する。
+      //   activateSubscriptionOnPayment は冪等（DB status==='active' ならスキップ）なので、
+      //   invoice.payment_succeeded 側と二重実行されても通知は二重送信されない。
+      let activatedByRefetch = false;
+      try {
+        const latest = await stripe.subscriptions.retrieve(subscription.id);
+        if (latest.status === 'active' || latest.status === 'trialing') {
+          console.log(`[Webhook] subscription ${subscription.id} is ${latest.status} on re-fetch. Activating (catch-up).`);
+          await activateSubscriptionOnPayment({
+            dbSubscriptionId: (dbSubscription as any).id,
+            stripeSubscriptionId: subscription.id,
+            stripe,
+          });
+          activatedByRefetch = true;
+        }
+      } catch (e) {
+        console.warn(`[Webhook] failed to re-fetch latest status for ${subscription.id}; will defer activation.`, e);
+      }
+      if (!activatedByRefetch) {
+        console.log(`[Webhook] subscription ${subscription.id} not yet paid (status=${subscription.status}). Deferring activation (no Slack/email/inventory).`);
+      }
     }
 
   } catch (error) {
