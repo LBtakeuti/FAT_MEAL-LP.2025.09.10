@@ -257,8 +257,13 @@ function AdminOrdersPageInner() {
         setOrders(orders.map(order =>
           order.id === orderId ? { ...order, status: newStatus } : order
         ));
+        toast.success('ステータスを更新しました');
+      } else if (response.status === 401) {
+        toast.error('ログインが切れました。再ログインしてください');
+        router.push('/admin/login');
       } else {
-        toast.error('ステータスの更新に失敗しました');
+        const data = await response.json().catch(() => ({}));
+        toast.error(data.error || data.message || 'ステータスの更新に失敗しました');
       }
     } catch (error) {
       console.error('Failed to update status:', error);
