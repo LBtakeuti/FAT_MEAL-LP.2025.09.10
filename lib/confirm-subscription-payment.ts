@@ -27,8 +27,32 @@ export interface ConfirmInitialPaymentResult {
 }
 
 /**
- * 初回 PaymentIntent を確定する。
+ * invoice / confirmation_secret から PaymentIntent の id を取り出す。
+ * SDK v20（basil世代）では `latest_invoice.payment_intent` が展開されず空になるため、
+ * `invoice.payment_intent`（あれば）→ なければ `confirmation_secret.client_secret` を
+ * `'_secret_'` で分割した先頭（= PI id）から解決する。
+ */
+function extractPaymentIntentId(invoice: Stripe.Invoice): string | null {
+  const withPi = invoice as Stripe.Invoice & {
+    payment_intent?: Stripe.PaymentIntent | string | null;
+  };
+  const pi = withPi.payment_intent;
+  if (pi) {
+    if (typeof pi === 'string') return pi;
+    if (pi.id) return pi.id;
+  }
+  const secret = invoice.confirmation_secret?.client_secret;
+  if (secret && secret.includes('_secret_')) {
+    const piId = secret.split('_secret_')[0];
+    if (piId.startsWith('pi_')) return piId;
+  }
+  return null;
+}
+
+/**
+ * 初回 PaymentIntent を確実に解決してから確定する。
  * subscription は `expand: ['latest_invoice.payment_intent']` で作成済みであること。
+ * ただし SDK v20 では展開されないため、invoice 再取得 / confirmation_secret からも解決する。
  */
 export async function confirmInitialSubscriptionPayment(
   stripe: Stripe,
@@ -40,70 +64,131 @@ export async function confirmInitialSubscriptionPayment(
     return { requiresAction: false, subscriptionStatus: subscription.status };
   }
 
-  const latestInvoice = subscription.latest_invoice as Stripe.Invoice | null;
-  if (!latestInvoice || typeof latestInvoice === 'string') {
-    // invoice が展開されていない。安全側で「確定不要（請求なし）」とみなす。
+  // a. latest_invoice の invoice id を解決する。
+  const latestInvoice = subscription.latest_invoice as Stripe.Invoice | string | null;
+  let invoice: Stripe.Invoice | null = null;
+  let invoiceId: string | null = null;
+
+  if (latestInvoice && typeof latestInvoice === 'object') {
+    invoice = latestInvoice;
+    invoiceId = latestInvoice.id ?? null;
+  } else if (typeof latestInvoice === 'string') {
+    invoiceId = latestInvoice;
+  }
+
+  if (!invoiceId) {
+    // 請求書が無い（請求額0など） → 確定不要とみなす。
+    console.log(`[confirm-sub-payment] no invoice id for ${subscription.id}, status=${subscription.status}`);
     return { requiresAction: false, subscriptionStatus: subscription.status };
   }
 
-  // 請求額0（クーポン全額割引等）なら PaymentIntent が無く、契約は即 active になる。
-  const paymentIntent = (latestInvoice as Stripe.Invoice & {
-    payment_intent?: Stripe.PaymentIntent | string | null;
-  }).payment_intent;
+  // latest_invoice が object でない / PI も confirmation_secret も無い場合は invoice を再取得して
+  // confirmation_secret / payment_intent を展開する。
+  if (!invoice || (!extractPaymentIntentId(invoice))) {
+    try {
+      invoice = await stripe.invoices.retrieve(invoiceId, {
+        expand: ['confirmation_secret', 'payment_intent'],
+      });
+    } catch (e) {
+      console.error(`[confirm-sub-payment] invoice retrieve failed for ${invoiceId}: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
 
-  if (!paymentIntent || typeof paymentIntent === 'string') {
+  if (!invoice) {
     return { requiresAction: false, subscriptionStatus: subscription.status };
   }
 
-  try {
-    // 既に succeeded ならそのまま成功扱い。
-    if (paymentIntent.status === 'succeeded') {
-      return { requiresAction: false, subscriptionStatus: subscription.status };
-    }
+  // 請求残が無い（amount_due=0 / paid 済み）なら確定不要。
+  const hasOutstanding = invoice.amount_due > 0 || invoice.status === 'open';
+  const piId = extractPaymentIntentId(invoice);
+  console.log(`[confirm-sub-payment] sub=${subscription.id} invoice=${invoiceId} status=${invoice.status} amount_due=${invoice.amount_due} piId=${piId ?? 'none'}`);
 
-    // 追加認証が必要な状態なら confirm せず client_secret を返す。
-    if (paymentIntent.status === 'requires_action') {
-      return {
-        requiresAction: true,
-        clientSecret: paymentIntent.client_secret,
-        subscriptionStatus: subscription.status,
-      };
-    }
+  if (!hasOutstanding) {
+    // 請求額0（クーポン全額割引等で即 paid）→ 確定不要。
+    return { requiresAction: false, subscriptionStatus: subscription.status };
+  }
 
-    // requires_confirmation / requires_payment_method → off_session で確定を試みる。
-    const confirmed = await stripe.paymentIntents.confirm(paymentIntent.id, {
-      payment_method: paymentMethodId,
-      off_session: true,
-    });
+  // c. PI が解決できた場合は PI を取得して確定フローに流す。
+  if (piId) {
+    try {
+      const paymentIntent = await stripe.paymentIntents.retrieve(piId);
 
-    if (confirmed.status === 'succeeded') {
-      return { requiresAction: false, subscriptionStatus: 'active' };
-    }
+      if (paymentIntent.status === 'succeeded') {
+        console.log(`[confirm-sub-payment] PI ${piId} already succeeded`);
+        return { requiresAction: false, subscriptionStatus: 'active' };
+      }
 
-    if (confirmed.status === 'requires_action') {
-      // off_session では完了できず追加認証が要る → フロントへ委譲。
-      return {
-        requiresAction: true,
-        clientSecret: confirmed.client_secret,
-        subscriptionStatus: subscription.status,
-      };
-    }
+      if (paymentIntent.status === 'requires_action') {
+        console.log(`[confirm-sub-payment] PI ${piId} requires_action → defer to frontend`);
+        return {
+          requiresAction: true,
+          clientSecret: paymentIntent.client_secret,
+          subscriptionStatus: subscription.status,
+        };
+      }
 
-    return { requiresAction: false, error: `payment_intent status: ${confirmed.status}` };
-  } catch (err) {
-    // off_session 確定で 3DS 等の認証が要求されると StripeCardError が投げられる。
-    // その場合 payment_intent から client_secret を取り出してフロントへ委譲する。
-    const stripeErr = err as Stripe.errors.StripeError;
-    const pi = (stripeErr as { payment_intent?: Stripe.PaymentIntent }).payment_intent;
-    if (pi && (pi.status === 'requires_action' || pi.status === 'requires_payment_method' || pi.status === 'requires_confirmation')) {
-      if (pi.status === 'requires_action') {
+      // requires_confirmation / requires_payment_method → off_session で確定を試みる。
+      const confirmed = await stripe.paymentIntents.confirm(piId, {
+        payment_method: paymentMethodId,
+        off_session: true,
+      });
+      console.log(`[confirm-sub-payment] PI ${piId} confirm result=${confirmed.status}`);
+
+      if (confirmed.status === 'succeeded') {
+        return { requiresAction: false, subscriptionStatus: 'active' };
+      }
+
+      if (confirmed.status === 'requires_action') {
+        return {
+          requiresAction: true,
+          clientSecret: confirmed.client_secret,
+          subscriptionStatus: subscription.status,
+        };
+      }
+
+      return { requiresAction: false, error: `payment_intent status: ${confirmed.status}` };
+    } catch (err) {
+      // off_session 確定で 3DS 等の認証が要求されると StripeCardError が投げられる。
+      const stripeErr = err as Stripe.errors.StripeError;
+      const pi = (stripeErr as { payment_intent?: Stripe.PaymentIntent }).payment_intent;
+      if (pi && pi.status === 'requires_action') {
+        console.log(`[confirm-sub-payment] PI ${piId} confirm threw requires_action → defer to frontend`);
         return {
           requiresAction: true,
           clientSecret: pi.client_secret,
           subscriptionStatus: subscription.status,
         };
       }
+      console.error(`[confirm-sub-payment] PI ${piId} confirm error: ${stripeErr.message || String(err)}`);
+      return { requiresAction: false, error: stripeErr.message || String(err) };
     }
+  }
+
+  // PI を解決できないが請求残がある → invoice.pay でフォールバック確定する。
+  // 無言で requiresAction:false を返さない（money-critical）。
+  console.log(`[confirm-sub-payment] PI unresolved but outstanding → fallback invoices.pay ${invoiceId}`);
+  try {
+    const paid = await stripe.invoices.pay(invoiceId, {
+      payment_method: paymentMethodId,
+      off_session: true,
+    });
+    console.log(`[confirm-sub-payment] invoices.pay ${invoiceId} result status=${paid.status}`);
+    if (paid.status === 'paid') {
+      return { requiresAction: false, subscriptionStatus: 'active' };
+    }
+    return { requiresAction: false, error: `invoice status after pay: ${paid.status}` };
+  } catch (err) {
+    const stripeErr = err as Stripe.errors.StripeError;
+    const pi = (stripeErr as { payment_intent?: Stripe.PaymentIntent }).payment_intent;
+    if (pi && pi.status === 'requires_action') {
+      console.log(`[confirm-sub-payment] invoices.pay ${invoiceId} threw requires_action → defer to frontend`);
+      return {
+        requiresAction: true,
+        clientSecret: pi.client_secret,
+        subscriptionStatus: subscription.status,
+      };
+    }
+    console.error(`[confirm-sub-payment] invoices.pay ${invoiceId} error: ${stripeErr.message || String(err)}`);
     return { requiresAction: false, error: stripeErr.message || String(err) };
   }
 }
