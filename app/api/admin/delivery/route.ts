@@ -3,6 +3,7 @@ import { createServerClient } from '@/lib/supabase';
 import { withAuth, jsonSuccess, jsonBadRequest, jsonError } from '@/lib/api-helpers';
 import { predictDeliveries } from '@/lib/delivery-prediction';
 import { resolveDeliveryWorkDate } from '@/lib/business-days';
+import { getMenuSetNameWithDeliveryNumber } from '@/lib/subscription-schedule';
 
 // F4-4: クエリ範囲を「配送作業日」軸でフィルタするための JS 側拡張範囲。
 //   resolveDeliveryWorkDate は土日祝で次の営業日にスライドするため、
@@ -393,6 +394,77 @@ export const PATCH = withAuth(async (request: NextRequest) => {
   const now = new Date().toISOString();
 
   if (source === 'subscription') {
+    // 予測配送（仮想ID: predicted:${subscription_id}:${date}）は実レコードが無いため、
+    // ステータス変更時に subscription_deliveries へ materialize（実レコード化）する。
+    if (typeof id === 'string' && id.startsWith('predicted:')) {
+      // id 形式: predicted:${subscription_id}:${date}
+      // subscription_id は UUID、date は YYYY-MM-DD（いずれもコロンを含まない）。
+      const parts = id.split(':');
+      const subscriptionId = parts[1];
+      const scheduledDate = parts[2];
+      if (!subscriptionId || !scheduledDate) {
+        return jsonBadRequest('不正な予測配送IDです');
+      }
+
+      // 既存行の有無を確認（DB 反映済み・他経路で実体化済みのケースに対応）
+      const { data: existing, error: selectError } = await supabase
+        .from('subscription_deliveries')
+        .select('id')
+        .eq('subscription_id', subscriptionId)
+        .eq('scheduled_date', scheduledDate)
+        .maybeSingle();
+      if (selectError) {
+        return jsonError('予測配送の確認に失敗しました', 500, selectError);
+      }
+
+      if (existing?.id) {
+        // 既に実レコードがあれば通常どおり update
+        const { error } = await supabase
+          .from('subscription_deliveries')
+          .update({ status, delivered_date: status === 'shipped' ? now : null })
+          .eq('id', existing.id);
+        if (error) return jsonError('サブスク配送の更新に失敗しました', 500, error);
+        return jsonSuccess({ message: 'ステータスを更新しました' });
+      }
+
+      // 実レコードが無ければ insert（materialize）。
+      // menu_set / meals_per_delivery は subscription から再算出する。
+      const { data: sub, error: subError } = await supabase
+        .from('subscriptions')
+        .select('id, plan_id, meals_per_delivery, shipping_address')
+        .eq('id', subscriptionId)
+        .maybeSingle();
+      if (subError) {
+        return jsonError('対象サブスクの取得に失敗しました', 500, subError);
+      }
+      if (!sub) {
+        return jsonBadRequest('対象のサブスクリプションが見つかりません');
+      }
+
+      const planId = sub.plan_id as string;
+      const mealsPerDelivery = (sub.meals_per_delivery as number) || 12;
+      const customerEmail = sub.shipping_address?.email || null;
+
+      const { error: insertError } = await supabase
+        .from('subscription_deliveries')
+        .insert({
+          subscription_id: subscriptionId,
+          scheduled_date: scheduledDate,
+          // F1: 予測は scheduled_date と同値で実体化
+          preferred_delivery_date: scheduledDate,
+          menu_set: getMenuSetNameWithDeliveryNumber(planId, 0),
+          meals_per_delivery: mealsPerDelivery,
+          quantity: 1,
+          status,
+          delivered_date: status === 'shipped' ? now : null,
+          customer_email: customerEmail,
+        });
+      if (insertError) {
+        return jsonError('予測配送の実レコード化に失敗しました', 500, insertError);
+      }
+      return jsonSuccess({ message: 'ステータスを更新しました' });
+    }
+
     const { error } = await supabase
       .from('subscription_deliveries')
       .update({ status, delivered_date: status === 'shipped' ? now : null })
