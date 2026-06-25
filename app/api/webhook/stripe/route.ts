@@ -309,10 +309,16 @@ export async function POST(request: NextRequest) {
         break;
       }
 
-      // サブスクリプション削除時（解約）
+      // サブスクリプション削除時（解約 or 決済未完了の失効）
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
-        await cancelSubscription(subscription);
+        // B2: 一度も決済成功していない＝「決済未完了の失効」かを判定し、
+        //     解約メールの誤送信を防ぐ。
+        if (isPaymentIncompleteExpiry(subscription)) {
+          await handleIncompletePaymentExpiry(subscription, stripe);
+        } else {
+          await cancelSubscription(subscription);
+        }
         break;
       }
 
@@ -1256,6 +1262,208 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
 }
 
 // サブスクリプション解約処理
+/**
+ * B2: 削除されたサブスクが「決済未完了の失効」かを判定する。
+ *
+ * incomplete_expired は、初回 invoice の支払いが約23時間確認されず Stripe が自動で
+ * サブスクを削除した状態。この場合は一度も課金されておらず「解約」ではないため、
+ * 解約メールを送ってはいけない。
+ *
+ * subscription.status が 'incomplete' / 'incomplete_expired' のいずれかなら
+ * 「一度も決済成功していない」とみなせる（active を経たことがない）。
+ */
+function isPaymentIncompleteExpiry(subscription: Stripe.Subscription): boolean {
+  return (
+    subscription.status === 'incomplete_expired' ||
+    subscription.status === 'incomplete'
+  );
+}
+
+/**
+ * B2: 決済未完了で失効したサブスクの処理。
+ * - 解約メールは送らない。
+ * - お客様には「決済が完了せず失効した」案内（再申込の案内）を送る。
+ * - 管理者にも通知する。
+ */
+async function handleIncompletePaymentExpiry(
+  subscription: Stripe.Subscription,
+  _stripe: Stripe
+) {
+  const supabase = getSupabaseClient();
+
+  // メタデータ（activate-subscription が書き込んだ顧客情報）から宛先を取得。
+  const meta = subscription.metadata || {};
+  let email = meta.email || '';
+  let name = meta.customer_name || 'お客様';
+  let planName = '';
+
+  // DB 側に契約レコードがあれば、宛先・プラン名を補完しつつ状態を失効に更新。
+  if (supabase) {
+    try {
+      const { data: dbSubscription } = await (supabase
+        .from('subscriptions') as any)
+        .select('id, plan_name, shipping_address')
+        .eq('stripe_subscription_id', subscription.id)
+        .maybeSingle();
+
+      if (dbSubscription) {
+        planName = (dbSubscription as any).plan_name || planName;
+        const shippingAddress = (dbSubscription as any).shipping_address as any;
+        if (shippingAddress?.email) email = email || shippingAddress.email;
+        if (shippingAddress?.name) name = shippingAddress.name || name;
+
+        // 解約ではなく「決済未完了の失効」として記録する。
+        await (supabase.from('subscriptions') as any)
+          .update({
+            status: 'incomplete_expired',
+            payment_status: 'incomplete_expired',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('stripe_subscription_id', subscription.id);
+
+        // pending 配送はキャンセルしておく。
+        await (supabase.from('subscription_deliveries') as any)
+          .update({ status: 'cancelled' })
+          .eq('subscription_id', (dbSubscription as any).id)
+          .eq('status', 'pending');
+      }
+    } catch (error) {
+      console.error('[incomplete-expiry] DB update error:', error);
+    }
+  }
+
+  if (!planName) planName = 'ふとるめし定期プラン';
+
+  console.log(`[incomplete-expiry] Subscription ${subscription.id} expired before payment (status=${subscription.status}). Skipping cancellation email.`);
+
+  // お客様向け「決済未完了」案内
+  if (email) {
+    await sendPaymentIncompleteEmail({ email, name, planName });
+  }
+
+  // 管理者向け通知
+  await sendAdminIncompleteExpiryNotice({
+    subscriptionId: subscription.id,
+    customerEmail: email || '(不明)',
+    customerName: name,
+    planName,
+    status: subscription.status,
+  });
+}
+
+/**
+ * B2: お客様向け「決済が完了せず失効した」案内メール（再申込の案内）。
+ */
+async function sendPaymentIncompleteEmail(params: {
+  email: string;
+  name: string;
+  planName: string;
+}) {
+  const resend = await getResendClient();
+  if (!resend) {
+    console.log('Resend client not available, skipping payment-incomplete email');
+    return;
+  }
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.futorumeshi.com';
+
+  const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.8; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .content { background: #fff; padding: 30px; }
+    .button { display: inline-block; background: #E8593C; color: #fff; padding: 12px 24px; border-radius: 9999px; text-decoration: none; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="content">
+      <p>${params.name}様</p>
+      <p>このたびは「${params.planName}」へのお申し込みをいただき、誠にありがとうございます。</p>
+      <p>恐れ入りますが、初回のお支払いが完了しなかったため、お申し込みが自動的に失効いたしました。<br>
+      なお、ご請求は発生しておりませんのでご安心ください。</p>
+      <p>引き続きご利用をご希望の場合は、お手数ですが下記より改めてお申し込みをお願いいたします。</p>
+      <p style="text-align:center; margin:24px 0;">
+        <a class="button" href="${siteUrl}">お申し込みはこちら</a>
+      </p>
+      <p>ご不明な点がございましたら、お気軽にご連絡ください。</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  const fromEmail = process.env.RESEND_FROM_EMAIL || '';
+
+  const { error } = await resend.emails.send({
+    from: fromEmail,
+    to: params.email,
+    subject: '【ふとるめし】お申し込みの決済が完了しませんでした',
+    html: emailHtml,
+  });
+
+  if (error) {
+    console.error('Failed to send payment-incomplete email:', error);
+  } else {
+    console.log('Payment-incomplete email sent to:', params.email);
+  }
+}
+
+/**
+ * B2: 管理者向け「決済未完了で失効」通知。
+ * ADMIN_NOTIFICATION_EMAIL が無ければ RESEND_FROM_EMAIL 宛にフォールバック。
+ */
+async function sendAdminIncompleteExpiryNotice(params: {
+  subscriptionId: string;
+  customerEmail: string;
+  customerName: string;
+  planName: string;
+  status: string;
+}) {
+  const resend = await getResendClient();
+  const fromEmail = process.env.RESEND_FROM_EMAIL || '';
+  const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || fromEmail;
+
+  if (!resend || !adminEmail) {
+    console.log(`[admin-notice] Resend/admin email not available. Subscription ${params.subscriptionId} expired before payment.`);
+    return;
+  }
+
+  const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body>
+  <p>定期申込が初回決済未完了で失効しました（解約メールは送信していません）。</p>
+  <ul>
+    <li>Stripe Subscription ID: ${params.subscriptionId}</li>
+    <li>ステータス: ${params.status}</li>
+    <li>お客様: ${params.customerName}（${params.customerEmail}）</li>
+    <li>プラン: ${params.planName}</li>
+  </ul>
+  <p>お客様には「決済未完了・再申込のご案内」を送信済みです。必要に応じてフォローをお願いします。</p>
+</body>
+</html>
+  `;
+
+  const { error } = await resend.emails.send({
+    from: fromEmail,
+    to: adminEmail,
+    subject: '【管理通知】定期申込が初回決済未完了で失効しました',
+    html: emailHtml,
+  });
+
+  if (error) {
+    console.error('Failed to send admin incomplete-expiry notice:', error);
+  } else {
+    console.log('Admin incomplete-expiry notice sent for:', params.subscriptionId);
+  }
+}
+
 async function cancelSubscription(subscription: Stripe.Subscription) {
   const supabase = getSupabaseClient();
   if (!supabase) {
