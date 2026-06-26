@@ -6,6 +6,7 @@ import { createBrowserClient } from '@/lib/supabase';
 import { MenuDetailModal } from '@/components/menu/MenuDetailModal';
 import { PlanSelectorCards, type PlanCardData } from '@/components/purchase/PlanSelectorCards';
 import { StripePaymentForm } from '@/components/purchase/StripePaymentForm';
+import SubscriptionUpsellModal from '@/components/purchase/SubscriptionUpsellModal';
 import { getDeliveryDateRange, listDeliveryDateOptions, formatDateKey } from '@/lib/business-days';
 import type { MenuItem } from '@/types';
 
@@ -233,6 +234,9 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
 
   // F43: 既存会員エラー時のログイン誘導モーダル
   const [showLoginRedirectModal, setShowLoginRedirectModal] = useState(false);
+
+  // 定期プラン訴求モーダル（お試し選択時に1セッション1回表示）
+  const [showUpsellModal, setShowUpsellModal] = useState(false);
 
   // ログインユーザーとプロフィールを取得
   useEffect(() => {
@@ -651,6 +655,35 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPlanIdForCoupon]);
+
+  // 定期プラン訴求モーダルの発火制御。
+  // 選択中プランが お試し（isTrial = trial-6）になった瞬間に、1セッション1回だけ表示する。
+  // LP の各お試しCTA（?plan=trial-6 / ?type=trial / セクションのお試しボタン）と
+  // 購入ページ内でのお試し選択を、この1か所でまとめてカバーする。
+  useEffect(() => {
+    const selectedId = cart.find(item => item.quantity > 0)?.planId;
+    const selectedPlan = selectedId ? planOptions.find(p => p.id === selectedId) : null;
+    if (!selectedPlan?.isTrial) return;
+    if (typeof window === 'undefined') return;
+    try {
+      if (sessionStorage.getItem('upsell_modal_shown') === '1') return;
+      sessionStorage.setItem('upsell_modal_shown', '1');
+    } catch {
+      // sessionStorage が使えない環境でも購入は継続できるようにする
+    }
+    setShowUpsellModal(true);
+  }, [cart]);
+
+  // 「お得な定期を見る」→ ページ遷移せず、その場で 12食定期（sub-12）に切替えて閉じる
+  const handleChooseSubscription = () => {
+    setCart(prev =>
+      prev.map(item => (item.planId === 'sub-12' ? { ...item, quantity: 1 } : { ...item, quantity: 0 }))
+    );
+    setPurchaseType('subscription-monthly');
+    setIsTrialMode(false);
+    setOpenPlanId('sub-12');
+    setShowUpsellModal(false);
+  };
 
   // クーポン適用
   const applyCoupon = async () => {
@@ -2225,6 +2258,13 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
           showPurchaseButton={false}
         />
       )}
+
+      {/* 定期プラン訴求モーダル（お試し選択時・1セッション1回） */}
+      <SubscriptionUpsellModal
+        open={showUpsellModal}
+        onClose={() => setShowUpsellModal(false)}
+        onChoose={handleChooseSubscription}
+      />
 
       {/* F43: 既存会員ログイン誘導モーダル */}
       {showLoginRedirectModal && (
