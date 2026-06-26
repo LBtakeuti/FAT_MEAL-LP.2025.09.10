@@ -68,6 +68,16 @@ const SubscriptionUpsellModal: React.FC<SubscriptionUpsellModalProps> = ({ open,
       <style>{`
         @keyframes upsellModalPop { 0% { transform: translateY(18px) scale(.94); } 100% { transform: translateY(0) scale(1); } }
         @keyframes upsellFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        /* モバイル: カードを縦積みにし、2カードの間に十分な隙間を空けて
+           矢印とシールをその隙間に重ねる（価格テキストに被らない） */
+        .upsell-cards { flex-direction: column; gap: 150px; }
+        .upsell-cards .upsell-arrow { left: 50%; top: 50%; transform: translate(-50%, calc(-50% - 52px)) rotate(90deg); }
+        .upsell-cards .upsell-seal { left: 50%; top: 50%; width: 96px; height: 96px; transform: translate(-50%, calc(-50% + 28px)); }
+        @media (min-width: 640px) {
+          .upsell-cards { flex-direction: row; gap: clamp(36px, 10vw, 62px); }
+          .upsell-cards .upsell-arrow { left: 50%; top: 33%; transform: translate(-50%,-50%) rotate(0deg); }
+          .upsell-cards .upsell-seal { left: 50%; top: 74%; width: 128px; height: 128px; transform: translate(-50%,-50%); }
+        }
       `}</style>
       <div
         role="dialog"
@@ -151,8 +161,8 @@ const SubscriptionUpsellModal: React.FC<SubscriptionUpsellModalProps> = ({ open,
 
           {/* plan cards */}
           <div
-            className="relative flex items-stretch"
-            style={{ gap: 'clamp(36px, 10vw, 62px)', marginTop: 18 }}
+            className="upsell-cards relative flex items-stretch"
+            style={{ marginTop: 18 }}
           >
             {/* LEFT: お試し */}
             <div
@@ -202,11 +212,8 @@ const SubscriptionUpsellModal: React.FC<SubscriptionUpsellModalProps> = ({ open,
 
             {/* 中央の矢印 */}
             <div
-              className="absolute flex items-center justify-center"
+              className="upsell-arrow absolute flex items-center justify-center"
               style={{
-                left: '50%',
-                top: '33%',
-                transform: 'translate(-50%,-50%)',
                 width: 48,
                 height: 48,
                 borderRadius: '50%',
@@ -223,22 +230,15 @@ const SubscriptionUpsellModal: React.FC<SubscriptionUpsellModalProps> = ({ open,
 
             {/* 割引シール（約21%オフ） */}
             <div
-              className="absolute flex items-center justify-center"
+              className="upsell-seal absolute flex items-center justify-center"
               style={{
-                left: '50%',
-                top: '74%',
-                transform: 'translate(-50%,-50%)',
-                width: 128,
-                height: 128,
                 zIndex: 4,
               }}
             >
               <svg
                 viewBox="0 0 100 100"
-                width={128}
-                height={128}
                 className="absolute inset-0"
-                style={{ filter: 'drop-shadow(0 6px 14px rgba(30,18,8,.25))' }}
+                style={{ width: '100%', height: '100%', filter: 'drop-shadow(0 6px 14px rgba(30,18,8,.25))' }}
                 aria-hidden="true"
               >
                 <path d={SEAL_PATH} fill="#fff" />
