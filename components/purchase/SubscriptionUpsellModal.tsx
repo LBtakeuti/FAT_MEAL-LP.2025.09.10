@@ -75,15 +75,17 @@ const SubscriptionUpsellModal: React.FC<SubscriptionUpsellModalProps> = ({ open,
       <style>{`
         @keyframes upsellModalPop { 0% { transform: translateY(18px) scale(.94); } 100% { transform: translateY(0) scale(1); } }
         @keyframes upsellFadeIn { from { opacity: 0; } to { opacity: 1; } }
-        /* モバイル: カードを縦積みにし、2カードの間に十分な隙間を空けて
-           矢印とシールをその隙間に重ねる（価格テキストに被らない） */
-        .upsell-cards { flex-direction: column; gap: 150px; }
-        .upsell-cards .upsell-arrow { left: 50%; top: 50%; transform: translate(-50%, calc(-50% - 52px)) rotate(90deg); }
-        .upsell-cards .upsell-seal { left: 50%; top: 50%; width: 96px; height: 96px; transform: translate(-50%, calc(-50% + 28px)); }
+        /* モバイル: PC同様に2カードを横並び（コンパクト）にする。
+           矢印はカード上部寄り（価格行と被らない高さ）、シールはカード下部
+           （弁当画像の間あたり＝price 行より下）に配置して価格に被らせない。
+           狭幅では gap・矢印/シールサイズを clamp でさらに縮小する。 */
+        .upsell-cards { flex-direction: row; gap: clamp(20px, 7vw, 62px); }
+        .upsell-cards .upsell-arrow { left: 50%; top: clamp(26px, 7.5vw, 40px); transform: translate(-50%,-50%) rotate(0deg); width: clamp(34px, 9vw, 48px); height: clamp(34px, 9vw, 48px); }
+        .upsell-cards .upsell-seal { left: 50%; top: auto; bottom: clamp(8px, 2.5vw, 18px); width: clamp(64px, 18vw, 96px); height: clamp(64px, 18vw, 96px); transform: translate(-50%, 0); }
         @media (min-width: 640px) {
           .upsell-cards { flex-direction: row; gap: clamp(36px, 10vw, 62px); }
-          .upsell-cards .upsell-arrow { left: 50%; top: 33%; transform: translate(-50%,-50%) rotate(0deg); }
-          .upsell-cards .upsell-seal { left: 50%; top: 74%; width: 128px; height: 128px; transform: translate(-50%,-50%); }
+          .upsell-cards .upsell-arrow { left: 50%; top: 33%; transform: translate(-50%,-50%) rotate(0deg); width: 48px; height: 48px; }
+          .upsell-cards .upsell-seal { left: 50%; top: 74%; bottom: auto; width: 128px; height: 128px; transform: translate(-50%,-50%); }
         }
       `}</style>
       <div
@@ -169,7 +171,7 @@ const SubscriptionUpsellModal: React.FC<SubscriptionUpsellModalProps> = ({ open,
           {/* plan cards */}
           <div
             className="upsell-cards relative flex items-stretch"
-            style={{ marginTop: 18 }}
+            style={{ marginTop: 'clamp(12px, 3.5vw, 18px)' }}
           >
             {/* LEFT: お試し */}
             <div
@@ -178,23 +180,23 @@ const SubscriptionUpsellModal: React.FC<SubscriptionUpsellModalProps> = ({ open,
             >
               <div
                 className="text-center"
-                style={{ padding: '15px 0 13px', background: 'linear-gradient(180deg,#fbf4e7,#f7eedd)' }}
+                style={{ padding: 'clamp(9px, 2.6vw, 15px) 0 clamp(8px, 2.2vw, 13px)', background: 'linear-gradient(180deg,#fbf4e7,#f7eedd)' }}
               >
-                <span style={{ fontSize: 'clamp(18px, 5vw, 27px)', fontWeight: 900, color: '#5b5147' }}>お試し6食</span>
+                <span style={{ fontSize: 'clamp(15px, 4.4vw, 27px)', fontWeight: 900, color: '#5b5147' }}>お試し6食</span>
               </div>
-              <div style={{ borderTop: '3px dotted #d9cdba', margin: '0 18px' }} />
-              <div className="flex flex-1 flex-col items-center" style={{ padding: '14px 10px 16px' }}>
-                <div style={{ fontSize: 'clamp(14px, 3.4vw, 17px)', fontWeight: 800, color: '#5b5147' }}>1食あたり</div>
+              <div style={{ borderTop: '3px dotted #d9cdba', margin: '0 clamp(8px, 3vw, 18px)' }} />
+              <div className="flex flex-1 flex-col items-center" style={{ padding: 'clamp(8px, 2.6vw, 14px) clamp(6px, 2.4vw, 10px) clamp(58px, 16vw, 16px)' }}>
+                <div style={{ fontSize: 'clamp(11px, 3vw, 17px)', fontWeight: 800, color: '#5b5147' }}>1食あたり</div>
                 <div style={{ fontWeight: 900, color: INK, lineHeight: 1, marginTop: 2 }}>
-                  <span style={{ fontSize: 'clamp(40px, 11vw, 58px)' }}>700</span>
-                  <span style={{ fontSize: 'clamp(20px, 6vw, 30px)' }}>円</span>
+                  <span style={{ fontSize: 'clamp(30px, 8.6vw, 58px)' }}>700</span>
+                  <span style={{ fontSize: 'clamp(15px, 4.6vw, 30px)' }}>円</span>
                 </div>
                 {SHOW_BENTO_IMAGES && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={BENTO_LEFT_SRC}
                     alt="お試しのお弁当"
-                    style={{ display: 'block', width: 'auto', maxWidth: '100%', maxHeight: 150, height: 'auto', marginTop: 10 }}
+                    style={{ display: 'block', width: 'auto', maxWidth: '100%', maxHeight: 'clamp(72px, 22vw, 150px)', height: 'auto', marginTop: 'clamp(6px, 2vw, 10px)' }}
                   />
                 )}
               </div>
@@ -205,21 +207,21 @@ const SubscriptionUpsellModal: React.FC<SubscriptionUpsellModalProps> = ({ open,
               className="flex flex-col overflow-hidden"
               style={{ flex: 1, borderRadius: 22, background: 'color-mix(in srgb, #EA580C 9%, #fff)' }}
             >
-              <div className="text-center" style={{ padding: '15px 0 13px', background: ACCENT }}>
-                <span style={{ fontSize: 'clamp(18px, 5vw, 27px)', fontWeight: 900, color: '#fff' }}>12食定期</span>
+              <div className="text-center" style={{ padding: 'clamp(9px, 2.6vw, 15px) 0 clamp(8px, 2.2vw, 13px)', background: ACCENT }}>
+                <span style={{ fontSize: 'clamp(15px, 4.4vw, 27px)', fontWeight: 900, color: '#fff' }}>12食定期</span>
               </div>
-              <div className="flex flex-1 flex-col items-center" style={{ padding: '14px 10px 16px' }}>
-                <div style={{ fontSize: 'clamp(14px, 3.4vw, 17px)', fontWeight: 800, color: '#5b5147' }}>1食あたり</div>
+              <div className="flex flex-1 flex-col items-center" style={{ padding: 'clamp(8px, 2.6vw, 14px) clamp(6px, 2.4vw, 10px) clamp(58px, 16vw, 16px)' }}>
+                <div style={{ fontSize: 'clamp(11px, 3vw, 17px)', fontWeight: 800, color: '#5b5147' }}>1食あたり</div>
                 <div style={{ fontWeight: 900, color: ACCENT, lineHeight: 1, marginTop: 2 }}>
-                  <span style={{ fontSize: 'clamp(40px, 11vw, 58px)' }}>550</span>
-                  <span style={{ fontSize: 'clamp(20px, 6vw, 30px)' }}>円</span>
+                  <span style={{ fontSize: 'clamp(30px, 8.6vw, 58px)' }}>550</span>
+                  <span style={{ fontSize: 'clamp(15px, 4.6vw, 30px)' }}>円</span>
                 </div>
                 {SHOW_BENTO_IMAGES && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={BENTO_RIGHT_SRC}
                     alt="12食定期のお弁当"
-                    style={{ display: 'block', width: 'auto', maxWidth: '100%', maxHeight: 150, height: 'auto', marginTop: 10 }}
+                    style={{ display: 'block', width: 'auto', maxWidth: '100%', maxHeight: 'clamp(72px, 22vw, 150px)', height: 'auto', marginTop: 'clamp(6px, 2vw, 10px)' }}
                   />
                 )}
               </div>
@@ -229,8 +231,6 @@ const SubscriptionUpsellModal: React.FC<SubscriptionUpsellModalProps> = ({ open,
             <div
               className="upsell-arrow absolute flex items-center justify-center"
               style={{
-                width: 48,
-                height: 48,
                 borderRadius: '50%',
                 background: ACCENT,
                 boxShadow: 'rgba(234,88,12,.4) 0 6px 14px',
@@ -238,7 +238,7 @@ const SubscriptionUpsellModal: React.FC<SubscriptionUpsellModalProps> = ({ open,
               }}
               aria-hidden="true"
             >
-              <svg viewBox="0 0 24 24" width={24} height={24} fill="none" stroke="#fff" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+              <svg viewBox="0 0 24 24" width="50%" height="50%" fill="none" stroke="#fff" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M4 12h13M13 6l6 6-6 6" />
               </svg>
             </div>
@@ -259,23 +259,23 @@ const SubscriptionUpsellModal: React.FC<SubscriptionUpsellModalProps> = ({ open,
                 <path d={SEAL_PATH} fill="#fff" />
               </svg>
               <div className="relative text-center" style={{ lineHeight: 1, color: ACCENT }}>
-                <div style={{ fontSize: 16, fontWeight: 800 }}>約</div>
-                <div style={{ fontSize: 34, fontWeight: 900, margin: '-1px 0' }}>
-                  21<span style={{ fontSize: 21 }}>%</span>
+                <div style={{ fontSize: 'clamp(9px, 2.6vw, 16px)', fontWeight: 800 }}>約</div>
+                <div style={{ fontSize: 'clamp(19px, 5.4vw, 34px)', fontWeight: 900, margin: '-1px 0' }}>
+                  21<span style={{ fontSize: 'clamp(12px, 3.4vw, 21px)' }}>%</span>
                 </div>
-                <div style={{ fontSize: 16, fontWeight: 900 }}>オフ！</div>
+                <div style={{ fontSize: 'clamp(9px, 2.6vw, 16px)', fontWeight: 900 }}>オフ！</div>
               </div>
             </div>
           </div>
 
           {/* 毎月自動お届け */}
-          <div className="flex items-center justify-center" style={{ gap: 16, marginTop: 26 }}>
+          <div className="flex items-center justify-center" style={{ gap: 'clamp(10px, 3vw, 16px)', marginTop: 'clamp(16px, 4vw, 26px)' }}>
             <div
               className="flex items-center justify-center"
-              style={{ width: 64, height: 64, borderRadius: '50%', background: 'color-mix(in srgb, #EA580C 12%, #fff)', flex: 'none' }}
+              style={{ width: 'clamp(46px, 13vw, 64px)', height: 'clamp(46px, 13vw, 64px)', borderRadius: '50%', background: 'color-mix(in srgb, #EA580C 12%, #fff)', flex: 'none' }}
               aria-hidden="true"
             >
-              <svg viewBox="0 0 24 24" width={34} height={34} fill="none" stroke={ACCENT} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+              <svg viewBox="0 0 24 24" width="55%" height="55%" fill="none" stroke={ACCENT} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 6h11v9H3z" />
                 <path d="M14 9h4l3 3v3h-7z" />
                 <circle cx="7" cy="17.5" r="1.8" />
@@ -294,14 +294,14 @@ const SubscriptionUpsellModal: React.FC<SubscriptionUpsellModalProps> = ({ open,
           </div>
 
           {/* CTA */}
-          <div className="flex flex-col sm:flex-row" style={{ gap: 16, marginTop: 22 }}>
+          <div className="flex flex-col sm:flex-row" style={{ gap: 'clamp(10px, 3vw, 16px)', marginTop: 'clamp(14px, 4vw, 22px)' }}>
             <button
               type="button"
               onClick={onClose}
               className="flex flex-1 items-center justify-center cursor-pointer"
               style={{
                 gap: 10,
-                padding: '18px 12px',
+                padding: 'clamp(13px, 3.6vw, 18px) 12px',
                 border: 'none',
                 borderRadius: 40,
                 background: ACCENT,
@@ -323,7 +323,7 @@ const SubscriptionUpsellModal: React.FC<SubscriptionUpsellModalProps> = ({ open,
               className="flex flex-1 items-center justify-center bg-white cursor-pointer"
               style={{
                 gap: 10,
-                padding: '18px 12px',
+                padding: 'clamp(13px, 3.6vw, 18px) 12px',
                 border: `3px solid ${ACCENT}`,
                 borderRadius: 40,
                 color: ACCENT,
