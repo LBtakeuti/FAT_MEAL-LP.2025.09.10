@@ -2228,6 +2228,12 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
             showPurchaseButton={false}
           />
         )}
+        {/* 定期プラン訴求モーダル（シート経路でも表示。body への portal で最前面） */}
+        <SubscriptionUpsellModal
+          open={showUpsellModal}
+          onClose={handleCloseUpsell}
+          onContinueTrial={handleContinueTrial}
+        />
       </>
     );
   }

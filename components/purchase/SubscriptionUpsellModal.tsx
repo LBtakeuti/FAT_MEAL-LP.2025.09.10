@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useId } from 'react';
+import React, { useEffect, useId, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 export interface SubscriptionUpsellModalProps {
   open: boolean;
@@ -46,6 +47,12 @@ const SEAL_PATH = buildSealPath(50, 43, 16);
 const SubscriptionUpsellModal: React.FC<SubscriptionUpsellModalProps> = ({ open, onClose, onContinueTrial }) => {
   const titleId = useId();
 
+  // body への portal 用（シート PurchaseSheetShell の stacking context を抜けて最前面に出すため）。
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Escapeで閉じる + 背景スクロール抑止
   useEffect(() => {
     if (!open) return;
@@ -61,9 +68,9 @@ const SubscriptionUpsellModal: React.FC<SubscriptionUpsellModalProps> = ({ open,
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  const content = (
     <>
       <style>{`
         @keyframes upsellModalPop { 0% { transform: translateY(18px) scale(.94); } 100% { transform: translateY(0) scale(1); } }
@@ -83,7 +90,7 @@ const SubscriptionUpsellModal: React.FC<SubscriptionUpsellModalProps> = ({ open,
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="fixed inset-0 z-[60] flex items-center justify-center overflow-auto p-4 sm:p-6"
+        className="fixed inset-0 z-[10010] flex items-center justify-center overflow-auto p-4 sm:p-6"
         style={{ fontFamily: "'M PLUS Rounded 1c', sans-serif" }}
       >
         {/* オーバーレイ（背景クリックで閉じる＝プラン選択を表示） */}
@@ -335,6 +342,8 @@ const SubscriptionUpsellModal: React.FC<SubscriptionUpsellModalProps> = ({ open,
       </div>
     </>
   );
+
+  return createPortal(content, document.body);
 };
 
 export default SubscriptionUpsellModal;
