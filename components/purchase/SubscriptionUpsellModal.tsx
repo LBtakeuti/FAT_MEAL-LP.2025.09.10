@@ -19,7 +19,7 @@ const INK = '#3c3530';
 const BENTO_LEFT_SRC = '/images/upsell/bento-left.png';
 const BENTO_RIGHT_SRC = '/images/upsell/bento-right.png';
 // 画像を実際に配置するまでは省略する（404を避けるため明示フラグで制御）。
-const SHOW_BENTO_IMAGES = false;
+const SHOW_BENTO_IMAGES = true;
 
 /**
  * ギザギザの星形シールのパスを生成する。
@@ -184,7 +184,11 @@ const SubscriptionUpsellModal: React.FC<SubscriptionUpsellModalProps> = ({ open,
                 </div>
                 {SHOW_BENTO_IMAGES && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={BENTO_LEFT_SRC} alt="お試しのお弁当" style={{ maxWidth: '100%', marginTop: 10 }} />
+                  <img
+                    src={BENTO_LEFT_SRC}
+                    alt="お試しのお弁当"
+                    style={{ display: 'block', width: 'auto', maxWidth: '100%', maxHeight: 150, height: 'auto', marginTop: 10 }}
+                  />
                 )}
               </div>
             </div>
@@ -205,7 +209,11 @@ const SubscriptionUpsellModal: React.FC<SubscriptionUpsellModalProps> = ({ open,
                 </div>
                 {SHOW_BENTO_IMAGES && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={BENTO_RIGHT_SRC} alt="12食定期のお弁当" style={{ maxWidth: '100%', marginTop: 10 }} />
+                  <img
+                    src={BENTO_RIGHT_SRC}
+                    alt="12食定期のお弁当"
+                    style={{ display: 'block', width: 'auto', maxWidth: '100%', maxHeight: 150, height: 'auto', marginTop: 10 }}
+                  />
                 )}
               </div>
             </div>
