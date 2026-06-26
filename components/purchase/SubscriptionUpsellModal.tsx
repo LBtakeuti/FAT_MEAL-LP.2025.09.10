@@ -145,7 +145,7 @@ const SubscriptionUpsellModal: React.FC<SubscriptionUpsellModalProps> = ({ open,
 
           {/* title */}
           <div className="relative text-center" style={{ margin: '10px 0 6px' }}>
-            <div id={titleId} style={{ fontSize: 'clamp(26px, 7.2vw, 40px)', fontWeight: 900, lineHeight: 1.2, letterSpacing: '.01em' }}>
+            <div id={titleId} style={{ fontSize: 'clamp(18px, 5.4vw, 36px)', fontWeight: 900, lineHeight: 1.2, letterSpacing: '.01em', whiteSpace: 'nowrap' }}>
               <span style={{ color: ACCENT }}>定期プラン</span>
               <span style={{ color: INK }}>の方が</span>
               <span style={{ color: ACCENT }}>お得</span>
