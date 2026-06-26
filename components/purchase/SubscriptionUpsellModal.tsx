@@ -4,10 +4,10 @@ import React, { useEffect, useId } from 'react';
 
 export interface SubscriptionUpsellModalProps {
   open: boolean;
-  /** 「このまま進む」「✕」「背景クリック」「Escape」→ 閉じる＝お試し継続 */
+  /** 「お得な定期を見る」「✕」「背景クリック」「Escape」→ モーダルを閉じプラン選択（6食/12食定期）を表示 */
   onClose: () => void;
-  /** 「お得な定期を見る」→ 呼び出し側で12食定期へ切替 */
-  onChoose: () => void;
+  /** 「このまま進む」＝お試し6個セットを買う唯一の入口（trial-6 を選択し次ステップへ） */
+  onContinueTrial: () => void;
 }
 
 // アクセント色はプロジェクトのブランドオレンジ（Tailwind orange-600 = #EA580C）。
@@ -43,7 +43,7 @@ function buildSealPath(rO = 50, rI = 43, pts = 16): string {
 
 const SEAL_PATH = buildSealPath(50, 43, 16);
 
-const SubscriptionUpsellModal: React.FC<SubscriptionUpsellModalProps> = ({ open, onClose, onChoose }) => {
+const SubscriptionUpsellModal: React.FC<SubscriptionUpsellModalProps> = ({ open, onClose, onContinueTrial }) => {
   const titleId = useId();
 
   // Escapeで閉じる + 背景スクロール抑止
@@ -86,7 +86,7 @@ const SubscriptionUpsellModal: React.FC<SubscriptionUpsellModalProps> = ({ open,
         className="fixed inset-0 z-[60] flex items-center justify-center overflow-auto p-4 sm:p-6"
         style={{ fontFamily: "'M PLUS Rounded 1c', sans-serif" }}
       >
-        {/* オーバーレイ（背景クリックで閉じる＝お試し継続） */}
+        {/* オーバーレイ（背景クリックで閉じる＝プラン選択を表示） */}
         <div
           className="absolute inset-0"
           style={{ background: 'rgba(38,28,18,.55)', backdropFilter: 'blur(3px)', animation: 'upsellFadeIn .25s ease' }}
@@ -290,7 +290,7 @@ const SubscriptionUpsellModal: React.FC<SubscriptionUpsellModalProps> = ({ open,
           <div className="flex flex-col sm:flex-row" style={{ gap: 16, marginTop: 22 }}>
             <button
               type="button"
-              onClick={onChoose}
+              onClick={onClose}
               className="flex flex-1 items-center justify-center cursor-pointer"
               style={{
                 gap: 10,
@@ -312,7 +312,7 @@ const SubscriptionUpsellModal: React.FC<SubscriptionUpsellModalProps> = ({ open,
             </button>
             <button
               type="button"
-              onClick={onClose}
+              onClick={onContinueTrial}
               className="flex flex-1 items-center justify-center bg-white cursor-pointer"
               style={{
                 gap: 10,

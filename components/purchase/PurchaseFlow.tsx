@@ -235,7 +235,7 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
   // F43: 既存会員エラー時のログイン誘導モーダル
   const [showLoginRedirectModal, setShowLoginRedirectModal] = useState(false);
 
-  // 定期プラン訴求モーダル（お試し選択時に1セッション1回表示）
+  // 定期プラン訴求モーダル（お試しCTA着地ごとに表示する「関所」）
   const [showUpsellModal, setShowUpsellModal] = useState(false);
 
   // ログインユーザーとプロフィールを取得
@@ -310,12 +310,17 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
       setIsTrialMode(false);
     }
 
-    if (planParam === 'trial-6') {
+    // お試し intent（?plan=trial-6 または ?type=trial）＝モーダルの「関所」を開く。
+    // trial-6 は即選択せず、プラン選択は定期（sub-12 初期選択）にしておく。
+    // 「このまま進む」を押した時のみ trial-6 を選択して info へ進む（onContinueTrial）。
+    if (planParam === 'trial-6' || typeParam === 'trial') {
       setIsTrialMode(false);
-      setPurchaseType('one-time');
+      setPurchaseType('subscription-monthly');
       setCart(prev => prev.map(item =>
-        item.planId === 'trial-6' ? { ...item, quantity: 1 } : { ...item, quantity: 0 }
+        item.planId === 'sub-12' ? { ...item, quantity: 1 } : { ...item, quantity: 0 }
       ));
+      setOpenPlanId('sub-12');
+      setShowUpsellModal(true);
     } else if (planParam && planOptions.some(p => p.id === planParam)) {
       const plan = planOptions.find(p => p.id === planParam);
       if (plan && plan.isSubscription) {
@@ -656,26 +661,26 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPlanIdForCoupon]);
 
-  // 定期プラン訴求モーダルの発火制御。
-  // 選択中プランが お試し（isTrial = trial-6）になった瞬間に、1セッション1回だけ表示する。
-  // LP の各お試しCTA（?plan=trial-6 / ?type=trial / セクションのお試しボタン）と
-  // 購入ページ内でのお試し選択を、この1か所でまとめてカバーする。
-  useEffect(() => {
-    const selectedId = cart.find(item => item.quantity > 0)?.planId;
-    const selectedPlan = selectedId ? planOptions.find(p => p.id === selectedId) : null;
-    if (!selectedPlan?.isTrial) return;
-    if (typeof window === 'undefined') return;
-    try {
-      if (sessionStorage.getItem('upsell_modal_shown') === '1') return;
-      sessionStorage.setItem('upsell_modal_shown', '1');
-    } catch {
-      // sessionStorage が使えない環境でも購入は継続できるようにする
-    }
-    setShowUpsellModal(true);
-  }, [cart]);
+  // 定期プラン訴求モーダルの発火は mount 時の「お試し intent 判定」のみで行う
+  // （?plan=trial-6 / ?type=trial の着地ごとに表示。1セッション1回の抑止は廃止）。
+  // ここでは cart 監視による自動発火は行わない。
 
-  // 「お得な定期を見る」→ ページ遷移せず、その場で 12食定期（sub-12）に切替えて閉じる
-  const handleChooseSubscription = () => {
+  // 「このまま進む」＝お試し6個セットを買う唯一の入口。
+  // trial-6 を quantity 1・他 0 に設定し、モーダルを閉じて次ステップ（info）へ進む。
+  const handleContinueTrial = () => {
+    setCart(prev =>
+      prev.map(item => (item.planId === 'trial-6' ? { ...item, quantity: 1 } : { ...item, quantity: 0 }))
+    );
+    setPurchaseType('one-time');
+    setIsTrialMode(false);
+    setShowUpsellModal(false);
+    setCurrentStep('info');
+    resetSheetScroll();
+  };
+
+  // 「お得な定期を見る」/ ✕ / 背景 / Escape ＝モーダルを閉じてプラン選択（6食/12食定期）を表示。
+  // trial は選択せず、おすすめとして 12食定期（sub-12）を初期選択にする。
+  const handleCloseUpsell = () => {
     setCart(prev =>
       prev.map(item => (item.planId === 'sub-12' ? { ...item, quantity: 1 } : { ...item, quantity: 0 }))
     );
@@ -1215,17 +1220,22 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
     window.location.href = `/login?redirect=${encodeURIComponent(returnUrl)}`;
   };
 
-  const planCardData: PlanCardData[] = planOptions.map((plan) => ({
-    id: plan.id,
-    mealCount: plan.quantity,
-    title: plan.isTrial ? 'お試し6個セット' : `${plan.quantity}食 月額プラン`,
-    subtitle: plan.description,
-    totalPrice: plan.totalPrice,
-    perMeal: plan.perMeal,
-    badge: undefined,
-    shippingNote: '送料別',
-    isSubscription: plan.isSubscription,
-  }));
+  // プラン選択カードは定期（sub-6 / sub-12）のみ。お試し(trial-6)はカードに出さない。
+  // trial-6 はモーダルの「このまま進む」経由でのみ選択される（planOptions 定義自体は
+  // 価格計算・選択用に残す）。
+  const planCardData: PlanCardData[] = planOptions
+    .filter((plan) => !plan.isTrial)
+    .map((plan) => ({
+      id: plan.id,
+      mealCount: plan.quantity,
+      title: `${plan.quantity}食 月額プラン`,
+      subtitle: plan.description,
+      totalPrice: plan.totalPrice,
+      perMeal: plan.perMeal,
+      badge: undefined,
+      shippingNote: '送料別',
+      isSubscription: plan.isSubscription,
+    }));
 
   const currentSelectedId = cart.find((item) => item.quantity > 0)?.planId || null;
 
@@ -2259,11 +2269,12 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
         />
       )}
 
-      {/* 定期プラン訴求モーダル（お試し選択時・1セッション1回） */}
+      {/* 定期プラン訴求モーダル（お試しCTA着地ごとに表示・関所）。
+          このまま進む→お試し選択して info へ。閉じる→プラン選択（sub-12初期選択）を表示。 */}
       <SubscriptionUpsellModal
         open={showUpsellModal}
-        onClose={() => setShowUpsellModal(false)}
-        onChoose={handleChooseSubscription}
+        onClose={handleCloseUpsell}
+        onContinueTrial={handleContinueTrial}
       />
 
       {/* F43: 既存会員ログイン誘導モーダル */}
