@@ -15,6 +15,10 @@
       "schedule": "0 9 * * *"
     },
     {
+      "path": "/api/cron/backfill-renewal-deliveries",
+      "schedule": "30 7 * * *"
+    },
+    {
       "path": "/api/cron/subscription-delivery",
       "schedule": "0 8 * * *"
     },
