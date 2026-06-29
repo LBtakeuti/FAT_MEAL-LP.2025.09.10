@@ -146,8 +146,13 @@ export function isValidPlanId(planId: string): boolean {
 /**
  * F9-1: 初回購入時の希望日（preferred_delivery_date）を 2回目以降の請求月に継承する。
  *
- * - `preferred` の「日（day-of-month）」を抽出し、`billingDate` の年月に当てはめた YYYY-MM-DD を返す
- * - 当該月に同じ日が存在しない場合（例: 1/31 → 2/28、3/31 → 4/30）はその月の月末日へ丸める
+ * あるべき仕様: 「希望日（毎月◯日）」を、課金日以降で最も早く来る ◯日 にする。
+ * - `preferred` の「日（day-of-month）」を抽出する
+ * - まず `billingDate`（JST 換算）の年月に ◯日を当てる（その月に無い日は月末日へクランプ）
+ * - 当てた日が課金日より前（＝過去日）になる場合は翌月へ送る（翌月でも月末クランプ）
+ *   例: 希望2日／課金 6/26 → 7/2（当月 6/2 は過去日のため翌月へ）
+ *   例: 希望26日／課金 6/26 → 6/26（当月のまま）、希望20日／課金 6/10 → 6/20（当月のまま）
+ * - 月末クランプの既存挙動は維持（例: 1/31 → 2月課金は 2/28、5/31 → 6月課金は 6/30）
  * - `preferred` は "YYYY-MM-DD" 形式の文字列を想定。形式不正の場合は null を返す
  * - 戻り値は JST 想定の "YYYY-MM-DD"（時刻成分なし）
  */
@@ -160,11 +165,26 @@ export function inheritPreferredDateForBilling(
   const preferredDay = parseInt(m[3], 10);
   if (!Number.isFinite(preferredDay) || preferredDay < 1 || preferredDay > 31) return null;
 
-  // billingDate を JST 換算してから年月を取り出す（UTC のまま使うと境界日でズレる可能性があるため）
+  // billingDate を JST 換算してから年月日を取り出す（UTC のまま使うと境界日でズレる可能性があるため）
   const jst = new Date(billingDate.getTime() + 9 * 60 * 60 * 1000);
-  const year = jst.getUTCFullYear();
-  const month = jst.getUTCMonth(); // 0-11
-  // 月末日: 翌月の 0 日 = 当月末日
+  let year = jst.getUTCFullYear();
+  let month = jst.getUTCMonth(); // 0-11
+  const billingDay = jst.getUTCDate();
+
+  // 当月に ◯日を当てる（月末日へクランプ）
+  const lastDayOfBillingMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const dayInBillingMonth = Math.min(preferredDay, lastDayOfBillingMonth);
+
+  // 当月の ◯日が課金日より前（過去日）になる場合は翌月へ送る
+  if (dayInBillingMonth < billingDay) {
+    month += 1;
+    if (month > 11) {
+      month = 0;
+      year += 1;
+    }
+  }
+
+  // 確定した年月で改めて月末クランプ
   const lastDayOfMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
   const day = Math.min(preferredDay, lastDayOfMonth);
 

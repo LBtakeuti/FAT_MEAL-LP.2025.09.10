@@ -1185,8 +1185,9 @@ async function handleMonthlySubscriptionPayment(invoice: Stripe.Invoice, stripe:
     const customerEmail = (dbSubscription as any).shipping_address?.email || '';
 
     // F9-1: 初回購入時の preferred_delivery_date を 2回目以降の配送日にも継承する。
-    //   - preferred_delivery_date が存在する場合: 「billingDate の年月」+「初回希望日の日（day-of-month）」で算出
-    //   - 翌月にその日が無い場合（例: 1/31 → 2月）は月末日へフォールバック
+    //   - preferred_delivery_date が存在する場合: 課金日以降で最も早い希望日（毎月◯日）を採用。
+    //     当月の◯日が課金日より前（過去日）になる場合は翌月へ送る（例: 希望2日／課金6/26 → 7/2）。
+    //   - 当該月に◯日が無い場合（例: 1/31 → 2月）は月末日へクランプ
     //   - preferred_delivery_date が null（旧プラン体系の既存契約者）: 従来通り calculateMonthlyDeliverySchedule の billingDate ベース
     const preferredAnchor = (dbSubscription as any).preferred_delivery_date as string | null | undefined;
     const inheritedScheduledDate = preferredAnchor
