@@ -395,7 +395,16 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
         setPurchaseType(parsed.purchaseType);
         setIsTrialMode(parsed.purchaseType !== 'subscription-monthly');
       }
-      if (parsed.appliedCoupon) setAppliedCoupon(parsed.appliedCoupon);
+      if (parsed.appliedCoupon) {
+        setAppliedCoupon(parsed.appliedCoupon);
+        // 復元したクーポンは stale の可能性があるため、現在のプランで必ずサーバー再検証する。
+        const restoredPlanId = Array.isArray(parsed.cart)
+          ? parsed.cart.find((it: { quantity?: number; planId?: string }) => (it.quantity ?? 0) > 0)?.planId
+          : undefined;
+        if (parsed.appliedCoupon.code && restoredPlanId) {
+          void revalidateCouponForPlan(parsed.appliedCoupon.code, restoredPlanId);
+        }
+      }
       if (Array.isArray(parsed.surveyQ1)) setSurveyQ1(parsed.surveyQ1);
       if (typeof parsed.surveyQ1Other === 'string') setSurveyQ1Other(parsed.surveyQ1Other);
       if (Array.isArray(parsed.surveyQ2)) setSurveyQ2(parsed.surveyQ2);
@@ -424,7 +433,16 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
       setCart(savedCart);
       setPurchaseType(savedType);
       setIsTrialMode(savedType !== 'subscription-monthly');
-      if (savedCoupon) setAppliedCoupon(savedCoupon);
+      if (savedCoupon) {
+        setAppliedCoupon(savedCoupon);
+        // 復元したクーポンは stale の可能性があるため、現在のプランで必ずサーバー再検証する。
+        const restoredPlanId = Array.isArray(savedCart)
+          ? savedCart.find((it: { quantity?: number; planId?: string }) => (it.quantity ?? 0) > 0)?.planId
+          : undefined;
+        if (savedCoupon.code && restoredPlanId) {
+          void revalidateCouponForPlan(savedCoupon.code, restoredPlanId);
+        }
+      }
       setCurrentStep('confirm');
       localStorage.removeItem('purchase_step2_data');
       window.scrollTo(0, 0);
@@ -493,8 +511,14 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
 
   const calculateCouponDiscount = (plan: PlanOption | null): number => {
     if (!plan || !appliedCoupon) return 0;
-    // お試しプラン × 定期専用クーポンは割引ゼロ
-    if (plan.isTrial && isSubscriptionOnlyCouponApplied()) return 0;
+    // お試しプラン × 定期専用クーポンは割引ゼロ。
+    // 多重防衛: subscription_only（stale で欠ける可能性あり）に加え、サーバーが
+    // 現プランへの適用可を確認できていない（appliesToCurrentPlan === false）場合も割引ゼロ。
+    if (
+      plan.isTrial &&
+      (isSubscriptionOnlyCouponApplied() || appliedCoupon.appliesToCurrentPlan === false)
+    )
+      return 0;
     const base = plan.totalPrice;
     if (appliedCoupon.percentOff) {
       const afterDiscount = Math.round(base * (1 - appliedCoupon.percentOff / 100));
@@ -564,8 +588,13 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
     };
     const meta = appliedCoupon?.couponMetadata;
     if (!appliedCoupon || !meta || typeof meta !== 'object') return fallback;
-    // お試しプラン × 定期専用クーポンは専用表示も出さない（割引ゼロと整合）
-    if (getSelectedPlan()?.isTrial && isSubscriptionOnlyCouponApplied()) return fallback;
+    // お試しプラン × 定期専用クーポンは専用表示も出さない（割引ゼロと整合）。
+    // 多重防衛: appliesToCurrentPlan === false（サーバー未確認）も専用表示を出さない。
+    if (
+      getSelectedPlan()?.isTrial &&
+      (isSubscriptionOnlyCouponApplied() || appliedCoupon.appliesToCurrentPlan === false)
+    )
+      return fallback;
 
     const freeShipping = meta.free_shipping === 'true';
     const rawProductDiscount = meta.product_discount;
@@ -602,21 +631,52 @@ const PurchaseFlow: React.FC<PurchaseFlowProps> = ({ inSheet = false, onClose })
   // カートが空かどうか
   const isCartEmpty = cart.every(item => item.quantity === 0);
 
+  // 適用済みクーポンを指定プランでサーバー再検証し、最新値で上書き or 自動解除する。
+  // localStorage 復元時の stale な couponMetadata（subscription_only 欠落等）を、画面に
+  // 出す前にサーバーの最新判定へ揃えるために使う（表示ガードのサーバー一本化）。
+  const revalidateCouponForPlan = async (code: string, planId: string) => {
+    try {
+      const res = await fetch('/api/payment/validate-coupon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, planId }),
+      });
+      const data = await res.json();
+      if (data.valid) {
+        setAppliedCoupon({
+          code: data.code,
+          discount: data.discount || 0,
+          percentOff: data.percentOff,
+          scope: data.scope,
+          appliesToProducts: data.appliesToProducts,
+          appliesToCurrentPlan: data.appliesToCurrentPlan,
+          couponName: data.couponName,
+          couponMetadata: data.couponMetadata,
+          duration: data.duration,
+          durationInMonths: data.durationInMonths,
+        });
+      } else {
+        setAppliedCoupon(null);
+        setCouponAutoRemovedToast(
+          `クーポン ${code} はこのプランには使えないため解除しました`
+        );
+      }
+    } catch (e) {
+      console.error('[coupon re-validate] failed:', e);
+    }
+  };
+
   // F44: プラン切り替え時に適用済みクーポンを再判定
   // 範囲外（appliesToCurrentPlan === false）になったら自動で外し、トースト通知する
   const selectedPlanIdForCoupon = cart.find(item => item.quantity > 0)?.planId;
   useEffect(() => {
     if (!appliedCoupon || !selectedPlanIdForCoupon) return;
-    // 商品制限クーポン(scope==='product')に加え、定期専用クーポン(subscription_only)も
-    // プラン切替時に再判定する。定期専用は scope==='all' のため従来は素通りしていたが、
-    // 定期→お試しへ切替時に valid:false で自動解除させる必要がある。
-    const isSubscriptionOnly = appliedCoupon.couponMetadata?.subscription_only === 'true';
-    if (appliedCoupon.scope !== 'product' && !isSubscriptionOnly) return;
-    // F44-fix: appliesToCurrentPlan は前回 validate 時のプラン基準の値のため、
-    // プラン変更検知時に skip すると stale な値で判定をスキップしてしまう。
-    // 商品限定クーポンはプランが変わるたびに必ず再 validate する。
-    // 同一プラン内の数量変更等では useEffect 依存（selectedPlanIdForCoupon）が
-    // 変わらないため再実行されない。
+    // 根本修正: クーポン適用済みで選択プランが変わったら、scope や subscription_only の
+    // クライアント保持値に関わらず「常に」サーバーへ再確認する。
+    // 旧実装は stale な couponMetadata（subscription_only 欠落等）に依存した早期 return で
+    // 再検証自体をスキップし、定期専用クーポンの割引がお試し表示にすり抜けていた。
+    // 表示ガードをサーバー判定へ一本化するため早期 return を撤廃した
+    // （普通の全体クーポンも一度サーバー確認＝コスト微増だが正確性優先）。
 
     let cancelled = false;
     (async () => {
