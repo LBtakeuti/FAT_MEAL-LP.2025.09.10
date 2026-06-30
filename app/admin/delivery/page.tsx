@@ -357,7 +357,7 @@ function DeliveryPageContent() {
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     <button onClick={() => setSortOrder(o => o === 'asc' ? 'desc' : 'asc')} className="flex items-center gap-1 hover:text-gray-800">
-                      配送日 <span className="text-gray-400">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                      配送予定日 <span className="text-gray-400">{sortOrder === 'asc' ? '↑' : '↓'}</span>
                     </button>
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">種別</th>
