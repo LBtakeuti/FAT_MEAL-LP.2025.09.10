@@ -72,15 +72,21 @@ export async function GET(request: NextRequest) {
         `)
         .order('created_at', { ascending: true });
 
-      if (workFromYmd) subQuery = subQuery.gte('created_at', `${workFromYmd}T00:00:00+09:00`);
-      if (workToYmd) subQuery = subQuery.lte('created_at', `${workToYmd}T23:59:59+09:00`);
+      // F: subscription_deliveries は配送日（scheduled_date）軸でバッファ範囲を取得する。
+      //    created_at 軸だと「配送日は今日だが作成がずっと前」のレコードを SQL 段階で取りこぼし、
+      //    逆に「配送日は過去だが cron が今日 created_at で補完作成」したレコードが紛れ込むため。
+      if (workFromYmd) subQuery = subQuery.gte('scheduled_date', workFromYmd);
+      if (workToYmd) subQuery = subQuery.lte('scheduled_date', workToYmd);
       if (statusFilter) subQuery = subQuery.eq('status', statusFilter);
 
       const { data: rawDeliveries, error: subError } = await subQuery;
-      // F4-4: created_at から算出した配送作業日が target 範囲に入るものだけ残す
-      const deliveries = (rawDeliveries || []).filter((d: { created_at?: string }) =>
-        !d.created_at || inWorkDateRange(resolveDeliveryWorkDate(new Date(d.created_at)))
-      );
+      // F: 配送日軸（preferred_delivery_date 優先、無ければ scheduled_date）で target 範囲に入るものだけ残す。
+      //    両方 null のときのみ従来の created_at 軸へフォールバック。
+      const deliveries = (rawDeliveries || []).filter((d: { created_at?: string; scheduled_date?: string; preferred_delivery_date?: string }) => {
+        const deliveryDate = d.preferred_delivery_date ?? d.scheduled_date;
+        if (deliveryDate) return inWorkDateRange(deliveryDate);
+        return !d.created_at || inWorkDateRange(resolveDeliveryWorkDate(new Date(d.created_at)));
+      });
 
       if (subError) {
         console.error('Failed to fetch subscription_deliveries:', subError);

@@ -42,8 +42,8 @@ const getJSTToday = () => {
 };
 
 const addDays = (yyyymmdd: string, n: number) => {
-  const d = new Date(yyyymmdd + 'T00:00:00');
-  d.setDate(d.getDate() + n);
+  const d = new Date(yyyymmdd + 'T00:00:00Z'); // Z付き=UTC解釈
+  d.setUTCDate(d.getUTCDate() + n);             // UTC日付演算
   return d.toISOString().slice(0, 10);
 };
 
